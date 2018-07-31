@@ -48,25 +48,24 @@ from scipy.fftpack import fft2, ifft2
 from scipy import optimize
 
 
-def fitCenterOfMass(x):
+def fitCenterOfMass(x, com):
     fit_func = lambda p, x: p[0] * np.sin(2 * np.pi / 360 * (x - p[1])) + p[2]
     err_func = lambda p, x, y: fit_func(p, x) - y
     p0 = [100, 100, 100]
-    p1, success = optimize.leastsq(errfunc, p0[:], args=(x, self.com))
-    #centerOfMassDiff = fit_func(p1, x) - self.com
+    p1, success = optimize.leastsq(err_func, p0[:], args=(x, com))
+    ##centerOfMassDiff = fit_func(p1, x) - self.com
     return p1
 
 
-def runCenterOfMass(theta):
+def runCenterOfMass(theta, com):
     '''
     find center of mass with self.centerOfMass and fit the curve with self.fitCenterOfMass
     '''
     centerOfMass()
-    return fitCenterOfMass(x=theta)
-    #self.lbl.setText("Center of Mass: " + str(self.p1[2]))
+    return fitCenterOfMass(x=theta, com)
 
 
-def fitCenterOfMass2(x):
+def fitCenterOfMass2(x, com):
     '''
     Find a position difference between center of mass of first projection
     and center of other projections.
@@ -82,14 +81,14 @@ def fitCenterOfMass2(x):
     self.centerOfMassDiff: ndarray
           Difference of center of mass of first projections and center
           of other projections
-    self.com: ndarray
+    com: ndarray
           The position of center of mass
     '''
-    fit_func = lambda p, x: p[0] * np.sin(2 * np.pi / 360 * (x - p[1])) + self.p1[2]
+    fit_func = lambda p, x: p[0] * np.sin(2 * np.pi / 360 * (x - p[1])) + p1[2]
     err_func = lambda p, x, y: fit_func(p, x) - y
     p0 = [100, 100]
-    p2, success = optimize.leastsq(err_func, p0[:], args=(x, self.com))
-    centerOfMassDiff = fit_func(p2, x) - self.com
+    p2, success = optimize.leastsq(err_func, p0[:], args=(x, com))
+    centerOfMassDiff = fit_func(p2, x) - com
     return centerOfMassDiff
 
 
@@ -104,7 +103,7 @@ def runCenterOfMass2(projections, data, thickness, theta):
     temp2 = np.zeros(data.shape[3])
     comelem = sino.combo.currentIndex()
     for i in np.arange(projections):
-        temp = sum(data[comelem, i, sino.sld.value() - thickness / 2:sino.sld.value() + thickness / 2,:] - self.data[comelem, i, :10, :10].mean(), axis=0)
+        temp = sum(data[comelem, i, sino.sld.value() - thickness / 2:sino.sld.value() + thickness / 2,:] - data[comelem, i, :10, :10].mean(), axis=0)
         # temp=sum(self.data[self.comelem,i,:,:]-1, axis=0)
         numb2 = sum(temp)
         for j in np.arange(data.shape[3]):
@@ -112,8 +111,6 @@ def runCenterOfMass2(projections, data, thickness, theta):
         numb = float(sum(temp2)) / numb2
         com[i] = numb
     return fitCenterOfMass(x=theta)
-    #self.alignCenterOfMass()
-    #self.sinogram()
 
 
 def centerOfMass(projections, data):
@@ -178,7 +175,6 @@ def alignCenterOfMass(projections, data, xshift):
     for i in np.arange(projections):
         xshift[i] += int(self.centerOfMassDiff[i])
         data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(xshift[i])), axis=2)
-
 
 
 def alignCenterOfMass2(hotspotProj, data, xshift, centerOfMassDiff):
