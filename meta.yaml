@@ -1,0 +1,28 @@
+package:
+  name: xfluo
+  version: '0.1.1'
+
+source:
+  git_url: https://github.com/tomography/xfluo.git
+  
+build:
+  number: 0
+
+requirements:
+  build:
+    - python
+    - setuptools
+ 
+  run:
+    - python
+    - numpy    
+    
+test:
+  # Python imports
+  imports:
+    - xfluo
+
+about:
+  home: http://xfluo.readthedocs.org
+  license: BSD-3
+  summary: 'Add docs to any xfluo.'
