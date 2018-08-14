@@ -46,26 +46,29 @@ POSSIBILITY OF SUCH DAMAGE.
 import numpy as np
 from scipy.fftpack import fft2, ifft2
 from scipy import optimize
+from skimage.feature import match_template
 
 
-def fitCenterOfMass(x, com):
+
+
+def fitCenterOfMass(x, center_of_mass):
     fit_func = lambda p, x: p[0] * np.sin(2 * np.pi / 360 * (x - p[1])) + p[2]
     err_func = lambda p, x, y: fit_func(p, x) - y
     p0 = [100, 100, 100]
-    p1, success = optimize.leastsq(err_func, p0[:], args=(x, com))
-    ##centerOfMassDiff = fit_func(p1, x) - self.com
+    p1, success = optimize.leastsq(err_func, p0[:], args=(x, center_of_mass))
+    ##centerOfMassDiff = fit_func(p1, x) - self.center_of_mass
     return p1
 
 
-def runCenterOfMass(theta, com):
+def runCenterOfMass(projections, data, center_of_mass_element, theta, center_of_mass):
     '''
     find center of mass with self.centerOfMass and fit the curve with self.fitCenterOfMass
     '''
-    centerOfMass()
-    return fitCenterOfMass(x=theta, com)
+    centerOfMass(projections, data, center_of_mass_element)
+    return fitCenterOfMass(theta, center_of_mass)
 
 
-def fitCenterOfMass2(x, com):
+def fitCenterOfMass2(x, center_of_mass):
     '''
     Find a position difference between center of mass of first projection
     and center of other projections.
@@ -81,47 +84,45 @@ def fitCenterOfMass2(x, com):
     self.centerOfMassDiff: ndarray
           Difference of center of mass of first projections and center
           of other projections
-    com: ndarray
+    center_of_mass: ndarray
           The position of center of mass
     '''
-    fit_func = lambda p, x: p[0] * np.sin(2 * np.pi / 360 * (x - p[1])) + p1[2]
+    fit_func = lambda p, x: p[0] * np.sin(2 * np.pi / 360 * (x - p[1])) + p[2]
     err_func = lambda p, x, y: fit_func(p, x) - y
     p0 = [100, 100]
-    p2, success = optimize.leastsq(err_func, p0[:], args=(x, com))
-    centerOfMassDiff = fit_func(p2, x) - com
+    p2, success = optimize.leastsq(err_func, p0[:], args=(x, center_of_mass))
+    centerOfMassDiff = fit_func(p2, x) - center_of_mass
     return centerOfMassDiff
 
 
-def runCenterOfMass2(projections, data, thickness, theta):
+def runCenterOfMass2(projections, data, thickness, theta, sino_value, comelem):
     '''
     second version of runCenterOfMass
-    self.com: center of mass vector
+    self.center_of_mass: center of mass vector
     self.comelem: the element chosen for center of mass
     '''
-    com = np.zeros(projections)
+    center_of_mass = np.zeros(projections)
     temp = np.zeros(data.shape[3])
     temp2 = np.zeros(data.shape[3])
-    comelem = sino.combo.currentIndex()
     for i in np.arange(projections):
-        temp = sum(data[comelem, i, sino.sld.value() - thickness / 2:sino.sld.value() + thickness / 2,:] - data[comelem, i, :10, :10].mean(), axis=0)
+        temp = sum(data[comelem, i, sino_value - thickness / 2:sino_value + thickness / 2,:] - data[comelem, i, :10, :10].mean(), axis=0)
         # temp=sum(self.data[self.comelem,i,:,:]-1, axis=0)
         numb2 = sum(temp)
         for j in np.arange(data.shape[3]):
             temp2[j] = temp[j] * j
         numb = float(sum(temp2)) / numb2
-        com[i] = numb
+        center_of_mass[i] = numb
     return fitCenterOfMass(x=theta)
 
 
-def centerOfMass(projections, data):
+def centerOfMass(projections, data, comelem):
     '''
-    self.com: center of mass vector
+    self.center_of_mass: center of mass vector
     self.comelem: the element chosen for center of mass
     '''
-    com = np.zeros(projections)
+    center_of_mass = np.zeros(projections)
     temp = np.zeros(data.shape[3])
     temp2 = np.zeros(data.shape[3])
-    comelem = comer.combo.currentIndex()
     for i in np.arange(projections):
         temp = sum(data[comelem, i, :, :] - data[comelem, i, :10, :10].mean(), axis=0)
         # temp=sum(self.data[self.comelem,i,:,:]-1, axis=0)
@@ -129,34 +130,11 @@ def centerOfMass(projections, data):
         for j in np.arange(data.shape[3]):
             temp2[j] = temp[j] * j
         numb = float(sum(temp2)) / numb2
-        com[i] = numb
-    return com
+        center_of_mass[i] = numb
+    return center_of_mass
 
 
-def fitCenterOfMass(ang, com):
-    '''
-    Find a position difference between center of mass of first projection
-    and center of other projections.
-    If we use this difference, centers will be aligned in a straigh line
-
-    Parameters
-    -----------
-    ang: ndarray
-          angle
-
-    Variables
-    ------------
-    self.centerOfMassDiff: ndarray
-          Difference of center of mass of first projections and center
-          of other projections
-    self.com: ndarray
-          The position of center of mass
-    '''
-    centerOfMassDiff = com[0] - com
-
-
-
-def alignCenterOfMass(projections, data, xshift):
+def alignCenterOfMass(projections, data, xshift, centerOfMassDiff):
     '''
     Align center of Mass
 
@@ -173,7 +151,7 @@ def alignCenterOfMass(projections, data, xshift):
           4D data [element,projections,y,x]
     '''
     for i in np.arange(projections):
-        xshift[i] += int(self.centerOfMassDiff[i])
+        xshift[i] += int(centerOfMassDiff[i])
         data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(xshift[i])), axis=2)
 
 
@@ -306,7 +284,7 @@ def edgegauss(imagey, sigma=4):
     nx = image.shape[1]
     ny = image.shape[0]
 
-    n_sigma = -log(10 ** -6)
+    n_sigma = -np.log(10 ** -6)
     n_roll = max(int(1 + sigma * n_sigma), 2)
     exparg = np.float32(np.arange(n_roll) / float(sigma))
     rolloff = np.float32(1) - np.exp(-0.5 * exparg * exparg)

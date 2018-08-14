@@ -44,8 +44,9 @@ POSSIBILITY OF SUCH DAMAGE.
 '''
 
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtGui, QtWidgets, QtCore
 import sys
+from widgets.file_table_widget import  FileTableWidget
 from widgets.image_process_widget import ImageProcessWidget
 from widgets.hotspot_widget import HotspotWidget
 from widgets.sinogram_widget import SinogramWidget
@@ -58,18 +59,18 @@ class XfluoGui(QtGui.QMainWindow):
 
     def initUI(self):
         exitAction = QtGui.QAction('Exit', self)
-        #exitAction.triggered.connect(self.close)
+        exitAction.triggered.connect(self.close)
         exitAction.setShortcut('Ctrl+Q')
 
         closeAction = QtGui.QAction('Quit', self)
         closeAction.triggered.connect(sys.exit)
         closeAction.setShortcut('Ctrl+X')
 
-        openFileAction = QtGui.QAction('Open File', self)
+        #openFileAction = QtGui.QAction('Open File', self)
         #openFileAction.triggered.connect(self.openfile)
 
         openFolderAction = QtGui.QAction('Open Folder', self)
-        # openFolderAction.triggered.connect(self.openfolder)
+        openFolderAction.triggered.connect(self.openFolder)
 
         openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
         #openTiffFolderAction.triggered.connect(self.openTiffFolder)
@@ -163,6 +164,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.vl = QtWidgets.QVBoxLayout()
 
         self.tab_widget = QtWidgets.QTabWidget()
+        self.tab_widget.addTab(FileTableWidget(), 'Files')
         self.tab_widget.addTab(ImageProcessWidget(), "Image Process")
         self.tab_widget.addTab(HotspotWidget(), "Hotspot")
         self.tab_widget.addTab(SinogramWidget(), "Sinogram")
@@ -180,7 +182,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.fileMenu = menubar.addMenu('&File')
         self.fileMenu.addAction(configurationAction) #to replace readconfiguration Action
         self.fileMenu.addAction(readConfigAction)
-        self.fileMenu.addAction(openFileAction)
+        ##self.fileMenu.addAction(openFileAction)
         self.fileMenu.addAction(openFolderAction)
         self.fileMenu.addAction(openTiffFolderAction)
         self.fileMenu.addAction(exitAction)
@@ -217,21 +219,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(reorderAction)
         #self.afterConversionMenu.setDisabled(True)
 
-        # toolbar = self.addToolBar('ToolBar')
-        # toolbar.addAction(exitAction)
-        # toolbar.addAction(openFileAction)
-        # # toolbar.addAction(openFolderAction)
-        # toolbar.addAction(saveHotSpotPosAction)
-        # toolbar.addAction(alignHotSpotPosAction)
-        # toolbar.addAction(exportDataAction)
-        # toolbar.addAction(runTransRecAction)
-        # toolbar.addAction(runCenterOfMassAction)
-        # toolbar.addAction(matcherAction)
-        # toolbar.addAction(runReconstructAction)
-        # toolbar.addAction(selectElementAction)
-        # toolbar.addAction(convertAction)
-        # toolbar.addAction(saveSinogramAction)
-        # toolbar.setVisible(False)
         add = 0
         if sys.platform == "win32":
             add = 50
@@ -239,6 +226,15 @@ class XfluoGui(QtGui.QMainWindow):
         self.setWindowTitle('xfluo')
         self.show()
 
+
+    def openFolder(self):
+        try:
+            folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+        except IndexError:
+            print("no folder has been selected")
+        except OSError:
+            print("no folder has been selected")
+        return folderName
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
