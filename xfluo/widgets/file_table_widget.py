@@ -73,6 +73,9 @@ class FileTableWidget(QtWidgets.QWidget):
         dirLabel = QtWidgets.QLabel('Directory')
         self.dirLineEdit = QtWidgets.QLineEdit()
         self.dirLineEdit.returnPressed.connect(self.onLoadDirectory)
+        self.extLineEdit = QtWidgets.QLineEdit('*.h5')
+        self.extLineEdit.setMaximumSize(50, 30)
+        self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
         self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
         self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
 
@@ -85,6 +88,7 @@ class FileTableWidget(QtWidgets.QWidget):
         hBox0 = QtWidgets.QHBoxLayout()
         hBox0.addWidget(dirLabel)
         hBox0.addWidget(self.dirLineEdit)
+        hBox0.addWidget(self.extLineEdit)
         hBox0.addWidget(self.dirBrowseBtn)
 
         hBox1 = QtWidgets.QHBoxLayout()
@@ -108,11 +112,12 @@ class FileTableWidget(QtWidgets.QWidget):
         self.fileTableModel.loadThetas(self.thetaLineEdit.text())
 
     def onLoadDirectory(self):
-        self.fileTableModel.loadDirectory(self.dirLineEdit.text())
+        self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         self.fileTableModel.setAllChecked(True)
         fpath = self.fileTableModel.getFirstCheckedFilePath()
         self.elementTableModel.loadElementNames(fpath)
         self.elementTableModel.setAllChecked(True)
+        self.onThetaUpdate()
 
     def onFileTableContextMenu(self, pos):
         if self.fileTableView.selectionModel().selection().indexes():

@@ -163,13 +163,26 @@ class XfluoGui(QtGui.QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.vl = QtWidgets.QVBoxLayout()
 
+        self.fileTableWidget = FileTableWidget()
+        self.imageProcessWidget = ImageProcessWidget()
+        self.hotspotWidget = HotspotWidget()
+        self.sinogramWidget = SinogramWidget()
+        self.reconstructionWidget = ReconstructionWidget()
+
+        self.prevTab = 0
+        self.TAB_FILE = 0
+        self.TAB_IMAGE_PROC = 1
+        self.TAB_HOTSPOT = 2
+        self.TAB_SINOGRAM = 3
+        self.TAB_RECONSTRUCTION = 4
+
         self.tab_widget = QtWidgets.QTabWidget()
-        self.tab_widget.addTab(FileTableWidget(), 'Files')
-        self.tab_widget.addTab(ImageProcessWidget(), "Image Process")
-        self.tab_widget.addTab(HotspotWidget(), "Hotspot")
-        self.tab_widget.addTab(SinogramWidget(), "Sinogram")
-        self.tab_widget.addTab(ReconstructionWidget(), "Reconstruction")
-        #self.tab_widget.currentChanged.connect(self.tab1manual)
+        self.tab_widget.addTab(self.fileTableWidget, 'Files')
+        self.tab_widget.addTab(self.imageProcessWidget, "Image Process")
+        self.tab_widget.addTab(self.hotspotWidget, "Hotspot")
+        self.tab_widget.addTab(self.sinogramWidget, "Sinogram")
+        self.tab_widget.addTab(self.reconstructionWidget, "Reconstruction")
+        self.tab_widget.currentChanged.connect(self.onTabChanged)
 
         self.vl.addWidget(self.tab_widget)
         #self.vl.addWidget(self.createMessageWidget())
@@ -235,6 +248,25 @@ class XfluoGui(QtGui.QMainWindow):
         except OSError:
             print("no folder has been selected")
         return folderName
+
+    def onTabChanged(self, index):
+        if self.prevTab == self.TAB_FILE:
+            self.loadImages()
+        elif self.prevTab == self.TAB_IMAGE_PROC:
+            pass
+        elif self.prevTab == self.TAB_HOTSPOT:
+            pass
+        elif self.prevTab == self.TAB_SINOGRAM:
+            pass
+        elif self.prevTab == self.TAB_RECONSTRUCTION:
+            pass
+        self.prevTab = index
+
+    def loadImages(self):
+        file_array = self.fileTableWidget.fileTableModel.arrayData
+        element_array = self.fileTableWidget.elementTableModel.arrayData
+        #for fidx in range(len(file_array)):
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
