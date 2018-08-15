@@ -45,7 +45,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from models.file_table_model import FileTableModel
-
+from models.element_table_model import ElementTableModel
 
 class FileTableWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -61,6 +61,13 @@ class FileTableWidget(QtWidgets.QWidget):
         self.fileTableView.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         self.fileTableView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.fileTableView.customContextMenuRequested.connect(self.onFileTableContextMenu)
+
+        self.elementTableModel = ElementTableModel()
+        self.elementTableView = QtWidgets.QTableView()
+        self.elementTableView.setModel(self.elementTableModel)
+        self.elementTableView.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.elementTableView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.elementTableView.customContextMenuRequested.connect(self.onElementTableContextMenu)
 
         dirLabel = QtWidgets.QLabel('Directory')
         self.dirLineEdit = QtWidgets.QLineEdit()
@@ -88,6 +95,7 @@ class FileTableWidget(QtWidgets.QWidget):
         vBox.addLayout(hBox0)
         vBox.addLayout(hBox1)
         vBox.addWidget(self.fileTableView)
+        vBox.addWidget(self.elementTableView)
         self.setLayout(vBox)
 
     def onDirBrowse(self):
@@ -100,12 +108,29 @@ class FileTableWidget(QtWidgets.QWidget):
 
     def onLoadDirectory(self):
         self.fileTableModel.loadDirectory(self.dirLineEdit.text())
+        fpath = self.fileTableModel.getFirstCheckedFilePath()
+        self.elementTableModel.loadElementNames(fpath)
 
     def onFileTableContextMenu(self, pos):
         if self.fileTableView.selectionModel().selection().indexes():
-            #for i in self.fileTableView.selectionModel().selection().indexes():
-            #    row, column = i.row(), i.column()
+            rows = []
+            for i in self.fileTableView.selectionModel().selection().indexes():
+                rows += [i.row()]
             menu = QtGui.QMenu()
-            checkAction = menu.addAction("Check")
-            uncheckAction = menu.addAction("Uncheck")
-            action = menu.exec_(self.mapToGlobal(pos))
+            check_action = menu.addAction("Check")
+            uncheck_action = menu.addAction("Uncheck")
+            action = menu.exec_(self.fileTableView.mapToGlobal(pos))
+            if action == check_action or action == uncheck_action:
+                self.fileTableModel.setChecked(rows, (check_action == action))
+
+    def onElementTableContextMenu(self, pos):
+        if self.elementTableView.selectionModel().selection().indexes():
+            rows = []
+            for i in self.elementTableView.selectionModel().selection().indexes():
+                rows += [i.row()]
+            menu = QtGui.QMenu()
+            check_action = menu.addAction("Check")
+            uncheck_action = menu.addAction("Uncheck")
+            action = menu.exec_(self.elementTableView.mapToGlobal(pos))
+            if action == check_action or action == uncheck_action:
+                self.elementTableModel.setChecked(rows, (check_action == action))

@@ -43,26 +43,23 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 '''
 
-from PyQt5 import QtCore, QtGui
+from PyQt5 import QtCore
 from glob import glob
 import h5py
 import numpy as np
 import os
 
 
-class FileTableModel(QtCore.QAbstractTableModel):
+class ElementTableModel(QtCore.QAbstractTableModel):
     def __init__(self, parent=None, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
-        self.fileNames = [[],[],[]]
-        self.directory = ''
-        self.columns = ['Filename', 'Theta']
-        self.COL_FILE = 0
-        self.COL_THETA = 1
-        self.COL_USE = 2
+        self.elementMaps = [[],[]]
+        self.columns = ['Element Map']
+        self.COL_MAP = 0
+        self.COL_USE = 1
 
     def rowCount(self, parent):
-        return len(self.fileNames[self.COL_FILE])
-        #return len(self.fileNames)
+        return len(self.elementMaps[self.COL_MAP])
 
     def columnCount(self, parent):
         return len(self.columns)
@@ -73,25 +70,24 @@ class FileTableModel(QtCore.QAbstractTableModel):
 
     def flags(self, index):
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
-        if index.column() == self.COL_FILE:
+        if index.column() == self.COL_MAP:
             flags |= QtCore.Qt.ItemIsUserCheckable
         return flags
 
     def setData(self, index, value, role=QtCore.Qt.EditRole):
         if role == QtCore.Qt.CheckStateRole:
-            rows = len(self.fileNames[self.COL_FILE])
+            rows = len(self.elementMaps[self.COL_MAP])
             if rows > 0 and index.row() < rows:
-                self.fileNames[self.COL_USE][index.row()] = bool(value)
-                self.dataChanged.emit(index, index)
+                self.elementMaps[self.COL_USE][index.row()] = bool(value)
                 return True
         return False
 
     def data(self, index, role):
         if not index.isValid():
             return QtCore.QVariant()
-        elif role == QtCore.Qt.CheckStateRole and index.column() == self.COL_FILE:
-            if len(self.fileNames[self.COL_FILE]) > 0:
-                if self.fileNames[self.COL_USE][index.row()] is True:
+        elif role == QtCore.Qt.CheckStateRole and index.column() == self.COL_MAP:
+            if len(self.elementMaps[self.COL_MAP]) > 0:
+                if self.elementMaps[self.COL_USE][index.row()] is True:
                     return QtCore.Qt.Checked
                 else:
                     return QtCore.Qt.Unchecked
@@ -99,45 +95,29 @@ class FileTableModel(QtCore.QAbstractTableModel):
                 return QtCore.Qt.Unchecked
         elif role != QtCore.Qt.DisplayRole:
             return QtCore.QVariant()
-        if len(self.fileNames[self.COL_FILE]) > 0:
-            return QtCore.QVariant(self.fileNames[index.column()][index.row()])
+        if len(self.elementMaps[self.COL_MAP]) > 0:
+            return QtCore.QVariant(self.elementMaps[index.column()][index.row()])
         else:
             return QtCore.QVariant()
 
-    def loadDirectory(self, directoryName, ext='*.h5*'):
-        self.directory = directoryName
+    def loadElementNames(self, filePath):
+        if filePath is None:
+            return
+        self.elementMaps[self.COL_MAP] = []
         topLeft = self.index(0, 0)
         self.layoutAboutToBeChanged.emit()
-        self.fileNames[self.COL_FILE] = [os.path.basename(x) for x in glob(directoryName+'/'+ext)]
-        for i in range(len(self.fileNames[0])):
-            self.fileNames[self.COL_USE] += [True]
-            self.fileNames[self.COL_THETA] += [0.0]
-        bottomRight = self.index(len(self.fileNames[self.COL_FILE]), len(self.columns))
+        try:
+            hFile = h5py.File(filePath)
+            elements = hFile['/MAPS/channel_names']
+            for i in range(len(elements)):
+                self.elementMaps[self.COL_MAP] += [elements[i].decode('UTF-8')]
+                self.elementMaps[self.COL_USE] += [True]
+        except:
+            pass
+        bottomRight = self.index(len(self.elementMaps[self.COL_MAP]), len(self.columns))
         self.layoutChanged.emit()
         self.dataChanged.emit(topLeft, bottomRight)
 
-    def loadThetas(self, thetaPV):
-        thetaBytes = thetaPV.encode('ascii')
-        topLeft = self.index(0, self.COL_THETA)
-        bottomRight = self.index(len(self.fileNames[self.COL_FILE]), self.COL_THETA)
-        for i in range(len(self.fileNames[self.COL_FILE])):
-            try:
-                hFile = h5py.File(self.directory+'/'+self.fileNames[self.COL_FILE][i])
-                extra_pvs = hFile['/MAPS/extra_pvs']
-                idx = np.where(extra_pvs[0] == thetaBytes)
-                if len(idx[0]) > 0:
-                    self.fileNames[self.COL_THETA][i] = float(extra_pvs[1][idx[0][0]])
-            except:
-                pass
-        self.dataChanged.emit(topLeft, bottomRight)
-
-    def getFirstCheckedFilePath(self):
-        for i in range(len(self.fileNames[self.COL_FILE])):
-            if self.fileNames[self.COL_USE][i] is True:
-                return self.directory+'/'+self.fileNames[self.COL_FILE][i]
-        return None
-
     def setChecked(self, rows, value):
         for i in rows:
-            self.setData(self.index(i, self.COL_FILE), value, QtCore.Qt.CheckStateRole)
-
+            self.setData(self.index(i, self.COL_MAP), value, QtCore.Qt.CheckStateRole)

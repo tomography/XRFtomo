@@ -69,10 +69,10 @@ class XfluoGui(QtGui.QMainWindow):
         #openFileAction = QtGui.QAction('Open File', self)
         #openFileAction.triggered.connect(self.openfile)
 
-        openFolderAction = QtGui.QAction('Open Folder', self)
-        openFolderAction.triggered.connect(self.openFolder)
+        #openFolderAction = QtGui.QAction('Open Folder', self)
+        #openFolderAction.triggered.connect(self.openFolder)
 
-        openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
+        #openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
         #openTiffFolderAction.triggered.connect(self.openTiffFolder)
 
         sinogramAction = QtGui.QAction('Sinogram', self)
@@ -81,16 +81,16 @@ class XfluoGui(QtGui.QMainWindow):
         saveImageAction = QtGui.QAction('Save Projections', self)
         #saveImageAction.triggered.connect(self.saveImage)
 
-        selectElementAction = QtGui.QAction('Select Element', self)
+        #selectElementAction = QtGui.QAction('Select Element', self)
         #selectElementAction.triggered.connect(self.selectElement)
 
-        selectFilesAction = QtGui.QAction('Select Files', self)
+        #selectFilesAction = QtGui.QAction('Select Files', self)
         #selectFilesAction.triggered.connect(self.selectFilesShow)
 
-        saveThetaTxtAction = QtGui.QAction("Save Theta Postion as txt", self)
+        #saveThetaTxtAction = QtGui.QAction("Save Theta Postion as txt", self)
         #saveThetaTxtAction.triggered.connect(self.saveThetaTxt)
 
-        convertAction = QtGui.QAction('Save data in memory', self)
+        #convertAction = QtGui.QAction('Save data in memory', self)
         #convertAction.triggered.connect(self.convert)
 
         saveSinogramAction = QtGui.QAction('Save Sinogram', self)
@@ -183,16 +183,16 @@ class XfluoGui(QtGui.QMainWindow):
         self.fileMenu.addAction(configurationAction) #to replace readconfiguration Action
         self.fileMenu.addAction(readConfigAction)
         ##self.fileMenu.addAction(openFileAction)
-        self.fileMenu.addAction(openFolderAction)
-        self.fileMenu.addAction(openTiffFolderAction)
+        #self.fileMenu.addAction(openFolderAction)
+        #self.fileMenu.addAction(openTiffFolderAction)
         self.fileMenu.addAction(exitAction)
         self.fileMenu.addAction(closeAction)
 
         self.optionMenu = menubar.addMenu('Convert Option')
-        self.optionMenu.addAction(selectFilesAction)
+        #self.optionMenu.addAction(selectFilesAction)
         self.optionMenu.addAction(selectImageTagAction)
-        self.optionMenu.addAction(selectElementAction)
-        self.optionMenu.addAction(convertAction)
+        #self.optionMenu.addAction(selectElementAction)
+        #self.optionMenu.addAction(convertAction)
         #self.optionMenu.setDisabled(True)
 
         self.alignmentMenu = menubar.addMenu("Alignment")
@@ -212,7 +212,7 @@ class XfluoGui(QtGui.QMainWindow):
 
         self.afterConversionMenu = menubar.addMenu('After saving data in memory')
         self.afterConversionMenu.addAction(saveImageAction)
-        self.afterConversionMenu.addAction(saveThetaTxtAction)
+        #self.afterConversionMenu.addAction(saveThetaTxtAction)
         # self.afterConversionMenu.addAction(selectElementAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
         # self.afterConversionMenu.addAction(runReconstructAction)
