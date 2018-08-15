@@ -58,6 +58,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.fileTableModel = FileTableModel()
         self.fileTableView = QtWidgets.QTableView()
         self.fileTableView.setModel(self.fileTableModel)
+        self.fileTableView.setSortingEnabled(True)
         self.fileTableView.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         self.fileTableView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.fileTableView.customContextMenuRequested.connect(self.onFileTableContextMenu)
@@ -108,8 +109,10 @@ class FileTableWidget(QtWidgets.QWidget):
 
     def onLoadDirectory(self):
         self.fileTableModel.loadDirectory(self.dirLineEdit.text())
+        self.fileTableModel.setAllChecked(True)
         fpath = self.fileTableModel.getFirstCheckedFilePath()
         self.elementTableModel.loadElementNames(fpath)
+        self.elementTableModel.setAllChecked(True)
 
     def onFileTableContextMenu(self, pos):
         if self.fileTableView.selectionModel().selection().indexes():

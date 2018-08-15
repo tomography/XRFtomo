@@ -50,16 +50,21 @@ import numpy as np
 import os
 
 
+class TableArrayItem:
+    def __init__(self, name):
+        self.element_name = name
+        self.use = True
+
+
 class ElementTableModel(QtCore.QAbstractTableModel):
     def __init__(self, parent=None, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
-        self.elementMaps = [[],[]]
+        self.arrayData = []
         self.columns = ['Element Map']
         self.COL_MAP = 0
-        self.COL_USE = 1
 
     def rowCount(self, parent):
-        return len(self.elementMaps[self.COL_MAP])
+        return len(self.arrayData)
 
     def columnCount(self, parent):
         return len(self.columns)
@@ -76,9 +81,9 @@ class ElementTableModel(QtCore.QAbstractTableModel):
 
     def setData(self, index, value, role=QtCore.Qt.EditRole):
         if role == QtCore.Qt.CheckStateRole:
-            rows = len(self.elementMaps[self.COL_MAP])
+            rows = len(self.arrayData)
             if rows > 0 and index.row() < rows:
-                self.elementMaps[self.COL_USE][index.row()] = bool(value)
+                self.arrayData[index.row()].use = bool(value)
                 return True
         return False
 
@@ -86,8 +91,8 @@ class ElementTableModel(QtCore.QAbstractTableModel):
         if not index.isValid():
             return QtCore.QVariant()
         elif role == QtCore.Qt.CheckStateRole and index.column() == self.COL_MAP:
-            if len(self.elementMaps[self.COL_MAP]) > 0:
-                if self.elementMaps[self.COL_USE][index.row()] is True:
+            if len(self.arrayData) > 0:
+                if self.arrayData[index.row()].use is True:
                     return QtCore.Qt.Checked
                 else:
                     return QtCore.Qt.Unchecked
@@ -95,29 +100,32 @@ class ElementTableModel(QtCore.QAbstractTableModel):
                 return QtCore.Qt.Unchecked
         elif role != QtCore.Qt.DisplayRole:
             return QtCore.QVariant()
-        if len(self.elementMaps[self.COL_MAP]) > 0:
-            return QtCore.QVariant(self.elementMaps[index.column()][index.row()])
+        if len(self.arrayData) > 0:
+            return QtCore.QVariant(self.arrayData[index.row()].element_name)
         else:
             return QtCore.QVariant()
 
     def loadElementNames(self, filePath):
         if filePath is None:
             return
-        self.elementMaps[self.COL_MAP] = []
+        self.arrayData = []
         topLeft = self.index(0, 0)
         self.layoutAboutToBeChanged.emit()
         try:
             hFile = h5py.File(filePath)
             elements = hFile['/MAPS/channel_names']
             for i in range(len(elements)):
-                self.elementMaps[self.COL_MAP] += [elements[i].decode('UTF-8')]
-                self.elementMaps[self.COL_USE] += [True]
+                self.arrayData += [TableArrayItem(elements[i].decode('UTF-8'))]
         except:
             pass
-        bottomRight = self.index(len(self.elementMaps[self.COL_MAP]), len(self.columns))
+        bottomRight = self.index(len(self.arrayData), len(self.columns))
         self.layoutChanged.emit()
         self.dataChanged.emit(topLeft, bottomRight)
 
     def setChecked(self, rows, value):
         for i in rows:
+            self.setData(self.index(i, self.COL_MAP), value, QtCore.Qt.CheckStateRole)
+
+    def setAllChecked(self, value):
+        for i in range(len(self.arrayData)):
             self.setData(self.index(i, self.COL_MAP), value, QtCore.Qt.CheckStateRole)

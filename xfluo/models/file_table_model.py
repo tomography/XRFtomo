@@ -43,17 +43,24 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 '''
 
-from PyQt5 import QtCore, QtGui
+from PyQt5 import QtCore
 from glob import glob
 import h5py
 import numpy as np
 import os
 
 
+class TableArrayItem:
+    def __init__(self, fname):
+        self.filename = fname
+        self.theta = 0.0
+        self.use = True
+
+
 class FileTableModel(QtCore.QAbstractTableModel):
     def __init__(self, parent=None, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
-        self.fileNames = [[],[],[]]
+        self.arrayData = [] # list of TableArrayItem's
         self.directory = ''
         self.columns = ['Filename', 'Theta']
         self.COL_FILE = 0
@@ -61,8 +68,7 @@ class FileTableModel(QtCore.QAbstractTableModel):
         self.COL_USE = 2
 
     def rowCount(self, parent):
-        return len(self.fileNames[self.COL_FILE])
-        #return len(self.fileNames)
+        return len(self.arrayData)
 
     def columnCount(self, parent):
         return len(self.columns)
@@ -79,9 +85,9 @@ class FileTableModel(QtCore.QAbstractTableModel):
 
     def setData(self, index, value, role=QtCore.Qt.EditRole):
         if role == QtCore.Qt.CheckStateRole:
-            rows = len(self.fileNames[self.COL_FILE])
+            rows = len(self.arrayData)
             if rows > 0 and index.row() < rows:
-                self.fileNames[self.COL_USE][index.row()] = bool(value)
+                self.arrayData[index.row()].use = bool(value)
                 self.dataChanged.emit(index, index)
                 return True
         return False
@@ -90,8 +96,8 @@ class FileTableModel(QtCore.QAbstractTableModel):
         if not index.isValid():
             return QtCore.QVariant()
         elif role == QtCore.Qt.CheckStateRole and index.column() == self.COL_FILE:
-            if len(self.fileNames[self.COL_FILE]) > 0:
-                if self.fileNames[self.COL_USE][index.row()] is True:
+            if len(self.arrayData) > 0:
+                if self.arrayData[index.row()].use is True:
                     return QtCore.Qt.Checked
                 else:
                     return QtCore.Qt.Unchecked
@@ -99,8 +105,11 @@ class FileTableModel(QtCore.QAbstractTableModel):
                 return QtCore.Qt.Unchecked
         elif role != QtCore.Qt.DisplayRole:
             return QtCore.QVariant()
-        if len(self.fileNames[self.COL_FILE]) > 0:
-            return QtCore.QVariant(self.fileNames[index.column()][index.row()])
+        if len(self.arrayData) > 0:
+            if index.column() == self.COL_FILE:
+                return QtCore.QVariant(self.arrayData[index.row()].filename)
+            elif index.column() == self.COL_THETA:
+                return QtCore.QVariant(self.arrayData[index.row()].theta)
         else:
             return QtCore.QVariant()
 
@@ -108,36 +117,53 @@ class FileTableModel(QtCore.QAbstractTableModel):
         self.directory = directoryName
         topLeft = self.index(0, 0)
         self.layoutAboutToBeChanged.emit()
-        self.fileNames[self.COL_FILE] = [os.path.basename(x) for x in glob(directoryName+'/'+ext)]
-        for i in range(len(self.fileNames[0])):
-            self.fileNames[self.COL_USE] += [True]
-            self.fileNames[self.COL_THETA] += [0.0]
-        bottomRight = self.index(len(self.fileNames[self.COL_FILE]), len(self.columns))
+        fileNames = [os.path.basename(x) for x in glob(directoryName+'/'+ext)]
+        fileNames = sorted(fileNames)
+        self.arrayData = []
+        for i in range(len(fileNames)):
+            self.arrayData += [TableArrayItem(fileNames[i])]
+        bottomRight = self.index(len(self.arrayData), len(self.columns))
         self.layoutChanged.emit()
         self.dataChanged.emit(topLeft, bottomRight)
 
     def loadThetas(self, thetaPV):
         thetaBytes = thetaPV.encode('ascii')
         topLeft = self.index(0, self.COL_THETA)
-        bottomRight = self.index(len(self.fileNames[self.COL_FILE]), self.COL_THETA)
-        for i in range(len(self.fileNames[self.COL_FILE])):
+        bottomRight = self.index(len(self.arrayData), self.COL_THETA)
+        for i in range(len(self.arrayData)):
             try:
-                hFile = h5py.File(self.directory+'/'+self.fileNames[self.COL_FILE][i])
+                hFile = h5py.File(self.directory+'/'+self.arrayData[i].filename)
                 extra_pvs = hFile['/MAPS/extra_pvs']
                 idx = np.where(extra_pvs[0] == thetaBytes)
                 if len(idx[0]) > 0:
-                    self.fileNames[self.COL_THETA][i] = float(extra_pvs[1][idx[0][0]])
+                    self.arrayData[i].theta = float(extra_pvs[1][idx[0][0]])
             except:
                 pass
         self.dataChanged.emit(topLeft, bottomRight)
 
     def getFirstCheckedFilePath(self):
-        for i in range(len(self.fileNames[self.COL_FILE])):
-            if self.fileNames[self.COL_USE][i] is True:
-                return self.directory+'/'+self.fileNames[self.COL_FILE][i]
+        for i in range(len(self.arrayData)):
+            if self.arrayData[i].use is True:
+                return self.directory+'/'+self.arrayData[i].filename
         return None
 
     def setChecked(self, rows, value):
         for i in rows:
             self.setData(self.index(i, self.COL_FILE), value, QtCore.Qt.CheckStateRole)
 
+    def setAllChecked(self, value):
+        for i in range(len(self.arrayData)):
+            self.setData(self.index(i, self.COL_FILE), value, QtCore.Qt.CheckStateRole)
+
+    def sort(self, col, order):
+        """Sort table by given column number.
+        """
+        self.layoutAboutToBeChanged.emit()
+        # self.arrayData = sorted(self.arrayData, key=operator.itemgetter(col))
+        if col == self.COL_FILE:
+            self.arrayData = sorted(self.arrayData, key=lambda tableitem: tableitem.filename)
+        if col == self.COL_THETA:
+            self.arrayData = sorted(self.arrayData, key=lambda tableitem: tableitem.theta)
+        if order == QtCore.Qt.DescendingOrder:
+            self.arrayData.reverse()
+        self.layoutChanged.emit()
