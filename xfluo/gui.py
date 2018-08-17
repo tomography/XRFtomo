@@ -46,15 +46,22 @@ POSSIBILITY OF SUCH DAMAGE.
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 import sys
-from widgets.file_table_widget import  FileTableWidget
+from widgets.file_widget import  FileTableWidget
 from widgets.image_process_widget import ImageProcessWidget
 from widgets.hotspot_widget import HotspotWidget
 from widgets.sinogram_widget import SinogramWidget
 from widgets.reconstruction_widget import ReconstructionWidget
+import json
+import os
+
+STR_CONFIG_THETA_STRS = 'theta_pv_strs'
+
 
 class XfluoGui(QtGui.QMainWindow):
     def __init__(self):
         super(QtGui.QMainWindow, self).__init__()
+        with open('xfluo_config.json') as json_file:
+            self.config = json.load(json_file)
         self.initUI()
 
     def initUI(self):
@@ -163,7 +170,11 @@ class XfluoGui(QtGui.QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.vl = QtWidgets.QVBoxLayout()
 
-        self.fileTableWidget = FileTableWidget()
+
+        theta_auto_completes = self.config.get(STR_CONFIG_THETA_STRS)
+        if theta_auto_completes is None:
+            theta_auto_completes = []
+        self.fileTableWidget = FileTableWidget(theta_auto_completes)
         self.imageProcessWidget = ImageProcessWidget()
         self.hotspotWidget = HotspotWidget()
         self.sinogramWidget = SinogramWidget()

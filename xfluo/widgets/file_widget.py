@@ -48,10 +48,11 @@ from models.file_table_model import FileTableModel
 from models.element_table_model import ElementTableModel
 
 class FileTableWidget(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, theta_auto_complete=[]):
         super(FileTableWidget, self).__init__()
         self._num_cols = 4
         self._num_row = 4
+        self.theta_auto_complete = theta_auto_complete
         self.initUI()
 
     def initUI(self):
@@ -79,8 +80,10 @@ class FileTableWidget(QtWidgets.QWidget):
         self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
         self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
 
+        thetaCompleter = QtWidgets.QCompleter(self.theta_auto_complete)
         thetaLabel = QtWidgets.QLabel('Theta PV')
         self.thetaLineEdit = QtWidgets.QLineEdit()
+        self.thetaLineEdit.setCompleter(thetaCompleter)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
         self.thetaUpdatehBtn = QtWidgets.QPushButton('Update')
         self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
