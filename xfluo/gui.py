@@ -44,34 +44,42 @@ POSSIBILITY OF SUCH DAMAGE.
 '''
 
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtGui, QtWidgets, QtCore
 import sys
+from widgets.file_widget import  FileTableWidget
 from widgets.image_process_widget import ImageProcessWidget
 from widgets.hotspot_widget import HotspotWidget
 from widgets.sinogram_widget import SinogramWidget
 from widgets.reconstruction_widget import ReconstructionWidget
+import json
+import os
+
+STR_CONFIG_THETA_STRS = 'theta_pv_strs'
+
 
 class XfluoGui(QtGui.QMainWindow):
     def __init__(self):
         super(QtGui.QMainWindow, self).__init__()
+        with open('xfluo_config.json') as json_file:
+            self.config = json.load(json_file)
         self.initUI()
 
     def initUI(self):
         exitAction = QtGui.QAction('Exit', self)
-        #exitAction.triggered.connect(self.close)
+        exitAction.triggered.connect(self.close)
         exitAction.setShortcut('Ctrl+Q')
 
         closeAction = QtGui.QAction('Quit', self)
         closeAction.triggered.connect(sys.exit)
         closeAction.setShortcut('Ctrl+X')
 
-        openFileAction = QtGui.QAction('Open File', self)
+        #openFileAction = QtGui.QAction('Open File', self)
         #openFileAction.triggered.connect(self.openfile)
 
-        openFolderAction = QtGui.QAction('Open Folder', self)
-        # openFolderAction.triggered.connect(self.openfolder)
+        #openFolderAction = QtGui.QAction('Open Folder', self)
+        #openFolderAction.triggered.connect(self.openFolder)
 
-        openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
+        #openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
         #openTiffFolderAction.triggered.connect(self.openTiffFolder)
 
         sinogramAction = QtGui.QAction('Sinogram', self)
@@ -80,16 +88,16 @@ class XfluoGui(QtGui.QMainWindow):
         saveImageAction = QtGui.QAction('Save Projections', self)
         #saveImageAction.triggered.connect(self.saveImage)
 
-        selectElementAction = QtGui.QAction('Select Element', self)
+        #selectElementAction = QtGui.QAction('Select Element', self)
         #selectElementAction.triggered.connect(self.selectElement)
 
-        selectFilesAction = QtGui.QAction('Select Files', self)
+        #selectFilesAction = QtGui.QAction('Select Files', self)
         #selectFilesAction.triggered.connect(self.selectFilesShow)
 
-        saveThetaTxtAction = QtGui.QAction("Save Theta Postion as txt", self)
+        #saveThetaTxtAction = QtGui.QAction("Save Theta Postion as txt", self)
         #saveThetaTxtAction.triggered.connect(self.saveThetaTxt)
 
-        convertAction = QtGui.QAction('Save data in memory', self)
+        #convertAction = QtGui.QAction('Save data in memory', self)
         #convertAction.triggered.connect(self.convert)
 
         saveSinogramAction = QtGui.QAction('Save Sinogram', self)
@@ -162,12 +170,30 @@ class XfluoGui(QtGui.QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.vl = QtWidgets.QVBoxLayout()
 
+
+        theta_auto_completes = self.config.get(STR_CONFIG_THETA_STRS)
+        if theta_auto_completes is None:
+            theta_auto_completes = []
+        self.fileTableWidget = FileTableWidget(theta_auto_completes)
+        self.imageProcessWidget = ImageProcessWidget()
+        self.hotspotWidget = HotspotWidget()
+        self.sinogramWidget = SinogramWidget()
+        self.reconstructionWidget = ReconstructionWidget()
+
+        self.prevTab = 0
+        self.TAB_FILE = 0
+        self.TAB_IMAGE_PROC = 1
+        self.TAB_HOTSPOT = 2
+        self.TAB_SINOGRAM = 3
+        self.TAB_RECONSTRUCTION = 4
+
         self.tab_widget = QtWidgets.QTabWidget()
-        self.tab_widget.addTab(ImageProcessWidget(), "Image Process")
-        self.tab_widget.addTab(HotspotWidget(), "Hotspot")
-        self.tab_widget.addTab(SinogramWidget(), "Sinogram")
-        self.tab_widget.addTab(ReconstructionWidget(), "Reconstruction")
-        #self.tab_widget.currentChanged.connect(self.tab1manual)
+        self.tab_widget.addTab(self.fileTableWidget, 'Files')
+        self.tab_widget.addTab(self.imageProcessWidget, "Image Process")
+        self.tab_widget.addTab(self.hotspotWidget, "Hotspot")
+        self.tab_widget.addTab(self.sinogramWidget, "Sinogram")
+        self.tab_widget.addTab(self.reconstructionWidget, "Reconstruction")
+        self.tab_widget.currentChanged.connect(self.onTabChanged)
 
         self.vl.addWidget(self.tab_widget)
         #self.vl.addWidget(self.createMessageWidget())
@@ -180,17 +206,17 @@ class XfluoGui(QtGui.QMainWindow):
         self.fileMenu = menubar.addMenu('&File')
         self.fileMenu.addAction(configurationAction) #to replace readconfiguration Action
         self.fileMenu.addAction(readConfigAction)
-        self.fileMenu.addAction(openFileAction)
-        self.fileMenu.addAction(openFolderAction)
-        self.fileMenu.addAction(openTiffFolderAction)
+        ##self.fileMenu.addAction(openFileAction)
+        #self.fileMenu.addAction(openFolderAction)
+        #self.fileMenu.addAction(openTiffFolderAction)
         self.fileMenu.addAction(exitAction)
         self.fileMenu.addAction(closeAction)
 
         self.optionMenu = menubar.addMenu('Convert Option')
-        self.optionMenu.addAction(selectFilesAction)
+        #self.optionMenu.addAction(selectFilesAction)
         self.optionMenu.addAction(selectImageTagAction)
-        self.optionMenu.addAction(selectElementAction)
-        self.optionMenu.addAction(convertAction)
+        #self.optionMenu.addAction(selectElementAction)
+        #self.optionMenu.addAction(convertAction)
         #self.optionMenu.setDisabled(True)
 
         self.alignmentMenu = menubar.addMenu("Alignment")
@@ -210,34 +236,47 @@ class XfluoGui(QtGui.QMainWindow):
 
         self.afterConversionMenu = menubar.addMenu('After saving data in memory')
         self.afterConversionMenu.addAction(saveImageAction)
-        self.afterConversionMenu.addAction(saveThetaTxtAction)
+        #self.afterConversionMenu.addAction(saveThetaTxtAction)
         # self.afterConversionMenu.addAction(selectElementAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
         # self.afterConversionMenu.addAction(runReconstructAction)
         self.afterConversionMenu.addAction(reorderAction)
         #self.afterConversionMenu.setDisabled(True)
 
-        # toolbar = self.addToolBar('ToolBar')
-        # toolbar.addAction(exitAction)
-        # toolbar.addAction(openFileAction)
-        # # toolbar.addAction(openFolderAction)
-        # toolbar.addAction(saveHotSpotPosAction)
-        # toolbar.addAction(alignHotSpotPosAction)
-        # toolbar.addAction(exportDataAction)
-        # toolbar.addAction(runTransRecAction)
-        # toolbar.addAction(runCenterOfMassAction)
-        # toolbar.addAction(matcherAction)
-        # toolbar.addAction(runReconstructAction)
-        # toolbar.addAction(selectElementAction)
-        # toolbar.addAction(convertAction)
-        # toolbar.addAction(saveSinogramAction)
-        # toolbar.setVisible(False)
         add = 0
         if sys.platform == "win32":
             add = 50
         self.setGeometry(add, add, 1100 + add, 500 + add)
         self.setWindowTitle('xfluo')
         self.show()
+
+
+    def openFolder(self):
+        try:
+            folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+        except IndexError:
+            print("no folder has been selected")
+        except OSError:
+            print("no folder has been selected")
+        return folderName
+
+    def onTabChanged(self, index):
+        if self.prevTab == self.TAB_FILE:
+            self.loadImages()
+        elif self.prevTab == self.TAB_IMAGE_PROC:
+            pass
+        elif self.prevTab == self.TAB_HOTSPOT:
+            pass
+        elif self.prevTab == self.TAB_SINOGRAM:
+            pass
+        elif self.prevTab == self.TAB_RECONSTRUCTION:
+            pass
+        self.prevTab = index
+
+    def loadImages(self):
+        file_array = self.fileTableWidget.fileTableModel.arrayData
+        element_array = self.fileTableWidget.elementTableModel.arrayData
+        #for fidx in range(len(file_array)):
 
 
 if __name__ == '__main__':
