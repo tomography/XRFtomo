@@ -57,7 +57,6 @@ class TableArrayItem:
         self.theta = 0.0
         self.use = True
 
-
 class FileTableModel(QtCore.QAbstractTableModel):
     def __init__(self, parent=None, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
@@ -67,6 +66,7 @@ class FileTableModel(QtCore.QAbstractTableModel):
         self.COL_FILE = 0
         self.COL_THETA = 1
         self.COL_USE = 2
+        self.idx = 0
 
     def rowCount(self, parent):
         return len(self.arrayData)
@@ -135,9 +135,9 @@ class FileTableModel(QtCore.QAbstractTableModel):
             try:
                 hFile = h5py.File(self.directory+'/'+self.arrayData[i].filename)
                 extra_pvs = hFile['/MAPS/extra_pvs']
-                idx = np.where(extra_pvs[0] == thetaBytes)
-                if len(idx[0]) > 0:
-                    self.arrayData[i].theta = float(extra_pvs[1][idx[0][0]])
+                self.idx = np.where(extra_pvs[0] == thetaBytes)
+                if len(self.idx[0]) > 0:
+                    self.arrayData[i].theta = float(extra_pvs[1][self.idx[0][0]])
             except:
                 pass
         self.dataChanged.emit(topLeft, bottomRight)
