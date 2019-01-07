@@ -54,14 +54,32 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.lcd = QtWidgets.QLCDNumber(self)
+        button1size = 250
+        buton2size = 122.5
+        button3size = 73.3
+        button4size = 58.75
+        # self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        # self.sld.setMaximumWidth(button1size)
+        # self.sld.setMinimumWidth(button1size)
+        # self.lcd = QtWidgets.QLCDNumber(self)
+        # self.lcd.setMaximumWidth(button1size)
+        # self.lcd.setMinimumWidth(button1size)
         self.combo = QtWidgets.QComboBox(self)
-        self.btn = QtWidgets.QPushButton('Click2')
-        self.btn.setText("Sinogram")
+        self.combo.setMaximumWidth(button1size)
+        self.combo.setMinimumWidth(button1size)
+        self.btn = QtWidgets.QPushButton('Sinogram')
+        self.btn.setMaximumWidth(button1size)
+        self.btn.setMinimumWidth(button1size)
         self.btn2 = QtWidgets.QPushButton("shift data")
+        self.btn2.setMaximumWidth(button1size)
+        self.btn2.setMinimumWidth(button1size)
         self.btn3 = QtWidgets.QPushButton("X 10")
+        self.btn3.setMaximumWidth(button1size)
+        self.btn3.setMinimumWidth(button1size)
         self.btn4 = QtWidgets.QPushButton("/ 10")
+        self.btn4.setMaximumWidth(button1size)
+        self.btn4.setMinimumWidth(button1size)
+
         hb = QtWidgets.QHBoxLayout()
         hb.addWidget(self.btn3)
         hb.addWidget(self.btn4)
@@ -73,8 +91,8 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb.addWidget(self.combo)
         vb.addWidget(self.btn)
         vb.addWidget(self.btn2)
-        vb.addWidget(self.lcd)
-        vb.addWidget(self.sld)
+        # vb.addWidget(self.lcd)
+        # vb.addWidget(self.sld)
         vb.addWidget(self.lbl)
         vb.addLayout(hb)
         self.setLayout(vb)

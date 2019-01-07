@@ -43,12 +43,10 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-
-from PyQt5 import QtWidgets
+from PyQt5 import QtCore, QtWidgets
 from widgets.sinogram_view import SinogramView
 from widgets.sinogram_controls_widget import SinogramControlsWidget
 import pyqtgraph
-
 
 class SinogramWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -58,15 +56,28 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def initUI(self):
         self.sino = SinogramControlsWidget()
-
-        hb1 = QtWidgets.QHBoxLayout()
         self.view = SinogramView()
+        lbl = QtWidgets.QLabel('Row y')
+        sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
+        self.hist.setMinimumSize(120,120)
+        self.hist.setMaximumWidth(120)
         self.hist.setImageItem(self.view.projView)
-        hb1.addWidget(self.view)
-        hb1.addWidget(self.hist, 10)
+
+        hb0 = QtWidgets.QHBoxLayout()
+        hb0.addWidget(lbl)
+        hb0.addWidget(lcd)
+        hb0.addWidget(sld)
+        vb1 = QtWidgets.QVBoxLayout()
+        vb1.addWidget(self.view)
+        vb1.addLayout(hb0)
 
         sinoBox = QtWidgets.QHBoxLayout()
         sinoBox.addWidget(self.sino)
-        sinoBox.addLayout(hb1, 10)
+        sinoBox.addLayout(vb1)
+        sinoBox.addWidget(self.hist, 10)
+
         self.setLayout(sinoBox)
+
+
