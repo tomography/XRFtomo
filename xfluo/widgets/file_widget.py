@@ -48,6 +48,10 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from models.file_table_model import FileTableModel
 from models.element_table_model import ElementTableModel
 
+from file_io.reader import read_projection
+from pylab import *
+
+
 class FileTableWidget(QtWidgets.QWidget):
     def __init__(self, theta_auto_complete=[]):
         super(FileTableWidget, self).__init__()
@@ -88,6 +92,9 @@ class FileTableWidget(QtWidgets.QWidget):
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
         self.thetaUpdatehBtn = QtWidgets.QPushButton('Update')
         self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
+        self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
+        self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
+        self.saveDataBtn.setEnabled(False)
 
         hBox0 = QtWidgets.QHBoxLayout()
         hBox0.addWidget(dirLabel)
@@ -99,6 +106,7 @@ class FileTableWidget(QtWidgets.QWidget):
         hBox1.addWidget(thetaLabel)
         hBox1.addWidget(self.thetaLineEdit)
         hBox1.addWidget(self.thetaUpdatehBtn)
+        hBox1.addWidget(self.saveDataBtn)
 
         vBox = QtWidgets.QVBoxLayout()
         vBox.addLayout(hBox0)
@@ -114,6 +122,7 @@ class FileTableWidget(QtWidgets.QWidget):
 
     def onThetaUpdate(self):
         self.fileTableModel.loadThetas(self.thetaLineEdit.text())
+        self.saveDataBtn.setEnabled(True)
 
     def onLoadDirectory(self):
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
@@ -121,7 +130,7 @@ class FileTableWidget(QtWidgets.QWidget):
         fpath = self.fileTableModel.getFirstCheckedFilePath()
         self.elementTableModel.loadElementNames(fpath)
         self.elementTableModel.setAllChecked(True)
-        self.onThetaUpdate()
+        # self.onThetaUpdate()
 
     def onFileTableContextMenu(self, pos):
         if self.fileTableView.selectionModel().selection().indexes():
@@ -146,3 +155,31 @@ class FileTableWidget(QtWidgets.QWidget):
             action = menu.exec_(self.elementTableView.mapToGlobal(pos))
             if action == check_action or action == uncheck_action:
                 self.elementTableModel.setChecked(rows, (check_action == action))
+
+    def onSaveDataInMemory(self):
+
+        #get list of selected elements, files and corresponding angles
+        path = self.fileTableModel.directory
+        files = [i.filename for i in self.fileTableModel.arrayData]
+        files = [path + '/' + s for s in files]
+        thetas = [i.theta for i in self.fileTableModel.arrayData]
+        elements = [i.element_name for i in self.elementTableModel.arrayData]
+        use = [i.use for i in self.fileTableModel.arrayData]
+        use2 = [i.use for i in self.elementTableModel.arrayData]
+
+        k = arange(len(files))
+        l = arange(len(elements))
+        use_files =[files[j] for j in k if use[j]==True]
+        use_thetas = [thetas[j] for j in k if use[j]==True]
+        use_elements = [elements[j] for j in l if use2[j]==True]
+        theta_index = int(self.fileTableModel.idx[0])
+
+        #get largest dimension in x and y from projections 
+
+        for i in use_files:
+            dummy, projection = read_projection(i,use_elements[0],theta_index)
+
+
+
+
+        pass
