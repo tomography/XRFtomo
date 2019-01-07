@@ -61,6 +61,8 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
         self.lbl2 = QtWidgets.QLabel("")
         lbl3 = QtWidgets.QLabel("y pos")
         self.lbl4 = QtWidgets.QLabel("")
+        self.lbl5 = QtWidgets.QLabel("Angle")
+
         btn1 = QtWidgets.QPushButton("position")
         hb3.addWidget(lbl1)
         hb3.addWidget(self.lbl2)
@@ -77,8 +79,11 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
+        self.hist.setMinimumSize(120,120)
+        self.hist.setMaximumWidth(120)
         self.hist.setImageItem(self.view.projView)
 
+        hb2.addWidget(self.lbl5)
         hb2.addWidget(self.lcd)
         hb2.addWidget(self.sld)
         vb1.addWidget(self.file_name_title)
