@@ -60,7 +60,8 @@ __author__ = "Francesco De Carlo"
 __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
 __version__ = "0.0.1"
 __docformat__ = 'restructuredtext en'
-__all__ = ['read_projection']
+__all__ = ['read_projection',
+           'read_elements']
 
 
 def find_index(a_list, element):
@@ -97,5 +98,5 @@ def read_projection(fname, element, theta_index):
     theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(",")[1]
     elements = read_elements(fname)
 
-    return theta, projections[find_index(elements, element)]
+    return projections[find_index(elements, element)], theta
 
