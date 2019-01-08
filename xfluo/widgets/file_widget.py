@@ -45,10 +45,11 @@
 
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from models.file_table_model import FileTableModel
-from models.element_table_model import ElementTableModel
+# from models.file_table_model import FileTableModel
+# from models.element_table_model import ElementTableModel
+import xfluo
 
-from file_io.reader import read_projection
+# from file_io.reader import read_projection
 from pylab import *
 
 
@@ -61,7 +62,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.fileTableModel = FileTableModel()
+        self.fileTableModel = xfluo.FileTableModel()
         self.fileTableView = QtWidgets.QTableView()
         self.fileTableView.setModel(self.fileTableModel)
         self.fileTableView.setSortingEnabled(True)
@@ -69,7 +70,8 @@ class FileTableWidget(QtWidgets.QWidget):
         self.fileTableView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.fileTableView.customContextMenuRequested.connect(self.onFileTableContextMenu)
 
-        self.elementTableModel = ElementTableModel()
+        # self.elementTableModel = ElementTableModel()
+        self.elementTableModel = xfluo.ElementTableModel()
         self.elementTableView = QtWidgets.QTableView()
         self.elementTableView.setModel(self.elementTableModel)
         self.elementTableView.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
