@@ -51,7 +51,6 @@ from __future__ import (absolute_import, division, print_function,
 
 from xfluo.models.element_table_model import *
 from xfluo.file_io.reader import *
-from xfluo.module_01 import *
 
 try:
     import pkg_resources

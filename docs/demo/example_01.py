@@ -76,12 +76,14 @@ def main(arg):
 
     if os.path.isfile(fname):    
 
-        elements = xfluo.file_io.read_elements(fname)
+        elements = xfluo.read_elements(fname)
         for i, e in enumerate(elements):
             print ('%d:  %s' % (i, e))
         
-        proj, theta = xfluo.file_io.read_projection(fname, element, 657)
+        proj, theta = xfluo.read_projection(fname, element, 657)
         print ("theta:", theta)
+        print (theta.shape)
+        print ("proj:", proj)
         print (proj.shape)
 
     elif os.path.isdir(fname):
