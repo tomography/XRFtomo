@@ -43,12 +43,20 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 from PyQt5 import QtCore
 from glob import glob
 import h5py
 import numpy as np
 import os
+
+__author__ = "Fabricio Marin"
+__copyright__ = "Copyright (c) 2018-19, UChicago Argonne, LLC."
+__version__ = "0.0.1"
+__docformat__ = 'restructuredtext en'
+__all__ = ['ElementTableModel']
 
 
 class TableArrayItem:

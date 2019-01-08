@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -44,47 +47,5 @@
 # #########################################################################
 
 
-
-import numpy as np
-
-
-
-def alignFromText2(filename, data, projections, xshift, yshift):
-    '''
-    align by reading text file that saved prior image registration
-    alignment info is saved in following format: name of the file, xshift, yshift
-    by locating where the comma(,) is we can extract information:
-    name of the file(string before first comma),
-    yshift(string after first comma before second comma),
-    xshift(string after second comma)
-
-    '''
-    try:
-        fio = open(filename, 'r')
-        read = fio.readlines()
-        datacopy = np.zeros(data.shape)
-        datacopy[...] = data[...]
-        data[np.isnan(data)] = 1
-        for i in np.arange(projections):
-            j = i + 1
-            secondcol = read[j].rfind(",")
-            firstcol = read[j][:secondcol].rfind(",")
-            yshift[i] += int(float(read[j][secondcol + 1:-1]))
-            xshift[i] += int(float(read[j][firstcol + 1:secondcol]))
-            data[:, i, :, :] = np.roll(data[:, i, :, :], xshift[i], axis=2)
-            data[:, i, :, :] = np.roll(data[:, i, :, :], yshift[i], axis=1)
-
-        fio.close()
-
-        #self.lbl.setText("Alignment using values from Text has been completed")
-        #self.updateImages()
-    except IOError:
-        print("choose file please")
-
-
-def saveAlignToText(filename, projections, xshift, yshift):
-    fio = open(filename, "w")
-    #fio.writelines("rotation axis, " + str(self.p1[2]) + "\n")
-    for i in range(projections):
-        fio.writelines(projections[i] + ", " + str(xshift[i]) + ", " + str(yshift[i]) + "\n")
-    fio.close()
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)

@@ -76,12 +76,14 @@ def main(arg):
 
     if os.path.isfile(fname):    
 
-        elements = xfluo.file_io.read_elements(fname)
+        elements = xfluo.read_elements(fname)
         for i, e in enumerate(elements):
             print ('%d:  %s' % (i, e))
         
-        proj, theta = xfluo.file_io.read_projection(fname, element, 657)
+        proj, theta = xfluo.read_projection(fname, element, 663)
         print ("theta:", theta)
+#        print (theta.shape)
+        print ("proj:", proj)
         print (proj.shape)
 
     elif os.path.isdir(fname):
@@ -91,7 +93,7 @@ def main(arg):
         h5_file_list = list(filter(lambda x: x.endswith(('.h5', '.hdf')), os.listdir(top)))
 
         for i, fname in enumerate(h5_file_list):
-            theta, proj = xfluo.file_io.read_projection(top+fname, element, 657)
+            proj, theta = xfluo.file_io.read_projection(top+fname, element, 663) ##657 
             print(i, theta, fname)
 
     else:
