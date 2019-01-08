@@ -59,6 +59,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.recon = ReconstructionControlsWidget()
         self.recon.sld.setVisible(False)
         self.projView = ImageAndHistogramWidget()
+        self.projView.lbl5.setText(str('Slice'))
         projViewBox = QtWidgets.QHBoxLayout()
         projViewBox.addWidget(self.recon)
         projViewBox.addWidget(self.projView, 10)
