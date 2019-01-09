@@ -175,13 +175,10 @@ class FileTableWidget(QtWidgets.QWidget):
         use_thetas = [thetas[j] for j in k if use[j]==True]
         use_elements = [elements[j] for j in l if use2[j]==True]
         theta_index = int(self.fileTableModel.idx[0])
+        element_index = [elements.index(j) for j in use_elements]
 
         #get largest dimension in x and y from projections 
 
-        for i in use_files:
-            dummy, projection = read_projection(i,use_elements[0],theta_index)
-
-
-
+        # data = xfluo.convert_to_array(use_files, element_index, theta_index)
 
         pass

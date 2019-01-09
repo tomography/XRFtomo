@@ -46,16 +46,35 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+"""
+Module for converting raw data to 4D array: [elements, angles, y, x]
+"""
 
-from xfluo.file_io.reader import *
-from xfluo.file_io.converter import *
+import xfluo
 
-##from xfluo.models.element_table_model import *
+def convert_to_array(fnames,element_index, theta_index):
+    """
+    Converts hdf files to numpy arrays for plotting and manipulation.
 
-try:
-    import pkg_resources
-    __version__ = pkg_resources.working_set.require("xfluo")[0].version
-except:
-    pass
+    Parameters
+    ----------
+    elements: list
+    	List of selected elements
+    element_index : list
+        List of element index positions for selected elements
+    thetas : list
+        List of projection angles used
+    fnames : list
+		list of file names including full direcory path.
+    Returns
+    -------
+    ndarray
+        projection
+    """
+    
+    elements = xfluo.read_elements(fnames[0])
+    tmp1 = element_index[1]
+    for i in range(len(fnames)):
+    	XY = xfluo.read_projection(fnames[i],elements[tmp1],theta_index)
+
+    return XY

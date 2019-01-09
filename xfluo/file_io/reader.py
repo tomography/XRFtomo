@@ -95,7 +95,7 @@ def read_projection(fname, element, theta_index):
     """
 
     projections = dxchange.read_hdf5(fname, "MAPS/XRF_roi")
-    theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(",")[1]
+    theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1]
     elements = read_elements(fname)
 
     return projections[find_index(elements, element)], theta
