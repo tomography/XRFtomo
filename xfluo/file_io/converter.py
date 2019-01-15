@@ -46,35 +46,62 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-"""
-Module for converting raw data to 4D array: [elements, angles, y, x]
-"""
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 import xfluo
+import numpy as np
+from pylab import *
 
-def convert_to_array(fnames,element_index, theta_index):
+__author__ = "Fabricio S. Marin"
+__copyright__ = "Copyright (c) 2019, UChicago Argonne, LLC."
+__version__ = "0.0.1"
+__docformat__ = 'restructuredtext en'
+__all__ = ['convert_to_array']
+
+def convert_to_array(path_files, use_elements, theta_index):
+
     """
     Converts hdf files to numpy arrays for plotting and manipulation.
 
     Parameters
     ----------
-    elements: list
-    	List of selected elements
-    element_index : list
-        List of element index positions for selected elements
-    thetas : list
-        List of projection angles used
-    fnames : list
-		list of file names including full direcory path.
+    path_files: list
+    	List of path+filenames
+    use_elements : list
+        List of string element names selected in checkboxes
+    theta_index: int
+        index position of theta PV
     Returns
     -------
-    ndarray
-        projection
+    ndarray: ndarray
+        4D array [elements, projection, y, x]
     """
-    
-    elements = xfluo.read_elements(fnames[0])
-    tmp1 = element_index[1]
-    for i in range(len(fnames)):
-    	XY = xfluo.read_projection(fnames[i],elements[tmp1],theta_index)
 
-    return XY
+    elements = xfluo.read_elements(path_files[0])
+    max_y, max_x = 0, 0
+    for i in range(len(path_files)):
+        proj, dummy = xfluo.read_projection(path_files[0], elements[0], theta_index)
+        if proj.shape[0] > max_y:
+            max_y = proj.shape[0]
+        if proj.shape[1] > max_x:
+            max_x = proj.shape[1]
+
+    data = zeros([len(use_elements),len(path_files), max_y, max_x])
+
+    for i in range(len(use_elements)):
+        indx = use_elements.index(use_elements[i])
+
+        for j in range(len(path_files)):
+            proj, theta = xfluo.read_projection(path_files[j], elements[indx], theta_index)
+            img_y = proj.shape[0]
+            img_x = proj.shape[1]
+            dx = np.floor((max_x-img_x)/2).astype(int)
+            dy = np.floor((max_y-img_y)/2).astype(int)
+            data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
+    data[isnan(data)] = 0.0001
+    data[data == inf] = 0.0001
+
+    return data
+
