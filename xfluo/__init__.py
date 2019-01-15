@@ -48,11 +48,22 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
 from xfluo.file_io.reader import *
 from xfluo.file_io.converter import *
 
-##from xfluo.models.element_table_model import *
+from xfluo.models.element_table_model import *
+from xfluo.models.file_table_model import *
+
+from xfluo.widgets.image_process_widget import *
+from xfluo.widgets.image_and_histogram_widget import *
+from xfluo.widgets.image_process_controls_widget import *
+from xfluo.widgets.hotspot_widget import *
+from xfluo.widgets.sinogram_widget import *
+from xfluo.widgets.reconstruction_widget import *
+from xfluo.widgets.file_widget import *
+
+
+
 
 try:
     import pkg_resources
