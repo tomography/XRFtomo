@@ -61,7 +61,8 @@ __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
 __version__ = "0.0.1"
 __docformat__ = 'restructuredtext en'
 __all__ = ['read_projection',
-           'read_elements']
+           'read_elements',
+           'find_index']
 
 
 def find_index(a_list, element):

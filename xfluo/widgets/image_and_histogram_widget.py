@@ -43,9 +43,9 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-
+import xfluo
 from PyQt5 import QtCore, QtWidgets
-from widgets.histogram_widget import HistogramWidget
+# from widgets.histogram_widget import HistogramWidget
 import pyqtgraph
 
 class ImageAndHistogramWidget(QtWidgets.QWidget):
@@ -75,7 +75,7 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
         hb2 = QtWidgets.QHBoxLayout()
         hb1 = QtWidgets.QHBoxLayout()
         vb1 = QtWidgets.QVBoxLayout()
-        self.view = HistogramWidget()
+        self.view = xfluo.HistogramWidget()
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()

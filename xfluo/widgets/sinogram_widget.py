@@ -43,9 +43,10 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+import xfluo
 from PyQt5 import QtCore, QtWidgets
-from widgets.sinogram_view import SinogramView
-from widgets.sinogram_controls_widget import SinogramControlsWidget
+# from widgets.sinogram_view import SinogramView
+# from widgets.sinogram_controls_widget import SinogramControlsWidget
 import pyqtgraph
 
 class SinogramWidget(QtWidgets.QWidget):
@@ -55,8 +56,8 @@ class SinogramWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.sino = SinogramControlsWidget()
-        self.view = SinogramView()
+        self.sino = xfluo.SinogramControlsWidget()
+        self.view = xfluo.SinogramView()
         lbl = QtWidgets.QLabel('Row y')
         sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         lcd = QtWidgets.QLCDNumber(self)

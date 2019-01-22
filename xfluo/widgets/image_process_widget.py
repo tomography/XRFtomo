@@ -45,8 +45,7 @@
 
 
 from PyQt5 import QtWidgets
-from widgets.image_and_histogram_widget import ImageAndHistogramWidget
-from widgets.image_process_controls_widget import ImageProcessControlsWidget
+import xfluo
 
 class ImageProcessWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -55,8 +54,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.ViewControl = ImageProcessControlsWidget()
-        self.imgAndHistoWidget = ImageAndHistogramWidget()
+        self.ViewControl = xfluo.ImageProcessControlsWidget()
+        self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget()
         mainHBox = QtWidgets.QHBoxLayout()
         mainHBox.addWidget(self.ViewControl)
         mainHBox.addWidget(self.imgAndHistoWidget, 10)

@@ -43,10 +43,10 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-
+import xfluo
 from PyQt5 import QtWidgets
-from widgets.image_and_histogram_widget import ImageAndHistogramWidget
-from widgets.hotspot_controls_widget import HotspotControlsWidget
+# from widgets.image_and_histogram_widget import ImageAndHistogramWidget
+# from widgets.hotspot_controls_widget import HotspotControlsWidget
 
 
 class HotspotWidget(QtWidgets.QWidget):
@@ -57,8 +57,8 @@ class HotspotWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.projViewControl = HotspotControlsWidget()
-        self.projView = ImageAndHistogramWidget()
+        self.projViewControl =xfluo.HotspotControlsWidget()
+        self.projView = xfluo.ImageAndHistogramWidget()
         projViewBox = QtWidgets.QHBoxLayout()
         projViewBox.addWidget(self.projViewControl)
         projViewBox.addWidget(self.projView, 10)
