@@ -46,11 +46,13 @@
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 import sys
-from widgets.file_widget import  FileTableWidget
-from widgets.image_process_widget import ImageProcessWidget
-from widgets.hotspot_widget import HotspotWidget
-from widgets.sinogram_widget import SinogramWidget
-from widgets.reconstruction_widget import ReconstructionWidget
+import xfluo
+
+# from widgets.file_widget import  FileTableWidget
+# from widgets.image_process_widget import ImageProcessWidget
+# from widgets.hotspot_widget import HotspotWidget
+# from widgets.sinogram_widget import SinogramWidget
+# from widgets.reconstruction_widget import ReconstructionWidget
 import json
 import os
 
@@ -170,15 +172,14 @@ class XfluoGui(QtGui.QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.vl = QtWidgets.QVBoxLayout()
 
-
         theta_auto_completes = self.config.get(STR_CONFIG_THETA_STRS)
         if theta_auto_completes is None:
             theta_auto_completes = []
-        self.fileTableWidget = FileTableWidget(theta_auto_completes)
-        self.imageProcessWidget = ImageProcessWidget()
-        self.hotspotWidget = HotspotWidget()
-        self.sinogramWidget = SinogramWidget()
-        self.reconstructionWidget = ReconstructionWidget()
+        self.fileTableWidget = xfluo.FileTableWidget(theta_auto_completes)
+        self.imageProcessWidget = xfluo.ImageProcessWidget()
+        self.hotspotWidget = xfluo.HotspotWidget()
+        self.sinogramWidget = xfluo.SinogramWidget()
+        self.reconstructionWidget = xfluo.ReconstructionWidget()
 
         self.prevTab = 0
         self.TAB_FILE = 0
