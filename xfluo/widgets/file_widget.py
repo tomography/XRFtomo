@@ -48,9 +48,9 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 # from models.file_table_model import FileTableModel
 # from models.element_table_model import ElementTableModel
 import xfluo
+from pylab import *
 
 # from file_io.reader import read_projection
-from pylab import *
 
 
 class FileTableWidget(QtWidgets.QWidget):
@@ -161,9 +161,8 @@ class FileTableWidget(QtWidgets.QWidget):
     def onSaveDataInMemory(self):
 
         #get list of selected elements, files and corresponding angles
-        path = self.fileTableModel.directory
         files = [i.filename for i in self.fileTableModel.arrayData]
-        files = [path + '/' + s for s in files]
+        path_files = [self.fileTableModel.directory + '/' + s for s in files]
         thetas = [i.theta for i in self.fileTableModel.arrayData]
         elements = [i.element_name for i in self.elementTableModel.arrayData]
         use = [i.use for i in self.fileTableModel.arrayData]
@@ -177,8 +176,6 @@ class FileTableWidget(QtWidgets.QWidget):
         theta_index = int(self.fileTableModel.idx[0])
         element_index = [elements.index(j) for j in use_elements]
 
-        #get largest dimension in x and y from projections 
+        self.data = xfluo.convert_to_array(path_files,use_elements,theta_index)
 
-        # data = xfluo.convert_to_array(use_files, element_index, theta_index)
-
-        pass
+        return self.data
