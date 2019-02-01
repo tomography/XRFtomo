@@ -61,7 +61,10 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         self.show()
         self.p1 = self.addPlot()
         self.projView = pyqtgraph.ImageItem()
-        self.projView.rotate(-90)
+        self.projView.iniY = 0
+        self.projView.iniX = 0
+
+        self.projView.rotate(0)
         self.p1.addItem(self.projView)
 
     def keyPressEvent(self, ev):

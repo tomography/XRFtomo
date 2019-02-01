@@ -48,6 +48,8 @@ from PyQt5 import QtCore, QtWidgets
 # from widgets.sinogram_view import SinogramView
 # from widgets.sinogram_controls_widget import SinogramControlsWidget
 import pyqtgraph
+from pylab import *
+import numpy as np
 
 class SinogramWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -56,29 +58,85 @@ class SinogramWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.sino = xfluo.SinogramControlsWidget()
-        self.view = xfluo.SinogramView()
-        lbl = QtWidgets.QLabel('Row y')
-        sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        lcd = QtWidgets.QLCDNumber(self)
+        self.sinoControl = xfluo.SinogramControlsWidget()
+        self.sinoView = xfluo.SinogramView()
+        self.lbl = QtWidgets.QLabel('Row y')
+        self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
         self.hist.setMinimumSize(120,120)
         self.hist.setMaximumWidth(120)
-        self.hist.setImageItem(self.view.projView)
+        self.hist.setImageItem(self.sinoView.projView)
 
         hb0 = QtWidgets.QHBoxLayout()
-        hb0.addWidget(lbl)
-        hb0.addWidget(lcd)
-        hb0.addWidget(sld)
+        hb0.addWidget(self.lbl)
+        hb0.addWidget(self.lcd)
+        hb0.addWidget(self.sld)
         vb1 = QtWidgets.QVBoxLayout()
-        vb1.addWidget(self.view)
+        vb1.addWidget(self.sinoView)
         vb1.addLayout(hb0)
 
         sinoBox = QtWidgets.QHBoxLayout()
-        sinoBox.addWidget(self.sino)
+        sinoBox.addWidget(self.sinoControl)
         sinoBox.addLayout(vb1)
         sinoBox.addWidget(self.hist, 10)
 
         self.setLayout(sinoBox)
 
+    def showSinogram(self, data, element_names = []):
+        '''
+        loads sinogram tabS
+        '''
+        self.data = data
+        ## self.tab_widget.removeTab(2)
+        ## self.tab_widget.insertTab(2, self.createSinoWidget(), unicode("Sinogram"))
+        num_elements = len(element_names)
+        for j in range(num_elements):
+            self.sinoControl.combo1.addItem(element_names[j])
 
+        # self.sino.btn.clicked.connect(self.runCenterOfMass2)
+        # self.sino.btn2.clicked.connect(self.sinoShift)
+        self.sld.setRange(1, self.data.shape[2])
+        self.lcd.display(1)
+        self.sld.valueChanged.connect(self.lcd.display)
+        self.sld.valueChanged.connect(self.sinogram)
+        self.show()
+
+    def sinogram(self):
+        '''
+        load variables and image for sinogram window
+
+        Variables
+        -----------
+        self.thickness: number
+              thickness of y of each projections
+        self.sino.combo.currentIndex(): number
+              indicates the index of the element
+        self.data: ndarray
+              4d tomographic data [element, projections, y,x]
+        '''
+        # self.file_name_update(self.sino)
+        thickness = 10
+        element = self.sinoControl.combo1.currentIndex()
+        sinodata = self.data[element, :, :, :]
+        self.sinogramData = zeros([sinodata.shape[0] * thickness, sinodata.shape[2]], dtype=float32)
+
+        num_projections = self.data.shape[1]
+        for i in arange(num_projections):
+            self.sinogramData[i * thickness:(i + 1) * thickness, :] = sinodata[i, self.sld.value()-1, :]
+
+        global sinofig
+
+        sinofig = self.sinogramData
+        self.sinogramData[isinf(self.sinogramData)] = 0.001
+        self.sinoView.projView.setImage(self.sinogramData)
+        # self.view.projView.setRect(QtCore.QRect(round(self.theta[0]), 0, round(self.theta[-1])- round(self.theta[0]), self.sinogramData.shape[1]))
+        self.sinoView.projData = self.sinogramData
+
+        self.sinoView.getShape()
+        return
+
+    def sinoShift(self):
+
+        for i in arange(self.projections):
+            self.data[:,i,:,:] = np.roll(self.data[:,i,:,:], self.view.regShift[i])
