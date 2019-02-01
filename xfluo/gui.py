@@ -196,6 +196,8 @@ class XfluoGui(QtGui.QMainWindow):
         self.tab_widget.addTab(self.reconstructionWidget, "Reconstruction")
         self.tab_widget.currentChanged.connect(self.onTabChanged)
 
+        self.fileTableWidget.saveDataBtn.clicked.connect(self.updateImages)
+
         self.vl.addWidget(self.tab_widget)
         #self.vl.addWidget(self.createMessageWidget())
 
@@ -279,6 +281,17 @@ class XfluoGui(QtGui.QMainWindow):
         element_array = self.fileTableWidget.elementTableModel.arrayData
         #for fidx in range(len(file_array)):
 
+    def updateImages(self):
+        self.fileTableWidget.onSaveDataInMemory()
+
+        self.imageProcessWidget.showImgProcess(self.fileTableWidget.data, self.fileTableWidget.use_elements)
+        self.imageProcessWidget.show()
+
+        self.hotspotWidget.showHotSpot(self.fileTableWidget.data, self.fileTableWidget.use_elements)
+
+        self.sinogramWidget.showSinogram(self.fileTableWidget.data, self.fileTableWidget.use_elements)
+        self.sinogramWidget.sinogram()
+        self.sinogramWidget.show()
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

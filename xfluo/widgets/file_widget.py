@@ -95,7 +95,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.thetaUpdatehBtn = QtWidgets.QPushButton('Update')
         self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
-        self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
+        # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
         self.saveDataBtn.setEnabled(False)
 
         hBox0 = QtWidgets.QHBoxLayout()
@@ -172,10 +172,10 @@ class FileTableWidget(QtWidgets.QWidget):
         l = arange(len(elements))
         use_files =[files[j] for j in k if use[j]==True]
         use_thetas = [thetas[j] for j in k if use[j]==True]
-        use_elements = [elements[j] for j in l if use2[j]==True]
+        self.use_elements = [elements[j] for j in l if use2[j]==True]
         theta_index = int(self.fileTableModel.idx[0])
-        element_index = [elements.index(j) for j in use_elements]
+        element_index = [elements.index(j) for j in self.use_elements]
 
-        self.data = xfluo.convert_to_array(path_files,use_elements,theta_index)
+        self.data = xfluo.convert_to_array(path_files, self.use_elements,theta_index)
 
         return self.data
