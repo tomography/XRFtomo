@@ -48,9 +48,9 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 # from models.file_table_model import FileTableModel
 # from models.element_table_model import ElementTableModel
 import xfluo
+from pylab import *
 
 # from file_io.reader import read_projection
-from pylab import *
 
 
 class FileTableWidget(QtWidgets.QWidget):
@@ -95,7 +95,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.thetaUpdatehBtn = QtWidgets.QPushButton('Update')
         self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
-        self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
+        # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
         self.saveDataBtn.setEnabled(False)
 
         hBox0 = QtWidgets.QHBoxLayout()
@@ -161,9 +161,8 @@ class FileTableWidget(QtWidgets.QWidget):
     def onSaveDataInMemory(self):
 
         #get list of selected elements, files and corresponding angles
-        path = self.fileTableModel.directory
         files = [i.filename for i in self.fileTableModel.arrayData]
-        files = [path + '/' + s for s in files]
+        path_files = [self.fileTableModel.directory + '/' + s for s in files]
         thetas = [i.theta for i in self.fileTableModel.arrayData]
         elements = [i.element_name for i in self.elementTableModel.arrayData]
         use = [i.use for i in self.fileTableModel.arrayData]
@@ -173,15 +172,10 @@ class FileTableWidget(QtWidgets.QWidget):
         l = arange(len(elements))
         use_files =[files[j] for j in k if use[j]==True]
         use_thetas = [thetas[j] for j in k if use[j]==True]
-        use_elements = [elements[j] for j in l if use2[j]==True]
+        self.use_elements = [elements[j] for j in l if use2[j]==True]
         theta_index = int(self.fileTableModel.idx[0])
+        element_index = [elements.index(j) for j in self.use_elements]
 
-        #get largest dimension in x and y from projections 
+        self.data = xfluo.convert_to_array(path_files, self.use_elements,theta_index)
 
-        for i in use_files:
-            dummy, projection = read_projection(i,use_elements[0],theta_index)
-
-
-
-
-        pass
+        return self.data

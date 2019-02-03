@@ -43,9 +43,9 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-
+import xfluo
 from PyQt5 import QtCore, QtWidgets
-from widgets.histogram_widget import HistogramWidget
+# from widgets.histogram_widget import HistogramWidget
 import pyqtgraph
 
 class ImageAndHistogramWidget(QtWidgets.QWidget):
@@ -55,27 +55,24 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        hb3 = QtWidgets.QHBoxLayout()
         self.file_name_title = QtWidgets.QLabel("_")
         lbl1 = QtWidgets.QLabel("x pos")
         self.lbl2 = QtWidgets.QLabel("")
         lbl3 = QtWidgets.QLabel("y pos")
         self.lbl4 = QtWidgets.QLabel("")
         self.lbl5 = QtWidgets.QLabel("Angle")
-
         btn1 = QtWidgets.QPushButton("position")
-        hb3.addWidget(lbl1)
-        hb3.addWidget(self.lbl2)
-        hb3.addWidget(lbl3)
-        hb3.addWidget(self.lbl4)
-        hb3.addWidget(btn1)
+        
+        hb0 = QtWidgets.QHBoxLayout()
+        hb0.addWidget(lbl1)
+        hb0.addWidget(self.lbl2)
+        hb0.addWidget(lbl3)
+        hb0.addWidget(self.lbl4)
+        hb0.addWidget(btn1)
 
         btn1.clicked.connect(self.updatePanel)
 
-        hb2 = QtWidgets.QHBoxLayout()
-        hb1 = QtWidgets.QHBoxLayout()
-        vb1 = QtWidgets.QVBoxLayout()
-        self.view = HistogramWidget()
+        self.view = xfluo.HistogramWidget()
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
@@ -83,16 +80,22 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
         self.hist.setMaximumWidth(120)
         self.hist.setImageItem(self.view.projView)
 
-        hb2.addWidget(self.lbl5)
-        hb2.addWidget(self.lcd)
-        hb2.addWidget(self.sld)
+        hb1 = QtWidgets.QHBoxLayout()
+        hb1.addWidget(self.lbl5)
+        hb1.addWidget(self.lcd)
+        hb1.addWidget(self.sld)
+
+        vb1 = QtWidgets.QVBoxLayout()
         vb1.addWidget(self.file_name_title)
-        vb1.addLayout(hb3)
+        vb1.addLayout(hb0)
         vb1.addWidget(self.view)
-        vb1.addLayout(hb2)
-        hb1.addLayout(vb1)
-        hb1.addWidget(self.hist, 10)
-        self.setLayout(hb1)
+        vb1.addLayout(hb1)
+
+        hb2 = QtWidgets.QHBoxLayout()
+        hb2.addLayout(vb1)
+        hb2.addWidget(self.hist, 10)
+
+        self.setLayout(hb2)
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_N:
