@@ -11,3 +11,5 @@
    .. autosummary::
    
       FileTableModel
+      TableArrayItem
+

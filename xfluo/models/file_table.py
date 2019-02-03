@@ -43,6 +43,10 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+"""
+Subclasses the h5py module for interacting with Data Exchange files.
+"""
+
 
 from PyQt5 import QtCore
 from glob import glob
@@ -50,11 +54,13 @@ import h5py
 import numpy as np
 import os
 
+
 __author__ = "Fabricio Marin"
 __copyright__ = "Copyright (c) 2018-19, UChicago Argonne, LLC."
 __version__ = "0.0.1"
 __docformat__ = 'restructuredtext en'
-__all__ = ['FileTableModel']
+__all__ = ['TableArrayItem', 'FileTableModel']
+
 
 class TableArrayItem:
     def __init__(self, fname):
@@ -62,7 +68,22 @@ class TableArrayItem:
         self.theta = 0.0
         self.use = True
 
+
 class FileTableModel(QtCore.QAbstractTableModel):
+
+    """
+    Interact with Data Exchange files.
+
+    Methods
+    -------
+    data(self, index, role)
+        Helper function for ....
+
+    loadDirectory(self, directoryName, ext='*.h5*')
+        This method is used to ....
+
+    """
+
     def __init__(self, parent=None, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.arrayData = [] # list of TableArrayItem's
