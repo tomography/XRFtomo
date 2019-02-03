@@ -1,7 +1,7 @@
-:mod:`xfluo.models.file_table_model`
-====================================
+:mod:`xfluo.models.file_table`
+==============================
 
-.. automodule:: xfluo.models.file_table_model
+.. automodule:: xfluo.models.file_table
    :members:
    :show-inheritance:
    :undoc-members:
