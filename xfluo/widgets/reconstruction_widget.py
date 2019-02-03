@@ -43,10 +43,10 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-
+import xfluo
 from PyQt5 import QtWidgets
-from widgets.image_and_histogram_widget import ImageAndHistogramWidget
-from widgets.reconstruction_controls_widget import ReconstructionControlsWidget
+# from widgets.image_and_histogram_widget import ImageAndHistogramWidget
+# from widgets.reconstruction_controls_widget import ReconstructionControlsWidget
 
 
 class ReconstructionWidget(QtWidgets.QWidget):
@@ -56,9 +56,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.recon = ReconstructionControlsWidget()
+        self.recon = xfluo.ReconstructionControlsWidget()
         self.recon.sld.setVisible(False)
-        self.projView = ImageAndHistogramWidget()
+        self.projView = xfluo.ImageAndHistogramWidget()
         self.projView.lbl5.setText(str('Slice'))
         projViewBox = QtWidgets.QHBoxLayout()
         projViewBox.addWidget(self.recon)

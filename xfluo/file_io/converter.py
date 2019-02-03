@@ -46,33 +46,62 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from xfluo.file_io.reader import *
-from xfluo.file_io.converter import *
+import xfluo
+import numpy as np
+from pylab import *
 
-from xfluo.models.element_table_model import *
-from xfluo.models.file_table_model import *
+__author__ = "Fabricio S. Marin"
+__copyright__ = "Copyright (c) 2019, UChicago Argonne, LLC."
+__version__ = "0.0.1"
+__docformat__ = 'restructuredtext en'
+__all__ = ['convert_to_array']
 
-from xfluo.widgets.image_process_widget import *
-from xfluo.widgets.image_and_histogram_widget import *
-from xfluo.widgets.image_process_controls_widget import *
-from xfluo.widgets.hotspot_widget import *
-from xfluo.widgets.hotspot_controls_widget import *
-from xfluo.widgets.histogram_widget import *
-from xfluo.widgets.sinogram_widget import *
-from xfluo.widgets.sinogram_controls_widget import *
-from xfluo.widgets.sinogram_view import *
-from xfluo.widgets.reconstruction_widget import *
-from xfluo.widgets.reconstruction_controls_widget import *
-from xfluo.widgets.file_widget import *
+def convert_to_array(path_files, use_elements, theta_index):
 
+    """
+    Converts hdf files to numpy arrays for plotting and manipulation.
 
+    Parameters
+    ----------
+    path_files: list
+    	List of path+filenames
+    use_elements : list
+        List of string element names selected in checkboxes
+    theta_index: int
+        index position of theta PV
+    Returns
+    -------
+    ndarray: ndarray
+        4D array [elements, projection, y, x]
+    """
 
+    elements = xfluo.read_elements(path_files[0])
+    max_y, max_x = 0, 0
+    for i in range(len(path_files)):
+        proj, dummy = xfluo.read_projection(path_files[0], elements[0], theta_index)
+        if proj.shape[0] > max_y:
+            max_y = proj.shape[0]
+        if proj.shape[1] > max_x:
+            max_x = proj.shape[1]
 
-try:
-    import pkg_resources
-    __version__ = pkg_resources.working_set.require("xfluo")[0].version
-except:
-    pass
+    data = zeros([len(use_elements),len(path_files), max_y, max_x])
+
+    for i in range(len(use_elements)):
+        indx = use_elements.index(use_elements[i])
+
+        for j in range(len(path_files)):
+            proj, theta = xfluo.read_projection(path_files[j], elements[indx], theta_index)
+            img_y = proj.shape[0]
+            img_x = proj.shape[1]
+            dx = np.floor((max_x-img_x)/2).astype(int)
+            dy = np.floor((max_y-img_y)/2).astype(int)
+            data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
+    data[isnan(data)] = 0.0001
+    data[data == inf] = 0.0001
+
+    return data
+
