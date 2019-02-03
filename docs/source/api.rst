@@ -5,8 +5,9 @@ API reference
 
 .. toctree::
 
-   api/xfluo.module_01
    api/xfluo.file_io.reader
+   api/xfluo.models.file_table
+   api/xfluo.models.element_table
 
 .. automodule:: xfluo
    :members:

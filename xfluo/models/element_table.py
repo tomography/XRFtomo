@@ -43,6 +43,8 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 from PyQt5 import QtCore
 from glob import glob
@@ -50,37 +52,39 @@ import h5py
 import numpy as np
 import os
 
+__author__ = "Fabricio Marin"
+__copyright__ = "Copyright (c) 2018-19, UChicago Argonne, LLC."
+__version__ = "0.0.1"
+__docformat__ = 'restructuredtext en'
+__all__ = ['ElementTableModel']
+
 
 class TableArrayItem:
-    def __init__(self, fname):
-        self.filename = fname
-        self.theta = 0.0
+    def __init__(self, name):
+        self.element_name = name
         self.use = True
 
-class FileTableModel(QtCore.QAbstractTableModel):
+
+class ElementTableModel(QtCore.QAbstractTableModel):
     def __init__(self, parent=None, *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
-        self.arrayData = [] # list of TableArrayItem's
-        self.directory = ''
-        self.columns = ['Filename', 'Theta']
-        self.COL_FILE = 0
-        self.COL_THETA = 1
-        self.COL_USE = 2
-        self.idx = 0
+        self.arrayData = []
+        self.columns = ['Element Map']
+        self.COL_MAP = 0
 
     def rowCount(self, parent):
         return len(self.arrayData)
 
     def columnCount(self, parent):
         return len(self.columns)
-
-    def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
-        if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
-            return self.columns[section]
+    # commented to fix compile error. Please defing int = ...
+    # def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
+    #     if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+    #         return self.columns[section]
 
     def flags(self, index):
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
-        if index.column() == self.COL_FILE:
+        if index.column() == self.COL_MAP:
             flags |= QtCore.Qt.ItemIsUserCheckable
         return flags
 
@@ -89,14 +93,13 @@ class FileTableModel(QtCore.QAbstractTableModel):
             rows = len(self.arrayData)
             if rows > 0 and index.row() < rows:
                 self.arrayData[index.row()].use = bool(value)
-                self.dataChanged.emit(index, index)
                 return True
         return False
 
     def data(self, index, role):
         if not index.isValid():
             return QtCore.QVariant()
-        elif role == QtCore.Qt.CheckStateRole and index.column() == self.COL_FILE:
+        elif role == QtCore.Qt.CheckStateRole and index.column() == self.COL_MAP:
             if len(self.arrayData) > 0:
                 if self.arrayData[index.row()].use is True:
                     return QtCore.Qt.Checked
@@ -107,64 +110,31 @@ class FileTableModel(QtCore.QAbstractTableModel):
         elif role != QtCore.Qt.DisplayRole:
             return QtCore.QVariant()
         if len(self.arrayData) > 0:
-            if index.column() == self.COL_FILE:
-                return QtCore.QVariant(self.arrayData[index.row()].filename)
-            elif index.column() == self.COL_THETA:
-                return QtCore.QVariant(self.arrayData[index.row()].theta)
+            return QtCore.QVariant(self.arrayData[index.row()].element_name)
         else:
             return QtCore.QVariant()
 
-    def loadDirectory(self, directoryName, ext='*.h5*'):
-        self.directory = directoryName
+    def loadElementNames(self, filePath):
+        if filePath is None:
+            return
+        self.arrayData = []
         topLeft = self.index(0, 0)
         self.layoutAboutToBeChanged.emit()
-        fileNames = [os.path.basename(x) for x in glob(directoryName+'/'+ext)]
-        fileNames = sorted(fileNames)
-        self.arrayData = []
-        for i in range(len(fileNames)):
-            self.arrayData += [TableArrayItem(fileNames[i])]
+        try:
+            hFile = h5py.File(filePath)
+            elements = hFile['/MAPS/channel_names']
+            for i in range(len(elements)):
+                self.arrayData += [TableArrayItem(elements[i].decode('UTF-8'))]
+        except:
+            pass
         bottomRight = self.index(len(self.arrayData), len(self.columns))
         self.layoutChanged.emit()
         self.dataChanged.emit(topLeft, bottomRight)
 
-    def loadThetas(self, thetaPV):
-        thetaBytes = thetaPV.encode('ascii')
-        topLeft = self.index(0, self.COL_THETA)
-        bottomRight = self.index(len(self.arrayData), self.COL_THETA)
-        for i in range(len(self.arrayData)):
-            try:
-                hFile = h5py.File(self.directory+'/'+self.arrayData[i].filename)
-                extra_pvs = hFile['/MAPS/extra_pvs']
-                self.idx = np.where(extra_pvs[0] == thetaBytes)
-                if len(self.idx[0]) > 0:
-                    self.arrayData[i].theta = float(extra_pvs[1][self.idx[0][0]])
-            except:
-                pass
-        self.dataChanged.emit(topLeft, bottomRight)
-
-    def getFirstCheckedFilePath(self):
-        for i in range(len(self.arrayData)):
-            if self.arrayData[i].use is True:
-                return self.directory+'/'+self.arrayData[i].filename
-        return None
-
     def setChecked(self, rows, value):
         for i in rows:
-            self.setData(self.index(i, self.COL_FILE), value, QtCore.Qt.CheckStateRole)
+            self.setData(self.index(i, self.COL_MAP), value, QtCore.Qt.CheckStateRole)
 
     def setAllChecked(self, value):
         for i in range(len(self.arrayData)):
-            self.setData(self.index(i, self.COL_FILE), value, QtCore.Qt.CheckStateRole)
-
-    def sort(self, col, order):
-        """Sort table by given column number.
-        """
-        self.layoutAboutToBeChanged.emit()
-        # self.arrayData = sorted(self.arrayData, key=operator.itemgetter(col))
-        if col == self.COL_FILE:
-            self.arrayData = sorted(self.arrayData, key=lambda tableitem: tableitem.filename)
-        if col == self.COL_THETA:
-            self.arrayData = sorted(self.arrayData, key=lambda tableitem: tableitem.theta)
-        if order == QtCore.Qt.DescendingOrder:
-            self.arrayData.reverse()
-        self.layoutChanged.emit()
+            self.setData(self.index(i, self.COL_MAP), value, QtCore.Qt.CheckStateRole)

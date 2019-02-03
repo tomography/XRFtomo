@@ -46,33 +46,6 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
-from xfluo.file_io.reader import *
-from xfluo.file_io.converter import *
-
-from xfluo.models.element_table import *
-from xfluo.models.file_table import *
-
-from xfluo.widgets.file_loader import *
-from xfluo.widgets.histogram import *
-from xfluo.widgets.hotspot import *
-from xfluo.widgets.hotspot_controls import *
-from xfluo.widgets.image_and_histogram import *
-from xfluo.widgets.image_process import *
-from xfluo.widgets.image_process_controls import *
-from xfluo.widgets.reconstruction import *
-from xfluo.widgets.reconstruction_controls import *
-from xfluo.widgets.sinogram import *
-from xfluo.widgets.sinogram_controls import *
-from xfluo.widgets.sinogram_view import *
-
-
-
-
-try:
-    import pkg_resources
-    __version__ = pkg_resources.working_set.require("xfluo")[0].version
-except:
-    pass
