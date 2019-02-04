@@ -74,6 +74,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         for k in arange(num_projections):
             self.ViewControl.combo2.addItem(str(k+1))
 
+        self.imgProcessProjShow()
         self.ViewControl.combo1.currentIndexChanged.connect(self.imgProcessProjShow)
         self.ViewControl.combo2.currentIndexChanged.connect(self.imgProcessProjShow)
         # self.ViewControl.xUpBtn.clicked.connect(self.imgProcessBoxSizeChange)

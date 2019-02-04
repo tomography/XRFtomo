@@ -82,6 +82,7 @@ class HotspotWidget(QtWidgets.QWidget):
 
         # self.projViewControl.combo.currentIndexChanged.connect(self.saveHotSpotPos)
         # self.ViewControl.combo1.setVisible(False)
+        self.hotSpotProjShow()
         self.ViewControl.combo1.currentIndexChanged.connect(self.hotSpotProjShow)
         self.ViewControl.combo2.currentIndexChanged.connect(self.hotSpotProjShow)
 
