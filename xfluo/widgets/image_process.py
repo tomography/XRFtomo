@@ -64,8 +64,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
         mainHBox.addWidget(self.imgAndHistoWidget, 10)
         self.setLayout(mainHBox)
 
-    def showImgProcess(self, data, element_names = []):
+    def showImgProcess(self, data, element_names, thetas):
         self.data = data
+        self.thetas = thetas
 
         num_elements = len(element_names)
         for j in arange(num_elements):
@@ -103,7 +104,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.ViewControl.shift_all_right.clicked.connect(self.shiftDataRight)
 
         self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
-        # self.imgAndHistoWidget.sld.valueChanged.connect(self.imageProcessLCDValueChanged)
+        self.imgAndHistoWidget.sld.valueChanged.connect(self.imageProcessLCDValueChanged)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imgProcessProjChanged)
         self.testtest =pyqtgraph.ImageView()
 
@@ -115,10 +116,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
    
     def imageProcessLCDValueChanged(self):
         index = self.imgAndHistoWidget.sld.value()
-        # angle = round(self.theta[index])
-        # self.imgProcess.lcd.display(angle)
-        # self.projView.lcd.display(angle)
-        self.projView.sld.setValue(index)
+        angle = round(self.thetas[index])
+        self.imgAndHistoWidget.lcd.display(angle)
+        # self.projView.lcd.display(angle)      
+        self.imgAndHistoWidget.sld.setValue(index)
 
     def imgProcessProjChanged(self):
         element = self.ViewControl.combo1.currentIndex()

@@ -83,7 +83,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.setLayout(sinoBox)
 
-    def showSinogram(self, data, element_names = []):
+    def showSinogram(self, data, element_names, thetas):
         '''
         loads sinogram tabS
         '''
