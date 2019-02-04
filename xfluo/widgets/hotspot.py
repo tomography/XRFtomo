@@ -111,8 +111,8 @@ class HotspotWidget(QtWidgets.QWidget):
 
     def hotSpotProjChanged(self):
         element = self.ViewControl.combo1.currentIndex()
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, self.projView.sld.value(), :, :])
-        # self.file_name_update(self.projView)
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, self.imgAndHistoWidget.sld.value(), :, :])
+        # self.file_name_update(self.imgAndHistoWidget)
     
 
         # self.imgProcess.view.projView.setImage(self.imgProcessImg)
