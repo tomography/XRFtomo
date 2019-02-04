@@ -82,7 +82,7 @@ def convert_to_array(path_files, use_elements, theta_index):
     elements = xfluo.read_elements(path_files[0])
     max_y, max_x = 0, 0
     for i in range(len(path_files)):
-        proj, dummy = xfluo.read_projection(path_files[0], elements[0], theta_index)
+        proj, dummy = xfluo.read_projection(path_files[i], elements[0], theta_index)
         if proj.shape[0] > max_y:
             max_y = proj.shape[0]
         if proj.shape[1] > max_x:

@@ -291,6 +291,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget.sinogram()
         self.sinogramWidget.show()
 
+
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     mainWindow = XfluoGui()
