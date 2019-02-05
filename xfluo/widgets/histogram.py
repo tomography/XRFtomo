@@ -46,50 +46,43 @@
 
 from PyQt5 import QtCore
 import pyqtgraph
-import numpy as np
 
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
+class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
 
     def __init__(self):
-        super(SinogramView, self).__init__()
+        super(HistogramWidget, self).__init__()
 
         self.initUI()
+        self.boxSize = 20
         self.hotSpotNumb = 0
+        self.xSize = 20
+        self.ySize = 20
 
     def initUI(self):
-        self.show()
         self.p1 = self.addPlot()
         self.projView = pyqtgraph.ImageItem()
-        self.projView.iniY = 0
+        self.projView.rotate(-90)
         self.projView.iniX = 0
-
-        self.projView.rotate(0)
+        self.projView.iniY = 0
+        self.ROI = pyqtgraph.ROI([self.projView.iniX, self.projView.iniY], [20, 20])
         self.p1.addItem(self.projView)
+        self.p1.addItem(self.ROI)
+
+    def mouseReleaseEvent(self, ev):
+        self.ROI.setPos([self.projView.iniX - self.xSize / 2, -self.projView.iniY - self.ySize / 2])
 
     def keyPressEvent(self, ev):
-
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.getMousePos()
-            self.shiftnumb = 1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.getMousePos()
-            self.shiftnumb = -1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-    def getMousePos(self):
-        numb = self.projView.iniY
-        self.numb2 = int(numb / 10)
-
-    def shift(self):
-        self.copy = self.projData
-        self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :] = np.roll(self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :], self.shiftnumb, axis=1)
-
-    def getShape(self):
-        self.regShift = np.zeros(self.projData.shape[0], dtype=int)
+        if ev.key() == QtCore.Qt.Key_N:
+            if self.hotSpotNumb < self.data.shape[0]:
+                self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = self.projView.iniY
+                self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = self.projView.iniX
+                self.hotSpotNumb += 1
+                if self.hotSpotNumb < self.data.shape[0]:
+                    self.projView.setImage(self.data[self.hotSpotNumb, :, :])
+        if ev.key() == QtCore.Qt.Key_S:
+            self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = 0
+            self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = 0
+            if self.hotSpotNumb < self.data.shape[0] - 1:
+                self.hotSpotNumb += 1
+                self.projView.setImage(self.data[self.hotSpotNumb, :, :])

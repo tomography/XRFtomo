@@ -44,52 +44,72 @@
 # #########################################################################
 
 
-from PyQt5 import QtCore
-import pyqtgraph
-import numpy as np
+from PyQt5 import QtCore, QtWidgets
 
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
+class HotspotControlsWidget(QtWidgets.QWidget):
 
     def __init__(self):
-        super(SinogramView, self).__init__()
+        super(HotspotControlsWidget, self).__init__()
 
         self.initUI()
-        self.hotSpotNumb = 0
 
     def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.iniY = 0
-        self.projView.iniX = 0
+        button1size = 250
+        buton2size = 122.5
+        button3size = 73.3
+        button4size = 57.5
+        self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.sld.setMaximumWidth(button1size)
+        self.sld.setMinimumWidth(button1size)
+        self.lcd = QtWidgets.QLCDNumber(self)
+        self.lcd.setMaximumWidth(button1size)
+        self.lcd.setMinimumWidth(button1size)
+        self.combo1 = QtWidgets.QComboBox(self)
+        self.combo1.setMaximumWidth(button1size)
+        self.combo1.setMinimumWidth(button1size)
+        self.combo2 = QtWidgets.QComboBox(self)
+        self.combo2.setMaximumWidth(button1size)
+        self.combo2.setMinimumWidth(button1size)
+        self.combo3 = QtWidgets.QComboBox(self)
+        self.combo3.setMaximumWidth(button1size)
+        self.combo3.setMinimumWidth(button1size)
+        self.lbl1 = QtWidgets.QLabel("Set the size of the hotspot")
+        self.lbl1.setMaximumWidth(button1size)
+        self.lbl1.setMinimumWidth(button1size)
+        self.lbl3 = QtWidgets.QLabel("Set a group number of the hot spot")
+        self.lbl3.setMaximumWidth(button1size)
+        self.lbl3.setMinimumWidth(button1size)
 
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
+        for i in range(5):
+            self.combo2.addItem(str(i + 1))
+        self.btn = QtWidgets.QPushButton("Hotspots to a line")
+        self.btn.setMaximumWidth(button1size)
+        self.btn.setMinimumWidth(button1size)
+        self.btn2 = QtWidgets.QPushButton("Hotspots to a sine curve")
+        self.btn2.setMaximumWidth(button1size)
+        self.btn2.setMinimumWidth(button1size)
+        self.btn3 = QtWidgets.QPushButton("set y")
+        self.btn3.setMaximumWidth(button1size)
+        self.btn3.setMinimumWidth(button1size)
+        self.btn4 = QtWidgets.QPushButton("Clear hotspot data")
+        self.btn4.setMaximumWidth(button1size)
+        self.btn4.setMinimumWidth(button1size)
 
-    def keyPressEvent(self, ev):
+        vb = QtWidgets.QVBoxLayout()
+        vb.addWidget(self.combo1)
+        vb.addWidget(self.lbl1)
+        vb.addWidget(self.lcd)
+        vb.addWidget(self.sld)
+        vb.addWidget(self.combo3)
 
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.getMousePos()
-            self.shiftnumb = 1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
+        hb1 = QtWidgets.QVBoxLayout()
+        hb1.addWidget(self.lbl3, 0)
+        hb1.addWidget(self.combo2)
 
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.getMousePos()
-            self.shiftnumb = -1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-    def getMousePos(self):
-        numb = self.projView.iniY
-        self.numb2 = int(numb / 10)
-
-    def shift(self):
-        self.copy = self.projData
-        self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :] = np.roll(self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :], self.shiftnumb, axis=1)
-
-    def getShape(self):
-        self.regShift = np.zeros(self.projData.shape[0], dtype=int)
+        vb.addLayout(hb1)
+        vb.addWidget(self.btn)
+        vb.addWidget(self.btn2)
+        vb.addWidget(self.btn3)
+        vb.addWidget(self.btn4)
+        self.setLayout(vb)

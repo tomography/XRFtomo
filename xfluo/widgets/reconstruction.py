@@ -43,53 +43,24 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+import xfluo
+from PyQt5 import QtWidgets
+# from widgets.image_and_histogram_widget import ImageAndHistogramWidget
+# from widgets.reconstruction_controls_widget import ReconstructionControlsWidget
 
-from PyQt5 import QtCore
-import pyqtgraph
-import numpy as np
 
-
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
-
+class ReconstructionWidget(QtWidgets.QWidget):
     def __init__(self):
-        super(SinogramView, self).__init__()
+        super(ReconstructionWidget, self).__init__()
 
         self.initUI()
-        self.hotSpotNumb = 0
 
     def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.iniY = 0
-        self.projView.iniX = 0
-
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
-
-    def keyPressEvent(self, ev):
-
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.getMousePos()
-            self.shiftnumb = 1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.getMousePos()
-            self.shiftnumb = -1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-    def getMousePos(self):
-        numb = self.projView.iniY
-        self.numb2 = int(numb / 10)
-
-    def shift(self):
-        self.copy = self.projData
-        self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :] = np.roll(self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :], self.shiftnumb, axis=1)
-
-    def getShape(self):
-        self.regShift = np.zeros(self.projData.shape[0], dtype=int)
+        self.recon = xfluo.ReconstructionControlsWidget()
+        self.recon.sld.setVisible(False)
+        self.projView = xfluo.ImageAndHistogramWidget()
+        self.projView.lbl5.setText(str('Slice'))
+        projViewBox = QtWidgets.QHBoxLayout()
+        projViewBox.addWidget(self.recon)
+        projViewBox.addWidget(self.projView, 10)
+        self.setLayout(projViewBox)

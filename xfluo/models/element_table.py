@@ -43,53 +43,98 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 from PyQt5 import QtCore
-import pyqtgraph
+from glob import glob
+import h5py
 import numpy as np
+import os
+
+__author__ = "Fabricio Marin"
+__copyright__ = "Copyright (c) 2018-19, UChicago Argonne, LLC."
+__version__ = "0.0.1"
+__docformat__ = 'restructuredtext en'
+__all__ = ['ElementTableModel']
 
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
+class TableArrayItem:
+    def __init__(self, name):
+        self.element_name = name
+        self.use = True
 
-    def __init__(self):
-        super(SinogramView, self).__init__()
 
-        self.initUI()
-        self.hotSpotNumb = 0
+class ElementTableModel(QtCore.QAbstractTableModel):
+    def __init__(self, parent=None, *args):
+        QtCore.QAbstractTableModel.__init__(self, parent, *args)
+        self.arrayData = []
+        self.columns = ['Element Map']
+        self.COL_MAP = 0
 
-    def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.iniY = 0
-        self.projView.iniX = 0
+    def rowCount(self, parent):
+        return len(self.arrayData)
 
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
+    def columnCount(self, parent):
+        return len(self.columns)
+    # commented to fix compile error. Please defing int = ...
+    # def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
+    #     if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+    #         return self.columns[section]
 
-    def keyPressEvent(self, ev):
+    def flags(self, index):
+        flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
+        if index.column() == self.COL_MAP:
+            flags |= QtCore.Qt.ItemIsUserCheckable
+        return flags
 
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.getMousePos()
-            self.shiftnumb = 1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        if role == QtCore.Qt.CheckStateRole:
+            rows = len(self.arrayData)
+            if rows > 0 and index.row() < rows:
+                self.arrayData[index.row()].use = bool(value)
+                return True
+        return False
 
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.getMousePos()
-            self.shiftnumb = -1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
+    def data(self, index, role):
+        if not index.isValid():
+            return QtCore.QVariant()
+        elif role == QtCore.Qt.CheckStateRole and index.column() == self.COL_MAP:
+            if len(self.arrayData) > 0:
+                if self.arrayData[index.row()].use is True:
+                    return QtCore.Qt.Checked
+                else:
+                    return QtCore.Qt.Unchecked
+            else:
+                return QtCore.Qt.Unchecked
+        elif role != QtCore.Qt.DisplayRole:
+            return QtCore.QVariant()
+        if len(self.arrayData) > 0:
+            return QtCore.QVariant(self.arrayData[index.row()].element_name)
+        else:
+            return QtCore.QVariant()
 
-    def getMousePos(self):
-        numb = self.projView.iniY
-        self.numb2 = int(numb / 10)
+    def loadElementNames(self, filePath):
+        if filePath is None:
+            return
+        self.arrayData = []
+        topLeft = self.index(0, 0)
+        self.layoutAboutToBeChanged.emit()
+        try:
+            hFile = h5py.File(filePath)
+            elements = hFile['/MAPS/channel_names']
+            for i in range(len(elements)):
+                self.arrayData += [TableArrayItem(elements[i].decode('UTF-8'))]
+        except:
+            pass
+        bottomRight = self.index(len(self.arrayData), len(self.columns))
+        self.layoutChanged.emit()
+        self.dataChanged.emit(topLeft, bottomRight)
 
-    def shift(self):
-        self.copy = self.projData
-        self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :] = np.roll(self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :], self.shiftnumb, axis=1)
+    def setChecked(self, rows, value):
+        for i in rows:
+            self.setData(self.index(i, self.COL_MAP), value, QtCore.Qt.CheckStateRole)
 
-    def getShape(self):
-        self.regShift = np.zeros(self.projData.shape[0], dtype=int)
+    def setAllChecked(self, value):
+        for i in range(len(self.arrayData)):
+            self.setData(self.index(i, self.COL_MAP), value, QtCore.Qt.CheckStateRole)

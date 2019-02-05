@@ -44,52 +44,55 @@
 # #########################################################################
 
 
-from PyQt5 import QtCore
-import pyqtgraph
-import numpy as np
+from PyQt5 import QtCore, QtWidgets
 
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
+class SinogramControlsWidget(QtWidgets.QWidget):
 
     def __init__(self):
-        super(SinogramView, self).__init__()
-
+        super(SinogramControlsWidget, self).__init__()
         self.initUI()
-        self.hotSpotNumb = 0
 
     def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.iniY = 0
-        self.projView.iniX = 0
+        button1size = 250
+        buton2size = 122.5
+        button3size = 73.3
+        button4size = 58.75
+        # self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        # self.sld.setMaximumWidth(button1size)
+        # self.sld.setMinimumWidth(button1size)
+        # self.lcd = QtWidgets.QLCDNumber(self)
+        # self.lcd.setMaximumWidth(button1size)
+        # self.lcd.setMinimumWidth(button1size)
+        self.combo1 = QtWidgets.QComboBox(self)
+        self.combo1.setMaximumWidth(button1size)
+        self.combo1.setMinimumWidth(button1size)
+        self.btn = QtWidgets.QPushButton('Sinogram')
+        self.btn.setMaximumWidth(button1size)
+        self.btn.setMinimumWidth(button1size)
+        self.btn2 = QtWidgets.QPushButton("shift data")
+        self.btn2.setMaximumWidth(button1size)
+        self.btn2.setMinimumWidth(button1size)
+        self.btn3 = QtWidgets.QPushButton("X 10")
+        self.btn3.setMaximumWidth(button1size)
+        self.btn3.setMinimumWidth(button1size)
+        self.btn4 = QtWidgets.QPushButton("/ 10")
+        self.btn4.setMaximumWidth(button1size)
+        self.btn4.setMinimumWidth(button1size)
 
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
-
-    def keyPressEvent(self, ev):
-
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.getMousePos()
-            self.shiftnumb = 1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.getMousePos()
-            self.shiftnumb = -1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-    def getMousePos(self):
-        numb = self.projView.iniY
-        self.numb2 = int(numb / 10)
-
-    def shift(self):
-        self.copy = self.projData
-        self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :] = np.roll(self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :], self.shiftnumb, axis=1)
-
-    def getShape(self):
-        self.regShift = np.zeros(self.projData.shape[0], dtype=int)
+        hb = QtWidgets.QHBoxLayout()
+        hb.addWidget(self.btn3)
+        hb.addWidget(self.btn4)
+        self.btn3.setVisible(False)
+        self.btn4.setVisible(False)
+        self.lbl = QtWidgets.QLabel()
+        self.lbl.setText("")
+        vb = QtWidgets.QVBoxLayout()
+        vb.addWidget(self.combo1)
+        vb.addWidget(self.btn)
+        vb.addWidget(self.btn2)
+        # vb.addWidget(self.lcd)
+        # vb.addWidget(self.sld)
+        vb.addWidget(self.lbl)
+        vb.addLayout(hb)
+        self.setLayout(vb)

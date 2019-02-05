@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -43,53 +46,58 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+"""
+Module for importing raw data files.
+"""
 
-from PyQt5 import QtCore
-import pyqtgraph
-import numpy as np
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
+import dxchange
 
-    def __init__(self):
-        super(SinogramView, self).__init__()
+__author__ = "Francesco De Carlo"
+__copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
+__version__ = "0.0.1"
+__docformat__ = 'restructuredtext en'
+__all__ = ['read_projection',
+           'read_elements',
+           'find_index']
 
-        self.initUI()
-        self.hotSpotNumb = 0
 
-    def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.iniY = 0
-        self.projView.iniX = 0
+def find_index(a_list, element):
+    try:
+        return a_list.tolist().index(element)
+    except ValueError:
+        return None
 
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
+def read_elements(h5fname):
+    return(dxchange.read_hdf5(h5fname, "MAPS/channel_names"))
 
-    def keyPressEvent(self, ev):
+def read_projection(fname, element, theta_index):
+    """
+    Reads a projection for a given element from an hdf file.
 
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.getMousePos()
-            self.shiftnumb = 1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
+    Parameters
+    ----------
+    fname : str
+        String defining the file name
+    element : 
+        String defining the element to select
+    theta_index :
+        index where theta is saved under in the hdf MAPS/extra_pvs_as_csv tag
 
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.getMousePos()
-            self.shiftnumb = -1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
+    Returns
+    -------
+    float
+        projection angle
+    ndarray
+        projection
+    """
 
-    def getMousePos(self):
-        numb = self.projView.iniY
-        self.numb2 = int(numb / 10)
+    projections = dxchange.read_hdf5(fname, "MAPS/XRF_roi")
+    theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1]
+    elements = read_elements(fname)
 
-    def shift(self):
-        self.copy = self.projData
-        self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :] = np.roll(self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :], self.shiftnumb, axis=1)
+    return projections[find_index(elements, element)], theta
 
-    def getShape(self):
-        self.regShift = np.zeros(self.projData.shape[0], dtype=int)

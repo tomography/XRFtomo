@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -43,53 +46,58 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+"""
+Example script 
+"""
 
-from PyQt5 import QtCore
-import pyqtgraph
-import numpy as np
+from __future__ import print_function
 
+import os
+import sys
+import argparse
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
+import xfluo
 
-    def __init__(self):
-        super(SinogramView, self).__init__()
+def main(arg):
 
-        self.initUI()
-        self.hotSpotNumb = 0
+    parser = argparse.ArgumentParser()
+    parser.add_argument("fname", help="Directory containing multiple datasets or file name of a single dataset: /data/ or /data/sample.h5")
+    parser.add_argument("--start", nargs='?', type=float, default=0.0, help="Angle first projection (default 0.0)")
+    parser.add_argument("--end", nargs='?', type=float, default=180.0, help="Angle last projection (default 180.0)")
+    parser.add_argument("--element", nargs='?', type=str, default="Si", help="Select the element to recontruct (default Si)")
 
-    def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.iniY = 0
-        self.projView.iniX = 0
+    args = parser.parse_args()
 
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
+    # Set path to the micro-CT data to reconstruct.
+    fname = args.fname
+    angle_start = float(args.start)
+    angle_end = float(args.end)
+    element = args.element
 
-    def keyPressEvent(self, ev):
+    if os.path.isfile(fname):    
 
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.getMousePos()
-            self.shiftnumb = 1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
+        elements = xfluo.read_elements(fname)
+        for i, e in enumerate(elements):
+            print ('%d:  %s' % (i, e))
+        
+        proj, theta = xfluo.read_projection(fname, element, 663)
+        print ("theta:", theta)
+#        print (theta.shape)
+        print ("proj:", proj)
+        print (proj.shape)
 
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.getMousePos()
-            self.shiftnumb = -1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
+    elif os.path.isdir(fname):
+        # Add a trailing slash if missing
+        top = os.path.join(fname, '')
 
-    def getMousePos(self):
-        numb = self.projView.iniY
-        self.numb2 = int(numb / 10)
+        h5_file_list = list(filter(lambda x: x.endswith(('.h5', '.hdf')), os.listdir(top)))
 
-    def shift(self):
-        self.copy = self.projData
-        self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :] = np.roll(self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :], self.shiftnumb, axis=1)
+        for i, fname in enumerate(h5_file_list):
+            proj, theta = xfluo.file_io.read_projection(top+fname, element, 663) ##657 
+            print(i, theta, fname)
 
-    def getShape(self):
-        self.regShift = np.zeros(self.projData.shape[0], dtype=int)
+    else:
+        print("Directory or File Name does not exist: ", fname)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

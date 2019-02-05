@@ -1,7 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright (c) 2015, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
+# Copyright 2015. UChicago Argonne, LLC. This software was produced       #
 # under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
 # Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
 # U.S. Department of Energy. The U.S. Government has rights to use,       #
@@ -43,53 +46,4 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-
-from PyQt5 import QtCore
-import pyqtgraph
-import numpy as np
-
-
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
-
-    def __init__(self):
-        super(SinogramView, self).__init__()
-
-        self.initUI()
-        self.hotSpotNumb = 0
-
-    def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.iniY = 0
-        self.projView.iniX = 0
-
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
-
-    def keyPressEvent(self, ev):
-
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.getMousePos()
-            self.shiftnumb = 1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.getMousePos()
-            self.shiftnumb = -1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-    def getMousePos(self):
-        numb = self.projView.iniY
-        self.numb2 = int(numb / 10)
-
-    def shift(self):
-        self.copy = self.projData
-        self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :] = np.roll(self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :], self.shiftnumb, axis=1)
-
-    def getShape(self):
-        self.regShift = np.zeros(self.projData.shape[0], dtype=int)
+from __future__ import absolute_import, division, print_function

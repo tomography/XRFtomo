@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -44,52 +47,61 @@
 # #########################################################################
 
 
-from PyQt5 import QtCore
-import pyqtgraph
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
+import xfluo
 import numpy as np
+from pylab import *
 
+__author__ = "Fabricio S. Marin"
+__copyright__ = "Copyright (c) 2019, UChicago Argonne, LLC."
+__version__ = "0.0.1"
+__docformat__ = 'restructuredtext en'
+__all__ = ['convert_to_array']
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
+def convert_to_array(path_files, use_elements, theta_index):
 
-    def __init__(self):
-        super(SinogramView, self).__init__()
+    """
+    Converts hdf files to numpy arrays for plotting and manipulation.
 
-        self.initUI()
-        self.hotSpotNumb = 0
+    Parameters
+    ----------
+    path_files: list
+    	List of path+filenames
+    use_elements : list
+        List of string element names selected in checkboxes
+    theta_index: int
+        index position of theta PV
+    Returns
+    -------
+    ndarray: ndarray
+        4D array [elements, projection, y, x]
+    """
 
-    def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.iniY = 0
-        self.projView.iniX = 0
+    elements = xfluo.read_elements(path_files[0])
+    max_y, max_x = 0, 0
+    for i in range(len(path_files)):
+        proj, dummy = xfluo.read_projection(path_files[0], elements[0], theta_index)
+        if proj.shape[0] > max_y:
+            max_y = proj.shape[0]
+        if proj.shape[1] > max_x:
+            max_x = proj.shape[1]
 
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
+    data = zeros([len(use_elements),len(path_files), max_y, max_x])
 
-    def keyPressEvent(self, ev):
+    for i in range(len(use_elements)):
+        indx = use_elements.index(use_elements[i])
 
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.getMousePos()
-            self.shiftnumb = 1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
+        for j in range(len(path_files)):
+            proj, theta = xfluo.read_projection(path_files[j], elements[indx], theta_index)
+            img_y = proj.shape[0]
+            img_x = proj.shape[1]
+            dx = np.floor((max_x-img_x)/2).astype(int)
+            dy = np.floor((max_y-img_y)/2).astype(int)
+            data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
+    data[isnan(data)] = 0.0001
+    data[data == inf] = 0.0001
 
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.getMousePos()
-            self.shiftnumb = -1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
+    return data
 
-    def getMousePos(self):
-        numb = self.projView.iniY
-        self.numb2 = int(numb / 10)
-
-    def shift(self):
-        self.copy = self.projData
-        self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :] = np.roll(self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :], self.shiftnumb, axis=1)
-
-    def getShape(self):
-        self.regShift = np.zeros(self.projData.shape[0], dtype=int)

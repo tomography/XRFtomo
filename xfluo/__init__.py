@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -43,53 +46,33 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
-from PyQt5 import QtCore
-import pyqtgraph
-import numpy as np
+from xfluo.file_io.reader import *
+from xfluo.file_io.converter import *
+
+from xfluo.models.element_table import *
+from xfluo.models.file_table import *
+
+from xfluo.widgets.file_loader import *
+from xfluo.widgets.histogram import *
+from xfluo.widgets.hotspot import *
+from xfluo.widgets.hotspot_controls import *
+from xfluo.widgets.image_and_histogram import *
+from xfluo.widgets.image_process import *
+from xfluo.widgets.image_process_controls import *
+from xfluo.widgets.reconstruction import *
+from xfluo.widgets.reconstruction_controls import *
+from xfluo.widgets.sinogram import *
+from xfluo.widgets.sinogram_controls import *
+from xfluo.widgets.sinogram_view import *
 
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
 
-    def __init__(self):
-        super(SinogramView, self).__init__()
 
-        self.initUI()
-        self.hotSpotNumb = 0
-
-    def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.iniY = 0
-        self.projView.iniX = 0
-
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
-
-    def keyPressEvent(self, ev):
-
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.getMousePos()
-            self.shiftnumb = 1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.getMousePos()
-            self.shiftnumb = -1
-            self.shift()
-            self.projView.setImage(self.copy)
-            self.regShift[self.numb2] += self.shiftnumb
-
-    def getMousePos(self):
-        numb = self.projView.iniY
-        self.numb2 = int(numb / 10)
-
-    def shift(self):
-        self.copy = self.projData
-        self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :] = np.roll(self.copy[self.numb2 * 10:self.numb2 * 10 + 10, :], self.shiftnumb, axis=1)
-
-    def getShape(self):
-        self.regShift = np.zeros(self.projData.shape[0], dtype=int)
+try:
+    import pkg_resources
+    __version__ = pkg_resources.working_set.require("xfluo")[0].version
+except:
+    pass
