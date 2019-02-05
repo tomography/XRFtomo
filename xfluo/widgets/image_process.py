@@ -78,10 +78,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imgProcessProjShow()
         self.ViewControl.combo1.currentIndexChanged.connect(self.imgProcessProjShow)
         self.ViewControl.combo2.currentIndexChanged.connect(self.imgProcessProjShow)
-        # self.ViewControl.xUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
-        # self.ViewControl.xDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
-        # self.ViewControl.yUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
-        # self.ViewControl.yDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
+        self.ViewControl.xUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
+        self.ViewControl.xDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
+        self.ViewControl.yUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
+        self.ViewControl.yDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.combo2.setVisible(False)
         # self.ViewControl.bgBtn.clicked.connect(self.ipBg)
         # self.ViewControl.delHotspotBtn.clicked.connect(self.ipDelHotspot)
@@ -94,14 +94,14 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.ViewControl.setBackground.clicked.connect(self.setBg)
         # self.ViewControl.deleteProjection.clicked.connect(self.removeFrame)
         # self.ViewControl.testButton.clicked.connect(self.noise_analysis)
-        # self.ViewControl.shift_img_up.clicked.connect(self.shiftProjectionUp)
-        # self.ViewControl.shift_img_down.clicked.connect(self.shiftProjectionDown)
-        # self.ViewControl.shift_img_left.clicked.connect(self.shiftProjectionLeft)
-        # self.ViewControl.shift_img_right.clicked.connect(self.shiftProjectionRight)
-        # self.ViewControl.shift_all_up.clicked.connect(self.shiftDataUp)
-        # self.ViewControl.shift_all_down.clicked.connect(self.shiftDataDown)
-        # self.ViewControl.shift_all_left.clicked.connect(self.shiftDataLeft)
-        # self.ViewControl.shift_all_right.clicked.connect(self.shiftDataRight)
+        self.ViewControl.shift_img_up.clicked.connect(self.shiftProjectionUp)
+        self.ViewControl.shift_img_down.clicked.connect(self.shiftProjectionDown)
+        self.ViewControl.shift_img_left.clicked.connect(self.shiftProjectionLeft)
+        self.ViewControl.shift_img_right.clicked.connect(self.shiftProjectionRight)
+        self.ViewControl.shift_all_up.clicked.connect(self.shiftDataUp)
+        self.ViewControl.shift_all_down.clicked.connect(self.shiftDataDown)
+        self.ViewControl.shift_all_left.clicked.connect(self.shiftDataLeft)
+        self.ViewControl.shift_all_right.clicked.connect(self.shiftDataRight)
 
         self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imageProcessLCDValueChanged)
@@ -125,3 +125,53 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, self.imgAndHistoWidget.sld.value(), :, :])
         # self.file_name_update(self.imgProcess)
+
+    def shiftProjectionUp(self):
+        projection_index = self.imgAndHistoWidget.sld.value()
+        self.data[:,projection_index] = np.roll(self.data[:,projection_index],-1,axis=1)
+        self.imgProcessProjChanged()
+
+    def shiftProjectionDown(self):
+        projection_index = self.imgAndHistoWidget.sld.value() 
+        self.data[:,projection_index] = np.roll(self.data[:,projection_index],1,axis=1)
+        self.imgProcessProjChanged()
+
+    def shiftProjectionLeft(self):
+        projection_index = self.imgAndHistoWidget.sld.value() 
+        self.data[:,projection_index] = np.roll(self.data[:,projection_index],-1)
+        self.imgProcessProjChanged()
+
+    def shiftProjectionRight(self):
+        projection_index = self.imgAndHistoWidget.sld.value() 
+        self.data[:,projection_index] = np.roll(self.data[:,projection_index],1)
+        self.imgProcessProjChanged()
+
+    def shiftDataUp(self):
+        for i in range(len(self.thetas)):
+            self.data[:,i] = np.roll(self.data[:,i],-1,axis=1)
+        self.imgProcessProjChanged()
+
+    def shiftDataDown(self):
+        for i in range(len(self.thetas)):
+            self.data[:,i] = np.roll(self.data[:,i],1,axis=1)
+        self.imgProcessProjChanged()
+
+    def shiftDataLeft(self):
+        self.data = np.roll(self.data,-4)
+        self.imgProcessProjChanged()
+
+    def shiftDataRight(self):
+        self.data = np.roll(self.data,4)
+        self.imgProcessProjChanged()
+
+    def imgProcessBoxSizeChange(self):
+        xSize = self.ViewControl.xSize / 2 * 2
+        ySize = self.ViewControl.ySize / 2 * 2
+        self.imgAndHistoWidget.view.ROI.setSize([xSize, ySize])
+        self.imgAndHistoWidget.view.ROI.setPos([int(round(self.imgAndHistoWidget.view.projView.iniX)) - xSize / 2,
+                                        -int(round(self.imgAndHistoWidget.view.projView.iniY)) - ySize / 2])
+        self.imgAndHistoWidget.view.xSize = xSize
+        self.imgAndHistoWidget.view.ySize = ySize
+
+    def mouseReleaseEvent(self, ev):
+        self.imgAndHistoWidget.view.ROI.setPos([self.imgAndHistoWidget.view.projView.iniX - self.ViewControl.xSize / 2, -self.imgAndHistoWidget.view.projView.iniY - self.ViewControl.ySize / 2])
