@@ -171,11 +171,10 @@ class FileTableWidget(QtWidgets.QWidget):
         k = arange(len(files))
         l = arange(len(elements))
         use_files =[files[j] for j in k if use[j]==True]
-        use_thetas = [thetas[j] for j in k if use[j]==True]
+        self.use_thetas = [thetas[j] for j in k if use[j]==True]
         self.use_elements = [elements[j] for j in l if use2[j]==True]
         theta_index = int(self.fileTableModel.idx[0])
         element_index = [elements.index(j) for j in self.use_elements]
-
         self.data = xfluo.convert_to_array(path_files, self.use_elements,theta_index)
 
-        return self.data
+        return self.data, self.use_elements, self.use_thetas 
