@@ -83,7 +83,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.setLayout(sinoBox)
 
-    def showSinogram(self, data, element_names = []):
+    def showSinogram(self, data, element_names, thetas):
         '''
         loads sinogram tabS
         '''
@@ -100,6 +100,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.lcd.display(1)
         self.sld.valueChanged.connect(self.lcd.display)
         self.sld.valueChanged.connect(self.sinogram)
+        self.sinoControl.combo1.currentIndexChanged.connect(self.sinogram)
         self.show()
 
     def sinogram(self):

@@ -282,16 +282,15 @@ class XfluoGui(QtGui.QMainWindow):
         #for fidx in range(len(file_array)):
 
     def updateImages(self):
-        self.fileTableWidget.onSaveDataInMemory()
+        data, elements, thetas = self.fileTableWidget.onSaveDataInMemory()
 
-        self.imageProcessWidget.showImgProcess(self.fileTableWidget.data, self.fileTableWidget.use_elements)
+        self.imageProcessWidget.showImgProcess(data, elements, thetas)
         self.imageProcessWidget.show()
-
-        self.hotspotWidget.showHotSpot(self.fileTableWidget.data, self.fileTableWidget.use_elements)
-
-        self.sinogramWidget.showSinogram(self.fileTableWidget.data, self.fileTableWidget.use_elements)
+        self.hotspotWidget.showHotSpot(data, elements, thetas)
+        self.sinogramWidget.showSinogram(data, elements, thetas)
         self.sinogramWidget.sinogram()
         self.sinogramWidget.show()
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
