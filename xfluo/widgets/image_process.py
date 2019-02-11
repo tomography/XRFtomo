@@ -168,10 +168,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
         xSize = self.ViewControl.xSize / 2 * 2
         ySize = self.ViewControl.ySize / 2 * 2
         self.imgAndHistoWidget.view.ROI.setSize([xSize, ySize])
-        self.imgAndHistoWidget.view.ROI.setPos([int(round(self.imgAndHistoWidget.view.projView.iniX)) - xSize / 2,
-                                        -int(round(self.imgAndHistoWidget.view.projView.iniY)) - ySize / 2])
+        # self.imgAndHistoWidget.view.ROI.setPos([int(round(self.imgAndHistoWidget.view.projView.iniX)) - xSize / 2,
+                                        # -int(round(self.imgAndHistoWidget.view.projView.iniY)) - ySize / 2])
+        self.imgAndHistoWidget.view.ROI.setPos([int(round(self.imgAndHistoWidget.view.p1.items[1].pos()[0])), int(round(self.imgAndHistoWidget.view.p1.items[1].pos()[1]))])
         self.imgAndHistoWidget.view.xSize = xSize
         self.imgAndHistoWidget.view.ySize = ySize
 
-    def mouseReleaseEvent(self, ev):
-        self.imgAndHistoWidget.view.ROI.setPos([self.imgAndHistoWidget.view.projView.iniX - self.ViewControl.xSize / 2, -self.imgAndHistoWidget.view.projView.iniY - self.ViewControl.ySize / 2])

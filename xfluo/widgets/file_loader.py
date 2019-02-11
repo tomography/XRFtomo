@@ -119,11 +119,15 @@ class FileTableWidget(QtWidgets.QWidget):
 
     def onDirBrowse(self):
         folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+        #temporary hard-coded string for rapid testing
+        # folderName = '/home/fabricio/scans/coarsescan'
         self.dirLineEdit.setText(folderName)
         self.onLoadDirectory()
 
     def onThetaUpdate(self):
         self.fileTableModel.loadThetas(self.thetaLineEdit.text())
+        #temporary hard-coded string for rapid testing
+        # self.fileTableModel.loadThetas("2xfm:m58.VAL")
         self.saveDataBtn.setEnabled(True)
 
     def onLoadDirectory(self):

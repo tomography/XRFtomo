@@ -46,6 +46,8 @@
 
 from PyQt5 import QtCore
 import pyqtgraph
+# import MyImageItem
+
 
 
 class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
@@ -69,9 +71,12 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         self.p1.addItem(self.projView)
         self.p1.addItem(self.ROI)
 
-    def mouseReleaseEvent(self, ev):
-        self.ROI.setPos([self.projView.iniX - self.xSize / 2, -self.projView.iniY - self.ySize / 2])
-
+    def mouseReleaseEvent(self,ev):
+        # self.ROI.setPos([self.projView.iniX - self.xSize / 2, -self.projView.iniY - self.ySize / 2])
+        x = self.p1.items[1].pos()[0]
+        y = self.p1.items[1].pos()[1]
+        self.ROI.setPos([x,y])
+    
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_N:
             if self.hotSpotNumb < self.data.shape[0]:
