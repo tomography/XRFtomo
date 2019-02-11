@@ -307,7 +307,6 @@ class XfluoGui(QtGui.QMainWindow):
             self.gui_warn(str(e))
             self.on_save_as()
 
-
 def main(params):
     app = QtGui.QApplication(sys.argv)
     mainWindow = XfluoGui(app, params)
