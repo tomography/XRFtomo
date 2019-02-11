@@ -33,7 +33,9 @@ or a GUI with:
 
     $ bin/xfluo gui
 
-.. warning:: If your python installation is in a location different from #!/usr/bin/env python please edit the first line of the bin/ufot file to match yours.
+```
+If your python installation is in a location different from #!/usr/bin/env python please edit the first line of the bin/xfluo file to match yours.
+```
 
 You can also load configuration parameters from a configuration file called
 `xfluo.conf`. You can create a template with
