@@ -16,7 +16,7 @@ Installation
 ============
    
     $ git clone https://github.com/tomography/xfluo.git
-    $ cd xfluo.git
+    $ cd xfluo
     $ python setup.py install
 
 in a prepared virtualenv or as root for system-wide installation.
