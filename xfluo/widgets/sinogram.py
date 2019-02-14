@@ -52,9 +52,9 @@ from pylab import *
 import numpy as np
 
 class SinogramWidget(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, parent):
         super(SinogramWidget, self).__init__()
-
+        self.parent = parent
         self.initUI()
 
     def initUI(self):
@@ -120,6 +120,8 @@ class SinogramWidget(QtWidgets.QWidget):
         thickness = 10
         element = self.sinoControl.combo1.currentIndex()
         sinodata = self.data[element, :, :, :]
+        self.parent.imageProcessWidget.ViewControl.combo1.setCurrentIndex(element)
+        self.parent.hotspotWidget.ViewControl.combo1.setCurrentIndex(element)
         self.sinogramData = zeros([sinodata.shape[0] * thickness, sinodata.shape[2]], dtype=float32)
 
         num_projections = self.data.shape[1]
@@ -133,7 +135,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinoView.projView.setImage(self.sinogramData)
         # self.view.projView.setRect(QtCore.QRect(round(self.theta[0]), 0, round(self.theta[-1])- round(self.theta[0]), self.sinogramData.shape[1]))
         self.sinoView.projData = self.sinogramData
-
         self.sinoView.getShape()
         return
 

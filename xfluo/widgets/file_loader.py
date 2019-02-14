@@ -54,8 +54,9 @@ from pylab import *
 
 
 class FileTableWidget(QtWidgets.QWidget):
-    def __init__(self, theta_auto_complete):
+    def __init__(self, parent, theta_auto_complete):
         super(FileTableWidget, self).__init__()
+        self.parent = parent
         self._num_cols = 4
         self._num_row = 4
         self.theta_auto_complete = theta_auto_complete
@@ -127,8 +128,7 @@ class FileTableWidget(QtWidgets.QWidget):
 
     def onThetaUpdate(self):
         self.fileTableModel.loadThetas(self.thetaLineEdit.text())
-        #temporary hard-coded string for rapid testing
-        # self.fileTableModel.loadThetas("2xfm:m58.VAL")
+        self.parent.params.theta_pv = self.thetaLineEdit.text()
         self.saveDataBtn.setEnabled(True)
 
     def onLoadDirectory(self):

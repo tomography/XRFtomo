@@ -51,9 +51,9 @@ import pyqtgraph
 
 
 class ImageProcessWidget(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, parent):
         super(ImageProcessWidget, self).__init__()
-
+        self.parent = parent
         self.initUI()
 
     def initUI(self):
@@ -113,13 +113,20 @@ class ImageProcessWidget(QtWidgets.QWidget):
         projection = self.ViewControl.combo2.currentIndex()
         self.imgProcessImg = self.data[element, projection, :, :]
         self.imgAndHistoWidget.view.projView.setImage(self.imgProcessImg)
-   
+        self.parent.hotspotWidget.hotSpotImg = self.data[element, projection, :, :]
+        self.parent.hotspotWidget.imgAndHistoWidget.view.projView.setImage(self.parent.hotspotWidget.hotSpotImg)
+        self.parent.hotspotWidget.ViewControl.combo1.setCurrentIndex(element)
+        self.parent.hotspotWidget.ViewControl.combo2.setCurrentIndex(projection)
+
+        self.parent.sinogramWidget.sinoControl.combo1.setCurrentIndex(element)
+
     def imageProcessLCDValueChanged(self):
         index = self.imgAndHistoWidget.sld.value()
         angle = round(self.thetas[index])
         self.imgAndHistoWidget.lcd.display(angle)
-        # self.projView.lcd.display(angle)      
         self.imgAndHistoWidget.sld.setValue(index)
+        self.parent.hotspotWidget.imgAndHistoWidget.sld.setValue(index)
+        self.parent.hotspotWidget.imgAndHistoWidget.lcd.display(angle)
 
     def imgProcessProjChanged(self):
         element = self.ViewControl.combo1.currentIndex()

@@ -52,9 +52,9 @@ from pylab import *
 
 class HotspotWidget(QtWidgets.QWidget):
 
-    def __init__(self):
+    def __init__(self, parent):
         super(HotspotWidget, self).__init__()
-
+        self.parent = parent
         self.initUI()
 
     def initUI(self):
@@ -109,6 +109,16 @@ class HotspotWidget(QtWidgets.QWidget):
         self.hotSpotImg = self.data[element, projection, :, :]
         self.imgAndHistoWidget.view.projView.setImage(self.hotSpotImg)
 
+        self.parent.imageProcessWidget.imgProcessImg = self.data[element, projection, :, :]
+        self.parent.imageProcessWidget.imgAndHistoWidget.view.projView.setImage(self.parent.imageProcessWidget.imgProcessImg)
+        self.parent.imageProcessWidget.ViewControl.combo1.setCurrentIndex(element)
+        self.parent.imageProcessWidget.ViewControl.combo2.setCurrentIndex(projection)
+        self.parent.sinogramWidget.sinoControl.combo1.setCurrentIndex(element)
+        self.parent.hotspotWidget.hotSpotImg = self.data[element, projection, :, :]
+        self.parent.hotspotWidget.imgAndHistoWidget.view.projView.setImage(self.parent.hotspotWidget.hotSpotImg)
+        self.parent.hotspotWidget.ViewControl.combo1.setCurrentIndex(element)
+        self.parent.hotspotWidget.ViewControl.combo2.setCurrentIndex(projection)
+
     def hotSpotProjChanged(self):
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, self.imgAndHistoWidget.sld.value(), :, :])
@@ -122,5 +132,6 @@ class HotspotWidget(QtWidgets.QWidget):
         index = self.imgAndHistoWidget.sld.value()
         angle = round(self.thetas[index])
         self.imgAndHistoWidget.lcd.display(angle)
-        # self.imgProcess.lcd.display(angle)
         self.imgAndHistoWidget.sld.setValue(index)
+        self.parent.hotspotWidget.imgAndHistoWidget.sld.setValue(index)
+        self.parent.hotspotWidget.imgAndHistoWidget.lcd.display(angle)

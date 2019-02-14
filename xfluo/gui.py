@@ -178,10 +178,10 @@ class XfluoGui(QtGui.QMainWindow):
         # theta_auto_completes = self.params.theta_pv
         # if theta_auto_completes is None:
         #     theta_auto_completes = []
-        self.fileTableWidget = xfluo.FileTableWidget(self.theta_auto_completes)
-        self.imageProcessWidget = xfluo.ImageProcessWidget()
-        self.hotspotWidget = xfluo.HotspotWidget()
-        self.sinogramWidget = xfluo.SinogramWidget()
+        self.fileTableWidget = xfluo.FileTableWidget(self, self.theta_auto_completes)
+        self.imageProcessWidget = xfluo.ImageProcessWidget(self)
+        self.hotspotWidget = xfluo.HotspotWidget(self)
+        self.sinogramWidget = xfluo.SinogramWidget(self)
         self.reconstructionWidget = xfluo.ReconstructionWidget()
 
         self.prevTab = 0
