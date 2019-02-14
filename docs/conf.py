@@ -324,7 +324,7 @@ class Mock(object):
 
 MOCK_MODULES = ['numpy', 'numpy.ma', 'h5py', 'tomopy', 'tomopy.util', 'tomopy.util.dtype',
                 'tifffile', 'dxchange', 'matplotlib', 'matplotlib.pylab', 'PyQt5', 'pyqtgraph',
-                'glob']
+                'glob', 'pylab']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()

@@ -47,6 +47,7 @@
 from PyQt5 import QtGui, QtWidgets, QtCore
 import sys
 import xfluo
+import xfluo.config as config
 
 # from widgets.file_widget import  FileTableWidget
 # from widgets.image_process_widget import ImageProcessWidget
@@ -60,10 +61,11 @@ STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
 
 class XfluoGui(QtGui.QMainWindow):
-    def __init__(self):
+    def __init__(self, app, params):
         super(QtGui.QMainWindow, self).__init__()
-        with open('xfluo_config.json') as json_file:
-            self.config = json.load(json_file)
+        self.params = params
+        self.app = app
+        self.get_values_from_params()
         self.initUI()
 
     def initUI(self):
@@ -172,10 +174,11 @@ class XfluoGui(QtGui.QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.vl = QtWidgets.QVBoxLayout()
 
-        theta_auto_completes = self.config.get(STR_CONFIG_THETA_STRS)
-        if theta_auto_completes is None:
-            theta_auto_completes = []
-        self.fileTableWidget = xfluo.FileTableWidget(theta_auto_completes)
+        # theta_auto_completes = self.config.get(STR_CONFIG_THETA_STRS)
+        # theta_auto_completes = self.params.theta_pv
+        # if theta_auto_completes is None:
+        #     theta_auto_completes = []
+        self.fileTableWidget = xfluo.FileTableWidget(self.theta_auto_completes)
         self.imageProcessWidget = xfluo.ImageProcessWidget()
         self.hotspotWidget = xfluo.HotspotWidget()
         self.sinogramWidget = xfluo.SinogramWidget()
@@ -291,8 +294,20 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget.sinogram()
         self.sinogramWidget.show()
 
+    def get_values_from_params(self):
 
-if __name__ == '__main__':
+        self.theta_auto_completes = self.params.theta_pv
+
+
+    def closeEvent(self, event):
+        try:
+            sections = config.TOMO_PARAMS + ('gui', 'file-io')
+            config.write('xfluo.conf', args=self.params, sections=sections)
+        except IOError as e:
+            self.gui_warn(str(e))
+            self.on_save_as()
+
+def main(params):
     app = QtGui.QApplication(sys.argv)
-    mainWindow = XfluoGui()
+    mainWindow = XfluoGui(app, params)
     sys.exit(app.exec_())
