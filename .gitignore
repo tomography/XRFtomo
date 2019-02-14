@@ -74,7 +74,7 @@ main.py
 
 # Distribution / packaging #
 ############################
-bin/
+# bin/
 build/
 develop-eggs/
 dist/
@@ -119,6 +119,7 @@ tmp/
 tmp2/
 validate*
 workingOn/
-#rec_*
+rec_*
 datasets/
 phantoms/
+*.conf

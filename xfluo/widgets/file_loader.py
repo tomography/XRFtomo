@@ -54,7 +54,7 @@ from pylab import *
 
 
 class FileTableWidget(QtWidgets.QWidget):
-    def __init__(self, theta_auto_complete=[]):
+    def __init__(self, theta_auto_complete):
         super(FileTableWidget, self).__init__()
         self._num_cols = 4
         self._num_row = 4
@@ -87,9 +87,10 @@ class FileTableWidget(QtWidgets.QWidget):
         self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
         self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
 
-        thetaCompleter = QtWidgets.QCompleter(self.theta_auto_complete)
+        self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL']
+        thetaCompleter = QtWidgets.QCompleter(self.thetaOptions)
         thetaLabel = QtWidgets.QLabel('Theta PV')
-        self.thetaLineEdit = QtWidgets.QLineEdit()
+        self.thetaLineEdit = QtWidgets.QLineEdit(self.theta_auto_complete)
         self.thetaLineEdit.setCompleter(thetaCompleter)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
         self.thetaUpdatehBtn = QtWidgets.QPushButton('Update')
