@@ -43,7 +43,6 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-
 from PyQt5 import QtWidgets, QtCore, QtGui
 # from models.file_table_model import FileTableModel
 # from models.element_table_model import ElementTableModel
@@ -54,12 +53,13 @@ from pylab import *
 
 
 class FileTableWidget(QtWidgets.QWidget):
-    def __init__(self, parent, theta_auto_complete):
+    def __init__(self, parent, theta_auto_complete, dir_auto_complete):
         super(FileTableWidget, self).__init__()
         self.parent = parent
         self._num_cols = 4
         self._num_row = 4
         self.theta_auto_complete = theta_auto_complete
+        self.dir_auto_complete = dir_auto_complete
         self.initUI()
 
     def initUI(self):
@@ -80,14 +80,14 @@ class FileTableWidget(QtWidgets.QWidget):
         self.elementTableView.customContextMenuRequested.connect(self.onElementTableContextMenu)
 
         dirLabel = QtWidgets.QLabel('Directory')
-        self.dirLineEdit = QtWidgets.QLineEdit()
+        self.dirLineEdit = QtWidgets.QLineEdit(self.dir_auto_complete)
         self.dirLineEdit.returnPressed.connect(self.onLoadDirectory)
         self.extLineEdit = QtWidgets.QLineEdit('*.h5')
         self.extLineEdit.setMaximumSize(50, 30)
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
         self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
         self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
-
+        self.onLoadDirectory()        
         self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL']
         thetaCompleter = QtWidgets.QCompleter(self.thetaOptions)
         thetaLabel = QtWidgets.QLabel('Theta PV')
@@ -98,7 +98,8 @@ class FileTableWidget(QtWidgets.QWidget):
         self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
-        self.saveDataBtn.setEnabled(False)
+        self.onThetaUpdate()
+        # self.saveDataBtn.setEnabled(False)
 
         hBox0 = QtWidgets.QHBoxLayout()
         hBox0.addWidget(dirLabel)
@@ -121,15 +122,8 @@ class FileTableWidget(QtWidgets.QWidget):
 
     def onDirBrowse(self):
         folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
-        #temporary hard-coded string for rapid testing
-        # folderName = '/home/fabricio/scans/coarsescan'
         self.dirLineEdit.setText(folderName)
         self.onLoadDirectory()
-
-    def onThetaUpdate(self):
-        self.fileTableModel.loadThetas(self.thetaLineEdit.text())
-        self.parent.params.theta_pv = self.thetaLineEdit.text()
-        self.saveDataBtn.setEnabled(True)
 
     def onLoadDirectory(self):
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
@@ -137,7 +131,12 @@ class FileTableWidget(QtWidgets.QWidget):
         fpath = self.fileTableModel.getFirstCheckedFilePath()
         self.elementTableModel.loadElementNames(fpath)
         self.elementTableModel.setAllChecked(True)
-        # self.onThetaUpdate()
+        self.parent.params.input_path = self.dirLineEdit.text()
+
+    def onThetaUpdate(self):
+        self.fileTableModel.loadThetas(self.thetaLineEdit.text())
+        self.parent.params.theta_pv = self.thetaLineEdit.text()
+        self.saveDataBtn.setEnabled(True)
 
     def onFileTableContextMenu(self, pos):
         if self.fileTableView.selectionModel().selection().indexes():

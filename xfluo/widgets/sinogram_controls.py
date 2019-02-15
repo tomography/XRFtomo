@@ -67,7 +67,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setMaximumWidth(button1size)
         self.combo1.setMinimumWidth(button1size)
-        self.btn = QtWidgets.QPushButton('Sinogram')
+        self.btn = QtWidgets.QPushButton('center of mass')
         self.btn.setMaximumWidth(button1size)
         self.btn.setMinimumWidth(button1size)
         self.btn2 = QtWidgets.QPushButton("shift data")

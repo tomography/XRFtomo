@@ -178,7 +178,7 @@ class XfluoGui(QtGui.QMainWindow):
         # theta_auto_completes = self.params.theta_pv
         # if theta_auto_completes is None:
         #     theta_auto_completes = []
-        self.fileTableWidget = xfluo.FileTableWidget(self, self.theta_auto_completes)
+        self.fileTableWidget = xfluo.FileTableWidget(self, self.theta_auto_completes, self.dir_auto_completes)
         self.imageProcessWidget = xfluo.ImageProcessWidget(self)
         self.hotspotWidget = xfluo.HotspotWidget(self)
         self.sinogramWidget = xfluo.SinogramWidget(self)
@@ -288,16 +288,25 @@ class XfluoGui(QtGui.QMainWindow):
         data, elements, thetas = self.fileTableWidget.onSaveDataInMemory()
 
         self.imageProcessWidget.showImgProcess(data, elements, thetas)
-        self.imageProcessWidget.show()
+        # self.imageProcessWidget.show()
         self.hotspotWidget.showHotSpot(data, elements, thetas)
         self.sinogramWidget.showSinogram(data, elements, thetas)
         self.sinogramWidget.sinogram()
-        self.sinogramWidget.show()
+        # self.sinogramWidget.show()
+
+
+        self.tab_widget.removeTab(1)
+        self.tab_widget.removeTab(2)
+        self.tab_widget.removeTab(3)
+
+        self.tab_widget.insertTab(1, self.imageProcessWidget, "Image Process")
+        self.tab_widget.insertTab(2, self.hotspotWidget, "Hotspot")
+        self.tab_widget.insertTab(3, self.sinogramWidget, "Sinogram")
 
     def get_values_from_params(self):
 
         self.theta_auto_completes = self.params.theta_pv
-
+        self.dir_auto_completes = self.params.input_path
 
     def closeEvent(self, event):
         try:
