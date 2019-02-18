@@ -90,9 +90,8 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data = data
         ## self.tab_widget.removeTab(2)
         ## self.tab_widget.insertTab(2, self.createSinoWidget(), unicode("Sinogram"))
-        num_elements = len(element_names)
-        for j in range(num_elements):
-            self.sinoControl.combo1.addItem(element_names[j])
+        for j in element_names:
+            self.sinoControl.combo1.addItem(j)
 
         # self.sino.btn.clicked.connect(self.runCenterOfMass2)
         # self.sino.btn2.clicked.connect(self.sinoShift)

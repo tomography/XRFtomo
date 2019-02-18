@@ -47,6 +47,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 # from models.file_table_model import FileTableModel
 # from models.element_table_model import ElementTableModel
 import xfluo
+import h5py
 from pylab import *
 
 # from file_io.reader import read_projection
@@ -87,17 +88,20 @@ class FileTableWidget(QtWidgets.QWidget):
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
         self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
         self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
-        self.onLoadDirectory()        
         self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL']
         thetaCompleter = QtWidgets.QCompleter(self.thetaOptions)
         thetaLabel = QtWidgets.QLabel('Theta PV')
         self.thetaLineEdit = QtWidgets.QLineEdit(self.theta_auto_complete)
         self.thetaLineEdit.setCompleter(thetaCompleter)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
+        self.imageTag = QtWidgets.QComboBox()
+        self.imageTag.currentIndexChanged.connect(self.getImgTagData)
+        self.imageTagData = QtWidgets.QComboBox()
         self.thetaUpdatehBtn = QtWidgets.QPushButton('Update')
         self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
+        self.onLoadDirectory()        
         self.onThetaUpdate()
         # self.saveDataBtn.setEnabled(False)
 
@@ -110,6 +114,8 @@ class FileTableWidget(QtWidgets.QWidget):
         hBox1 = QtWidgets.QHBoxLayout()
         hBox1.addWidget(thetaLabel)
         hBox1.addWidget(self.thetaLineEdit)
+        hBox1.addWidget(self.imageTag)
+        hBox1.addWidget(self.imageTagData)
         hBox1.addWidget(self.thetaUpdatehBtn)
         hBox1.addWidget(self.saveDataBtn)
 
@@ -132,11 +138,27 @@ class FileTableWidget(QtWidgets.QWidget):
         self.elementTableModel.loadElementNames(fpath)
         self.elementTableModel.setAllChecked(True)
         self.parent.params.input_path = self.dirLineEdit.text()
+        self.getImgTags()
+        for i in range(len(self.imgTags)):
+            self.imageTag.addItem(self.imgTags[i])
+
+    def getImgTags(self):
+
+        fpath = self.fileTableModel.getFirstCheckedFilePath()
+        img = h5py.File(fpath,"r")
+        self.imgTags = list(img.keys())
+        self.imgTagData = {}
+        for i in range(len(self.imgTags)):
+            self.imgTagData[i] = list(img[self.imgTags[i]])
+
+    def getImgTagData(self):
+        indx = self.imageTag.currentIndex()
+        for i in range(len(self.imgTagData[indx])):
+            self.imageTagData.addItem(self.imgTagData[indx][i])
 
     def onThetaUpdate(self):
         self.fileTableModel.loadThetas(self.thetaLineEdit.text())
         self.parent.params.theta_pv = self.thetaLineEdit.text()
-        self.saveDataBtn.setEnabled(True)
 
     def onFileTableContextMenu(self, pos):
         if self.fileTableView.selectionModel().selection().indexes():

@@ -49,6 +49,11 @@ SECTIONS['file-io'] = {
         'type': str,
         'help': "Path of the last used directory",
         'metavar': 'PATH'},
+    'image-tag': {
+        'default': 'MAPS',
+        'type': str,
+        'help': "data tag for h5 file",
+        'metavar': 'PATH'},
     'input-file-path': {
         'default': '.',
         'type': str,
