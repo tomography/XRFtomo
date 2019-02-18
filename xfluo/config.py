@@ -44,6 +44,11 @@ SECTIONS['gui'] = {
         'action': 'store_true'}}
 
 SECTIONS['file-io'] = {
+    'input-file-path': {
+        'default': '.',
+        'type': str,
+        'help': "Name of the last file used",
+        'metavar': 'PATH'},
     'input-path': {
         'default': '.',
         'type': str,
@@ -52,18 +57,34 @@ SECTIONS['file-io'] = {
     'image-tag': {
         'default': 'MAPS',
         'type': str,
+        'help': "image tag for h5 file",
+        'metavar': 'PATH'},
+    'data-tag': {
+        'default': 'XRF_roi',
+        'type': str,
         'help': "data tag for h5 file",
         'metavar': 'PATH'},
-    'input-file-path': {
-        'default': '.',
+    'element-tag': {
+        'default': 'channel_names',
         'type': str,
-        'help': "Name of the last file used",
+        'help': "element tag for h5 file",
+        'metavar': 'PATH'},
+    'sorted-angles': {
+        'default': 'True',
+        'type': bool,
+        'help': "sort interlaced dataset by projection angle",
         'metavar': 'PATH'},
     'theta-pv': {
         'default': '2xfm:m53.VAL',
         'type': str,
         'help': "theta PV name",
-        'choices': ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL']}}
+        'choices': ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL']},
+    'selected-elements': {
+        'default': ['Si','Fe'],
+        'type': str,
+        'help': "theta PV name",
+        'metavar': 'PATH'}
+        }
 
 SECTIONS['reconstruction'] = {
     'binning': {

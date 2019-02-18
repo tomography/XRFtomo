@@ -71,10 +71,10 @@ def find_index(a_list, element):
     except ValueError:
         return None
 
-def read_elements(h5fname):
-    return(dxchange.read_hdf5(h5fname, "MAPS/channel_names"))
+def read_elements(h5fname, img_tag, element_tag):
+    return(dxchange.read_hdf5(h5fname, "{}/{}".format(img_tag, element_tag)))
 
-def read_projection(fname, element, theta_index):
+def read_projection(fname, element, theta_index, img_tag, data_tag, element_tag):
     """
     Reads a projection for a given element from an hdf file.
 
@@ -95,9 +95,9 @@ def read_projection(fname, element, theta_index):
         projection
     """
 
-    projections = dxchange.read_hdf5(fname, "MAPS/XRF_roi")
+    projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
     theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1]
-    elements = read_elements(fname)
+    elements = read_elements(fname, img_tag, element_tag)
 
     return projections[find_index(elements, element)], theta
 

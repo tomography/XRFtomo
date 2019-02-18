@@ -55,7 +55,7 @@ import numpy as np
 import os
 
 
-__author__ = "Fabricio Marin"
+__author__ = "Arthur T. Glowacki"
 __copyright__ = "Copyright (c) 2018-19, UChicago Argonne, LLC."
 __version__ = "0.0.1"
 __docformat__ = 'restructuredtext en'

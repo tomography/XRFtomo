@@ -64,6 +64,7 @@ class XfluoGui(QtGui.QMainWindow):
     def __init__(self, app, params):
         super(QtGui.QMainWindow, self).__init__()
         self.params = params
+        self.param_list = {}
         self.app = app
         self.get_values_from_params()
         self.initUI()
@@ -178,7 +179,7 @@ class XfluoGui(QtGui.QMainWindow):
         # theta_auto_completes = self.params.theta_pv
         # if theta_auto_completes is None:
         #     theta_auto_completes = []
-        self.fileTableWidget = xfluo.FileTableWidget(self, self.theta_auto_completes, self.dir_auto_completes)
+        self.fileTableWidget = xfluo.FileTableWidget(self)
         self.imageProcessWidget = xfluo.ImageProcessWidget(self)
         self.hotspotWidget = xfluo.HotspotWidget(self)
         self.sinogramWidget = xfluo.SinogramWidget(self)
@@ -305,9 +306,16 @@ class XfluoGui(QtGui.QMainWindow):
 
     def get_values_from_params(self):
 
-        self.theta_auto_completes = self.params.theta_pv
-        self.dir_auto_completes = self.params.input_path
+        # self.param_list[0] = self.params.theta_pv
+        # self.param_list[1] = self.params.input_path
+        # self.param_list[2] = self.params.image_tag
+        # self.param_list[3] = self.params.data_tag
+        # self.param_list[4] = self.params.element_tag
+        # self.param_list[5] = self.params.sorted_angles
+        # self.param_list[6] = self.params.selected_elements
 
+        pass
+        
     def closeEvent(self, event):
         try:
             sections = config.TOMO_PARAMS + ('gui', 'file-io')

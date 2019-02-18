@@ -54,13 +54,18 @@ from pylab import *
 
 
 class FileTableWidget(QtWidgets.QWidget):
-    def __init__(self, parent, theta_auto_complete, dir_auto_complete):
+    def __init__(self, parent):
         super(FileTableWidget, self).__init__()
         self.parent = parent
         self._num_cols = 4
         self._num_row = 4
-        self.theta_auto_complete = theta_auto_complete
-        self.dir_auto_complete = dir_auto_complete
+        self.auto_theta_pv = self.parent.params.theta_pv
+        self.auto_input_path = self.parent.params.input_path
+        self.auto_image_tag = self.parent.params.image_tag
+        self.auto_data_tag = self.parent.params.data_tag
+        self.auto_element_tag = self.parent.params.element_tag
+        self.auto_sorted_angles = self.parent.params.sorted_angles
+        self.auto_selected_elements = self.parent.params.selected_elements
         self.initUI()
 
     def initUI(self):
@@ -81,7 +86,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.elementTableView.customContextMenuRequested.connect(self.onElementTableContextMenu)
 
         dirLabel = QtWidgets.QLabel('Directory')
-        self.dirLineEdit = QtWidgets.QLineEdit(self.dir_auto_complete)
+        self.dirLineEdit = QtWidgets.QLineEdit(self.auto_input_path)
         self.dirLineEdit.returnPressed.connect(self.onLoadDirectory)
         self.extLineEdit = QtWidgets.QLineEdit('*.h5')
         self.extLineEdit.setMaximumSize(50, 30)
@@ -91,14 +96,17 @@ class FileTableWidget(QtWidgets.QWidget):
         self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL']
         thetaCompleter = QtWidgets.QCompleter(self.thetaOptions)
         thetaLabel = QtWidgets.QLabel('Theta PV')
-        self.thetaLineEdit = QtWidgets.QLineEdit(self.theta_auto_complete)
+        self.thetaLineEdit = QtWidgets.QLineEdit(self.auto_theta_pv)
         self.thetaLineEdit.setCompleter(thetaCompleter)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
         self.imageTag = QtWidgets.QComboBox()
-        self.imageTag.currentIndexChanged.connect(self.getImgTagData)
-        self.imageTagData = QtWidgets.QComboBox()
-        self.thetaUpdatehBtn = QtWidgets.QPushButton('Update')
-        self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
+        self.imageTag.currentIndexChanged.connect(self.getDataTag)
+        self.dataTag = QtWidgets.QComboBox()
+        self.elementTag = QtWidgets.QComboBox()
+        self.elementTag.currentIndexChanged.connect(self.getElementList)
+
+        # self.thetaUpdatehBtn = QtWidgets.QPushButton('Update')
+        # self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
         self.onLoadDirectory()        
@@ -115,8 +123,9 @@ class FileTableWidget(QtWidgets.QWidget):
         hBox1.addWidget(thetaLabel)
         hBox1.addWidget(self.thetaLineEdit)
         hBox1.addWidget(self.imageTag)
-        hBox1.addWidget(self.imageTagData)
-        hBox1.addWidget(self.thetaUpdatehBtn)
+        hBox1.addWidget(self.dataTag)
+        hBox1.addWidget(self.elementTag)
+        # hBox1.addWidget(self.thetaUpdatehBtn)
         hBox1.addWidget(self.saveDataBtn)
 
         vBox = QtWidgets.QVBoxLayout()
@@ -129,36 +138,76 @@ class FileTableWidget(QtWidgets.QWidget):
     def onDirBrowse(self):
         folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
         self.dirLineEdit.setText(folderName)
+        self.parent.params.input_path = self.dirLineEdit.text()
         self.onLoadDirectory()
 
     def onLoadDirectory(self):
+        self.parent.params.input_path = self.dirLineEdit.text()
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         self.fileTableModel.setAllChecked(True)
+        is_directory = True
+        try:
+            self.imageTag.clear()
+            self.getImgTags()
+            for i in range(len(self.imgTags)):
+                self.imageTag.addItem(self.imgTags[i])
+            indx = self.imgTags.index(self.auto_image_tag)
+            self.imageTag.setCurrentIndex(indx)
+        except TypeError:
+            is_directory = False
+            print("Not a valid directory")
+        if is_directory == True:
+            self.getElementList()
+
+    def getElementList(self):
+
         fpath = self.fileTableModel.getFirstCheckedFilePath()
-        self.elementTableModel.loadElementNames(fpath)
-        self.elementTableModel.setAllChecked(True)
-        self.parent.params.input_path = self.dirLineEdit.text()
-        self.getImgTags()
-        for i in range(len(self.imgTags)):
-            self.imageTag.addItem(self.imgTags[i])
+        image_tag = self.imageTag.currentText()
+        element_tag = self.elementTag.currentText()
+        self.parent.params.element_tag = element_tag
+        self.parent.params.data_tag = self.dataTag.currentText()
+        self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
+        self.elementTableModel.setAllChecked(False)
 
     def getImgTags(self):
-
+        print("index change trigger")
         fpath = self.fileTableModel.getFirstCheckedFilePath()
         img = h5py.File(fpath,"r")
         self.imgTags = list(img.keys())
-        self.imgTagData = {}
+        self.dataTags = {}
+        self.elementTags = {}
         for i in range(len(self.imgTags)):
-            self.imgTagData[i] = list(img[self.imgTags[i]])
+            self.dataTags[i] = list(img[self.imgTags[i]])
+            self.elementTags[i] = list(img[self.imgTags[i]])
 
-    def getImgTagData(self):
+    def getDataTag(self):
         indx = self.imageTag.currentIndex()
-        for i in range(len(self.imgTagData[indx])):
-            self.imageTagData.addItem(self.imgTagData[indx][i])
+        try:
+            self.dataTag.clear()
+            self.elementTag.clear()
+            for i in range(len(self.dataTags[indx])):
+                self.dataTag.addItem(self.dataTags[indx][i])
+                self.elementTag.addItem(self.dataTags[indx][i])
+
+        except KeyError:        #This error happens when resetting image tags as a result of reloading the same dataset
+            pass
+
+        try:
+            indx2 = self.dataTags[indx].index(self.auto_data_tag)
+            self.dataTag.setCurrentIndex(indx2)
+            indx3 = self.elementTags[indx].index(self.auto_element_tag)
+            self.elementTag.setCurrentIndex(indx3)
+        except ValueError:
+            pass
+        self.parent.params.image_tag = self.imageTag.currentText()
+        self.parent.params.data_tag = self.dataTag.currentText()
 
     def onThetaUpdate(self):
         self.fileTableModel.loadThetas(self.thetaLineEdit.text())
+        if self.parent.params.sorted_angles == True:
+            self.fileTableView.sortByColumn(1, 0)
         self.parent.params.theta_pv = self.thetaLineEdit.text()
+        self.parent.params.input_path = self.dirLineEdit.text()
 
     def onFileTableContextMenu(self, pos):
         if self.fileTableView.selectionModel().selection().indexes():
@@ -193,6 +242,9 @@ class FileTableWidget(QtWidgets.QWidget):
         elements = [i.element_name for i in self.elementTableModel.arrayData]
         use = [i.use for i in self.fileTableModel.arrayData]
         use2 = [i.use for i in self.elementTableModel.arrayData]
+        img_tag = self.imageTag.currentText()
+        data_tag = self.dataTag.currentText()
+        element_tag = self.elementTag.currentText()
 
         k = arange(len(files))
         l = arange(len(elements))
@@ -201,6 +253,10 @@ class FileTableWidget(QtWidgets.QWidget):
         self.use_elements = [elements[j] for j in l if use2[j]==True]
         theta_index = int(self.fileTableModel.idx[0])
         element_index = [elements.index(j) for j in self.use_elements]
-        self.data = xfluo.convert_to_array(path_files, self.use_elements,theta_index)
+
+        print(len(self.use_elements))
+
+
+        self.data = xfluo.convert_to_array(path_files, self.use_elements,theta_index, img_tag, data_tag, element_tag)
 
         return self.data, self.use_elements, self.use_thetas 
