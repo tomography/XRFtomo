@@ -138,3 +138,4 @@ class ElementTableModel(QtCore.QAbstractTableModel):
     def setAllChecked(self, value):
         for i in range(len(self.arrayData)):
             self.setData(self.index(i, self.COL_MAP), value, QtCore.Qt.CheckStateRole)
+

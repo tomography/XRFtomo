@@ -80,9 +80,9 @@ SECTIONS['file-io'] = {
         'help': "theta PV name",
         'choices': ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL']},
     'selected-elements': {
-        'default': ['Si','Fe'],
+        'default': '[0,1]',
         'type': str,
-        'help': "theta PV name",
+        'help': "list of selected elements indexes",
         'metavar': 'PATH'}
         }
 
@@ -238,8 +238,8 @@ def write(config_file, args=None, sections=None):
         for name, opts in SECTIONS[section].items():
             if args and sections and section in sections and hasattr(args, name.replace('-', '_')):
                 value = getattr(args, name.replace('-', '_'))
-
                 if isinstance(value, list):
+                    print(type(value), value)
                     value = ', '.join(value)
             else:
                 value = opts['default'] if opts['default'] is not None else ''

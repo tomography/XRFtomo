@@ -65,7 +65,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.auto_data_tag = self.parent.params.data_tag
         self.auto_element_tag = self.parent.params.element_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
-        self.auto_selected_elements = self.parent.params.selected_elements
+        self.auto_selected_elements = eval(self.parent.params.selected_elements)
         self.initUI()
 
     def initUI(self):
@@ -77,7 +77,6 @@ class FileTableWidget(QtWidgets.QWidget):
         self.fileTableView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.fileTableView.customContextMenuRequested.connect(self.onFileTableContextMenu)
 
-        # self.elementTableModel = ElementTableModel()
         self.elementTableModel = xfluo.ElementTableModel()
         self.elementTableView = QtWidgets.QTableView()
         self.elementTableView.setModel(self.elementTableModel)
@@ -168,9 +167,9 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.params.data_tag = self.dataTag.currentText()
         self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
         self.elementTableModel.setAllChecked(False)
+        self.elementTableModel.setChecked(self.auto_selected_elements, (True))
 
     def getImgTags(self):
-        print("index change trigger")
         fpath = self.fileTableModel.getFirstCheckedFilePath()
         img = h5py.File(fpath,"r")
         self.imgTags = list(img.keys())
@@ -253,8 +252,8 @@ class FileTableWidget(QtWidgets.QWidget):
         self.use_elements = [elements[j] for j in l if use2[j]==True]
         theta_index = int(self.fileTableModel.idx[0])
         element_index = [elements.index(j) for j in self.use_elements]
-
-        print(len(self.use_elements))
+        # print(type(self.parent.params.selected_elements), type(element_index))
+        self.parent.params.selected_elements = str(element_index)
 
 
         self.data = xfluo.convert_to_array(path_files, self.use_elements,theta_index, img_tag, data_tag, element_tag)
