@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -46,35 +43,85 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
-from xfluo.file_io.reader import *
-from xfluo.file_io.converter import *
-
-from xfluo.models.element_table import *
-from xfluo.models.file_table import *
-
-from xfluo.widgets.file_loader import *
-from xfluo.widgets.histogram import *
-from xfluo.widgets.hotspot import *
-from xfluo.widgets.hotspot_controls import *
-from xfluo.widgets.image_and_histogram import *
-from xfluo.widgets.image_process import *
-from xfluo.widgets.image_process_controls import *
-from xfluo.widgets.image_process_actions import *
-
-from xfluo.widgets.reconstruction import *
-from xfluo.widgets.reconstruction_controls import *
-from xfluo.widgets.sinogram import *
-from xfluo.widgets.sinogram_controls import *
-from xfluo.widgets.sinogram_view import *
+from PyQt5 import QtWidgets
+import numpy as np
+from pylab import *
+import xfluo
+import matplotlib.pyplot as plt
 
 
+class ImageProcessActions(QtWidgets.QWidget):
+	def __init__(self, parent):
+		super(ImageProcessActions, self).__init__()
+		self.parent = parent
+		self.widget = self.parent.imageProcessWidget
+		self.control = self.widget.ViewControl
+		self.view = self.widget.imgAndHistoWidget
 
+	def background_value(self):
+		element = self.control.combo1.currentIndex()
+		projection = self.view.sld.value()
+		iniX = self.view.view.p1.items[1].pos()[0]
+		iniY = self.view.view.p1.items[1].pos()[1]
+		xSize = self.control.xSize
+		ySize = self.control.ySize
+		ystart = int(abs(round(iniY)) - ySize)
+		yend = int(abs(round(iniY)))
+		xstart= int(round(iniX))
+		xend = int(round(iniX))+int(np.floor(xSize))
+		img = self.widget.data[element,projection, ystart: yend, xstart: xend]
 
-try:
-    import pkg_resources
-    __version__ = pkg_resources.working_set.require("xfluo")[0].version
-except:
-    pass
+		self.bg = np.average(img)
+		print(self.bg)
+
+	def patch_hotspot(self):
+		element = self.control.combo1.currentIndex()
+		projection = self.view.sld.value()
+		iniX = self.view.view.p1.items[1].pos()[0]
+		iniY = self.view.view.p1.items[1].pos()[1]
+		xSize = self.control.xSize
+		ySize = self.control.ySize
+		ystart = int(abs(round(iniY)) - ySize)
+		yend = int(abs(round(iniY)))
+		xstart= int(round(iniX))
+		xend = int(round(iniX))+int(np.floor(xSize))
+
+		img = self.widget.data[element,projection, ystart: yend, xstart: xend]
+		self.widget.data[element,projection, ystart: yend, xstart: xend] = ones(img.shape, dtype = img.dtype) * self.bg
+		self.view.view.projView.setImage(self.widget.data[element,projection,:,:])
+
+	def normalize(self):
+		element = self.control.combo1.currentIndex()
+		projection = self.view.sld.value()
+		normData = self.widget.data[element, :, :, :]
+		for i in range((normData.shape[0])):
+			temp = normData[i, :, :]
+			tempMax = temp.max()
+			tempMin = temp.min()
+			temp = (temp - tempMin) / tempMax * 10000
+			self.widget.data[element, i, :, :] = temp	
+
+	def cut(self):
+		element = self.control.combo1.currentIndex()
+		projection = self.view.sld.value()
+		iniX = self.view.view.p1.items[1].pos()[0]
+		iniY = self.view.view.p1.items[1].pos()[1]
+		xSize = self.control.xSize
+		ySize = self.control.ySize
+		ystart = int(abs(round(iniY)) - ySize)
+		yend = int(abs(round(iniY)))
+		xstart= int(round(iniX))
+		xend = int(round(iniX))+int(np.floor(xSize))
+
+		num_elements = self.control.combo1.count()
+		num_projections = self.widget.data.shape[1]
+		img = self.widget.data[element,projection, ystart: yend, xstart: xend]
+		temp_data = zeros([num_elements,num_projections, img.shape[0], img.shape[1]])
+		
+		for i in range(num_projections):
+			for j in range(num_elements):
+				temp_data[j,i,:,:] = self.widget.data[j, i, ystart: yend, xstart: xend]
+		print("done")
+
+		self.widget.data = temp_data
+		self.view.view.projView.setImage(self.widget.data[element,projection,:,:])

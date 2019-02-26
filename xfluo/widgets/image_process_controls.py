@@ -53,8 +53,8 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.xSize = 20
-        self.ySize = 20
+        self.xSize = 10
+        self.ySize = 10
         button1size = 250       #long button (1 column)
         button2size = 122.5     #mid button (2 column)
         button3size = 73.3      #small button (almost third)
@@ -79,7 +79,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.bgBtn = QtWidgets.QPushButton("Bg Value")
         self.bgBtn.setMaximumWidth(button2size)
         self.bgBtn.setMinimumWidth(button2size)
-        self.delHotspotBtn = QtWidgets.QPushButton("Delete HS")
+        self.delHotspotBtn = QtWidgets.QPushButton("patch HS")
         self.delHotspotBtn.setMaximumWidth(button2size)
         self.delHotspotBtn.setMinimumWidth(button2size)
         self.normalizeBtn = QtWidgets.QPushButton("Normalize")
@@ -179,7 +179,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb8.addWidget(self.shift_all_down)
 
         hb9 = QtWidgets.QHBoxLayout()
-        hb9.addWidget(self.bgBtn, )
+        hb9.addWidget(self.bgBtn)
         hb9.addWidget(self.delHotspotBtn)
         hb10 = QtWidgets.QHBoxLayout()
         hb10.addWidget(self.normalizeBtn)

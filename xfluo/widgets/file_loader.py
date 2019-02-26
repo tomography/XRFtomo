@@ -97,6 +97,7 @@ class FileTableWidget(QtWidgets.QWidget):
         thetaLabel = QtWidgets.QLabel('Theta PV')
         self.thetaLineEdit = QtWidgets.QLineEdit(self.auto_theta_pv)
         self.thetaLineEdit.setCompleter(thetaCompleter)
+        self.thetaLineEdit.textChanged.connect(self.onThetaPVChange)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
         self.imageTag = QtWidgets.QComboBox()
         self.imageTag.currentIndexChanged.connect(self.getDataTag)
@@ -133,6 +134,9 @@ class FileTableWidget(QtWidgets.QWidget):
         vBox.addWidget(self.fileTableView)
         vBox.addWidget(self.elementTableView)
         self.setLayout(vBox)
+
+    def onThetaPVChange(self):
+        self.parent.params.theta_pv =  self.thetaLineEdit.text()
 
     def onDirBrowse(self):
         folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
@@ -254,7 +258,6 @@ class FileTableWidget(QtWidgets.QWidget):
         element_index = [elements.index(j) for j in self.use_elements]
         # print(type(self.parent.params.selected_elements), type(element_index))
         self.parent.params.selected_elements = str(element_index)
-
 
         self.data = xfluo.convert_to_array(path_files, self.use_elements,theta_index, img_tag, data_tag, element_tag)
 

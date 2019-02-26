@@ -82,10 +82,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.yUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.yDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.combo2.setVisible(False)
-        # self.ViewControl.bgBtn.clicked.connect(self.ipBg)
-        # self.ViewControl.delHotspotBtn.clicked.connect(self.ipDelHotspot)
-        # self.ViewControl.normalizeBtn.clicked.connect(self.ipNormalize)
-        # self.ViewControl.cutBtn.clicked.connect(self.ipCut)
+        self.ViewControl.bgBtn.clicked.connect(self.parent.actions.background_value)
+        self.ViewControl.delHotspotBtn.clicked.connect(self.parent.actions.patch_hotspot)
+        self.ViewControl.normalizeBtn.clicked.connect(self.parent.actions.normalize)
+        self.ViewControl.cutBtn.clicked.connect(self.parent.actions.cut)
         # self.ViewControl.cutBtn.clicked.connect(self.updateReconBounds)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.gauss33)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.gauss55)
@@ -163,11 +163,11 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imgProcessProjChanged()
 
     def shiftDataLeft(self):
-        self.data = np.roll(self.data,-4)
+        self.data = np.roll(self.data,-1)
         self.imgProcessProjChanged()
 
     def shiftDataRight(self):
-        self.data = np.roll(self.data,4)
+        self.data = np.roll(self.data,1)
         self.imgProcessProjChanged()
 
     def imgProcessBoxSizeChange(self):

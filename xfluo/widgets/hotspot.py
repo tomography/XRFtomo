@@ -132,5 +132,5 @@ class HotspotWidget(QtWidgets.QWidget):
         angle = round(self.thetas[index])
         self.imgAndHistoWidget.lcd.display(angle)
         self.imgAndHistoWidget.sld.setValue(index)
-        self.parent.hotspotWidget.imgAndHistoWidget.sld.setValue(index)
-        self.parent.hotspotWidget.imgAndHistoWidget.lcd.display(angle)
+        self.parent.imageProcessWidget.imgAndHistoWidget.sld.setValue(index)
+        self.parent.imageProcessWidget.imgAndHistoWidget.lcd.display(angle)
