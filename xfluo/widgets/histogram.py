@@ -52,32 +52,46 @@ import pyqtgraph
 
 class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
 
-    def __init__(self):
+    def __init__(self, parent):
         super(HistogramWidget, self).__init__()
-
-        self.initUI()
-        self.boxSize = 20
+        self.parent = parent
         self.hotSpotNumb = 0
-        self.xSize = 20
-        self.ySize = 20
+        self.xSize = 10
+        self.ySize = 10
+        self.x_pos = 5
+        self.y_pos = -5
+        self.initUI()
 
     def initUI(self):
-        self.p1 = self.addPlot()
+        self.p1 = self.addPlot(enableMouse = False)
         self.projView = pyqtgraph.ImageItem()
         self.projView.rotate(-90)
         self.projView.iniX = 0
-        self.projView.iniY = 0
-        self.ROI = pyqtgraph.ROI([self.projView.iniX, self.projView.iniY], [20, 20])
+        self.projView.iniY = -10
+        self.ROI = pyqtgraph.ROI([self.projView.iniX, self.projView.iniY], [10, 10])
         self.p1.addItem(self.projView)
         self.p1.addItem(self.ROI)
+        self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
+        self.p1.scene().sigMouseClicked.connect(self.mouseClick)
+        self.p1.setMouseEnabled(x=False, y=False)
 
-    def mouseReleaseEvent(self,ev):
-        # self.ROI.setPos([self.projView.iniX - self.xSize / 2, -self.projView.iniY - self.ySize / 2])
-        x = self.p1.items[1].pos()[0]
-        y = self.p1.items[1].pos()[1]
-        self.ROI.setPos([x,y])
-    
+    def mouseMoved(self, evt):
+        self.moving_x = self.p1.vb.mapSceneToView(evt).x()
+        self.moving_y = self.p1.vb.mapSceneToView(evt).y()
+
+    def mouseClick(self, evt):
+        self.x_pos = self.moving_x
+        self.y_pos = self.moving_y
+
+        # print(self.x_pos,self.y_pos)
+        self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
+
+    def wheelEvent(self, ev):
+        pass
+
     def keyPressEvent(self, ev):
+        print(ev.key())
+        print(ev.modifiers())
         if ev.key() == QtCore.Qt.Key_N:
             if self.hotSpotNumb < self.data.shape[0]:
                 self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = self.projView.iniY
@@ -91,3 +105,20 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
             if self.hotSpotNumb < self.data.shape[0] - 1:
                 self.hotSpotNumb += 1
                 self.projView.setImage(self.data[self.hotSpotNumb, :, :])
+        if ev.key() == QtCore.Qt.Key_Left:
+            self.parent.parent.parent.actions.shiftProjectionLeft()
+        if ev.key() == QtCore.Qt.Key_Right:
+            self.parent.parent.parent.actions.shiftProjectionRight()
+        if ev.key() == QtCore.Qt.Key_Up:
+            self.parent.parent.parent.actions.shiftProjectionUp()
+        if ev.key() == QtCore.Qt.Key_Down:
+            self.parent.parent.parent.actions.shiftProjectionDown()
+
+        if (ev.modifiers() == QtCore.Qt.Key_Shift) and ev.key() == QtCore.Qt.Key_Left:
+            self.parent.parent.parent.actions.shiftDataLeft()
+        if ev.modifiers() == QtCore.Qt.Key_Shift and ev.key() == QtCore.Qt.Key_Right:
+            self.parent.parent.parent.actions.shiftDataRight()
+        if ev.modifiers() == QtCore.Qt.Key_Shift and ev.key() == QtCore.Qt.Key_Up:
+            self.parent.parent.parent.actions.shiftDataUp()
+        if ev.modifiers() == QtCore.Qt.Key_Shift and ev.key() == QtCore.Qt.Key_Down:
+            self.parent.parent.parent.actions.shiftDataDown()

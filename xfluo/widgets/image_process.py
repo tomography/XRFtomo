@@ -49,7 +49,6 @@ import xfluo
 from pylab import *
 import pyqtgraph
 
-
 class ImageProcessWidget(QtWidgets.QWidget):
     def __init__(self, parent):
         super(ImageProcessWidget, self).__init__()
@@ -58,7 +57,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def initUI(self):
         self.ViewControl = xfluo.ImageProcessControlsWidget()
-        self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget()
+        self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
         mainHBox = QtWidgets.QHBoxLayout()
         mainHBox.addWidget(self.ViewControl)
         mainHBox.addWidget(self.imgAndHistoWidget, 10)
@@ -87,20 +86,20 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.normalizeBtn.clicked.connect(self.parent.actions.normalize)
         self.ViewControl.cutBtn.clicked.connect(self.parent.actions.cut)
         # self.ViewControl.cutBtn.clicked.connect(self.updateReconBounds)
-        # self.ViewControl.gaussian33Btn.clicked.connect(self.gauss33)
-        # self.ViewControl.gaussian33Btn.clicked.connect(self.gauss55)
-        # self.ViewControl.captureBackground.clicked.connect(self.copyBg)
-        # self.ViewControl.setBackground.clicked.connect(self.setBg)
+        self.ViewControl.gaussian33Btn.clicked.connect(self.parent.actions.gauss33)
+        self.ViewControl.gaussian33Btn.clicked.connect(self.parent.actions.gauss55)
+        self.ViewControl.captureBackground.clicked.connect(self.parent.actions.copy_background)
+        self.ViewControl.setBackground.clicked.connect(self.parent.actions.set_background)
         # self.ViewControl.deleteProjection.clicked.connect(self.removeFrame)
         # self.ViewControl.testButton.clicked.connect(self.noise_analysis)
-        self.ViewControl.shift_img_up.clicked.connect(self.shiftProjectionUp)
-        self.ViewControl.shift_img_down.clicked.connect(self.shiftProjectionDown)
-        self.ViewControl.shift_img_left.clicked.connect(self.shiftProjectionLeft)
-        self.ViewControl.shift_img_right.clicked.connect(self.shiftProjectionRight)
-        self.ViewControl.shift_all_up.clicked.connect(self.shiftDataUp)
-        self.ViewControl.shift_all_down.clicked.connect(self.shiftDataDown)
-        self.ViewControl.shift_all_left.clicked.connect(self.shiftDataLeft)
-        self.ViewControl.shift_all_right.clicked.connect(self.shiftDataRight)
+        self.ViewControl.shift_img_up.clicked.connect(self.parent.actions.shiftProjectionUp)
+        self.ViewControl.shift_img_down.clicked.connect(self.parent.actions.shiftProjectionDown)
+        self.ViewControl.shift_img_left.clicked.connect(self.parent.actions.shiftProjectionLeft)
+        self.ViewControl.shift_img_right.clicked.connect(self.parent.actions.shiftProjectionRight)
+        self.ViewControl.shift_all_up.clicked.connect(self.parent.actions.shiftDataUp)
+        self.ViewControl.shift_all_down.clicked.connect(self.parent.actions.shiftDataDown)
+        self.ViewControl.shift_all_left.clicked.connect(self.parent.actions.shiftDataLeft)
+        self.ViewControl.shift_all_right.clicked.connect(self.parent.actions.shiftDataRight)
 
         self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imageProcessLCDValueChanged)
@@ -116,7 +115,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.parent.hotspotWidget.imgAndHistoWidget.view.projView.setImage(self.parent.hotspotWidget.hotSpotImg)
         self.parent.hotspotWidget.ViewControl.combo1.setCurrentIndex(element)
         self.parent.hotspotWidget.ViewControl.combo2.setCurrentIndex(projection)
-
         self.parent.sinogramWidget.sinoControl.combo1.setCurrentIndex(element)
 
     def imageProcessLCDValueChanged(self):
@@ -132,51 +130,14 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, self.imgAndHistoWidget.sld.value(), :, :])
         # self.file_name_update(self.imgProcess)
 
-    def shiftProjectionUp(self):
-        projection_index = self.imgAndHistoWidget.sld.value()
-        self.data[:,projection_index] = np.roll(self.data[:,projection_index],-1,axis=1)
-        self.imgProcessProjChanged()
-
-    def shiftProjectionDown(self):
-        projection_index = self.imgAndHistoWidget.sld.value() 
-        self.data[:,projection_index] = np.roll(self.data[:,projection_index],1,axis=1)
-        self.imgProcessProjChanged()
-
-    def shiftProjectionLeft(self):
-        projection_index = self.imgAndHistoWidget.sld.value() 
-        self.data[:,projection_index] = np.roll(self.data[:,projection_index],-1)
-        self.imgProcessProjChanged()
-
-    def shiftProjectionRight(self):
-        projection_index = self.imgAndHistoWidget.sld.value() 
-        self.data[:,projection_index] = np.roll(self.data[:,projection_index],1)
-        self.imgProcessProjChanged()
-
-    def shiftDataUp(self):
-        for i in range(len(self.thetas)):
-            self.data[:,i] = np.roll(self.data[:,i],-1,axis=1)
-        self.imgProcessProjChanged()
-
-    def shiftDataDown(self):
-        for i in range(len(self.thetas)):
-            self.data[:,i] = np.roll(self.data[:,i],1,axis=1)
-        self.imgProcessProjChanged()
-
-    def shiftDataLeft(self):
-        self.data = np.roll(self.data,-1)
-        self.imgProcessProjChanged()
-
-    def shiftDataRight(self):
-        self.data = np.roll(self.data,1)
-        self.imgProcessProjChanged()
-
     def imgProcessBoxSizeChange(self):
-        xSize = self.ViewControl.xSize / 2 * 2
-        ySize = self.ViewControl.ySize / 2 * 2
-        self.imgAndHistoWidget.view.ROI.setSize([xSize, ySize])
-        # self.imgAndHistoWidget.view.ROI.setPos([int(round(self.imgAndHistoWidget.view.projView.iniX)) - xSize / 2,
-                                        # -int(round(self.imgAndHistoWidget.view.projView.iniY)) - ySize / 2])
-        self.imgAndHistoWidget.view.ROI.setPos([int(round(self.imgAndHistoWidget.view.p1.items[1].pos()[0])), int(round(self.imgAndHistoWidget.view.p1.items[1].pos()[1]))])
+        xSize = self.ViewControl.xSize
+        ySize = self.ViewControl.ySize
         self.imgAndHistoWidget.view.xSize = xSize
         self.imgAndHistoWidget.view.ySize = ySize
+        self.imgAndHistoWidget.view.ROI.setSize([xSize, ySize])
+        x_pos = int(round(self.imgAndHistoWidget.view.x_pos))
+        y_pos = int(round(self.imgAndHistoWidget.view.y_pos))
+        self.imgAndHistoWidget.view.ROI.setPos([x_pos-xSize/2, y_pos-ySize/2])
+
 

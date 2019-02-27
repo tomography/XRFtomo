@@ -59,7 +59,7 @@ class HotspotWidget(QtWidgets.QWidget):
 
     def initUI(self):
         self.ViewControl =xfluo.HotspotControlsWidget()
-        self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget()
+        self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
         projViewBox = QtWidgets.QHBoxLayout()
         projViewBox.addWidget(self.ViewControl)
         projViewBox.addWidget(self.imgAndHistoWidget, 10)

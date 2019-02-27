@@ -58,7 +58,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
     def initUI(self):
         self.recon = xfluo.ReconstructionControlsWidget()
         self.recon.sld.setVisible(False)
-        self.projView = xfluo.ImageAndHistogramWidget()
+        self.projView = xfluo.ImageAndHistogramWidget(self)
         self.projView.lbl5.setText(str('Slice'))
         projViewBox = QtWidgets.QHBoxLayout()
         projViewBox.addWidget(self.recon)

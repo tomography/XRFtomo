@@ -32,7 +32,7 @@
 # THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENTn SHALL UChicago     #
 # Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
 # INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
 # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
@@ -49,7 +49,6 @@ from pylab import *
 import xfluo
 import matplotlib.pyplot as plt
 
-
 class ImageProcessActions(QtWidgets.QWidget):
 	def __init__(self, parent):
 		super(ImageProcessActions, self).__init__()
@@ -57,71 +56,170 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.widget = self.parent.imageProcessWidget
 		self.control = self.widget.ViewControl
 		self.view = self.widget.imgAndHistoWidget
+	
+	def shiftProjectionUp(self):
+		projection_index = self.view.sld.value()
+		self.widget.data[:,projection_index] = np.roll(self.widget.data[:,projection_index],-1,axis=1)
+		self.widget.imgProcessProjChanged()
+
+	def shiftProjectionDown(self):
+		projection_index = self.view.sld.value() 
+		self.widget.data[:,projection_index] = np.roll(self.widget.data[:,projection_index],1,axis=1)
+		self.widget.imgProcessProjChanged()
+
+	def shiftProjectionLeft(self):
+		projection_index = self.view.sld.value() 
+		self.widget.data[:,projection_index] = np.roll(self.widget.data[:,projection_index],-1)
+		self.widget.imgProcessProjChanged()
+
+	def shiftProjectionRight(self):
+		projection_index = self.view.sld.value() 
+		self.widget.data[:,projection_index] = np.roll(self.widget.data[:,projection_index],1)
+		self.widget.imgProcessProjChanged()
+
+	def shiftDataUp(self):
+		self.thetas = self.widget.thetas
+		for i in range(len(self.thetas)):
+			self.widget.data[:,i] = np.roll(self.widget.data[:,i],-1,axis=1)
+		self.widget.imgProcessProjChanged()
+
+	def shiftDataDown(self):
+		self.thetas = self.widget.thetas
+		for i in range(len(self.thetas)):
+			self.widget.data[:,i] = np.roll(self.widget.data[:,i],1,axis=1)
+		self.widget.imgProcessProjChanged()
+
+	def shiftDataLeft(self):
+		self.widget.data = np.roll(self.widget.data,-1)
+		self.widget.imgProcessProjChanged()
+
+	def shiftDataRight(self):
+		self.widget.data = np.roll(self.widget.data,1)
+		self.widget.imgProcessProjChanged()
 
 	def background_value(self):
-		element = self.control.combo1.currentIndex()
-		projection = self.view.sld.value()
-		iniX = self.view.view.p1.items[1].pos()[0]
-		iniY = self.view.view.p1.items[1].pos()[1]
-		xSize = self.control.xSize
-		ySize = self.control.ySize
-		ystart = int(abs(round(iniY)) - ySize)
-		yend = int(abs(round(iniY)))
-		xstart= int(round(iniX))
-		xend = int(round(iniX))+int(np.floor(xSize))
-		img = self.widget.data[element,projection, ystart: yend, xstart: xend]
+		self.element = self.control.combo1.currentIndex()
+		self.projection = self.view.sld.value()
+		self.img = self.widget.data[self.element, self.projection, 
+			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
+			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
+			int(round(self.view.view.x_pos) - self.control.xSize/2): 
+			int(round(self.view.view.x_pos) + self.control.xSize/2)]
 
-		self.bg = np.average(img)
+		self.bg = np.average(self.img)
 		print(self.bg)
 
 	def patch_hotspot(self):
-		element = self.control.combo1.currentIndex()
-		projection = self.view.sld.value()
-		iniX = self.view.view.p1.items[1].pos()[0]
-		iniY = self.view.view.p1.items[1].pos()[1]
-		xSize = self.control.xSize
-		ySize = self.control.ySize
-		ystart = int(abs(round(iniY)) - ySize)
-		yend = int(abs(round(iniY)))
-		xstart= int(round(iniX))
-		xend = int(round(iniX))+int(np.floor(xSize))
+		self.element = self.control.combo1.currentIndex()
+		self.projection = self.view.sld.value()
+		self.img = self.widget.data[self.element, self.projection, 
+			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
+			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
+			int(round(self.view.view.x_pos) - self.control.xSize/2): 
+			int(round(self.view.view.x_pos) + self.control.xSize/2)]
 
-		img = self.widget.data[element,projection, ystart: yend, xstart: xend]
-		self.widget.data[element,projection, ystart: yend, xstart: xend] = ones(img.shape, dtype = img.dtype) * self.bg
-		self.view.view.projView.setImage(self.widget.data[element,projection,:,:])
+		patch = ones(self.img.shape, dtype = self.img.dtype) * self.bg
+
+		self.widget.data[self.element,self.projection,
+			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
+			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
+			int(round(self.view.view.x_pos) - self.control.xSize/2): 
+			int(round(self.view.view.x_pos) + self.control.xSize/2)] = patch
+		
+		self.view.view.projView.setImage(self.widget.data[self.element, self.projection,:,:])
 
 	def normalize(self):
-		element = self.control.combo1.currentIndex()
-		projection = self.view.sld.value()
-		normData = self.widget.data[element, :, :, :]
+		self.element = self.control.combo1.currentIndex()
+		normData = self.widget.data[self.element, :, :, :]
 		for i in range((normData.shape[0])):
 			temp = normData[i, :, :]
 			tempMax = temp.max()
 			tempMin = temp.min()
 			temp = (temp - tempMin) / tempMax * 10000
-			self.widget.data[element, i, :, :] = temp	
+			self.widget.data[self.element, i, :, :] = temp	
 
 	def cut(self):
-		element = self.control.combo1.currentIndex()
-		projection = self.view.sld.value()
-		iniX = self.view.view.p1.items[1].pos()[0]
-		iniY = self.view.view.p1.items[1].pos()[1]
-		xSize = self.control.xSize
-		ySize = self.control.ySize
-		ystart = int(abs(round(iniY)) - ySize)
-		yend = int(abs(round(iniY)))
-		xstart= int(round(iniX))
-		xend = int(round(iniX))+int(np.floor(xSize))
-
+		self.element = self.control.combo1.currentIndex()
+		self.projection = self.view.sld.value()
+		self.img = self.widget.data[self.element, self.projection, 
+			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
+			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
+			int(round(self.view.view.x_pos) - self.control.xSize/2): 
+			int(round(self.view.view.x_pos) + self.control.xSize/2)]
 		num_elements = self.control.combo1.count()
 		num_projections = self.widget.data.shape[1]
-		img = self.widget.data[element,projection, ystart: yend, xstart: xend]
-		temp_data = zeros([num_elements,num_projections, img.shape[0], img.shape[1]])
+		temp_data = zeros([num_elements,num_projections, self.img.shape[0], self.img.shape[1]])
 		
 		for i in range(num_projections):
 			for j in range(num_elements):
-				temp_data[j,i,:,:] = self.widget.data[j, i, ystart: yend, xstart: xend]
+				temp_data[j,i,:,:] = self.widget.data[j, i,
+					int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
+					int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
+					int(round(self.view.view.x_pos) - self.control.xSize/2): 
+					int(round(self.view.view.x_pos) + self.control.xSize/2)]
 		print("done")
 
 		self.widget.data = temp_data
-		self.view.view.projView.setImage(self.widget.data[element,projection,:,:])
+		self.view.view.projView.setImage(self.widget.data[self.element, self.projection,:,:])
+
+		# self.x = xSize
+		# self.y = ySize
+		# self.sino.sld.setRange(1, self.control.ySize)
+		# self.sino.sld.setValue(1)
+		# self.sino.lcd.display(1)
+
+	def gauss33(self):
+		result = self.gauss2D(shape=(3, 3), sigma=1.3)
+		print(result)
+		return result
+
+	def gauss55(self):
+		result = self.gauss2D(shape=(5, 5), sigma=1.3)
+		print(result)
+		return result
+
+	def gauss2D(self, shape=(3, 3), sigma=0.5):
+		"""
+		2D gaussian mask - should give the same result as MATLAB's
+		fspecial('gaussian',[shape],[sigma])
+		"""
+		m, n = [(ss - 1.) / 2. for ss in shape]
+		y, x = np.ogrid[-m:m + 1, -n:n + 1]
+		h = np.exp(-(x * x + y * y) / (2. * sigma * sigma))
+		h[h < np.finfo(h.dtype).eps * h.max()] = 0
+		sumh = h.sum()
+		if sumh != 0:
+			h /= sumh
+		return h
+
+	def copy_background(self):
+		self.element = self.control.combo1.currentIndex()
+		self.projection = self.view.sld.value()
+		self.img = self.widget.data[self.element, self.projection, 
+			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
+			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
+			int(round(self.view.view.x_pos) - self.control.xSize/2): 
+			int(round(self.view.view.x_pos) + self.control.xSize/2)]
+		self.meanNoise = np.mean(self.img)
+		self.stdNoise = np.std(self.img)
+
+	def set_background(self):
+		self.element = self.control.combo1.currentIndex()
+		self.projection = self.view.sld.value()
+		self.img = self.widget.data[self.element, self.projection, 
+			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
+			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
+			int(round(self.view.view.x_pos) - self.control.xSize/2): 
+			int(round(self.view.view.x_pos) + self.control.xSize/2)]
+
+		frame_boundary = self.img > 0
+		noise_generator = np.random.normal(self.meanNoise, self.stdNoise, 
+			(self.control.ySize, self.control.xSize))*frame_boundary
+
+		self.widget.data[self.element,self.projection,
+			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
+			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
+			int(round(self.view.view.x_pos) - self.control.xSize/2): 
+			int(round(self.view.view.x_pos) + self.control.xSize/2)] = noise_generator
+
+		self.view.view.projView.setImage(self.widget.data[self.element, self.projection, :, :])

@@ -260,5 +260,4 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.params.selected_elements = str(element_index)
 
         self.data = xfluo.convert_to_array(path_files, self.use_elements,theta_index, img_tag, data_tag, element_tag)
-
         return self.data, self.use_elements, self.use_thetas 
