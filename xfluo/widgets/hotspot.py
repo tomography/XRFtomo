@@ -72,7 +72,8 @@ class HotspotWidget(QtWidgets.QWidget):
         # self.tab_widget.removeTab(1)
         # self.tab_widget.insertTab(1, self.createSaveHotspotWidget(), unicode("Hotspot"))
         # self.projViewControl.numb = len(self.channelname)
-
+        self.ViewControl.combo1.clear()
+        self.ViewControl.combo2.clear()
         for j in element_names:
             self.ViewControl.combo1.addItem(j)
         num_projections  = data.shape[1]

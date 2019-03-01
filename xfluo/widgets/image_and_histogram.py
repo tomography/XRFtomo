@@ -97,7 +97,6 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
 
         self.setLayout(hb2)
 
-
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_N:
             self.sld.setValue(self.sld.value() + 1)

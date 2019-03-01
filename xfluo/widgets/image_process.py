@@ -53,6 +53,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def __init__(self, parent):
         super(ImageProcessWidget, self).__init__()
         self.parent = parent
+        self.thetas = []
         self.initUI()
 
     def initUI(self):
@@ -66,7 +67,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def showImgProcess(self, data, element_names, thetas):
         self.data = data
         self.thetas = thetas
-
+        self.ViewControl.combo1.clear()
+        self.ViewControl.combo2.clear()
         for j in element_names:
             self.ViewControl.combo1.addItem(j)
         num_projections  = data.shape[1]
@@ -90,8 +92,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.gaussian33Btn.clicked.connect(self.parent.actions.gauss55)
         self.ViewControl.captureBackground.clicked.connect(self.parent.actions.copy_background)
         self.ViewControl.setBackground.clicked.connect(self.parent.actions.set_background)
-        # self.ViewControl.deleteProjection.clicked.connect(self.removeFrame)
-        # self.ViewControl.testButton.clicked.connect(self.noise_analysis)
+        self.ViewControl.deleteProjection.clicked.connect(self.parent.actions.exclude_projection)
+        self.ViewControl.testButton.clicked.connect(self.parent.actions.noise_analysis)
         self.ViewControl.shift_img_up.clicked.connect(self.parent.actions.shiftProjectionUp)
         self.ViewControl.shift_img_down.clicked.connect(self.parent.actions.shiftProjectionDown)
         self.ViewControl.shift_img_left.clicked.connect(self.parent.actions.shiftProjectionLeft)
@@ -104,7 +106,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imageProcessLCDValueChanged)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imgProcessProjChanged)
-        self.testtest =pyqtgraph.ImageView()
+        self.testtest = pyqtgraph.ImageView()
 
     def imgProcessProjShow(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -118,6 +120,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.parent.sinogramWidget.sinoControl.combo1.setCurrentIndex(element)
 
     def imageProcessLCDValueChanged(self):
+
         index = self.imgAndHistoWidget.sld.value()
         angle = round(self.thetas[index])
         self.imgAndHistoWidget.lcd.display(angle)
@@ -139,5 +142,3 @@ class ImageProcessWidget(QtWidgets.QWidget):
         x_pos = int(round(self.imgAndHistoWidget.view.x_pos))
         y_pos = int(round(self.imgAndHistoWidget.view.y_pos))
         self.imgAndHistoWidget.view.ROI.setPos([x_pos-xSize/2, y_pos-ySize/2])
-
-

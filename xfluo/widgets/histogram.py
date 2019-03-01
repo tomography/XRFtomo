@@ -60,6 +60,7 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         self.ySize = 10
         self.x_pos = 5
         self.y_pos = -5
+        self.keylist = []
         self.initUI()
 
     def initUI(self):
@@ -80,45 +81,62 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         self.moving_y = self.p1.vb.mapSceneToView(evt).y()
 
     def mouseClick(self, evt):
-        self.x_pos = self.moving_x
-        self.y_pos = self.moving_y
+        self.x_pos = int(round(self.moving_x))
+        self.y_pos = int(round(self.moving_y))
+        self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
 
-        # print(self.x_pos,self.y_pos)
+    def mouseReleaseEvent(self, ev):
+        self.x_pos = int(round(self.moving_x))
+        self.y_pos = int(round(self.moving_y))
         self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
 
     def wheelEvent(self, ev):
         pass
 
     def keyPressEvent(self, ev):
-        print(ev.key())
-        print(ev.modifiers())
-        if ev.key() == QtCore.Qt.Key_N:
-            if self.hotSpotNumb < self.data.shape[0]:
-                self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = self.projView.iniY
-                self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = self.projView.iniX
-                self.hotSpotNumb += 1
-                if self.hotSpotNumb < self.data.shape[0]:
-                    self.projView.setImage(self.data[self.hotSpotNumb, :, :])
-        if ev.key() == QtCore.Qt.Key_S:
-            self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = 0
-            self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = 0
-            if self.hotSpotNumb < self.data.shape[0] - 1:
-                self.hotSpotNumb += 1
-                self.projView.setImage(self.data[self.hotSpotNumb, :, :])
-        if ev.key() == QtCore.Qt.Key_Left:
-            self.parent.parent.parent.actions.shiftProjectionLeft()
-        if ev.key() == QtCore.Qt.Key_Right:
-            self.parent.parent.parent.actions.shiftProjectionRight()
-        if ev.key() == QtCore.Qt.Key_Up:
-            self.parent.parent.parent.actions.shiftProjectionUp()
-        if ev.key() == QtCore.Qt.Key_Down:
-            self.parent.parent.parent.actions.shiftProjectionDown()
+        self.firstrelease = True
+        astr = ev.key()
+        self.keylist.append(astr)
 
-        if (ev.modifiers() == QtCore.Qt.Key_Shift) and ev.key() == QtCore.Qt.Key_Left:
-            self.parent.parent.parent.actions.shiftDataLeft()
-        if ev.modifiers() == QtCore.Qt.Key_Shift and ev.key() == QtCore.Qt.Key_Right:
-            self.parent.parent.parent.actions.shiftDataRight()
-        if ev.modifiers() == QtCore.Qt.Key_Shift and ev.key() == QtCore.Qt.Key_Up:
-            self.parent.parent.parent.actions.shiftDataUp()
-        if ev.modifiers() == QtCore.Qt.Key_Shift and ev.key() == QtCore.Qt.Key_Down:
-            self.parent.parent.parent.actions.shiftDataDown()
+    def keyReleaseEvent(self, ev):
+        if self.firstrelease == True:
+            self.processMultipleKeys(self.keylist)
+
+        self.firstrelease = False
+        del self.keylist[-1]
+
+    def processMultipleKeys(self, keyspressed):
+        print(keyspressed)
+        if len(keyspressed) ==1:
+
+            if keyspressed[0]== QtCore.Qt.Key_Left:
+                self.parent.parent.parent.actions.shiftProjectionLeft()
+            if keyspressed[0] == QtCore.Qt.Key_Right:
+                self.parent.parent.parent.actions.shiftProjectionRight()
+            if keyspressed[0] == QtCore.Qt.Key_Up:
+                self.parent.parent.parent.actions.shiftProjectionUp()
+            if keyspressed[0] == QtCore.Qt.Key_Down:
+                self.parent.parent.parent.actions.shiftProjectionDown()
+            # if keyspressed[0] == QtCore.Qt.Key_N:
+            #     if self.hotSpotNumb < self.data.shape[0]:
+            #         self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = self.projView.iniY
+            #         self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = self.projView.iniX
+            #         self.hotSpotNumb += 1
+            #         if self.hotSpotNumb < self.data.shape[0]:
+            #             self.projView.setImage(self.data[self.hotSpotNumb, :, :])
+            # if keyspressed[0] == QtCore.Qt.Key_S:
+            #     self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = 0
+            #     self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = 0
+            #     if self.hotSpotNumb < self.data.shape[0] - 1:
+            #         self.hotSpotNumb += 1
+            #         self.projView.setImage(self.data[self.hotSpotNumb, :, :])
+
+        if len(keyspressed) == 2:
+            if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Left:
+                self.parent.parent.parent.actions.shiftDataLeft()
+            if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Right:
+                self.parent.parent.parent.actions.shiftDataRight()
+            if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Up:
+                self.parent.parent.parent.actions.shiftDataUp()
+            if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Down:
+                self.parent.parent.parent.actions.shiftDataDown()

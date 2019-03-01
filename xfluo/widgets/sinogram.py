@@ -88,6 +88,7 @@ class SinogramWidget(QtWidgets.QWidget):
         loads sinogram tabS
         '''
         self.data = data
+        self.sinoControl.combo1.clear()
         ## self.tab_widget.removeTab(2)
         ## self.tab_widget.insertTab(2, self.createSinoWidget(), unicode("Sinogram"))
         for j in element_names:

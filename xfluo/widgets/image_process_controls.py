@@ -234,23 +234,23 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
     def xUp(self):
         self.changeXSize()
         self.changeYSize()
-        self.xSize += 1
+        self.xSize += 2
         self.xSizeTxt.setText(str(self.xSize))
 
     def xDown(self):
         self.changeXSize()
         self.changeYSize()
-        self.xSize -= 1
+        self.xSize -= 2
         self.xSizeTxt.setText(str(self.xSize))
 
     def yUp(self):
         self.changeXSize()
         self.changeYSize()
-        self.ySize += 1
+        self.ySize += 2
         self.ySizeTxt.setText(str(self.ySize))
 
     def yDown(self):
         self.changeXSize()
         self.changeYSize()
-        self.ySize -= 1
+        self.ySize -= 2
         self.ySizeTxt.setText(str(self.ySize))

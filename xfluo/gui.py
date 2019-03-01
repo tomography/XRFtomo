@@ -187,8 +187,6 @@ class XfluoGui(QtGui.QMainWindow):
 
         self.actions = xfluo.ImageProcessActions(self)
 
-
-
         self.prevTab = 0
         self.TAB_FILE = 0
         self.TAB_IMAGE_PROC = 1
@@ -293,11 +291,9 @@ class XfluoGui(QtGui.QMainWindow):
         data, elements, thetas = self.fileTableWidget.onSaveDataInMemory()
 
         self.imageProcessWidget.showImgProcess(data, elements, thetas)
-        # self.imageProcessWidget.show()
         self.hotspotWidget.showHotSpot(data, elements, thetas)
         self.sinogramWidget.showSinogram(data, elements, thetas)
         self.sinogramWidget.sinogram()
-        # self.sinogramWidget.show()
 
 
         self.tab_widget.removeTab(1)

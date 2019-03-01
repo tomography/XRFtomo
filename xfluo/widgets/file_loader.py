@@ -238,7 +238,6 @@ class FileTableWidget(QtWidgets.QWidget):
 
     def onSaveDataInMemory(self):
 
-        #get list of selected elements, files and corresponding angles
         files = [i.filename for i in self.fileTableModel.arrayData]
         path_files = [self.fileTableModel.directory + '/' + s for s in files]
         thetas = [i.theta for i in self.fileTableModel.arrayData]
@@ -256,7 +255,6 @@ class FileTableWidget(QtWidgets.QWidget):
         self.use_elements = [elements[j] for j in l if use2[j]==True]
         theta_index = int(self.fileTableModel.idx[0])
         element_index = [elements.index(j) for j in self.use_elements]
-        # print(type(self.parent.params.selected_elements), type(element_index))
         self.parent.params.selected_elements = str(element_index)
 
         self.data = xfluo.convert_to_array(path_files, self.use_elements,theta_index, img_tag, data_tag, element_tag)
