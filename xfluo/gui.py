@@ -185,7 +185,10 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget = xfluo.SinogramWidget(self)
         self.reconstructionWidget = xfluo.ReconstructionWidget()
 
-        self.actions = xfluo.ImageProcessActions(self)
+        self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
+        self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
+
+        ###self.actions = xfluo.ImageProcessActions(self)
 
         self.prevTab = 0
         self.TAB_FILE = 0

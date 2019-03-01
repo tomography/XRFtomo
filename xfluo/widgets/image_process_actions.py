@@ -52,8 +52,7 @@ import matplotlib.pyplot as plt
 class ImageProcessActions(QtWidgets.QWidget):
 	def __init__(self, parent):
 		super(ImageProcessActions, self).__init__()
-		self.parent = parent
-		self.widget = self.parent.imageProcessWidget
+		self.widget = parent
 		self.control = self.widget.ViewControl
 		self.view = self.widget.imgAndHistoWidget
 	
