@@ -45,6 +45,8 @@
 
 import xfluo
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import pyqtSignal
+
 # from widgets.sinogram_view import SinogramView
 # from widgets.sinogram_controls_widget import SinogramControlsWidget
 import pyqtgraph
@@ -52,13 +54,14 @@ from pylab import *
 import numpy as np
 
 class SinogramWidget(QtWidgets.QWidget):
+    elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
+
     def __init__(self, parent):
         super(SinogramWidget, self).__init__()
-        self.parent = parent
         self.initUI()
 
     def initUI(self):
-        self.sinoControl = xfluo.SinogramControlsWidget()
+        self.ViewControl = xfluo.SinogramControlsWidget()
         self.sinoView = xfluo.SinogramView()
         self.lbl = QtWidgets.QLabel('Row y')
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
@@ -77,7 +80,7 @@ class SinogramWidget(QtWidgets.QWidget):
         vb1.addLayout(hb0)
 
         sinoBox = QtWidgets.QHBoxLayout()
-        sinoBox.addWidget(self.sinoControl)
+        sinoBox.addWidget(self.ViewControl)
         sinoBox.addLayout(vb1)
         sinoBox.addWidget(self.hist, 10)
 
@@ -88,11 +91,13 @@ class SinogramWidget(QtWidgets.QWidget):
         loads sinogram tabS
         '''
         self.data = data
-        self.sinoControl.combo1.clear()
+        self.ViewControl.combo1.clear()
         ## self.tab_widget.removeTab(2)
         ## self.tab_widget.insertTab(2, self.createSinoWidget(), unicode("Sinogram"))
         for j in element_names:
-            self.sinoControl.combo1.addItem(j)
+            self.ViewControl.combo1.addItem(j)
+
+        self.elementChanged()
 
         # self.sino.btn.clicked.connect(self.runCenterOfMass2)
         # self.sino.btn2.clicked.connect(self.sinoShift)
@@ -100,10 +105,20 @@ class SinogramWidget(QtWidgets.QWidget):
         self.lcd.display(1)
         self.sld.valueChanged.connect(self.lcd.display)
         self.sld.valueChanged.connect(self.sinogram)
-        self.sinoControl.combo1.currentIndexChanged.connect(self.sinogram)
+        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.show()
 
-    def sinogram(self):
+    def elementChanged(self):
+        element = self.ViewControl.combo1.currentIndex()
+        projection = 0
+        self.updateElementSlot(element)
+        self.elementChangedSig.emit(element, projection)
+
+    def updateElementSlot(self, element):
+        self.sinogram(element)
+        self.ViewControl.combo1.setCurrentIndex(element)
+
+    def sinogram(self, element):
         '''
         load variables and image for sinogram window
 
@@ -118,10 +133,8 @@ class SinogramWidget(QtWidgets.QWidget):
         '''
         # self.file_name_update(self.sino)
         thickness = 10
-        element = self.sinoControl.combo1.currentIndex()
         sinodata = self.data[element, :, :, :]
-        self.parent.imageProcessWidget.ViewControl.combo1.setCurrentIndex(element)
-        self.parent.hotspotWidget.ViewControl.combo1.setCurrentIndex(element)
+
         self.sinogramData = zeros([sinodata.shape[0] * thickness, sinodata.shape[2]], dtype=float32)
 
         num_projections = self.data.shape[1]
@@ -142,3 +155,5 @@ class SinogramWidget(QtWidgets.QWidget):
 
         for i in arange(self.projections):
             self.data[:,i,:,:] = np.roll(self.data[:,i,:,:], self.view.regShift[i])
+
+

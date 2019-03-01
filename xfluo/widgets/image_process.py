@@ -54,10 +54,10 @@ import xfluo.widgets.image_process_actions as actions
 class ImageProcessWidget(QtWidgets.QWidget):
 
     sliderChangedSig = pyqtSignal(int, name='sliderChangedSig')
+    elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
 
     def __init__(self, parent):
         super(ImageProcessWidget, self).__init__()
-        self.parent = parent
         self.thetas = []
         self.initUI()
 
@@ -82,9 +82,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.actions = actions.ImageProcessActions(self)
 
-        self.imgProcessProjShow()
-        self.ViewControl.combo1.currentIndexChanged.connect(self.imgProcessProjShow)
-        self.ViewControl.combo2.currentIndexChanged.connect(self.imgProcessProjShow)
+        self.elementChanged()
+        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+        self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.xUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.xDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.yUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
@@ -112,44 +112,31 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
-        #self.imgAndHistoWidget.sld.valueChanged.connect(self.imageProcessLCDValueChanged)
-        #self.imgAndHistoWidget.sld.valueChanged.connect(self.imgProcessProjChanged)
         self.testtest = pyqtgraph.ImageView()
-
-    def imgProcessProjShow(self):
-        element = self.ViewControl.combo1.currentIndex()
-        projection = self.ViewControl.combo2.currentIndex()
-        self.imgProcessImg = self.data[element, projection, :, :]
-        self.imgAndHistoWidget.view.projView.setImage(self.imgProcessImg)
-        self.parent.hotspotWidget.hotSpotImg = self.data[element, projection, :, :]
-        self.parent.hotspotWidget.imgAndHistoWidget.view.projView.setImage(self.parent.hotspotWidget.hotSpotImg)
-        self.parent.hotspotWidget.ViewControl.combo1.setCurrentIndex(element)
-        self.parent.hotspotWidget.ViewControl.combo2.setCurrentIndex(projection)
-        self.parent.sinogramWidget.sinoControl.combo1.setCurrentIndex(element)
 
     def imageSliderChanged(self):
         index = self.imgAndHistoWidget.sld.value()
-        self.imageProcessLCDValueChanged(index)
-        self.imgProcessProjChanged(index)
+        self.updateSliderSlot(index)
         self.sliderChangedSig.emit(index)
 
+    def elementChanged(self):
+        element = self.ViewControl.combo1.currentIndex()
+        projection = self.ViewControl.combo2.currentIndex()
+        self.updateElementSlot(element, projection)
+        self.elementChangedSig.emit(element, projection)
+
     def updateSliderSlot(self, index):
-        self.imageProcessLCDValueChanged(index)
-        self.imgProcessProjChanged(index)
-        
-    def imageProcessLCDValueChanged(self, index):
-        #index = self.imgAndHistoWidget.sld.value()
         angle = round(self.thetas[index])
+        element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.lcd.display(angle)
         self.imgAndHistoWidget.sld.setValue(index)
-        # self.parent.hotspotWidget.imgAndHistoWidget.sld.setValue(index)
-        # self.parent.hotspotWidget.imgAndHistoWidget.lcd.display(angle)
-
-    def imgProcessProjChanged(self, index):
-        element = self.ViewControl.combo1.currentIndex()
-        #self.imgAndHistoWidget.view.projView.setImage(self.data[element, self.imgAndHistoWidget.sld.value(), :, :])
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
-        # self.file_name_update(self.imgProcess)
+    #     # self.file_name_update(self.imgProcess)
+
+    def updateElementSlot(self, element, projection):
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :])
+        self.ViewControl.combo1.setCurrentIndex(element)
+        self.ViewControl.combo2.setCurrentIndex(projection)
 
     def imgProcessBoxSizeChange(self):
         xSize = self.ViewControl.xSize

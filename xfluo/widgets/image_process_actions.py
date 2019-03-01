@@ -165,7 +165,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 		# self.x = xSize
 		# self.y = ySize
-		self.widget.parent.sinogramWidget.sld.setRange(1, self.control.ySize)
+		self.widget.sinogramWidget.sld.setRange(1, self.control.ySize)
 		self.widget.parent.sinogramWidget.sld.setValue(1)
 		self.widget.parent.sinogramWidget.lcd.display(1)
 		self.sync_data()
@@ -255,26 +255,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.widget.parent.hotspotWidget.imgAndHistoWidget.view.projView.setImage(self.widget.data[self.element, self.projection, :, :])
 		
 		self.sync_data()
-
-	def sync_data(self):
-		# self.widget.parent.fileTableWidget.data = self.widget.data
-		try: 
-			print("trying theta sync...")
-			self.widget.thetas  = self.thetas
-			self.widget.parent.hotspotWidget.thetas = self.thetas	
-			self.widget.imageProcessLCDValueChanged()
-			self.widget.parent.hotspotWidget.hotSpotLCDValueChanged()
-		except Exception as e:
-			print(e)
-
-		try:
-			self.widget.parent.hotspotWidget.data = self.widget.data
-			self.widget.parent.hotspotWidget.hotSpotProjChanged()
-			self.widget.parent.sinogramWidget.data = self.widget.data
-			self.widget.parent.sinogramWidget.sinogram()
-			self.widget.imgProcessProjChanged()
-		except Exception as e:
-			print(e)
 			
 	def noise_analysis(self):
 		self.element = self.control.combo1.currentIndex()
@@ -299,3 +279,23 @@ class ImageProcessActions(QtWidgets.QWidget):
 		figure()
 		plt.imshow(noise_generator, cmap=gray(), interpolation='nearest')
 		show()
+
+	def sync_data(self):
+		# self.widget.parent.fileTableWidget.data = self.widget.data
+		try: 
+			print("trying theta sync...")
+			self.widget.thetas  = self.thetas
+			self.widget.parent.hotspotWidget.thetas = self.thetas	
+			self.widget.imageProcessLCDValueChanged()
+			self.widget.parent.hotspotWidget.hotSpotLCDValueChanged()
+		except Exception as e:
+			print(e)
+
+		try:
+			self.widget.parent.hotspotWidget.data = self.widget.data
+			self.widget.parent.hotspotWidget.hotSpotProjChanged()
+			self.widget.parent.sinogramWidget.data = self.widget.data
+			self.widget.parent.sinogramWidget.sinogram()
+			self.widget.imgProcessProjChanged()
+		except Exception as e:
+			print(e)

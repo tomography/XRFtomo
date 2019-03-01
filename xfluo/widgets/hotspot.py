@@ -54,6 +54,7 @@ from pylab import *
 class HotspotWidget(QtWidgets.QWidget):
 
     sliderChangedSig = pyqtSignal(int, name='sliderChangedSig')
+    elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
 
     def __init__(self, parent):
         super(HotspotWidget, self).__init__()
@@ -72,9 +73,6 @@ class HotspotWidget(QtWidgets.QWidget):
 
         self.data = data
         self.thetas = thetas
-        # self.tab_widget.removeTab(1)
-        # self.tab_widget.insertTab(1, self.createSaveHotspotWidget(), unicode("Hotspot"))
-        # self.projViewControl.numb = len(self.channelname)
         self.ViewControl.combo1.clear()
         self.ViewControl.combo2.clear()
         for j in element_names:
@@ -85,9 +83,9 @@ class HotspotWidget(QtWidgets.QWidget):
 
         # self.projViewControl.combo.currentIndexChanged.connect(self.saveHotSpotPos)
         # self.ViewControl.combo1.setVisible(False)
-        self.hotSpotProjShow()
-        self.ViewControl.combo1.currentIndexChanged.connect(self.hotSpotProjShow)
-        self.ViewControl.combo2.currentIndexChanged.connect(self.hotSpotProjShow)
+        self.elementChanged()
+        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+        self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
 
         # self.projViewControl.sld.setValue(20)
         # self.projViewControl.sld.setRange(0, self.x / 2)
@@ -109,43 +107,32 @@ class HotspotWidget(QtWidgets.QWidget):
 
     def imageSliderChanged(self):
         index = self.imgAndHistoWidget.sld.value()
-        self.hotSpotLCDValueChanged(index)
-        self.hotSpotProjChanged(index)
+        self.updateSliderSlot(index)
         self.sliderChangedSig.emit(index)
 
-    def updateSliderSlot(self, index):
-        self.hotSpotLCDValueChanged(index)
-        self.hotSpotProjChanged(index)
-
-    def hotSpotProjShow(self):
+    def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
         projection = self.ViewControl.combo2.currentIndex()
-        self.hotSpotImg = self.data[element, projection, :, :]
-        self.imgAndHistoWidget.view.projView.setImage(self.hotSpotImg)
+        self.updateElementSlot(element, projection)
+        self.elementChangedSig.emit(element, projection)
 
-        self.parent.imageProcessWidget.imgProcessImg = self.data[element, projection, :, :]
-        self.parent.imageProcessWidget.imgAndHistoWidget.view.projView.setImage(self.parent.imageProcessWidget.imgProcessImg)
-        self.parent.imageProcessWidget.ViewControl.combo1.setCurrentIndex(element)
-        self.parent.imageProcessWidget.ViewControl.combo2.setCurrentIndex(projection)
-        self.parent.sinogramWidget.sinoControl.combo1.setCurrentIndex(element)
-        self.parent.hotspotWidget.hotSpotImg = self.data[element, projection, :, :]
-        self.parent.hotspotWidget.imgAndHistoWidget.view.projView.setImage(self.parent.hotspotWidget.hotSpotImg)
-        self.parent.hotspotWidget.ViewControl.combo1.setCurrentIndex(element)
-        self.parent.hotspotWidget.ViewControl.combo2.setCurrentIndex(projection)
-
-    def hotSpotProjChanged(self, index):
+    def updateSliderSlot(self, index):
+        angle = round(self.thetas[index])
         element = self.ViewControl.combo1.currentIndex()
+        self.imgAndHistoWidget.lcd.display(angle)
+        self.imgAndHistoWidget.sld.setValue(index)
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
+        
+    def updateElementSlot(self, element, projection):
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :])
+        self.ViewControl.combo1.setCurrentIndex(element)
+        self.ViewControl.combo2.setCurrentIndex(projection)
+
+    # def hotSpotProjChanged(self, index):
+    #     element = self.ViewControl.combo1.currentIndex()
+    #     self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
         # self.file_name_update(self.imgAndHistoWidget)
         # self.imgProcess.view.projView.setImage(self.imgProcessImg)
 
     def hotSpotSetChanged(self):
         self.imgAndHistoWidget.view.hotSpotSetNumb = self.ViewControl.combo2.currentIndex()
-
-    def hotSpotLCDValueChanged(self, index):
-        #index = self.imgAndHistoWidget.sld.value()
-        angle = round(self.thetas[index])
-        self.imgAndHistoWidget.lcd.display(angle)
-        self.imgAndHistoWidget.sld.setValue(index)
-        # self.parent.imageProcessWidget.imgAndHistoWidget.sld.setValue(index)
-        # self.parent.imageProcessWidget.imgAndHistoWidget.lcd.display(angle)

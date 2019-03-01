@@ -175,7 +175,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.vl = QtWidgets.QVBoxLayout()
 
-        # theta_auto_completes = self.config.get(STR_CONFIG_THETA_STRS)
+        # theta_auto_completes = seshowImgProcesslf.config.get(STR_CONFIG_THETA_STRS)
         # theta_auto_completes = self.params.theta_pv
         # if theta_auto_completes is None:
         #     theta_auto_completes = []
@@ -184,9 +184,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.hotspotWidget = xfluo.HotspotWidget(self)
         self.sinogramWidget = xfluo.SinogramWidget(self)
         self.reconstructionWidget = xfluo.ReconstructionWidget()
-
-        self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
-        self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
 
         ###self.actions = xfluo.ImageProcessActions(self)
 
@@ -292,12 +289,11 @@ class XfluoGui(QtGui.QMainWindow):
 
     def updateImages(self):
         data, elements, thetas = self.fileTableWidget.onSaveDataInMemory()
-
         self.imageProcessWidget.showImgProcess(data, elements, thetas)
+
         self.hotspotWidget.showHotSpot(data, elements, thetas)
         self.sinogramWidget.showSinogram(data, elements, thetas)
-        self.sinogramWidget.sinogram()
-
+        # self.sinogramWidget.sinogram()
 
         self.tab_widget.removeTab(1)
         self.tab_widget.removeTab(2)
@@ -306,6 +302,16 @@ class XfluoGui(QtGui.QMainWindow):
         self.tab_widget.insertTab(1, self.imageProcessWidget, "Image Process")
         self.tab_widget.insertTab(2, self.hotspotWidget, "Hotspot")
         self.tab_widget.insertTab(3, self.sinogramWidget, "Sinogram")
+
+
+
+        self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
+        self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
+
+        self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
+        self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
+        self.sinogramWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
+
 
     def get_values_from_params(self):
 
