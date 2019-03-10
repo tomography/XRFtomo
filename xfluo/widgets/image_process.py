@@ -43,18 +43,21 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 import xfluo
 from pylab import *
 import pyqtgraph
 import xfluo.widgets.image_process_actions as actions
+import numpy as np
 
 class ImageProcessWidget(QtWidgets.QWidget):
 
     sliderChangedSig = pyqtSignal(int, name='sliderChangedSig')
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
+    # shiftSig = pyqtSignal(str, name='sliderChangedSig')
+    dataChangedSig = pyqtSignal(np.ndarray, name='elementCahngedSig')
+    ySizeChanged = pyqtSignal(int, name='ySizeChanged')
 
     def __init__(self, parent):
         super(ImageProcessWidget, self).__init__()
@@ -90,26 +93,18 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.yUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.yDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.combo2.setVisible(False)
-        self.ViewControl.bgBtn.clicked.connect(self.actions.background_value)
-        self.ViewControl.delHotspotBtn.clicked.connect(self.actions.patch_hotspot)
-        self.ViewControl.normalizeBtn.clicked.connect(self.actions.normalize)
-        self.ViewControl.cutBtn.clicked.connect(self.actions.cut)
-        # self.ViewControl.cutBtn.clicked.connect(self.updateReconBounds)
+        self.ViewControl.normalizeBtn.clicked.connect(self.normalize_params)
+        self.ViewControl.cutBtn.clicked.connect(self.cut_params)
         self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
         self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss55)
         self.ViewControl.captureBackground.clicked.connect(self.actions.copy_background)
         self.ViewControl.setBackground.clicked.connect(self.actions.set_background)
         self.ViewControl.deleteProjection.clicked.connect(self.actions.exclude_projection)
         self.ViewControl.testButton.clicked.connect(self.actions.noise_analysis)
-        self.ViewControl.shift_img_up.clicked.connect(self.actions.shiftProjectionUp)
-        self.ViewControl.shift_img_down.clicked.connect(self.actions.shiftProjectionDown)
-        self.ViewControl.shift_img_left.clicked.connect(self.actions.shiftProjectionLeft)
-        self.ViewControl.shift_img_right.clicked.connect(self.actions.shiftProjectionRight)
-        self.ViewControl.shift_all_up.clicked.connect(self.actions.shiftDataUp)
-        self.ViewControl.shift_all_down.clicked.connect(self.actions.shiftDataDown)
-        self.ViewControl.shift_all_left.clicked.connect(self.actions.shiftDataLeft)
-        self.ViewControl.shift_all_right.clicked.connect(self.actions.shiftDataRight)
 
+        self.imgAndHistoWidget.view.shiftSig.connect(self.shift_process)
+        self.actions.dataSig.connect(self.update_data)
+        # self.actions.YsizeSig.connect(self.update_y_size)
         self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
         self.testtest = pyqtgraph.ImageView()
@@ -147,3 +142,67 @@ class ImageProcessWidget(QtWidgets.QWidget):
         x_pos = int(round(self.imgAndHistoWidget.view.x_pos))
         y_pos = int(round(self.imgAndHistoWidget.view.y_pos))
         self.imgAndHistoWidget.view.ROI.setPos([x_pos-xSize/2, y_pos-ySize/2])
+
+    def imageChanged(self):
+        index = self.imgAndHistoWidget.sld.value()
+        element = self.ViewControl.combo1.currentIndex()
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
+
+    def shift_process(self, command):
+        index = self.imgAndHistoWidget.sld.value()
+        if command == 'l':
+            self.actions.shiftProjectionLeft(self.data, index) 
+        if command == 'r':
+            self.actions.shiftProjectionRight(self.data, index) 
+        if command == 'u':
+            self.actions.shiftProjectionUp(self.data, index) 
+        if command == 'd':
+            self.actions.shiftProjectionDown(self.data, index) 
+        if command == 'sl':
+            self.actions.shiftDataLeft(self.data) 
+        if command == 'sr':
+            self.actions.shiftDataRight(self.data) 
+        if command == 'su':
+            self.actions.shiftDataUp(self.data, self.thetas) 
+        if command == 'sd':
+            self.actions.shiftDataDown(self.data, self.thetas) 
+
+    def background_value_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.action.background_value(img)
+
+    def patch_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.action.patch(self.data, img, elem, proj, x_pos, y_pos, x_size, y_size)
+
+    def normalize_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.action.normalize(data, element)
+        
+    def cut_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.action.cut(self.data, img, x_pos, y_pos, x_size, y_size)
+        self.ySizeChanged.emit(y_size)
+
+    def get_params(self):
+        element = self.ViewControl.combo1.currentIndex()
+        projection = self.imgAndHistoWidget.sld.value()
+        x_pos = self.imgAndHistoWidget.view.x_pos
+        y_pos = self.imgAndHistoWidget.view.y_pos
+        x_size = self.ViewControl.xSize
+        y_size = self.ViewControl.ySize
+        img = self.data[element, projection, 
+            int(round(abs(y_pos)) - y_size/2): int(round(abs(y_pos)) + y_size/2),
+            int(round(x_pos) - x_size/2): int(round(x_pos) + x_size/2)]
+        return element, projection, x_pos, y_pos, x_size, y_size, img
+
+    def update_data(self, data):
+        self.dataChangedSig.emit(data)
+
+    # def update_y_size(self):
+    #     self.ySizeChanged.emit(self.control.ySize)
+
+
+
+
+

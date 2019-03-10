@@ -45,12 +45,15 @@
 
 
 from PyQt5 import QtCore
+from PyQt5.QtCore import pyqtSignal
+
 import pyqtgraph
 # import MyImageItem
 
 
 
 class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
+    shiftSig = pyqtSignal(str, name='sliderChangedSig')
 
     def __init__(self, parent):
         super(HistogramWidget, self).__init__()
@@ -110,13 +113,13 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         if len(keyspressed) ==1:
 
             if keyspressed[0]== QtCore.Qt.Key_Left:
-                self.parent.parent.parent.actions.shiftProjectionLeft()
+                self.shiftSig.emit('l')
             if keyspressed[0] == QtCore.Qt.Key_Right:
-                self.parent.parent.parent.actions.shiftProjectionRight()
+                self.shiftSig.emit('r')
             if keyspressed[0] == QtCore.Qt.Key_Up:
-                self.parent.parent.parent.actions.shiftProjectionUp()
+                self.shiftSig.emit('u')
             if keyspressed[0] == QtCore.Qt.Key_Down:
-                self.parent.parent.parent.actions.shiftProjectionDown()
+                self.shiftSig.emit('d')
             # if keyspressed[0] == QtCore.Qt.Key_N:
             #     if self.hotSpotNumb < self.data.shape[0]:
             #         self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = self.projView.iniY
@@ -133,10 +136,10 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
 
         if len(keyspressed) == 2:
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Left:
-                self.parent.parent.parent.actions.shiftDataLeft()
+                self.shiftSig.emit('sl')
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Right:
-                self.parent.parent.parent.actions.shiftDataRight()
+                self.shiftSig.emit('sr')
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Up:
-                self.parent.parent.parent.actions.shiftDataUp()
+                self.shiftSig.emit('su')
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Down:
-                self.parent.parent.parent.actions.shiftDataDown()
+                self.shiftSig.emit('sd')

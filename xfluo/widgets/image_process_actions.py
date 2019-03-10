@@ -44,131 +44,85 @@
 # #########################################################################
 
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
 import numpy as np
 from pylab import *
 import xfluo
 import matplotlib.pyplot as plt
 
 class ImageProcessActions(QtWidgets.QWidget):
+	dataSig = pyqtSignal(np.ndarray, name='dataSig')
+	# YsizeSig = pyqtSignal(int, name='YsizeSig')
+
 	def __init__(self, parent):
 		super(ImageProcessActions, self).__init__()
 		self.widget = parent
 		self.control = self.widget.ViewControl
 		self.view = self.widget.imgAndHistoWidget
 	
-	def shiftProjectionUp(self):
-		projection_index = self.view.sld.value()
-		self.widget.data[:,projection_index] = np.roll(self.widget.data[:,projection_index],-1,axis=1)
-		self.sync_data()
+	def shiftProjectionUp(self, data, index):
+		data[:,index] = np.roll(data[:, index], -1, axis=1)
+		self.dataSig.emit(data)
 
-	def shiftProjectionDown(self):
-		projection_index = self.view.sld.value() 
-		self.widget.data[:,projection_index] = np.roll(self.widget.data[:,projection_index],1,axis=1)
-		self.sync_data()
+	def shiftProjectionDown(self, data, index):
+		data[:,index] = np.roll(data[:,index],1,axis=1)
+		self.dataSig.emit(data)
 
-	def shiftProjectionLeft(self):
-		projection_index = self.view.sld.value() 
-		self.widget.data[:,projection_index] = np.roll(self.widget.data[:,projection_index],-1)
-		self.sync_data()
+	def shiftProjectionLeft(self, data, index):
+		data[:,index] = np.roll(data[:,index],-1)
+		self.dataSig.emit(data)
 
-	def shiftProjectionRight(self):
-		projection_index = self.view.sld.value() 
-		self.widget.data[:,projection_index] = np.roll(self.widget.data[:,projection_index],1)
-		self.sync_data()
+	def shiftProjectionRight(self, data, index):
+		data[:,index] = np.roll(data[:,index],1)
+		self.dataSig.emit(data)
 
-	def shiftDataUp(self):
-		self.thetas = self.widget.thetas
-		for i in range(len(self.thetas)):
-			self.widget.data[:,i] = np.roll(self.widget.data[:,i],-1,axis=1)
-		self.sync_data()
+	def shiftDataUp(self, data, thetas):
+		for i in range(len(thetas)):
+			data[:,i] = np.roll(data[:,i],-1,axis=1)
+		self.dataSig.emit(data)
 
-	def shiftDataDown(self):
-		self.thetas = self.widget.thetas
-		for i in range(len(self.thetas)):
-			self.widget.data[:,i] = np.roll(self.widget.data[:,i],1,axis=1)
-		self.sync_data()
+	def shiftDataDown(self, data, thetas):
+		for i in range(len(thetas)):
+			data[:,i] = np.roll(data[:,i],1,axis=1)
+		self.dataSig.emit(data)
 
-	def shiftDataLeft(self):
-		self.widget.data = np.roll(self.widget.data,-1)
-		self.sync_data()
+	def shiftDataLeft(self, data):
+		data = np.roll(data,-1)
+		self.dataSig.emit(data)
 
-	def shiftDataRight(self):
-		self.widget.data = np.roll(self.widget.data,1)
-		self.sync_data()
+	def shiftDataRight(self, data):
+		data = np.roll(data,1)
+		self.dataSig.emit(data)
 
-	def background_value(self):
-		self.element = self.control.combo1.currentIndex()
-		self.projection = self.view.sld.value()
-		self.img = self.widget.data[self.element, self.projection, 
-			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
-			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
-			int(round(self.view.view.x_pos) - self.control.xSize/2): 
-			int(round(self.view.view.x_pos) + self.control.xSize/2)]
-
-		self.bg = np.average(self.img)
-		print(self.bg)
-
-	def patch_hotspot(self):
-		self.element = self.control.combo1.currentIndex()
-		self.projection = self.view.sld.value()
-		self.img = self.widget.data[self.element, self.projection, 
-			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
-			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
-			int(round(self.view.view.x_pos) - self.control.xSize/2): 
-			int(round(self.view.view.x_pos) + self.control.xSize/2)]
-
-		patch = ones(self.img.shape, dtype = self.img.dtype) * self.bg
-
-		self.widget.data[self.element,self.projection,
-			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
-			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
-			int(round(self.view.view.x_pos) - self.control.xSize/2): 
-			int(round(self.view.view.x_pos) + self.control.xSize/2)] = patch
-		
-		self.view.view.projView.setImage(self.widget.data[self.element, self.projection,:,:])
-		self.sync_data()
-
-	def normalize(self):
-		self.element = self.control.combo1.currentIndex()
-		normData = self.widget.data[self.element, :, :, :]
+	def normalize(self, data, element):
+		normData = data[element, :, :, :]
 		for i in range((normData.shape[0])):
 			temp = normData[i, :, :]
 			tempMax = temp.max()
 			tempMin = temp.min()
 			temp = (temp - tempMin) / tempMax * 10000
-			self.widget.data[self.element, i, :, :] = temp	
+			self.data[self.element, i, :, :] = temp	
+		self.dataSig.emit(data)
 
-	def cut(self):
-		self.element = self.control.combo1.currentIndex()
-		self.projection = self.view.sld.value()
-		self.img = self.widget.data[self.element, self.projection, 
-			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
-			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
-			int(round(self.view.view.x_pos) - self.control.xSize/2): 
-			int(round(self.view.view.x_pos) + self.control.xSize/2)]
-		num_elements = self.control.combo1.count()
-		num_projections = self.widget.data.shape[1]
-		temp_data = zeros([num_elements,num_projections, self.img.shape[0], self.img.shape[1]])
+	def cut(self, data, img, x_pos, y_pos, x_size, y_size):
+		num_elements = data.shape[0]
+		num_projections = data.shape[1]
+		temp_data = zeros([num_elements,num_projections, img.shape[0], img.shape[1]])
 		
 		for i in range(num_projections):
 			for j in range(num_elements):
-				temp_data[j,i,:,:] = self.widget.data[j, i,
-					int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
-					int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
-					int(round(self.view.view.x_pos) - self.control.xSize/2): 
-					int(round(self.view.view.x_pos) + self.control.xSize/2)]
+				temp_data[j,i,:,:] = data[j, i,
+					int(round(abs(y_pos)) - y_size/2):int(round(abs(y_pos)) + y_size/2),
+					int(round(x_pos) - x_size/2):int(round(x_pos) + x_size/2)]
 		print("done")
 
-		self.widget.data = temp_data
-
-		self.view.view.projView.setImage(self.widget.data[self.element, self.projection,:,:])
+		self.data = temp_data
 
 		# self.x = xSize
 		# self.y = ySize
-		self.widget.sinogramWidget.sld.setRange(1, self.control.ySize)
-		self.widget.parent.sinogramWidget.sld.setValue(1)
-		self.widget.parent.sinogramWidget.lcd.display(1)
-		self.sync_data()
+
+		self.dataSig.emit(data)
+		self.YsizeSig.emit(y_size)
 
 	def gauss33(self):
 		result = self.gauss2D(shape=(3, 3), sigma=1.3)
@@ -280,7 +234,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		plt.imshow(noise_generator, cmap=gray(), interpolation='nearest')
 		show()
 
-	def sync_data(self):
+	def sync_data(self, data):
 		# self.widget.parent.fileTableWidget.data = self.widget.data
 		try: 
 			print("trying theta sync...")

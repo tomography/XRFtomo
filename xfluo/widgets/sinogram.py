@@ -114,6 +114,11 @@ class SinogramWidget(QtWidgets.QWidget):
         self.updateElementSlot(element)
         self.elementChangedSig.emit(element, projection)
 
+    def yChanged(self, ySize):
+        self.sld.setRange(1, ySize)
+        self.sld.setValue(1)
+        self.lcd.display(1)
+
     def updateElementSlot(self, element):
         self.sinogram(element)
         self.ViewControl.combo1.setCurrentIndex(element)

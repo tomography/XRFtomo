@@ -59,7 +59,6 @@ import os
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
-
 class XfluoGui(QtGui.QMainWindow):
     def __init__(self, app, params):
         super(QtGui.QMainWindow, self).__init__()
@@ -185,7 +184,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget = xfluo.SinogramWidget(self)
         self.reconstructionWidget = xfluo.ReconstructionWidget()
 
-        ###self.actions = xfluo.ImageProcessActions(self)
 
         self.prevTab = 0
         self.TAB_FILE = 0
@@ -304,14 +302,27 @@ class XfluoGui(QtGui.QMainWindow):
         self.tab_widget.insertTab(3, self.sinogramWidget, "Sinogram")
 
 
-
+        #slider change
         self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
         self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
-
+        #element dropdown change
         self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
         self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
         self.sinogramWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
 
+        # data update
+        self.imageProcessWidget.dataChangedSig.connect(self.update_data)
+
+        #data dimensions changed
+        self.imageProcessWidget.ySizeChanged.connect(self.sinogramWidget.yChanged)
+        # self.actions = xfluo.ImageProcessActions(self)
+
+    def update_data(self, data):
+        self.data = data 
+        self.imageProcessWidget.data = self.data
+        self.imageProcessWidget.imageChanged()
+        self.hotspotWidget.data = self.data
+        # self.hotspotWidget.imageChanged()
 
     def get_values_from_params(self):
 
@@ -322,7 +333,6 @@ class XfluoGui(QtGui.QMainWindow):
         # self.param_list[4] = self.params.element_tag
         # self.param_list[5] = self.params.sorted_angles
         # self.param_list[6] = self.params.selected_elements
-
         pass
         
     def closeEvent(self, event):
