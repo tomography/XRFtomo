@@ -56,7 +56,7 @@ import numpy as np
 class SinogramWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
 
-    def __init__(self, parent):
+    def __init__(self):
         super(SinogramWidget, self).__init__()
         self.initUI()
 
@@ -92,20 +92,23 @@ class SinogramWidget(QtWidgets.QWidget):
         '''
         self.data = data
         self.ViewControl.combo1.clear()
-        ## self.tab_widget.removeTab(2)
-        ## self.tab_widget.insertTab(2, self.createSinoWidget(), unicode("Sinogram"))
         for j in element_names:
             self.ViewControl.combo1.addItem(j)
 
         self.elementChanged()
-
         # self.sino.btn.clicked.connect(self.runCenterOfMass2)
         # self.sino.btn2.clicked.connect(self.sinoShift)
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
-        self.sld.valueChanged.connect(self.lcd.display)
-        self.sld.valueChanged.connect(self.sinogram)
+        self.sld.valueChanged.connect(self.imageSliderChanged)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+
+    def imageSliderChanged(self):
+        index = self.sld.value()
+        element = self.ViewControl.combo1.currentIndex()
+        self.lcd.display(index)
+        self.sld.setValue(index)
+        self.sinogram(element)
         self.show()
 
     def elementChanged(self):
@@ -113,6 +116,11 @@ class SinogramWidget(QtWidgets.QWidget):
         projection = 0
         self.updateElementSlot(element)
         self.elementChangedSig.emit(element, projection)
+
+    def imageChanged(self):
+        element = self.ViewControl.combo1.currentIndex()
+        self.sinogram(element)
+
 
     def yChanged(self, ySize):
         self.sld.setRange(1, ySize)
@@ -136,7 +144,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data: ndarray
               4d tomographic data [element, projections, y,x]
         '''
-        # self.file_name_update(self.sino)
         thickness = 10
         sinodata = self.data[element, :, :, :]
 
@@ -156,6 +163,8 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinoView.getShape()
         return
 
+
+    #this might get moved to sinogram_actions.py
     def sinoShift(self):
 
         for i in arange(self.projections):

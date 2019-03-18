@@ -76,12 +76,6 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.yDownBtn.setMaximumWidth(button4size)
         self.yDownBtn.setMinimumWidth(button4size)
         self.yDownBtn.clicked.connect(self.yDown)
-        # self.bgBtn = QtWidgets.QPushButton("Bg Value")
-        # self.bgBtn.setMaximumWidth(button2size)
-        # self.bgBtn.setMinimumWidth(button2size)
-        # self.delHotspotBtn = QtWidgets.QPushButton("patch HS")
-        # self.delHotspotBtn.setMaximumWidth(button2size)
-        # self.delHotspotBtn.setMinimumWidth(button2size)
         self.normalizeBtn = QtWidgets.QPushButton("Normalize")
         self.normalizeBtn.setMaximumWidth(button2size)
         self.normalizeBtn.setMinimumWidth(button2size)
@@ -137,9 +131,6 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb2.addWidget(self.yDownBtn)
         hb2.addWidget(self.ySizeTxt)
 
-        # hb9 = QtWidgets.QHBoxLayout()
-        # hb9.addWidget(self.bgBtn)
-        # hb9.addWidget(self.delHotspotBtn)
         hb10 = QtWidgets.QHBoxLayout()
         hb10.addWidget(self.normalizeBtn)
         hb10.addWidget(self.cutBtn)
@@ -157,9 +148,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb1.addLayout(hb1)
         vb1.addLayout(hb2)
 
-
         vb4 = QtWidgets.QVBoxLayout()
-        # vb4.addLayout(hb9)
         vb4.addLayout(hb10)
         vb4.addLayout(hb11)
         vb4.addLayout(hb12)

@@ -52,13 +52,9 @@ import matplotlib.pyplot as plt
 
 class ImageProcessActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
-	# YsizeSig = pyqtSignal(int, name='YsizeSig')
 
-	def __init__(self, parent):
+	def __init__(self):
 		super(ImageProcessActions, self).__init__()
-		self.widget = parent
-		self.control = self.widget.ViewControl
-		self.view = self.widget.imgAndHistoWidget
 	
 	def shiftProjectionUp(self, data, index):
 		data[:,index] = np.roll(data[:, index], -1, axis=1)
@@ -101,7 +97,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 			tempMax = temp.max()
 			tempMin = temp.min()
 			temp = (temp - tempMin) / tempMax * 10000
-			self.data[self.element, i, :, :] = temp	
+			data[element, i, :, :] = temp	
 		self.dataSig.emit(data)
 
 	def cut(self, data, img, x_pos, y_pos, x_size, y_size):
@@ -117,12 +113,8 @@ class ImageProcessActions(QtWidgets.QWidget):
 		print("done")
 
 		self.data = temp_data
-
-		# self.x = xSize
-		# self.y = ySize
-
-		self.dataSig.emit(data)
-		self.YsizeSig.emit(y_size)
+		self.dataSig.emit(self.data)
+		return self.data
 
 	def gauss33(self):
 		result = self.gauss2D(shape=(3, 3), sigma=1.3)
@@ -148,81 +140,41 @@ class ImageProcessActions(QtWidgets.QWidget):
 			h /= sumh
 		return h
 
-	def copy_background(self):
-		self.element = self.control.combo1.currentIndex()
-		self.projection = self.view.sld.value()
-		self.img = self.widget.data[self.element, self.projection, 
-			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
-			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
-			int(round(self.view.view.x_pos) - self.control.xSize/2): 
-			int(round(self.view.view.x_pos) + self.control.xSize/2)]
-		self.meanNoise = np.mean(self.img)
-		self.stdNoise = np.std(self.img)
-
+	def copy_background(self, img):
+		self.meanNoise = np.mean(img)
+		self.stdNoise = np.std(img)
 		return self.meanNoise, self.stdNoise
 
-	def set_background(self):
-		self.element = self.control.combo1.currentIndex()
-		self.projection = self.view.sld.value()
-		self.img = self.widget.data[self.element, self.projection, 
-			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
-			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
-			int(round(self.view.view.x_pos) - self.control.xSize/2): 
-			int(round(self.view.view.x_pos) + self.control.xSize/2)]
-
-		frame_boundary = self.img >=0
+	def paste_background(self, data, element, projection, x_pos, y_pos, x_size, y_size, img):
+		frame_boundary = img >=0
 		noise_generator = np.random.normal(self.meanNoise, self.stdNoise, 
-			(self.control.ySize, self.control.xSize))*frame_boundary
+			(y_size, x_size))*frame_boundary
 
-		self.widget.data[self.element,self.projection,
-			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
-			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
-			int(round(self.view.view.x_pos) - self.control.xSize/2): 
-			int(round(self.view.view.x_pos) + self.control.xSize/2)] = noise_generator
+		data[element,projection,
+			int(round(abs(y_pos)) - y_size/2):int(round(abs(y_pos)) + y_size/2),
+			int(round(x_pos) - x_size/2):int(round(x_pos) + x_size/2)] = noise_generator
 
-		self.view.view.projView.setImage(self.widget.data[self.element, self.projection, :, :])
-		self.sync_data()
+		self.dataSig.emit(data)
 
-	def exclude_projection(self):
-		self.element = self.control.combo1.currentIndex()
-		self.projection = self.view.sld.value()
-		self.thetas = self.widget.thetas
-		num_projections = len(self.thetas)
-		# self.widget.data = np.delete(self.widget.data,self.projection,1)
-		self.thetas = np.delete(self.thetas, self.projection, 0)
-
-		# self.files = np.delete(self.files,projection,0)               #remove one projection from every channel
-		if self.projection>0:
-			self.projection -= 1
+	def exclude_projection(self, projection, data,  thetas):
+		num_projections = len(thetas)
+		data = np.delete(data, projection, 1)
+		thetas = np.delete(thetas, projection, 0)
+		
+		if projection>0:
+			projection -= 1
 			num_projections -=1
 		else:
 			num_projections -= 1
 
-		self.view.sld.setRange(0, num_projections -1)
-		self.view.lcd.display(self.thetas[self.projection])
-		self.view.sld.setValue(self.projection)
-		self.view.view.projView.setImage(self.widget.data[self.element, self.projection, :, :])
-
-		self.widget.parent.hotspotWidget.imgAndHistoWidget.sld.setRange(0, num_projections -1)
-		self.widget.parent.hotspotWidget.imgAndHistoWidget.lcd.display(self.thetas[self.projection])
-		self.widget.parent.hotspotWidget.imgAndHistoWidget.sld.setValue(self.projection)
-		self.widget.parent.hotspotWidget.imgAndHistoWidget.view.projView.setImage(self.widget.data[self.element, self.projection, :, :])
-		
-		self.sync_data()
-			
-	def noise_analysis(self):
-		self.element = self.control.combo1.currentIndex()
-		self.projection = self.view.sld.value()
-		self.img = self.widget.data[self.element, self.projection, 
-			int(round(abs(self.view.view.y_pos)) - self.control.ySize/2):
-			int(round(abs(self.view.view.y_pos)) + self.control.ySize/2),
-			int(round(self.view.view.x_pos) - self.control.xSize/2): 
-			int(round(self.view.view.x_pos) + self.control.xSize/2)]
-
-		meanNoise, stdNoise = self.copy_background()
-		flattened = self.img.reshape(np.size(self.img))
+		self.dataSig.emit(data)
+		return projection, data, thetas
+					
+	def noise_analysis(self, img):
+		meanNoise, stdNoise = self.copy_background(img)
+		flattened = img.reshape(np.size(img))
 		noise_generator1 = np.random.normal(meanNoise, stdNoise, np.size(flattened)).clip(min=0)
-		noise_generator = np.random.normal(meanNoise, stdNoise, np.shape(self.img)).clip(min=0)
+		noise_generator = np.random.normal(meanNoise, stdNoise, np.shape(img)).clip(min=0)
 
 		figure()
 		plt.plot(np.array(np.ones(np.size(flattened), dtype=int)*meanNoise))
@@ -233,23 +185,3 @@ class ImageProcessActions(QtWidgets.QWidget):
 		figure()
 		plt.imshow(noise_generator, cmap=gray(), interpolation='nearest')
 		show()
-
-	def sync_data(self, data):
-		# self.widget.parent.fileTableWidget.data = self.widget.data
-		try: 
-			print("trying theta sync...")
-			self.widget.thetas  = self.thetas
-			self.widget.parent.hotspotWidget.thetas = self.thetas	
-			self.widget.imageProcessLCDValueChanged()
-			self.widget.parent.hotspotWidget.hotSpotLCDValueChanged()
-		except Exception as e:
-			print(e)
-
-		try:
-			self.widget.parent.hotspotWidget.data = self.widget.data
-			self.widget.parent.hotspotWidget.hotSpotProjChanged()
-			self.widget.parent.sinogramWidget.data = self.widget.data
-			self.widget.parent.sinogramWidget.sinogram()
-			self.widget.imgProcessProjChanged()
-		except Exception as e:
-			print(e)

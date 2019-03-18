@@ -55,37 +55,60 @@ class HotspotControlsWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
+        self.xSize = 10
+        self.ySize = 10
         button1size = 250
-        buton2size = 122.5
+        button2size = 122.5
         button3size = 73.3
         button4size = 57.5
-        self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.sld.setMaximumWidth(button1size)
-        self.sld.setMinimumWidth(button1size)
-        self.lcd = QtWidgets.QLCDNumber(self)
-        self.lcd.setMaximumWidth(button1size)
-        self.lcd.setMinimumWidth(button1size)
+
+        self.xUpBtn = QtWidgets.QPushButton("x: +")
+        self.xUpBtn.setMaximumWidth(button4size)
+        self.xUpBtn.setMinimumWidth(button4size)
+        self.xUpBtn.clicked.connect(self.xUp)
+        self.xDownBtn = QtWidgets.QPushButton("x: -")
+        self.xDownBtn.setMaximumWidth(button4size)
+        self.xDownBtn.setMinimumWidth(button4size)
+        self.xDownBtn.clicked.connect(self.xDown)
+        self.yUpBtn = QtWidgets.QPushButton("y: +")
+        self.yUpBtn.setMaximumWidth(button4size)
+        self.yUpBtn.setMinimumWidth(button4size)
+        self.yUpBtn.clicked.connect(self.yUp)
+        self.yDownBtn = QtWidgets.QPushButton("y: -")
+        self.yDownBtn.setMaximumWidth(button4size)
+        self.yDownBtn.setMinimumWidth(button4size)
+        self.yDownBtn.clicked.connect(self.yDown)
+        self.xSizeLbl = QtWidgets.QLabel("x Size")
+        self.xSizeLbl.setMaximumWidth(button4size)
+        self.xSizeLbl.setMinimumWidth(button4size)
+        self.ySizeLbl = QtWidgets.QLabel("y Size")
+        self.ySizeLbl.setMaximumWidth(button4size)
+        self.ySizeLbl.setMinimumWidth(button4size)
+        self.xSizeTxt = QtWidgets.QLineEdit(str(self.xSize))
+        self.xSizeTxt.setMaximumWidth(button4size)
+        self.xSizeTxt.setMinimumWidth(button4size)
+        self.ySizeTxt = QtWidgets.QLineEdit(str(self.ySize))
+        self.ySizeTxt.setMaximumWidth(button4size)
+        self.ySizeTxt.setMinimumWidth(button4size)
+
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setMaximumWidth(button1size)
         self.combo1.setMinimumWidth(button1size)
         self.combo2 = QtWidgets.QComboBox(self)
-        self.combo2.setMaximumWidth(button1size)
-        self.combo2.setMinimumWidth(button1size)
+        self.combo2.setMaximumWidth(button2size)
+        self.combo2.setMinimumWidth(button2size)
         self.combo3 = QtWidgets.QComboBox(self)
         self.combo3.setMaximumWidth(button1size)
         self.combo3.setMinimumWidth(button1size)
-        self.lbl1 = QtWidgets.QLabel("Set the size of the hotspot")
-        self.lbl1.setMaximumWidth(button1size)
-        self.lbl1.setMinimumWidth(button1size)
-        self.lbl3 = QtWidgets.QLabel("Set a group number of the hot spot")
-        self.lbl3.setMaximumWidth(button1size)
-        self.lbl3.setMinimumWidth(button1size)
+        self.lbl3 = QtWidgets.QLabel("hotspot group#")
+        self.lbl3.setMaximumWidth(button2size)
+        self.lbl3.setMinimumWidth(button2size)
 
         for i in range(5):
             self.combo2.addItem(str(i + 1))
-        self.btn = QtWidgets.QPushButton("Hotspots to a line")
-        self.btn.setMaximumWidth(button1size)
-        self.btn.setMinimumWidth(button1size)
+        self.btn1 = QtWidgets.QPushButton("Hotspots to a line")
+        self.btn1.setMaximumWidth(button1size)
+        self.btn1.setMinimumWidth(button1size)
         self.btn2 = QtWidgets.QPushButton("Hotspots to a sine curve")
         self.btn2.setMaximumWidth(button1size)
         self.btn2.setMinimumWidth(button1size)
@@ -96,20 +119,66 @@ class HotspotControlsWidget(QtWidgets.QWidget):
         self.btn4.setMaximumWidth(button1size)
         self.btn4.setMinimumWidth(button1size)
 
+        hb1 = QtWidgets.QHBoxLayout()
+        hb1.addWidget(self.xSizeLbl)
+        hb1.addWidget(self.xUpBtn)
+        hb1.addWidget(self.xDownBtn)
+        hb1.addWidget(self.xSizeTxt)
+        hb2 = QtWidgets.QHBoxLayout()
+        hb2.addWidget(self.ySizeLbl)
+        hb2.addWidget(self.yUpBtn)
+        hb2.addWidget(self.yDownBtn)
+        hb2.addWidget(self.ySizeTxt)
+
+        hb3 = QtWidgets.QHBoxLayout()
+        hb3.addWidget(self.lbl3)
+        hb3.addWidget(self.combo2)
+
+        vb1 = QtWidgets.QVBoxLayout()
+        vb1.addLayout(hb1)
+        vb1.addLayout(hb2)
+
+        vb2 = QtWidgets.QVBoxLayout()
+        vb2.addLayout(hb3)
+        vb2.addWidget(self.btn1)
+        vb2.addWidget(self.btn2)
+        vb2.addWidget(self.btn3)
+        vb2.addWidget(self.btn4)
+
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)
-        vb.addWidget(self.lbl1)
-        vb.addWidget(self.lcd)
-        vb.addWidget(self.sld)
         vb.addWidget(self.combo3)
+        vb.addLayout(vb1)
+        vb.addLayout(vb2)
 
-        hb1 = QtWidgets.QVBoxLayout()
-        hb1.addWidget(self.lbl3, 0)
-        hb1.addWidget(self.combo2)
-
-        vb.addLayout(hb1)
-        vb.addWidget(self.btn)
-        vb.addWidget(self.btn2)
-        vb.addWidget(self.btn3)
-        vb.addWidget(self.btn4)
         self.setLayout(vb)
+
+    def changeXSize(self):
+        self.xSize = int(self.xSizeTxt.text())
+
+    def changeYSize(self):
+        self.ySize = int(self.ySizeTxt.text())
+
+    def xUp(self):
+        self.changeXSize()
+        self.changeYSize()
+        self.xSize += 2
+        self.xSizeTxt.setText(str(self.xSize))
+
+    def xDown(self):
+        self.changeXSize()
+        self.changeYSize()
+        self.xSize -= 2
+        self.xSizeTxt.setText(str(self.xSize))
+
+    def yUp(self):
+        self.changeXSize()
+        self.changeYSize()
+        self.ySize += 2
+        self.ySizeTxt.setText(str(self.ySize))
+
+    def yDown(self):
+        self.changeXSize()
+        self.changeYSize()
+        self.ySize -= 2
+        self.ySizeTxt.setText(str(self.ySize))

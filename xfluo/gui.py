@@ -179,11 +179,10 @@ class XfluoGui(QtGui.QMainWindow):
         # if theta_auto_completes is None:
         #     theta_auto_completes = []
         self.fileTableWidget = xfluo.FileTableWidget(self)
-        self.imageProcessWidget = xfluo.ImageProcessWidget(self)
-        self.hotspotWidget = xfluo.HotspotWidget(self)
-        self.sinogramWidget = xfluo.SinogramWidget(self)
+        self.imageProcessWidget = xfluo.ImageProcessWidget()
+        self.hotspotWidget = xfluo.HotspotWidget()
+        self.sinogramWidget = xfluo.SinogramWidget()
         self.reconstructionWidget = xfluo.ReconstructionWidget()
-
 
         self.prevTab = 0
         self.TAB_FILE = 0
@@ -286,12 +285,10 @@ class XfluoGui(QtGui.QMainWindow):
         #for fidx in range(len(file_array)):
 
     def updateImages(self):
-        data, elements, thetas = self.fileTableWidget.onSaveDataInMemory()
-        self.imageProcessWidget.showImgProcess(data, elements, thetas)
-
-        self.hotspotWidget.showHotSpot(data, elements, thetas)
+        data, elements, thetas, fnames = self.fileTableWidget.onSaveDataInMemory()
+        self.imageProcessWidget.showImgProcess(data, elements, thetas, fnames)
+        self.hotspotWidget.showHotSpot(data, elements, thetas, fnames)
         self.sinogramWidget.showSinogram(data, elements, thetas)
-        # self.sinogramWidget.sinogram()
 
         self.tab_widget.removeTab(1)
         self.tab_widget.removeTab(2)
@@ -317,11 +314,22 @@ class XfluoGui(QtGui.QMainWindow):
         self.imageProcessWidget.ySizeChanged.connect(self.sinogramWidget.yChanged)
         # self.actions = xfluo.ImageProcessActions(self)
 
+        #slider range change
+        self.imageProcessWidget.sldRangeChanged.connect(self.hotspotWidget.updateSldRange)
+        self.hotspotWidget.sldRangeChanged.connect(self.imageProcessWidget.updateSldRange)
+
+        #filenames changed
+        self.imageProcessWidget.fnamesChanged.connect(self.hotspotWidget.updateFileDisplay)
+
     def update_data(self, data):
         self.data = data 
         self.imageProcessWidget.data = self.data
         self.imageProcessWidget.imageChanged()
         self.hotspotWidget.data = self.data
+        self.hotspotWidget.imageChanged()
+        self.sinogramWidget.data = self.data
+        self.sinogramWidget.imageChanged()
+        
         # self.hotspotWidget.imageChanged()
 
     def get_values_from_params(self):

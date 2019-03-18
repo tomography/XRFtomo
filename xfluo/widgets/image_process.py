@@ -56,10 +56,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
     sliderChangedSig = pyqtSignal(int, name='sliderChangedSig')
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
     # shiftSig = pyqtSignal(str, name='sliderChangedSig')
-    dataChangedSig = pyqtSignal(np.ndarray, name='elementCahngedSig')
+    dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
     ySizeChanged = pyqtSignal(int, name='ySizeChanged')
+    sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
+    fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
 
-    def __init__(self, parent):
+    def __init__(self):
         super(ImageProcessWidget, self).__init__()
         self.thetas = []
         self.initUI()
@@ -72,7 +74,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         mainHBox.addWidget(self.imgAndHistoWidget, 10)
         self.setLayout(mainHBox)
 
-    def showImgProcess(self, data, element_names, thetas):
+    def showImgProcess(self, data, element_names, thetas, fnames):
+        self.fnames = fnames
         self.data = data
         self.thetas = thetas
         self.ViewControl.combo1.clear()
@@ -83,8 +86,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         for k in arange(num_projections):
             self.ViewControl.combo2.addItem(str(k+1))
 
-        self.actions = actions.ImageProcessActions(self)
-
+        self.actions = actions.ImageProcessActions()
         self.elementChanged()
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
@@ -96,21 +98,22 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.normalizeBtn.clicked.connect(self.normalize_params)
         self.ViewControl.cutBtn.clicked.connect(self.cut_params)
         self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
-        self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss55)
-        self.ViewControl.captureBackground.clicked.connect(self.actions.copy_background)
-        self.ViewControl.setBackground.clicked.connect(self.actions.set_background)
-        self.ViewControl.deleteProjection.clicked.connect(self.actions.exclude_projection)
-        self.ViewControl.testButton.clicked.connect(self.actions.noise_analysis)
+        self.ViewControl.gaussian55Btn.clicked.connect(self.actions.gauss55)
+        self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
+        self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
+        self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
+        self.ViewControl.testButton.clicked.connect(self.analysis_params)
 
         self.imgAndHistoWidget.view.shiftSig.connect(self.shift_process)
-        self.actions.dataSig.connect(self.update_data)
-        # self.actions.YsizeSig.connect(self.update_y_size)
+        self.actions.dataSig.connect(self.send_data)
         self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
-        self.testtest = pyqtgraph.ImageView()
+        self.imgAndHistoWidget.file_name_title.setText(str(fnames[0]))
 
     def imageSliderChanged(self):
         index = self.imgAndHistoWidget.sld.value()
+        self.updateFileDisplay(self.fnames, index)
+        self.fnamesChanged.emit(self.fnames,index)
         self.updateSliderSlot(index)
         self.sliderChangedSig.emit(index)
 
@@ -126,12 +129,15 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.lcd.display(angle)
         self.imgAndHistoWidget.sld.setValue(index)
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
-    #     # self.file_name_update(self.imgProcess)
 
     def updateElementSlot(self, element, projection):
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :])
         self.ViewControl.combo1.setCurrentIndex(element)
         self.ViewControl.combo2.setCurrentIndex(projection)
+
+    def updateFileDisplay(self, fnames, index):
+        self.fnames = fnames
+        self.imgAndHistoWidget.file_name_title.setText(str(self.fnames[index]))
 
     def imgProcessBoxSizeChange(self):
         xSize = self.ViewControl.xSize
@@ -169,20 +175,62 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def background_value_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.action.background_value(img)
+        self.actions.background_value(img)
 
-    def patch_params(self):
+    def patch_params(self): 
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.action.patch(self.data, img, elem, proj, x_pos, y_pos, x_size, y_size)
+        self.actions.patch(self.data, img, elem, proj, x_pos, y_pos, x_size, y_size)
 
     def normalize_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.action.normalize(data, element)
+        data = self.data
+        self.actions.normalize(data, element)
         
     def cut_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.action.cut(self.data, img, x_pos, y_pos, x_size, y_size)
+        self.actions.cut(self.data, img, x_pos, y_pos, x_size, y_size)
         self.ySizeChanged.emit(y_size)
+
+    def copyBG_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.actions.copy_background(img)
+
+    def pasteBG_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img)
+
+    def analysis_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.actions.noise_analysis(img)
+
+    def exclude_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        thetas = self.thetas
+        index = projection        
+        self.fnames.pop(index)    
+        num_files = len(self.fnames)
+
+        if index>0:
+            index -= 1
+            num_files -=1
+        else:
+            num_files -= 1
+
+        projection, self.data, self.thetas = self.actions.exclude_projection(projection, data, thetas)
+        self.updateFileDisplay(self.fnames, index)
+        self.fnamesChanged.emit(self.fnames,index)
+        self.updateSldRange(projection, self.data,  self.thetas)
+        self.sldRangeChanged.emit(projection, self.data,  self.thetas)
+        self.imageSliderChanged()
+        
+    def updateSldRange(self, projection, data, thetas):
+        element = self.ViewControl.combo1.currentIndex()
+        self.imgAndHistoWidget.sld.setRange(0, len(thetas) -1)
+        self.imgAndHistoWidget.lcd.display(thetas[projection])
+        self.imgAndHistoWidget.sld.setValue(projection)
+        self.imgAndHistoWidget.view.projView.setImage(data[element, projection])
 
     def get_params(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -196,13 +244,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
             int(round(x_pos) - x_size/2): int(round(x_pos) + x_size/2)]
         return element, projection, x_pos, y_pos, x_size, y_size, img
 
-    def update_data(self, data):
+    def send_data(self, data):
+        '''
+        This sends a signal one level up indicating that the data array has changed
+        and to update adjacent tabs with new data
+        '''
         self.dataChangedSig.emit(data)
-
-    # def update_y_size(self):
-    #     self.ySizeChanged.emit(self.control.ySize)
-
-
 
 
 
