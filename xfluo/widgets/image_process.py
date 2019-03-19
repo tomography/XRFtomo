@@ -43,16 +43,26 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
 import xfluo
 from pylab import *
 import pyqtgraph
+import xfluo.widgets.image_process_actions as actions
+import numpy as np
 
 class ImageProcessWidget(QtWidgets.QWidget):
-    def __init__(self, parent):
+
+    sliderChangedSig = pyqtSignal(int, name='sliderChangedSig')
+    elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
+    # shiftSig = pyqtSignal(str, name='sliderChangedSig')
+    dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
+    ySizeChanged = pyqtSignal(int, name='ySizeChanged')
+    sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
+    fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
+
+    def __init__(self):
         super(ImageProcessWidget, self).__init__()
-        self.parent = parent
         self.thetas = []
         self.initUI()
 
@@ -64,7 +74,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         mainHBox.addWidget(self.imgAndHistoWidget, 10)
         self.setLayout(mainHBox)
 
-    def showImgProcess(self, data, element_names, thetas):
+    def showImgProcess(self, data, element_names, thetas, fnames):
+        self.fnames = fnames
         self.data = data
         self.thetas = thetas
         self.ViewControl.combo1.clear()
@@ -75,63 +86,58 @@ class ImageProcessWidget(QtWidgets.QWidget):
         for k in arange(num_projections):
             self.ViewControl.combo2.addItem(str(k+1))
 
-        self.imgProcessProjShow()
-        self.ViewControl.combo1.currentIndexChanged.connect(self.imgProcessProjShow)
-        self.ViewControl.combo2.currentIndexChanged.connect(self.imgProcessProjShow)
+        self.actions = actions.ImageProcessActions()
+        self.elementChanged()
+        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+        self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.xUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.xDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.yUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.yDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.combo2.setVisible(False)
-        self.ViewControl.bgBtn.clicked.connect(self.parent.actions.background_value)
-        self.ViewControl.delHotspotBtn.clicked.connect(self.parent.actions.patch_hotspot)
-        self.ViewControl.normalizeBtn.clicked.connect(self.parent.actions.normalize)
-        self.ViewControl.cutBtn.clicked.connect(self.parent.actions.cut)
-        # self.ViewControl.cutBtn.clicked.connect(self.updateReconBounds)
-        self.ViewControl.gaussian33Btn.clicked.connect(self.parent.actions.gauss33)
-        self.ViewControl.gaussian33Btn.clicked.connect(self.parent.actions.gauss55)
-        self.ViewControl.captureBackground.clicked.connect(self.parent.actions.copy_background)
-        self.ViewControl.setBackground.clicked.connect(self.parent.actions.set_background)
-        self.ViewControl.deleteProjection.clicked.connect(self.parent.actions.exclude_projection)
-        self.ViewControl.testButton.clicked.connect(self.parent.actions.noise_analysis)
-        self.ViewControl.shift_img_up.clicked.connect(self.parent.actions.shiftProjectionUp)
-        self.ViewControl.shift_img_down.clicked.connect(self.parent.actions.shiftProjectionDown)
-        self.ViewControl.shift_img_left.clicked.connect(self.parent.actions.shiftProjectionLeft)
-        self.ViewControl.shift_img_right.clicked.connect(self.parent.actions.shiftProjectionRight)
-        self.ViewControl.shift_all_up.clicked.connect(self.parent.actions.shiftDataUp)
-        self.ViewControl.shift_all_down.clicked.connect(self.parent.actions.shiftDataDown)
-        self.ViewControl.shift_all_left.clicked.connect(self.parent.actions.shiftDataLeft)
-        self.ViewControl.shift_all_right.clicked.connect(self.parent.actions.shiftDataRight)
+        self.ViewControl.normalizeBtn.clicked.connect(self.normalize_params)
+        self.ViewControl.cutBtn.clicked.connect(self.cut_params)
+        self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
+        self.ViewControl.gaussian55Btn.clicked.connect(self.actions.gauss55)
+        self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
+        self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
+        self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
+        self.ViewControl.testButton.clicked.connect(self.analysis_params)
 
+        self.imgAndHistoWidget.view.shiftSig.connect(self.shift_process)
+        self.actions.dataSig.connect(self.send_data)
         self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
-        self.imgAndHistoWidget.sld.valueChanged.connect(self.imageProcessLCDValueChanged)
-        self.imgAndHistoWidget.sld.valueChanged.connect(self.imgProcessProjChanged)
-        self.testtest = pyqtgraph.ImageView()
+        self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
+        self.imgAndHistoWidget.file_name_title.setText(str(fnames[0]))
 
-    def imgProcessProjShow(self):
+    def imageSliderChanged(self):
+        index = self.imgAndHistoWidget.sld.value()
+        self.updateFileDisplay(self.fnames, index)
+        self.fnamesChanged.emit(self.fnames,index)
+        self.updateSliderSlot(index)
+        self.sliderChangedSig.emit(index)
+
+    def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
         projection = self.ViewControl.combo2.currentIndex()
-        self.imgProcessImg = self.data[element, projection, :, :]
-        self.imgAndHistoWidget.view.projView.setImage(self.imgProcessImg)
-        self.parent.hotspotWidget.hotSpotImg = self.data[element, projection, :, :]
-        self.parent.hotspotWidget.imgAndHistoWidget.view.projView.setImage(self.parent.hotspotWidget.hotSpotImg)
-        self.parent.hotspotWidget.ViewControl.combo1.setCurrentIndex(element)
-        self.parent.hotspotWidget.ViewControl.combo2.setCurrentIndex(projection)
-        self.parent.sinogramWidget.sinoControl.combo1.setCurrentIndex(element)
+        self.updateElementSlot(element, projection)
+        self.elementChangedSig.emit(element, projection)
 
-    def imageProcessLCDValueChanged(self):
-
-        index = self.imgAndHistoWidget.sld.value()
+    def updateSliderSlot(self, index):
         angle = round(self.thetas[index])
+        element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.lcd.display(angle)
         self.imgAndHistoWidget.sld.setValue(index)
-        self.parent.hotspotWidget.imgAndHistoWidget.sld.setValue(index)
-        self.parent.hotspotWidget.imgAndHistoWidget.lcd.display(angle)
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
 
-    def imgProcessProjChanged(self):
-        element = self.ViewControl.combo1.currentIndex()
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, self.imgAndHistoWidget.sld.value(), :, :])
-        # self.file_name_update(self.imgProcess)
+    def updateElementSlot(self, element, projection):
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :])
+        self.ViewControl.combo1.setCurrentIndex(element)
+        self.ViewControl.combo2.setCurrentIndex(projection)
+
+    def updateFileDisplay(self, fnames, index):
+        self.fnames = fnames
+        self.imgAndHistoWidget.file_name_title.setText(str(self.fnames[index]))
 
     def imgProcessBoxSizeChange(self):
         xSize = self.ViewControl.xSize
@@ -142,3 +148,108 @@ class ImageProcessWidget(QtWidgets.QWidget):
         x_pos = int(round(self.imgAndHistoWidget.view.x_pos))
         y_pos = int(round(self.imgAndHistoWidget.view.y_pos))
         self.imgAndHistoWidget.view.ROI.setPos([x_pos-xSize/2, y_pos-ySize/2])
+
+    def imageChanged(self):
+        index = self.imgAndHistoWidget.sld.value()
+        element = self.ViewControl.combo1.currentIndex()
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
+
+    def shift_process(self, command):
+        index = self.imgAndHistoWidget.sld.value()
+        if command == 'l':
+            self.actions.shiftProjectionLeft(self.data, index) 
+        if command == 'r':
+            self.actions.shiftProjectionRight(self.data, index) 
+        if command == 'u':
+            self.actions.shiftProjectionUp(self.data, index) 
+        if command == 'd':
+            self.actions.shiftProjectionDown(self.data, index) 
+        if command == 'sl':
+            self.actions.shiftDataLeft(self.data) 
+        if command == 'sr':
+            self.actions.shiftDataRight(self.data) 
+        if command == 'su':
+            self.actions.shiftDataUp(self.data, self.thetas) 
+        if command == 'sd':
+            self.actions.shiftDataDown(self.data, self.thetas) 
+
+    def background_value_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.actions.background_value(img)
+
+    def patch_params(self): 
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.actions.patch(self.data, img, elem, proj, x_pos, y_pos, x_size, y_size)
+
+    def normalize_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        self.actions.normalize(data, element)
+        
+    def cut_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.actions.cut(self.data, img, x_pos, y_pos, x_size, y_size)
+        self.ySizeChanged.emit(y_size)
+
+    def copyBG_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.actions.copy_background(img)
+
+    def pasteBG_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img)
+
+    def analysis_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        self.actions.noise_analysis(img)
+
+    def exclude_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        thetas = self.thetas
+        index = projection        
+        self.fnames.pop(index)    
+        num_files = len(self.fnames)
+
+        if index>0:
+            index -= 1
+            num_files -=1
+        else:
+            num_files -= 1
+
+        projection, self.data, self.thetas = self.actions.exclude_projection(projection, data, thetas)
+        self.updateFileDisplay(self.fnames, index)
+        self.fnamesChanged.emit(self.fnames,index)
+        self.updateSldRange(projection, self.data,  self.thetas)
+        self.sldRangeChanged.emit(projection, self.data,  self.thetas)
+        self.imageSliderChanged()
+        
+    def updateSldRange(self, projection, data, thetas):
+        element = self.ViewControl.combo1.currentIndex()
+        self.imgAndHistoWidget.sld.setRange(0, len(thetas) -1)
+        self.imgAndHistoWidget.lcd.display(thetas[projection])
+        self.imgAndHistoWidget.sld.setValue(projection)
+        self.imgAndHistoWidget.view.projView.setImage(data[element, projection])
+
+    def get_params(self):
+        element = self.ViewControl.combo1.currentIndex()
+        projection = self.imgAndHistoWidget.sld.value()
+        x_pos = self.imgAndHistoWidget.view.x_pos
+        y_pos = self.imgAndHistoWidget.view.y_pos
+        x_size = self.ViewControl.xSize
+        y_size = self.ViewControl.ySize
+        img = self.data[element, projection, 
+            int(round(abs(y_pos)) - y_size/2): int(round(abs(y_pos)) + y_size/2),
+            int(round(x_pos) - x_size/2): int(round(x_pos) + x_size/2)]
+        return element, projection, x_pos, y_pos, x_size, y_size, img
+
+    def send_data(self, data):
+        '''
+        This sends a signal one level up indicating that the data array has changed
+        and to update adjacent tabs with new data
+        '''
+        self.dataChangedSig.emit(data)
+
+
+

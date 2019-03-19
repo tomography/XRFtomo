@@ -102,6 +102,5 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
             self.sld.setValue(self.sld.value() + 1)
 
     def updatePanel(self):
-        self.lbl2.setText(str(self.view.projView.xSize))
-        self.lbl4.setText(str(self.view.projView.ySize))
-
+        self.lbl2.setText(str(self.view.x_pos))
+        self.lbl4.setText(str(self.view.y_pos))

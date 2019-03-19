@@ -45,6 +45,8 @@
 
 import xfluo
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import pyqtSignal
+
 # from widgets.sinogram_view import SinogramView
 # from widgets.sinogram_controls_widget import SinogramControlsWidget
 import pyqtgraph
@@ -52,13 +54,14 @@ from pylab import *
 import numpy as np
 
 class SinogramWidget(QtWidgets.QWidget):
-    def __init__(self, parent):
+    elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
+
+    def __init__(self):
         super(SinogramWidget, self).__init__()
-        self.parent = parent
         self.initUI()
 
     def initUI(self):
-        self.sinoControl = xfluo.SinogramControlsWidget()
+        self.ViewControl = xfluo.SinogramControlsWidget()
         self.sinoView = xfluo.SinogramView()
         self.lbl = QtWidgets.QLabel('Row y')
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
@@ -77,7 +80,7 @@ class SinogramWidget(QtWidgets.QWidget):
         vb1.addLayout(hb0)
 
         sinoBox = QtWidgets.QHBoxLayout()
-        sinoBox.addWidget(self.sinoControl)
+        sinoBox.addWidget(self.ViewControl)
         sinoBox.addLayout(vb1)
         sinoBox.addWidget(self.hist, 10)
 
@@ -88,22 +91,47 @@ class SinogramWidget(QtWidgets.QWidget):
         loads sinogram tabS
         '''
         self.data = data
-        self.sinoControl.combo1.clear()
-        ## self.tab_widget.removeTab(2)
-        ## self.tab_widget.insertTab(2, self.createSinoWidget(), unicode("Sinogram"))
+        self.ViewControl.combo1.clear()
         for j in element_names:
-            self.sinoControl.combo1.addItem(j)
+            self.ViewControl.combo1.addItem(j)
 
+        self.elementChanged()
         # self.sino.btn.clicked.connect(self.runCenterOfMass2)
         # self.sino.btn2.clicked.connect(self.sinoShift)
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
-        self.sld.valueChanged.connect(self.lcd.display)
-        self.sld.valueChanged.connect(self.sinogram)
-        self.sinoControl.combo1.currentIndexChanged.connect(self.sinogram)
+        self.sld.valueChanged.connect(self.imageSliderChanged)
+        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+
+    def imageSliderChanged(self):
+        index = self.sld.value()
+        element = self.ViewControl.combo1.currentIndex()
+        self.lcd.display(index)
+        self.sld.setValue(index)
+        self.sinogram(element)
         self.show()
 
-    def sinogram(self):
+    def elementChanged(self):
+        element = self.ViewControl.combo1.currentIndex()
+        projection = 0
+        self.updateElementSlot(element)
+        self.elementChangedSig.emit(element, projection)
+
+    def imageChanged(self):
+        element = self.ViewControl.combo1.currentIndex()
+        self.sinogram(element)
+
+
+    def yChanged(self, ySize):
+        self.sld.setRange(1, ySize)
+        self.sld.setValue(1)
+        self.lcd.display(1)
+
+    def updateElementSlot(self, element):
+        self.sinogram(element)
+        self.ViewControl.combo1.setCurrentIndex(element)
+
+    def sinogram(self, element):
         '''
         load variables and image for sinogram window
 
@@ -116,12 +144,9 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data: ndarray
               4d tomographic data [element, projections, y,x]
         '''
-        # self.file_name_update(self.sino)
         thickness = 10
-        element = self.sinoControl.combo1.currentIndex()
         sinodata = self.data[element, :, :, :]
-        self.parent.imageProcessWidget.ViewControl.combo1.setCurrentIndex(element)
-        self.parent.hotspotWidget.ViewControl.combo1.setCurrentIndex(element)
+
         self.sinogramData = zeros([sinodata.shape[0] * thickness, sinodata.shape[2]], dtype=float32)
 
         num_projections = self.data.shape[1]
@@ -138,7 +163,11 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinoView.getShape()
         return
 
+
+    #this might get moved to sinogram_actions.py
     def sinoShift(self):
 
         for i in arange(self.projections):
             self.data[:,i,:,:] = np.roll(self.data[:,i,:,:], self.view.regShift[i])
+
+
