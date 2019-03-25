@@ -59,6 +59,8 @@ from xfluo.widgets.file_loader import *
 from xfluo.widgets.histogram import *
 from xfluo.widgets.hotspot import *
 from xfluo.widgets.hotspot_controls import *
+from xfluo.widgets.hotspot_actions import *
+
 from xfluo.widgets.image_and_histogram import *
 from xfluo.widgets.image_process import *
 from xfluo.widgets.image_process_controls import *

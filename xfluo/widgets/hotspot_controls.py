@@ -57,39 +57,27 @@ class HotspotControlsWidget(QtWidgets.QWidget):
     def initUI(self):
         self.xSize = 10
         self.ySize = 10
+        self.boxSize = 10
         button1size = 250
         button2size = 122.5
         button3size = 73.3
         button4size = 57.5
 
-        self.xUpBtn = QtWidgets.QPushButton("x: +")
-        self.xUpBtn.setMaximumWidth(button4size)
-        self.xUpBtn.setMinimumWidth(button4size)
-        self.xUpBtn.clicked.connect(self.xUp)
-        self.xDownBtn = QtWidgets.QPushButton("x: -")
-        self.xDownBtn.setMaximumWidth(button4size)
-        self.xDownBtn.setMinimumWidth(button4size)
-        self.xDownBtn.clicked.connect(self.xDown)
-        self.yUpBtn = QtWidgets.QPushButton("y: +")
-        self.yUpBtn.setMaximumWidth(button4size)
-        self.yUpBtn.setMinimumWidth(button4size)
-        self.yUpBtn.clicked.connect(self.yUp)
-        self.yDownBtn = QtWidgets.QPushButton("y: -")
-        self.yDownBtn.setMaximumWidth(button4size)
-        self.yDownBtn.setMinimumWidth(button4size)
-        self.yDownBtn.clicked.connect(self.yDown)
-        self.xSizeLbl = QtWidgets.QLabel("x Size")
-        self.xSizeLbl.setMaximumWidth(button4size)
-        self.xSizeLbl.setMinimumWidth(button4size)
-        self.ySizeLbl = QtWidgets.QLabel("y Size")
-        self.ySizeLbl.setMaximumWidth(button4size)
-        self.ySizeLbl.setMinimumWidth(button4size)
-        self.xSizeTxt = QtWidgets.QLineEdit(str(self.xSize))
-        self.xSizeTxt.setMaximumWidth(button4size)
-        self.xSizeTxt.setMinimumWidth(button4size)
-        self.ySizeTxt = QtWidgets.QLineEdit(str(self.ySize))
-        self.ySizeTxt.setMaximumWidth(button4size)
-        self.ySizeTxt.setMinimumWidth(button4size)
+        self.boxUpBtn = QtWidgets.QPushButton("+")
+        self.boxUpBtn.setMaximumWidth(button4size)
+        self.boxUpBtn.setMinimumWidth(button4size)
+        self.boxUpBtn.clicked.connect(self.boxUp)
+        self.boxDownBtn = QtWidgets.QPushButton("-")
+        self.boxDownBtn.setMaximumWidth(button4size)
+        self.boxDownBtn.setMinimumWidth(button4size)
+        self.boxDownBtn.clicked.connect(self.boxDown)
+        self.boxDownBtn.clicked.connect(self.boxDown)
+        self.boxSizeLbl = QtWidgets.QLabel("box Size")
+        self.boxSizeLbl.setMaximumWidth(button4size)
+        self.boxSizeLbl.setMinimumWidth(button4size)
+        self.boxSizeTxt = QtWidgets.QLineEdit(str(self.xSize))
+        self.boxSizeTxt.setMaximumWidth(button4size)
+        self.boxSizeTxt.setMinimumWidth(button4size)
 
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setMaximumWidth(button1size)
@@ -120,15 +108,10 @@ class HotspotControlsWidget(QtWidgets.QWidget):
         self.btn4.setMinimumWidth(button1size)
 
         hb1 = QtWidgets.QHBoxLayout()
-        hb1.addWidget(self.xSizeLbl)
-        hb1.addWidget(self.xUpBtn)
-        hb1.addWidget(self.xDownBtn)
-        hb1.addWidget(self.xSizeTxt)
-        hb2 = QtWidgets.QHBoxLayout()
-        hb2.addWidget(self.ySizeLbl)
-        hb2.addWidget(self.yUpBtn)
-        hb2.addWidget(self.yDownBtn)
-        hb2.addWidget(self.ySizeTxt)
+        hb1.addWidget(self.boxSizeLbl)
+        hb1.addWidget(self.boxUpBtn)
+        hb1.addWidget(self.boxDownBtn)
+        hb1.addWidget(self.boxSizeTxt)
 
         hb3 = QtWidgets.QHBoxLayout()
         hb3.addWidget(self.lbl3)
@@ -136,7 +119,6 @@ class HotspotControlsWidget(QtWidgets.QWidget):
 
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addLayout(hb1)
-        vb1.addLayout(hb2)
 
         vb2 = QtWidgets.QVBoxLayout()
         vb2.addLayout(hb3)
@@ -153,32 +135,20 @@ class HotspotControlsWidget(QtWidgets.QWidget):
 
         self.setLayout(vb)
 
-    def changeXSize(self):
-        self.xSize = int(self.xSizeTxt.text())
+    def changeBoXSize(self):
+        self.boxSize = int(self.boxSizeTxt.text())
 
-    def changeYSize(self):
-        self.ySize = int(self.ySizeTxt.text())
-
-    def xUp(self):
-        self.changeXSize()
-        self.changeYSize()
+    def boxUp(self):
+        self.changeBoXSize()
         self.xSize += 2
-        self.xSizeTxt.setText(str(self.xSize))
-
-    def xDown(self):
-        self.changeXSize()
-        self.changeYSize()
-        self.xSize -= 2
-        self.xSizeTxt.setText(str(self.xSize))
-
-    def yUp(self):
-        self.changeXSize()
-        self.changeYSize()
         self.ySize += 2
-        self.ySizeTxt.setText(str(self.ySize))
+        self.boxSize +=2
+        self.boxSizeTxt.setText(str(self.boxSize))
 
-    def yDown(self):
-        self.changeXSize()
-        self.changeYSize()
+    def boxDown(self):
+        self.changeBoXSize()
+        self.xSize -= 2
         self.ySize -= 2
-        self.ySizeTxt.setText(str(self.ySize))
+        self.boxSize -=2
+        self.boxSizeTxt.setText(str(self.boxSize))
+

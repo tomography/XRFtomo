@@ -54,6 +54,7 @@ import pyqtgraph
 
 class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
     shiftSig = pyqtSignal(str, name='sliderChangedSig')
+    keyPressSig = pyqtSignal(str, name= 'keyPressSig')
 
     def __init__(self, parent):
         super(HistogramWidget, self).__init__()
@@ -109,37 +110,29 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         del self.keylist[-1]
 
     def processMultipleKeys(self, keyspressed):
-        print(keyspressed)
         if len(keyspressed) ==1:
-
             if keyspressed[0]== QtCore.Qt.Key_Left:
-                self.shiftSig.emit('l')
+                self.shiftSig.emit('left')
             if keyspressed[0] == QtCore.Qt.Key_Right:
-                self.shiftSig.emit('r')
+                self.shiftSig.emit('right')
             if keyspressed[0] == QtCore.Qt.Key_Up:
-                self.shiftSig.emit('u')
+                self.shiftSig.emit('up')
             if keyspressed[0] == QtCore.Qt.Key_Down:
-                self.shiftSig.emit('d')
-            # if keyspressed[0] == QtCore.Qt.Key_N:
-            #     if self.hotSpotNumb < self.data.shape[0]:
-            #         self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = self.projView.iniY
-            #         self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = self.projView.iniX
-            #         self.hotSpotNumb += 1
-            #         if self.hotSpotNumb < self.data.shape[0]:
-            #             self.projView.setImage(self.data[self.hotSpotNumb, :, :])
-            # if keyspressed[0] == QtCore.Qt.Key_S:
-            #     self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = 0
-            #     self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = 0
-            #     if self.hotSpotNumb < self.data.shape[0] - 1:
-            #         self.hotSpotNumb += 1
-            #         self.projView.setImage(self.data[self.hotSpotNumb, :, :])
+                self.shiftSig.emit('down')
+            if keyspressed[0] == QtCore.Qt.Key_N:
+                self.keyPressSig.emit('Next')
+            if keyspressed[0] == QtCore.Qt.Key_S:
+                self.keyPressSig.emit('Skip')
+            if keyspressed[0] == QtCore.Qt.Key_Delete:
+                self.shiftSig.emit('Delete')
 
         if len(keyspressed) == 2:
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Left:
-                self.shiftSig.emit('sl')
+                self.shiftSig.emit('shiftLeft')
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Right:
-                self.shiftSig.emit('sr')
+                self.shiftSig.emit('shiftRight')
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Up:
-                self.shiftSig.emit('su')
+                self.shiftSig.emit('shiftUp')
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Down:
-                self.shiftSig.emit('sd')
+                self.shiftSig.emit('shiftDown')
+

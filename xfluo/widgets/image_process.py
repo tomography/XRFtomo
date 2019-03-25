@@ -86,7 +86,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         for k in arange(num_projections):
             self.ViewControl.combo2.addItem(str(k+1))
 
-        self.actions = actions.ImageProcessActions()
+        self.actions = xfluo.ImageProcessActions()
         self.elementChanged()
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
@@ -96,7 +96,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.yDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.combo2.setVisible(False)
         self.ViewControl.normalizeBtn.clicked.connect(self.normalize_params)
-        self.ViewControl.cutBtn.clicked.connect(self.cut_params)
+        self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
         self.ViewControl.gaussian55Btn.clicked.connect(self.actions.gauss55)
         self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
@@ -156,22 +156,24 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def shift_process(self, command):
         index = self.imgAndHistoWidget.sld.value()
-        if command == 'l':
+        if command == 'left':
             self.actions.shiftProjectionLeft(self.data, index) 
-        if command == 'r':
+        if command == 'right':
             self.actions.shiftProjectionRight(self.data, index) 
-        if command == 'u':
+        if command == 'up':
             self.actions.shiftProjectionUp(self.data, index) 
-        if command == 'd':
+        if command == 'down':
             self.actions.shiftProjectionDown(self.data, index) 
-        if command == 'sl':
+        if command == 'shiftLeft':
             self.actions.shiftDataLeft(self.data) 
-        if command == 'sr':
+        if command == 'shiftRight':
             self.actions.shiftDataRight(self.data) 
-        if command == 'su':
+        if command == 'shigtUp':
             self.actions.shiftDataUp(self.data, self.thetas) 
-        if command == 'sd':
+        if command == 'shiftDown':
             self.actions.shiftDataDown(self.data, self.thetas) 
+        if command == 'Delete':
+            self.exclude_params()
 
     def background_value_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -211,26 +213,29 @@ class ImageProcessWidget(QtWidgets.QWidget):
         index = projection        
         self.fnames.pop(index)    
         num_files = len(self.fnames)
+        temp_thetas = np.delete(thetas, projection, 0)
 
         if index>0:
             index -= 1
-            num_files -=1
+            num_files -= 1
         else:
             num_files -= 1
 
+        self.updateSldRange(index, temp_thetas)
         projection, self.data, self.thetas = self.actions.exclude_projection(projection, data, thetas)
+        self.dataChangedSig.emit(self.data)
+        self.sldRangeChanged.emit(index, self.data,  self.thetas)
         self.updateFileDisplay(self.fnames, index)
         self.fnamesChanged.emit(self.fnames,index)
-        self.updateSldRange(projection, self.data,  self.thetas)
-        self.sldRangeChanged.emit(projection, self.data,  self.thetas)
         self.imageSliderChanged()
-        
-    def updateSldRange(self, projection, data, thetas):
+
+    def updateSldRange(self, index, thetas):
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.sld.setRange(0, len(thetas) -1)
-        self.imgAndHistoWidget.lcd.display(thetas[projection])
-        self.imgAndHistoWidget.sld.setValue(projection)
-        self.imgAndHistoWidget.view.projView.setImage(data[element, projection])
+        self.imgAndHistoWidget.lcd.display(thetas[index])
+        self.imgAndHistoWidget.sld.setValue(index)
+        self.imageChanged()
+        # self.imgAndHistoWidget.view.projView.setImage(data[element, projection])
 
     def get_params(self):
         element = self.ViewControl.combo1.currentIndex()

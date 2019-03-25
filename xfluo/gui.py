@@ -110,7 +110,7 @@ class XfluoGui(QtGui.QMainWindow):
         runReconstructAction = QtGui.QAction("Reconstruction", self)
         #runReconstructAction.triggered.connect(self.runReconstruct)
 
-        selectImageTagAction = QtGui.QAction("Select Image Tag", self)
+        # selectImageTagAction = QtGui.QAction("Select Image Tag", self)
         #selectImageTagAction.triggered.connect(self.selectImageTag)
 
         xCorAction = QtGui.QAction("Cross Correlation", self)
@@ -131,7 +131,7 @@ class XfluoGui(QtGui.QMainWindow):
         restoreAction = QtGui.QAction("Restore", self)
         #restoreAction.triggered.connect(self.restore)
 
-        readConfigAction = QtGui.QAction("Read configuration file", self)
+        # readConfigAction = QtGui.QAction("Read configuration file", self)
         #readConfigAction.triggered.connect(self.readConfigFile)
 
         runCenterOfMassAction = QtGui.QAction("run center of mass action", self)
@@ -143,7 +143,7 @@ class XfluoGui(QtGui.QMainWindow):
         matcherAction = QtGui.QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
 
-        configurationAction = QtGui.QAction("Configuration Window", self)
+        # configurationAction = QtGui.QAction("Configuration Window", self)
         #configurationAction.triggered.connect(self.configurationWindow)
 
         exportDataAction = QtGui.QAction("export data", self)
@@ -210,17 +210,17 @@ class XfluoGui(QtGui.QMainWindow):
         ## Top menu bar [file   Convert Option    Alignment   After saving in memory]
         menubar = self.menuBar()
         self.fileMenu = menubar.addMenu('&File')
-        self.fileMenu.addAction(configurationAction) #to replace readconfiguration Action
-        self.fileMenu.addAction(readConfigAction)
+        # self.fileMenu.addAction(configurationAction) #to replace readconfiguration Action
+        # self.fileMenu.addAction(readConfigAction)
         ##self.fileMenu.addAction(openFileAction)
         #self.fileMenu.addAction(openFolderAction)
         #self.fileMenu.addAction(openTiffFolderAction)
         self.fileMenu.addAction(exitAction)
         self.fileMenu.addAction(closeAction)
 
-        self.optionMenu = menubar.addMenu('Convert Option')
+        # self.optionMenu = menubar.addMenu('Convert Option')
         #self.optionMenu.addAction(selectFilesAction)
-        self.optionMenu.addAction(selectImageTagAction)
+        # self.optionMenu.addAction(selectImageTagAction)
         #self.optionMenu.addAction(selectElementAction)
         #self.optionMenu.addAction(convertAction)
         #self.optionMenu.setDisabled(True)
@@ -286,6 +286,7 @@ class XfluoGui(QtGui.QMainWindow):
 
     def updateImages(self):
         data, elements, thetas, fnames = self.fileTableWidget.onSaveDataInMemory()
+
         self.imageProcessWidget.showImgProcess(data, elements, thetas, fnames)
         self.hotspotWidget.showHotSpot(data, elements, thetas, fnames)
         self.sinogramWidget.showSinogram(data, elements, thetas)
@@ -302,6 +303,7 @@ class XfluoGui(QtGui.QMainWindow):
         #slider change
         self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
         self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
+       
         #element dropdown change
         self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
         self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
@@ -330,7 +332,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget.data = self.data
         self.sinogramWidget.imageChanged()
         
-        # self.hotspotWidget.imageChanged()
 
     def get_values_from_params(self):
 

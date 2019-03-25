@@ -127,7 +127,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		return result
 
 	def gauss2D(self, shape=(3, 3), sigma=0.5):
-		"""
+		"""s
 		2D gaussian mask - should give the same result as MATLAB's
 		fspecial('gaussian',[shape],[sigma])
 		"""
@@ -147,8 +147,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 	def paste_background(self, data, element, projection, x_pos, y_pos, x_size, y_size, img):
 		frame_boundary = img >=0
-		noise_generator = np.random.normal(self.meanNoise, self.stdNoise, 
-			(y_size, x_size))*frame_boundary
+		noise_generator = np.random.normal(self.meanNoise, self.stdNoise, (y_size, x_size))*frame_boundary
 
 		data[element,projection,
 			int(round(abs(y_pos)) - y_size/2):int(round(abs(y_pos)) + y_size/2),
@@ -156,7 +155,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 		self.dataSig.emit(data)
 
-	def exclude_projection(self, projection, data,  thetas):
+	def exclude_projection(self, projection, data, thetas):
 		num_projections = len(thetas)
 		data = np.delete(data, projection, 1)
 		thetas = np.delete(thetas, projection, 0)
@@ -185,3 +184,21 @@ class ImageProcessActions(QtWidgets.QWidget):
 		figure()
 		plt.imshow(noise_generator, cmap=gray(), interpolation='nearest')
 		show()
+
+	def saveHotspot(self):
+		# if self.hotSpotNumb < self.data.shape[0]:
+		# self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = self.projView.iniY
+		# self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = self.projView.iniX
+		# self.hotSpotNumb += 1
+		# if self.hotSpotNumb < self.data.shape[0]:
+		# self.projView.setImage(self.data[self.hotSpotNumb, :, :])
+		pass
+
+	def skipHotspot(self):
+
+		# self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = 0
+		# self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = 0
+		# if self.hotSpotNumb < self.data.shape[0] - 1:
+		#     self.hotSpotNumb += 1
+		#     self.projView.setImage(self.data[self.hotSpotNumb, :, :])
+		pass

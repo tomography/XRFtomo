@@ -152,6 +152,9 @@ class FileTableWidget(QtWidgets.QWidget):
         try:
             self.imageTag.clear()
             self.getImgTags()
+        except KeyError:
+            pass
+        try:
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
             indx = self.imgTags.index(self.auto_image_tag)
@@ -185,6 +188,8 @@ class FileTableWidget(QtWidgets.QWidget):
 
     def getDataTag(self):
         indx = self.imageTag.currentIndex()
+        if indx == -1:
+            return
         try:
             self.dataTag.clear()
             self.elementTag.clear()
