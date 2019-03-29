@@ -201,7 +201,12 @@ class HotspotWidget(QtWidgets.QWidget):
         self.actions.hotspot2line(element, boxSize, hs_group, posMat, data)
 
     def hotspot2sine_params(self):
-        pass
+        x_pos, y_pos, boxSize, hs_group, data = self.get_params()
+        data = self.data
+        posMat = self.posMat
+        element = self.ViewControl.combo1.currentIndex()
+        thetas = self.thetas
+        self.actions.hotspot2sine(element, boxSize, hs_group, posMat, data, thetas)
 
     def setY_params(self):
         pass

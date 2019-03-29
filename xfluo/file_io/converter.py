@@ -60,7 +60,7 @@ __version__ = "0.0.1"
 __docformat__ = 'restructuredtext en'
 __all__ = ['convert_to_array']
 
-def convert_to_array(path_files, use_elements, theta_index, img_tag, data_tag, element_tag):
+def convert_to_array(path_files, element_index, theta_index, img_tag, data_tag, element_tag):
 
     """
     Converts hdf files to numpy arrays for plotting and manipulation.
@@ -94,10 +94,10 @@ def convert_to_array(path_files, use_elements, theta_index, img_tag, data_tag, e
         if proj.shape[1] > max_x:
             max_x = proj.shape[1]
 
-    data = zeros([len(use_elements),len(path_files), max_y, max_x])
+    data = zeros([len(element_index),len(path_files), max_y, max_x])
 
-    for i in range(len(use_elements)):
-        indx = use_elements.index(use_elements[i])
+    for i in range(len(element_index)):
+        indx = element_index[i]
 
         for j in range(len(path_files)):
             proj, theta = xfluo.read_projection(path_files[j], elements[indx], theta_index, img_tag, data_tag, element_tag)

@@ -109,7 +109,10 @@ class FileTableWidget(QtWidgets.QWidget):
         # self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
-        self.onLoadDirectory()        
+        try:
+            self.onLoadDirectory()
+        except:
+            print("invalid directory or file, try new folder or remove problematic file")
         self.onThetaUpdate()
         # self.saveDataBtn.setEnabled(False)
 
@@ -139,10 +142,13 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.params.theta_pv =  self.thetaLineEdit.text()
 
     def onDirBrowse(self):
-        folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
-        self.dirLineEdit.setText(folderName)
-        self.parent.params.input_path = self.dirLineEdit.text()
-        self.onLoadDirectory()
+        try:
+            folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+            self.dirLineEdit.setText(folderName)
+            self.parent.params.input_path = self.dirLineEdit.text()
+            self.onLoadDirectory()
+        except:
+            print("select directory")
 
     def onLoadDirectory(self):
         self.parent.params.input_path = self.dirLineEdit.text()
@@ -262,5 +268,5 @@ class FileTableWidget(QtWidgets.QWidget):
         element_index = [elements.index(j) for j in self.use_elements]
         self.parent.params.selected_elements = str(element_index)
 
-        self.data = xfluo.convert_to_array(path_files, self.use_elements,theta_index, img_tag, data_tag, element_tag)
+        self.data = xfluo.convert_to_array(path_files, element_index,theta_index, img_tag, data_tag, element_tag)
         return self.data, self.use_elements, self.use_thetas, use_files

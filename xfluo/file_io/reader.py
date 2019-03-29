@@ -94,7 +94,7 @@ def read_projection(fname, element, theta_index, img_tag, data_tag, element_tag)
     ndarray
         projection
     """
-
+    print(fname)
     projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
     theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1]
     elements = read_elements(fname, img_tag, element_tag)
