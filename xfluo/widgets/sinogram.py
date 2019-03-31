@@ -66,6 +66,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinoView = xfluo.SinogramView()
         self.lbl = QtWidgets.QLabel('Row y')
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.sld.setValue(1)
         self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
         self.hist.setMinimumSize(120,120)
@@ -151,7 +152,6 @@ class SinogramWidget(QtWidgets.QWidget):
         sinodata = self.data[element, :, :, :]
 
         self.sinogramData = zeros([sinodata.shape[0] * 10, sinodata.shape[2]], dtype=float32)
-        self.sld.setValue(1)
         num_projections = self.data.shape[1]
         for i in arange(num_projections):
             self.sinogramData[i * 10:(i + 1) * 10, :] = sinodata[i, self.sld.value()-1, :]
