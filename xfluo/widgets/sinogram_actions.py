@@ -49,102 +49,70 @@ import numpy as np
 from pylab import *
 import xfluo
 import matplotlib.pyplot as plt
+from scipy import ndimage, optimize, signal
 
 class SinogramActions(QtWidgets.QWidget):
-	dataSig = pyqtSignal(np.ndarray, name='dataSig')
+    dataSig = pyqtSignal(np.ndarray, name='dataSig')
 
-	def __init__(self):
-		super(SinogramActions, self).__init__()
+    def __init__(self):
+        super(SinogramActions, self).__init__()
 
-    def runCenterOfMass2(self):
+    def runCenterOfMass2(self, element, row, data, thetas):
         '''
         second version of runCenterOfMass
         self.com: center of mass vector
-        self.comelem: the element chosen for center of mass
+        element: the element chosen for center of mass
         '''
-
-
-
-        self.com = zeros(self.projections)
-        temp = zeros(self.data.shape[3])
-        temp2 = zeros(self.data.shape[3])
-        self.comelem = self.sino.combo.currentIndex()
-        for i in arange(self.projections):
-            temp = sum(self.data[self.comelem, i,
-                       self.sino.sld.value() - self.thickness / 2:self.sino.sld.value() + self.thickness / 2,
-                       :] - self.data[self.comelem, i, :10, :10].mean(), axis=0)
-            # temp=sum(self.data[self.comelem,i,:,:]-1, axis=0)
+        num_projections = data.shape[1]
+        self.xshift = zeros(num_projections, dtype=np.int)
+        com = zeros(num_projections)
+        temp = zeros(data.shape[3])
+        temp2 = zeros(data.shape[3])
+        p1 = [100, 100, data.shape[3] / 2]
+        for i in arange(num_projections):
+            temp = sum(data[element, i, :, :] - data[element, i, :10, :10].mean(), axis=0)
+            # temp = sum(data[element, i,row-  / 2: row + 10 / 2, :] - data[element, i, :10, :10].mean(), axis=0)
             numb2 = sum(temp)
-            for j in arange(self.data.shape[3]):
+            for j in arange(data.shape[3]):
                 temp2[j] = temp[j] * j
             numb = float(sum(temp2)) / numb2
-            self.com[i] = numb
-        self.fitCenterOfMass(x=self.theta)
-        self.lbl.setText("Center of Mass: " + str(self.p1[2]))
-        self.alignCenterOfMass()
+            com[i] = numb
+        centerOfMassDiff = self.fitCenterOfMass(com, x=thetas)
+
+        #set some label within the sinogram widget to the string defined in the line below
+        # self.lbl.setText("Center of Mass: " + str(p1[2]))
+
+        data = self.alignCenterOfMass(data, centerOfMassDiff, self.xshift)
+
+        return data
         
-        #return a bunch of parameters, rerun sinogram()
+    def fitCenterOfMass(self, com, x):
+        fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
+        errfunc = lambda p, x, y: fitfunc(p, x) - y
+        p0 = [100, 100, 100]
+        p1, success = optimize.leastsq(errfunc, p0, args=(x, com))
+        centerOfMassDiff = fitfunc(p1, x) - com
+        return centerOfMassDiff
 
-
-
-
-    # def fitCenterOfMass(self, ang):
-    #     '''
-    #     Find a position difference between center of mass of first projection
-    #     and center of other projections.
-    #     If we use this difference, centers will be aligned in a straigh line
-
-    #     Parameters
-    #     -----------
-    #     ang: ndarray
-    #           angle
-
-    #     Variables
-    #     ------------
-    #     self.centerOfMassDiff: ndarray
-    #           Difference of center of mass of first projections and center
-    #           of other projections
-    #     self.com: ndarray
-    #           The position of center of mass
-    #     '''
-    #     self.centerOfMassDiff = self.com[0] - self.com
-
-
-
-        # def alignCenterOfMass(self):
-        # '''
-        # Align center of Mass
-
-        # Variables
-        # ------------
-        # self.centerOfMassDiff: ndarray
-        #       Difference of center of mass of first projections and center
-        #       of other projections
-        # self.projections: number
-        #       number of projections
-        # self.xshift: ndarray
-        #       shift in x direction
-        # self.data: ndarray
-        #       4D data [element,projections,y,x]
-        # '''
-        # for i in arange(self.projections):
-        #     self.xshift[i] += int(self.centerOfMassDiff[i])
-        #     self.data[:, i, :, :] = np.roll(self.data[:, i, :, :], int(round(self.xshift[i])), axis=2)
+    def alignCenterOfMass(self, data, centerOfMassDiff, xshift):
+        '''
+        Align center of Mass
+        '''
+        num_projections = data.shape[1]
+        
+        for i in arange(num_projections):
+            xshift[i] += int(centerOfMassDiff[i])
+            data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(xshift[i])), axis=2)
+        #set some status label
         # self.lbl.setText("Alignment has been completed")
+        return data
 
+    def shift(self, sinogramData, data, shift_number, col_number):
+        num_projections = data.shape[1]
+        regShift = zeros(sinogramData.shape[0], dtype=np.int)
+        sinogramData[col_number * 10:col_number * 10 + 10, :] = np.roll(sinogramData[col_number * 10:col_number * 10 + 10, :], shift_number, axis=1)
+        regShift[col_number] += shift_number
+        for i in arange(num_projections):
+            data[:,i,:,:] = np.roll(data[:,i,:,:], regShift[i], axis=2)
+        return data, sinogramData
 
-
-    # def sinoShift(self):
-    #     '''
-    #     shift images and record in data array
-
-    #     Variables
-    #     -----------
-    #     self.data: ndarray
-    #           4D tomographic data [element,projections,y,x]
-    #     self.sinoView.view.regShift: ndarray
-    #           horizontal shift registered by manually shifting on sinogram
-    #           winodow.
-    #     '''
-    #     for i in arange(self.projections):
-    #         self.data[:, i, :, :] = np.roll(self.data[:, i, :, :], self.sinoView.view.regShift[i], axis=2)

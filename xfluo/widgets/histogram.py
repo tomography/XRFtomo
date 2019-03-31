@@ -46,11 +46,7 @@
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
-
 import pyqtgraph
-# import MyImageItem
-
-
 
 class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
     shiftSig = pyqtSignal(str, name='sliderChangedSig')

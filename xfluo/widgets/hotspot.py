@@ -178,7 +178,6 @@ class HotspotWidget(QtWidgets.QWidget):
                 else:
                     self.sliderChangedSig.emit(hs_number-1)
                     print("This is the last projection")
-            self.ViewControl.btn4.setEnabled(True)
             self.ViewControl.btn3.setEnabled(True)
             self.ViewControl.btn2.setEnabled(True)
             self.ViewControl.btn1.setEnabled(True)
@@ -199,6 +198,7 @@ class HotspotWidget(QtWidgets.QWidget):
         posMat = self.posMat
         element = self.ViewControl.combo1.currentIndex()
         self.actions.hotspot2line(element, boxSize, hs_group, posMat, data)
+        self.ViewControl.btn4.setEnabled(True)
 
     def hotspot2sine_params(self):
         x_pos, y_pos, boxSize, hs_group, data = self.get_params()
@@ -207,12 +207,22 @@ class HotspotWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         thetas = self.thetas
         self.actions.hotspot2sine(element, boxSize, hs_group, posMat, data, thetas)
+        self.ViewControl.btn4.setEnabled(True)
 
     def setY_params(self):
-        pass
+        x_pos, y_pos, boxSize, hs_group, data = self.get_params()
+        data = self.data
+        posMat = self.posMat
+        element = self.ViewControl.combo1.currentIndex()
+        self.actions.setY(element, boxSize, hs_group, posMat, data)
+        self.ViewControl.btn4.setEnabled(True)
 
     def clrHotspot_params(self):
-        pass
+        self.posMat = self.actions.clrHotspot()
+        self.ViewControl.btn4.setEnabled(False)
+        self.ViewControl.btn3.setEnabled(False)
+        self.ViewControl.btn2.setEnabled(False)
+        self.ViewControl.btn1.setEnabled(False)
 
     def get_params(self):
         self.x_pos = int(round(self.imgAndHistoWidget.view.x_pos))

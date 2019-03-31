@@ -71,6 +71,7 @@ from xfluo.widgets.reconstruction_controls import *
 from xfluo.widgets.sinogram import *
 from xfluo.widgets.sinogram_controls import *
 from xfluo.widgets.sinogram_view import *
+from xfluo.widgets.sinogram_actions import *
 
 
 

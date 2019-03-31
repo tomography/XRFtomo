@@ -55,6 +55,7 @@ import numpy as np
 
 class SinogramWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
+    dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
 
     def __init__(self):
         super(SinogramWidget, self).__init__()
@@ -90,23 +91,27 @@ class SinogramWidget(QtWidgets.QWidget):
         '''
         loads sinogram tabS
         '''
+        self.thetas = thetas
         self.data = data
         self.ViewControl.combo1.clear()
         for j in element_names:
             self.ViewControl.combo1.addItem(j)
 
+        self.actions = xfluo.SinogramActions()
         self.elementChanged()
-        # self.sino.btn.clicked.connect(self.runCenterOfMass2)
-        # self.sino.btn2.clicked.connect(self.sinoShift)
+        self.ViewControl.btn.clicked.connect(self.centerOfMass_params)
+        self.ViewControl.btn2.setVisible(False)
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
         self.sld.valueChanged.connect(self.imageSliderChanged)
+        self.sinoView.keyPressSig.connect(self.shiftEvent_params)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
 
     def imageSliderChanged(self):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
         self.lcd.display(index)
+        print(index)
         self.sld.setValue(index)
         self.sinogram(element)
         self.show()
@@ -120,7 +125,6 @@ class SinogramWidget(QtWidgets.QWidget):
     def imageChanged(self):
         element = self.ViewControl.combo1.currentIndex()
         self.sinogram(element)
-
 
     def yChanged(self, ySize):
         self.sld.setRange(1, ySize)
@@ -144,30 +148,32 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data: ndarray
               4d tomographic data [element, projections, y,x]
         '''
-        thickness = 10
         sinodata = self.data[element, :, :, :]
 
-        self.sinogramData = zeros([sinodata.shape[0] * thickness, sinodata.shape[2]], dtype=float32)
-
+        self.sinogramData = zeros([sinodata.shape[0] * 10, sinodata.shape[2]], dtype=float32)
+        self.sld.setValue(1)
         num_projections = self.data.shape[1]
         for i in arange(num_projections):
-            self.sinogramData[i * thickness:(i + 1) * thickness, :] = sinodata[i, self.sld.value()-1, :]
+            self.sinogramData[i * 10:(i + 1) * 10, :] = sinodata[i, self.sld.value()-1, :]
 
-        global sinofig
-
-        sinofig = self.sinogramData
         self.sinogramData[isinf(self.sinogramData)] = 0.001
         self.sinoView.projView.setImage(self.sinogramData)
         # self.view.projView.setRect(QtCore.QRect(round(self.theta[0]), 0, round(self.theta[-1])- round(self.theta[0]), self.sinogramData.shape[1]))
-        self.sinoView.projData = self.sinogramData
-        self.sinoView.getShape()
+        # self.sinoView.projData = self.sinogramData
         return
 
+    def centerOfMass_params(self):
+        element, row, data, thetas = self.get_params()
+        self.data = self.actions.runCenterOfMass2(element, row, data, thetas)
+        self.dataChangedSig.emit(self.data)
 
-    #this might get moved to sinogram_actions.py
-    def sinoShift(self):
+    def shiftEvent_params(self, shift_number, column_number):
+        sinoData = self.sinogramData
+        data = self.data
+        self.data, self.sinogramData = self.actions.shift(sinoData, data, shift_number, column_number)
+        self.dataChangedSig.emit(self.data)
 
-        for i in arange(self.projections):
-            self.data[:,i,:,:] = np.roll(self.data[:,i,:,:], self.view.regShift[i])
-
-
+    def get_params(self):
+        element = self.ViewControl.combo1.currentIndex()
+        row = self.sld.value()
+        return element, row, self.data, self.thetas

@@ -73,7 +73,117 @@ class HotspotActions(QtWidgets.QWidget):
 		save the position of hotspots
 		and align hotspots by fixing hotspots in one position
 		'''
+		self.posMat = posMat
+		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, boxSize, hs_group, self.posMat, data)
+#****************
+		num_projections = data.shape[1]
+		boxSize2 = int(boxSize / 2)
+		p1 = [100, 100, int(data.shape[3] / 2)]
+		self.xshift = zeros(num_projections, dtype=np.int)
+		self.yshift = zeros(num_projections, dtype=np.int)
 
+		for j in arange(num_projections):
+
+			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
+				yyshift = int(round(boxSize2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
+				xxshift = int(round(boxSize2 - hotSpotX[j] - hs_x_pos[j] + hs_x_pos[firstPosOfHotSpot]))
+				data[:, j, :, :] = np.roll(np.roll(data[:, j, :, :], xxshift, axis=2), yyshift, axis=1)
+
+			if hs_x_pos[j] == 0:
+				xxshift = 0
+			if hs_y_pos[j] == 0:
+				yyshift = 0
+
+			self.xshift[j] += xxshift
+			self.yshift[j] += yyshift
+
+		p1[2] = hs_x_pos[0]
+
+		print("align done")
+
+	def hotspot2sine(self, element, boxSize, hs_group, posMat, data, theta):
+		'''
+		save the position of hotspots
+		and align by both x and y directions (self.alignHotSpotPos3_4)
+		'''
+		self.posMat = posMat
+		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, boxSize, hs_group, self.posMat, data)
+#****************
+		num_projections = data.shape[1]
+		boxSize2 = int(boxSize / 2)
+		p1 = [100, 100, int(data.shape[3] / 2)]
+		self.xshift = zeros(num_projections, dtype=np.int)
+		self.yshift = zeros(num_projections, dtype=np.int)
+		theta  = np.asarray(theta)
+
+		for j in arange(num_projections):
+
+			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
+				xxshift = int(round(boxSize2 - hotSpotX[j]))
+				yyshift = int(round(boxSize2 - hotSpotY[j]))
+			if hs_x_pos[j] == 0:
+				xxshift = 0
+			if hs_y_pos[j] == 0:
+				yyshift = 0
+
+			self.xshift[j] += xxshift
+			self.yshift[j] += yyshift
+
+		# global hotspotXPos, hotspotYPos
+		hotspotXPos = zeros(num_projections, dtype=np.int)
+		hotspotYPos = zeros(num_projections, dtype=np.int)
+		for i in arange(num_projections):
+			hotspotYPos[i] = int(round(hs_y_pos[i]))
+			hotspotXPos[i] = int(round(hs_x_pos[i]))
+		hotspotProj = np.where(hotspotXPos != 0)[0]
+		print(hotspotProj)
+
+		theta_tmp = theta[hotspotProj]
+		com = hotspotXPos[hotspotProj]
+
+		if hs_group == 0:
+			self.fitCenterOfMass(com, x=theta_tmp)
+		else:
+			self.fitCenterOfMass2(com, p1, x=theta_tmp)
+		self.alignCenterOfMass2(hotspotProj, self.xshift, data)
+
+		## yfit
+		for i in hotspotProj:
+			self.yshift[i] += int(hotspotYPos[hotspotProj[0]]) - int(hotspotYPos[i])
+			data[:, i, :, :] = np.roll(data[:, i, :, :], self.yshift[i], axis=1)
+			print(int(hotspotYPos[0]) - int(hotspotYPos[i]))
+
+		#update reconstruction slider value
+		# self.recon.sld.setValue(self.p1[2])
+
+		print("align done")
+
+	def setY(self, element, boxSize, hs_group, posMat, data):
+		'''
+		loads variables for aligning hotspots in y direction only
+		'''
+		self.posMat = posMat
+		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, boxSize, hs_group, self.posMat, data)
+#****************
+		num_projections = data.shape[1]
+		boxSize2 = int(boxSize / 2)
+		p1 = [100, 100, int(data.shape[3] / 2)]
+		self.xshift = zeros(num_projections, dtype=np.int)
+		self.yshift = zeros(num_projections, dtype=np.int)
+		for j in arange(num_projections):
+			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
+				yyshift = int(round(boxSize2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
+				data[:, j, :, :] = np.roll(data[:, j, :, :], yyshift, axis=1)
+
+			if hs_y_pos[j] == 0:
+				yyshift = 0
+
+			self.yshift[j] += yyshift
+
+		print("align done")
+
+	def alignment_parameters(self, element, boxSize, hs_group, posMat, data):
+		self.posMat = posMat
 		num_projections = data.shape[1]
 		boxSize2 = int(boxSize / 2)
 		hs_x_pos = zeros(num_projections, dtype=np.int)
@@ -81,11 +191,10 @@ class HotspotActions(QtWidgets.QWidget):
 		hs_array = zeros([num_projections, boxSize, boxSize], dtype=np.int)
 		self.xshift = zeros(num_projections, dtype=np.int)
 		self.yshift = zeros(num_projections, dtype=np.int)
-		p1 = [100, 100, int(data.shape[3] / 2)]
 
 		for i in arange(num_projections):
-			hs_x_pos[i] = int(round(posMat[hs_group, i, 0]))
-			hs_y_pos[i] = int(abs(round(posMat[hs_group, i, 1])))
+			hs_x_pos[i] = int(round(self.posMat[hs_group, i, 0]))
+			hs_y_pos[i] = int(abs(round(self.posMat[hs_group, i, 1])))
 
 			if hs_x_pos[i] != 0 and hs_y_pos[i] != 0:
 				if hs_y_pos[i] < boxSize2:	# if ROI is past top edge of projection
@@ -122,25 +231,35 @@ class HotspotActions(QtWidgets.QWidget):
 				new_hs_array[i, :, :] = np.roll(new_hs_array[i, :, :], yshift_tmp, axis=0)
 				add = 0
 
-		for j in arange(num_projections):
+		return hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data
 
-			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
-				yyshift_tmp = int(round(boxSize2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
-				xxshift_tmp = int(round(boxSize2 - hotSpotX[j] - hs_x_pos[j] + hs_x_pos[firstPosOfHotSpot]))
-				data[:, j, :, :] = np.roll(np.roll(data[:, j, :, :], xxshift_tmp, axis=2), yyshift_tmp, axis=1)
+	def fitCenterOfMass(self, com, x):
+		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
+		errfunc = lambda p, x, y: fitfunc(p, x) - y
+		p0 = [100, 100, 100]
+		p1, success = optimize.leastsq(errfunc, p0, args=(x, com))
+		self.centerOfMassDiff = fitfunc(p1, x) - com
+		print(self.centerOfMassDiff)
 
-			if hs_x_pos[j] == 0:
-				xxshift_tmp = 0
-			if hs_y_pos[j] == 0:
-				yyshift_tmp = 0
+	def fitCenterOfMass2(self, com, p1, x):
+		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p1[2]
+		errfunc = lambda p, x, y: fitfunc(p, x) - y
+		p0 = [100, 100]
+		p2, success = optimize.leastsq(errfunc, p0, args=(x, com))
+		self.centerOfMassDiff = fitfunc(p2, x) - com
+		print(self.centerOfMassDiff)
 
-			self.xshift[j] += xxshift_tmp
-			self.yshift[j] += yyshift_tmp
+	def alignCenterOfMass2(self, hotspotProj, xshift, data):
 
-		p1[2] = hs_x_pos[0]
+		j = 0
+		for i in hotspotProj:
+			xshift[i] += int(self.centerOfMassDiff[j])
 
-		print("align done")
+			data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(xshift[i])), axis=2)
+			j += 1
 
+		#set some label to be show that the alignment has completed. perhaps print this in a logbox
+		# self.lbl.setText("Alignment has been completed")
 	def fitgaussian(self, data):
 		"""Returns (height, x, y, width_x, width_y)
 		the gaussian parameters of a 2D distribution found by a fit"""
@@ -170,468 +289,6 @@ class HotspotActions(QtWidgets.QWidget):
 		width_y = float(width_y)
 		return lambda x, y: height * exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
 
-	def hotspot2sine(self, element, boxSize, hs_group, posMat, data, theta):
-		'''
-		save the position of hotspots
-		and align by both x and y directions (self.alignHotSpotPos3_4)
-		'''
-		theta  = np.asarray(theta)
-		num_projections = data.shape[1]
-		boxSize2 = int(boxSize / 2)
-		hs_x_pos = zeros(num_projections, dtype=np.int)
-		hs_y_pos = zeros(num_projections, dtype=np.int)
-		hs_array = zeros([num_projections, boxSize, boxSize], dtype=np.int)
-		self.xshift = zeros(num_projections, dtype=np.int)
-		self.yshift = zeros(num_projections, dtype=np.int)
-		p1 = [100, 100, int(data.shape[3] / 2)]
-
-		for i in arange(num_projections):
-			hs_x_pos[i] = int(round(posMat[hs_group, i, 0]))
-			hs_y_pos[i] = int(abs(round(posMat[hs_group, i, 1])))
-
-			if hs_x_pos[i] != 0 and hs_y_pos[i] != 0:
-				if hs_y_pos[i] < boxSize2:	# if ROI is past top edge of projection
-					hs_y_pos[i] = boxSize2
-				if hs_y_pos[i] > data.shape[2] - boxSize2: # if ROI is past top bottom of projection
-					hs_y_pos[i] = data.shape[2] - boxSize2
-				if hs_x_pos[i] < boxSize2:	# if ROI is past left edge of projection
-					hs_x_pos[i] = boxSize2
-				if hs_x_pos[i] > data.shape[3] - boxSize2: # if ROI is past right edge of projection
-					hs_x_pos[i] = data.shape[3] - boxSize2
-				hs_array[i, :, :] = data[element, i,
-									hs_y_pos[i] - boxSize2:hs_y_pos[i] + boxSize2,
-									hs_x_pos[i] - boxSize2:hs_x_pos[i] + boxSize2]
-
-		hotSpotX = zeros(num_projections, dtype=np.int)
-		hotSpotY = zeros(num_projections, dtype=np.int)
-		new_hs_array = zeros(hs_array.shape, dtype=np.int)
-		new_hs_array[...] = hs_array[...]
-		firstPosOfHotSpot = 0
-
-		add = 1
-		for i in arange(num_projections):
-
-			if hs_x_pos[i] == 0 and hs_y_pos[i] == 0:
-				firstPosOfHotSpot += add
-			if hs_x_pos[i] != 0 or hs_y_pos[i] != 0:
-				img = hs_array[i, :, :]
-				print(img.sum(),i)
-				a, x, y, b, c = self.fitgaussian(img)
-				hotSpotY[i] = x
-				hotSpotX[i] = y
-				xxshift = int(round(boxSize2 - hotSpotX[i]))
-				yyshift = int(round(boxSize2 - hotSpotY[i]))
-				new_hs_array[i, :, :] = np.roll(new_hs_array[i, :, :], xxshift, axis=1)
-				new_hs_array[i, :, :] = np.roll(new_hs_array[i, :, :], yyshift, axis=0)
-				add = 0
-
-		for j in arange(num_projections):
-
-			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
-				xxshift = int(round(boxSize2 - hotSpotX[j]))
-				yyshift = int(round(boxSize2 - hotSpotY[j]))
-
-			if hs_x_pos[j] == 0:
-				yyshift = 0
-			if hs_y_pos[j] == 0:
-				yyshift = 0
-
-			self.xshift[j] += yyshift
-			self.yshift[j] += yyshift
-
-		# global hotspotXPos, hotspotYPos
-		hotspotXPos = zeros(num_projections, dtype=np.int)
-		hotspotYPos = zeros(num_projections, dtype=np.int)
-		for i in arange(num_projections):
-			hotspotYPos[i] = int(round(hs_y_pos[i]))
-			hotspotXPos[i] = int(round(hs_x_pos[i]))
-		hotspotProj = np.where(hotspotXPos != 0)[0]
-		print(hotspotProj)
-		## temp
-
-		## xfit
-		# global a1, b4
-		# a1 = self.theta
-		# b4 = self.hotspotProj
-		theta_tmp = theta[hotspotProj]
-		com = hotspotXPos[hotspotProj]
-
-		if hs_group == 0:
-			self.fitCenterOfMass(com, x=theta_tmp)
-		else:
-			self.fitCenterOfMass2(com, x=theta_tmp)
-		self.alignCenterOfMass2(hotspotProj, self.xshift, data)
-
-		## yfit
-		for i in hotspotProj:
-			self.yshift[i] += int(hotspotYPos[hotspotProj[0]]) - int(hotspotYPos[i])
-			data[:, i, :, :] = np.roll(data[:, i, :, :], self.yshift[i], axis=1)
-			print(int(hotspotYPos[0]) - int(hotspotYPos[i]))
-
-		#update reconstruction slider value
-		# self.recon.sld.setValue(self.p1[2])
-
-		print("align done")
-
-	def fitCenterOfMass(self, com, x):
-		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
-		errfunc = lambda p, x, y: fitfunc(p, x) - y
-		p0 = [100, 100, 100]
-		p1, success = optimize.leastsq(errfunc, p0, args=(x, com))
-		self.centerOfMassDiff = fitfunc(p1, x) - com
-		print("here", self.centerOfMassDiff)
-
-	def fitCenterOfMass2(self, com, x):
-
-		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p1[2]
-		errfunc = lambda p, x, y: fitfunc(p, x) - y
-		p0 = [100, 100]
-		p2, success = optimize.leastsq(errfunc, p0, args=(x, com))
-		self.centerOfMassDiff = fitfunc(p2, x) - com
-		return self.centerOfMassDiff
-
-	def alignCenterOfMass2(self, hotspotProj, xshift, data):
-
-		j = 0
-		for i in hotspotProj:
-			xshift[i] += int(self.centerOfMassDiff[j])
-
-			data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(xshift[i])), axis=2)
-			j += 1
-
-		#set some label to be show that the alignment has completed. perhaps print this in a logbox
-		# self.lbl.setText("Alignment has been completed")
-
-	def setY(self):
-
-		'''
-		loads variables for aligning hotspots in y direction only
-		'''
-
-
-
-		boxSize2 = self.boxSize / 2
-		hs_x_pos = zeros(self.projections)
-		hs_y_pos = zeros(self.projections)
-		self.boxPos = zeros([self.projections, self.boxSize, self.boxSize])
-		hs_group = self.projViewControl.combo2.currentIndex()
-		for i in arange(self.projections):
-
-			hs_y_pos[i] = int(round(self.projView.view.posMat[hs_group, i, 0]))
-			hs_x_pos[i] = int(round(self.projView.view.posMat[hs_group, i, 1]))
-
-			if hs_x_pos[i] != 0 and hs_y_pos[i] != 0:
-				if hs_y_pos[i] < boxSize2:
-					hs_y_pos[i] = boxSize2
-				if hs_y_pos[i] > self.projView.view.data.shape[1] - boxSize2:
-					hs_y_pos[i] = self.projView.view.data.shape[1] - boxSize2
-				if hs_x_pos[i] < boxSize2:
-					hs_x_pos[i] = boxSize2
-				if hs_x_pos[i] > self.projView.view.data.shape[2] - boxSize2:
-					hs_x_pos[i] = self.projView.view.data.shape[2] - boxSize2
-				# self.boxPos[i,:,:]=self.projView.data[i,hs_x_pos[i]-boxSize2:hs_x_pos[i]+boxSize2,hs_y_pos[i]-boxSize2:hs_y_pos[i]+boxSize2]
-				self.boxPos[i, :, :] = self.projView.view.data[i,
-									hs_y_pos[i] - boxSize2:hs_y_pos[i] + boxSize2,
-									hs_x_pos[i] - boxSize2:hs_x_pos[i] + boxSize2]
-		print(self.boxPos.shape
-		print(hs_x_pos, hs_y_pos
-
-		self.alignHotSpotY_next()
-
-		pass
-
 	def clrHotspot(self):
-		# self.projView.view.posMat[...] = zeros_like(self.projView.view.posMat)
-
-		pass
-
-
-
-
-
-
-
-
-	# def alignHotSpotY_next(self):
-	#     '''
-	#     save the position of hotspots
-	#     and align by only in y directions.
-	#     '''
-	#     self.hotSpotX = zeros(self.projections)
-	#     self.hotSpotY = zeros(self.projections)
-	#     self.newBoxPos = zeros(self.boxPos.shape)
-	#     self.newBoxPos[...] = self.boxPos[...]
-	#     ### need to change x and y's
-	#     firstPosOfHotSpot = 0
-	#     add = 1
-	#     for i in arange(self.projections):
-	#         if hs_x_pos[i] == 0 and hs_y_pos[i] == 0:
-	#             firstPosOfHotSpot += add
-	#         if hs_x_pos[i] != 0 or hs_y_pos[i] != 0:
-	#             print(hs_x_pos[i], hs_y_pos[i]
-	#             img = self.boxPos[i, :, :]
-	#             print(img.shape
-	#             a, x, y, b, c = self.fitgaussian(img)
-	#             self.hotSpotY[i] = x
-	#             self.hotSpotX[i] = y
-	#             yshift = int(round(boxSize2 - self.hotSpotY[i]))
-	#             xshift = int(round(boxSize2 - self.hotSpotX[i]))
-	#             self.newBoxPos[i, :, :] = np.roll(self.newBoxPos[i, :, :], xshift, axis=1)
-	#             self.newBoxPos[i, :, :] = np.roll(self.newBoxPos[i, :, :], yshift, axis=0)
-	#             ##                  subplot(211)
-	#             ##                  plt.imshow(self.boxPos[i,:,:])
-	#             ##                  subplot(212)
-	#             ##                  plt.imshow(self.newBoxPos[i,:,:])
-	#             ##                  show()
-	#             add = 0
-
-	#     add2 = 0
-	#     for j in arange(self.projections):
-
-	#         if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
-	#             yyshift = int(round(boxSize2 - self.hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
-
-	#             print(yyshift
-	#             self.data[:, j, :, :] = np.roll(self.data[:, j, :, :],
-	#                                             yyshift, axis=1)
-	#         ##                        for l in arange(self.data.shape[0]):
-	#         ##                              if yyshift>0:
-	#         ##                                    self.data[l,j,:yyshift,:]=ones(self.data[l,j,:yyshift,:].shape)*self.data[l,j,:yyshift,:].mean()/2
-	#         ##                              if yyshift<0:
-	#         ##                                    self.data[l,j,yyshift:,:]=ones(self.data[l,j,yyshift:,:].shape)*self.data[l,j,-yyshift:,:].mean()/2
-	#         ##                              if xxshift>0:
-	#         ##                                    self.data[l,j,:,:xxshift]=ones(self.data[l,j,:,:xxshift].shape)*self.data[l,j,:xxshift,:].mean()/2
-	#         ##                              if xxshift<0:
-	#         ##                                    self.data[l,j,:,xxshift:]=ones(self.data[l,j,:,xxshift:].shape)*self.data[l,j,-xxshift:,:].mean()/2
-
-	#         if hs_y_pos[j] == 0:
-	#             yyshift = 0
-
-	#         self.yshift[j] += yyshift
-
-	#     print("align done"
-
-
-
-
-
-
-
-	# def alignHotSpotPos3_3(self):
-	#     '''
-	#     align hotspots by fixing hotspots in one position
-	#     '''
-	#     self.hotSpotX = zeros(self.projections)
-	#     self.hotSpotY = zeros(self.projections)
-	#     self.newBoxPos = zeros(self.boxPos.shape)
-	#     self.newBoxPos[...] = self.boxPos[...]
-	#     ### need to change x and y's
-	#     firstPosOfHotSpot = 0
-	#     add = 1
-	#     for i in arange(self.projections):
-	#         if hs_x_pos[i] == 0 and hs_y_pos[i] == 0:
-	#             firstPosOfHotSpot += add
-	#         if hs_x_pos[i] != 0 or hs_y_pos[i] != 0:
-	#             print(hs_x_pos[i], hs_y_pos[i]
-	#             img = self.boxPos[i, :, :]
-	#             print(img.shape
-	#             a, x, y, b, c = self.fitgaussian(img)
-	#             self.hotSpotY[i] = x
-	#             self.hotSpotX[i] = y
-	#             yshift = int(round(boxSize2 - self.hotSpotY[i]))
-	#             xshift = int(round(boxSize2 - self.hotSpotX[i]))
-	#             self.newBoxPos[i, :, :] = np.roll(self.newBoxPos[i, :, :], xshift, axis=1)
-	#             self.newBoxPos[i, :, :] = np.roll(self.newBoxPos[i, :, :], yshift, axis=0)
-	#             ##                  subplot(211)
-	#             ##                  plt.imshow(self.boxPos[i,:,:])
-	#             ##                  subplot(212)
-	#             ##                  plt.imshow(self.newBoxPos[i,:,:])
-	#             ##                  show()
-	#             add = 0
-
-	#     add2 = 0
-	#     for j in arange(self.projections):
-
-	#         if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
-	#             yyshift = int(round(boxSize2 - self.hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
-	#             xxshift = int(round(boxSize2 - self.hotSpotX[j] - hs_x_pos[j] + hs_x_pos[firstPosOfHotSpot]))
-	#             print(xxshift, yyshift
-	#             self.data[:, j, :, :] = np.roll(np.roll(self.data[:, j, :, :], xxshift, axis=2),
-	#                                             yyshift, axis=1)
-	#         ##                        for l in arange(self.data.shape[0]):
-	#         ##                              if yyshift>0:
-	#         ##                                    self.data[l,j,:yyshift,:]=ones(self.data[l,j,:yyshift,:].shape)*self.data[l,j,:yyshift,:].mean()/2
-	#         ##                              if yyshift<0:
-	#         ##                                    self.data[l,j,yyshift:,:]=ones(self.data[l,j,yyshift:,:].shape)*self.data[l,j,-yyshift:,:].mean()/2
-	#         ##                              if xxshift>0:
-	#         ##                                    self.data[l,j,:,:xxshift]=ones(self.data[l,j,:,:xxshift].shape)*self.data[l,j,:xxshift,:].mean()/2
-	#         ##                              if xxshift<0:
-	#         ##                                    self.data[l,j,:,xxshift:]=ones(self.data[l,j,:,xxshift:].shape)*self.data[l,j,-xxshift:,:].mean()/2
-	#         if hs_x_pos[j] == 0:
-	#             xxshift = 0
-	#         if hs_y_pos[j] == 0:
-	#             yyshift = 0
-
-	#         self.xshift[j] += xxshift
-	#         self.yshift[j] += yyshift
-
-	#     self.p1[2] = hs_x_pos[0]
-
-	#     print("align done"
-
-
-
-
-
-	# def alignHotSpotPos3_4(self):
-	#     '''
-	#     align hotspots by fixing hotspots by fitting in a sine curve
-	#     '''
-	#     self.hotSpotX = zeros(self.projections)
-	#     self.hotSpotY = zeros(self.projections)
-	#     self.newBoxPos = zeros(self.boxPos.shape)
-	#     self.newBoxPos[...] = self.boxPos[...]
-	#     ### need to change x and y's
-	#     firstPosOfHotSpot = 0
-	#     add = 1
-	#     for i in arange(self.projections):
-	#         if hs_x_pos[i] == 0 and hs_y_pos[i] == 0:
-	#             firstPosOfHotSpot += add
-	#         if hs_x_pos[i] != 0 or hs_y_pos[i] != 0:
-	#             print(hs_x_pos[i], hs_y_pos[i]
-	#             img = self.boxPos[i, :, :]
-	#             print(img.shape
-	#             a, x, y, b, c = self.fitgaussian(img)
-	#             self.hotSpotY[i] = x
-	#             self.hotSpotX[i] = y
-	#             yshift = int(round(boxSize2 - self.hotSpotY[i]))
-	#             xshift = int(round(boxSize2 - self.hotSpotX[i]))
-	#             self.newBoxPos[i, :, :] = np.roll(self.newBoxPos[i, :, :], xshift, axis=1)
-	#             self.newBoxPos[i, :, :] = np.roll(self.newBoxPos[i, :, :], yshift, axis=0)
-	#             ##                  subplot(211)
-	#             ##                  plt.imshow(self.boxPos[i,:,:])
-	#             ##                  subplot(212)
-	#             ##                  plt.imshow(self.newBoxPos[i,:,:])
-	#             ##                  show()
-	#             add = 0
-
-	#     for j in arange(self.projections):
-
-	#         if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
-	#             yyshift = int(round(boxSize2 - self.hotSpotY[j]))
-	#             xxshift = int(round(boxSize2 - self.hotSpotX[j]))
-
-	#         ##                        for l in arange(self.data.shape[0]):
-	#         ##                              if yyshift>0:
-	#         ##                                    self.data[l,j,:yyshift,:]=ones(self.data[l,j,:yyshift,:].shape)*self.data[l,j,:yyshift,:].mean()/2
-	#         ##                              if yyshift<0:
-	#         ##                                    self.data[l,j,yyshift:,:]=ones(self.data[l,j,yyshift:,:].shape)*self.data[l,j,-yyshift:,:].mean()/2
-	#         ##                              if xxshift>0:
-	#         ##                                    self.data[l,j,:,:xxshift]=ones(self.data[l,j,:,:xxshift].shape)*self.data[l,j,:xxshift,:].mean()/2
-	#         ##                              if xxshift<0:
-	#         ##                                    self.data[l,j,:,xxshift:]=ones(self.data[l,j,:,xxshift:].shape)*self.data[l,j,-xxshift:,:].mean()/2
-	#         if hs_x_pos[j] == 0:
-	#             xxshift = 0
-	#         if hs_y_pos[j] == 0:
-	#             yyshift = 0
-
-	#         self.xshift[j] += xxshift
-	#         self.yshift[j] += yyshift
-
-	#     add2 = 0
-
-	#     global hotspotXPos, hotspotYPos
-	#     hotspotXPos = zeros(self.projections)
-	#     hotspotYPos = zeros(self.projections)
-	#     for i in arange(self.projections):
-	#         hotspotYPos[i] = int(round(hs_y_pos[i]))
-	#         hotspotXPos[i] = int(round(hs_x_pos[i]))
-	#     self.hotspotProj = np.where(hotspotXPos != 0)[0]
-	#     print(self.hotspotProj
-	#     ## temp
-
-	#     ## xfit
-	#     print(self.hotspotProj
-	#     global a1, b4
-	#     a1 = self.theta
-	#     b4 = self.hotspotProj
-	#     theta = self.theta[self.hotspotProj]
-	#     print("theta", theta
-	#     self.com = hotspotXPos[self.hotspotProj]
-	#     if self.projViewControl.combo2.currentIndex() == 0:
-	#         self.fitCenterOfMass(x=theta)
-	#     else:
-	#         self.fitCenterOfMass2(x=theta)
-	#     self.alignCenterOfMass2()
-
-	#     ## yfit
-	#     for i in self.hotspotProj:
-	#         self.yshift[i] += int(hotspotYPos[self.hotspotProj[0]]) - int(hotspotYPos[i])
-	#         self.data[:, i, :, :] = np.roll(self.data[:, i, :, :], self.yshift[i], axis=1)
-	#         print(int(hotspotYPos[0]) - int(hotspotYPos[i])
-
-	#     self.recon.sld.setValue(self.p1[2])
-	#     print("align done"
-
-
-
-
-
-	# def alignHotSpotY_next(self):
-	#     '''
-	#     save the position of hotspots
-	#     and align by only in y directions.
-	#     '''
-	#     self.hotSpotX = zeros(self.projections)
-	#     self.hotSpotY = zeros(self.projections)
-	#     self.newBoxPos = zeros(self.boxPos.shape)
-	#     self.newBoxPos[...] = self.boxPos[...]
-	#     ### need to change x and y's
-	#     firstPosOfHotSpot = 0
-	#     add = 1
-	#     for i in arange(self.projections):
-	#         if hs_x_pos[i] == 0 and hs_y_pos[i] == 0:
-	#             firstPosOfHotSpot += add
-	#         if hs_x_pos[i] != 0 or hs_y_pos[i] != 0:
-	#             print(hs_x_pos[i], hs_y_pos[i]
-	#             img = self.boxPos[i, :, :]
-	#             print(img.shape
-	#             a, x, y, b, c = self.fitgaussian(img)
-	#             self.hotSpotY[i] = x
-	#             self.hotSpotX[i] = y
-	#             yshift = int(round(boxSize2 - self.hotSpotY[i]))
-	#             xshift = int(round(boxSize2 - self.hotSpotX[i]))
-	#             self.newBoxPos[i, :, :] = np.roll(self.newBoxPos[i, :, :], xshift, axis=1)
-	#             self.newBoxPos[i, :, :] = np.roll(self.newBoxPos[i, :, :], yshift, axis=0)
-	#             ##                  subplot(211)
-	#             ##                  plt.imshow(self.boxPos[i,:,:])
-	#             ##                  subplot(212)
-	#             ##                  plt.imshow(self.newBoxPos[i,:,:])
-	#             ##                  show()
-	#             add = 0
-
-	#     add2 = 0
-	#     for j in arange(self.projections):
-
-	#         if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
-	#             yyshift = int(round(boxSize2 - self.hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
-
-	#             print(yyshift
-	#             self.data[:, j, :, :] = np.roll(self.data[:, j, :, :],
-	#                                             yyshift, axis=1)
-	#         ##                        for l in arange(self.data.shape[0]):
-	#         ##                              if yyshift>0:
-	#         ##                                    self.data[l,j,:yyshift,:]=ones(self.data[l,j,:yyshift,:].shape)*self.data[l,j,:yyshift,:].mean()/2
-	#         ##                              if yyshift<0:
-	#         ##                                    self.data[l,j,yyshift:,:]=ones(self.data[l,j,yyshift:,:].shape)*self.data[l,j,-yyshift:,:].mean()/2
-	#         ##                              if xxshift>0:
-	#         ##                                    self.data[l,j,:,:xxshift]=ones(self.data[l,j,:,:xxshift].shape)*self.data[l,j,:xxshift,:].mean()/2
-	#         ##                              if xxshift<0:
-	#         ##                                    self.data[l,j,:,xxshift:]=ones(self.data[l,j,:,xxshift:].shape)*self.data[l,j,-xxshift:,:].mean()/2
-
-	#         if hs_y_pos[j] == 0:
-	#             yyshift = 0
-
-	#         self.yshift[j] += yyshift
-
-	#     print("align done"
+		self.posMat[...] = zeros_like(self.posMat)
+		return self.posMat

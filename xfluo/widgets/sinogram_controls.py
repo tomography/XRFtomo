@@ -58,12 +58,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         buton2size = 122.5
         button3size = 73.3
         button4size = 58.75
-        # self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        # self.sld.setMaximumWidth(button1size)
-        # self.sld.setMinimumWidth(button1size)
-        # self.lcd = QtWidgets.QLCDNumber(self)
-        # self.lcd.setMaximumWidth(button1size)
-        # self.lcd.setMinimumWidth(button1size)
+
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setMaximumWidth(button1size)
         self.combo1.setMinimumWidth(button1size)
@@ -91,8 +86,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb.addWidget(self.combo1)
         vb.addWidget(self.btn)
         vb.addWidget(self.btn2)
-        # vb.addWidget(self.lcd)
-        # vb.addWidget(self.sld)
         vb.addWidget(self.lbl)
         vb.addLayout(hb)
         self.setLayout(vb)

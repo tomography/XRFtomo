@@ -311,7 +311,7 @@ class XfluoGui(QtGui.QMainWindow):
 
         # data update
         self.imageProcessWidget.dataChangedSig.connect(self.update_data)
-
+        self.sinogramWidget.dataChangedSig.connect(self.update_data)
         #data dimensions changed
         self.imageProcessWidget.ySizeChanged.connect(self.sinogramWidget.yChanged)
         # self.actions = xfluo.ImageProcessActions(self)
@@ -331,7 +331,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.hotspotWidget.imageChanged()
         self.sinogramWidget.data = self.data
         self.sinogramWidget.imageChanged()
-        
 
     def get_values_from_params(self):
 
