@@ -130,7 +130,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.sld.setValue(index)
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
 
-    def updateElementSlot(self, element, projection):
+    def updateElementSlot(self, element, projection = None):
+        if projection == None:
+           projection =  self.imgAndHistoWidget.sld.value()
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :])
         self.ViewControl.combo1.setCurrentIndex(element)
         self.ViewControl.combo2.setCurrentIndex(projection)

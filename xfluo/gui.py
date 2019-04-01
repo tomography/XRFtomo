@@ -290,6 +290,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.imageProcessWidget.showImgProcess(data, elements, thetas, fnames)
         self.hotspotWidget.showHotSpot(data, elements, thetas, fnames)
         self.sinogramWidget.showSinogram(data, elements, thetas)
+        self.reconstructionWidget.showReconstruct(data, elements, fnames, thetas)
 
         self.tab_widget.removeTab(1)
         self.tab_widget.removeTab(2)
@@ -299,7 +300,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.tab_widget.insertTab(2, self.hotspotWidget, "Hotspot")
         self.tab_widget.insertTab(3, self.sinogramWidget, "Sinogram")
 
-
         #slider change
         self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
         self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
@@ -307,7 +307,8 @@ class XfluoGui(QtGui.QMainWindow):
         #element dropdown change
         self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
         self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
-        self.sinogramWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
+        self.sinogramWidget.elementChangedSig.connect(self.reconstructionWidget.updateElementSlot)
+        self.reconstructionWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
 
         # data update
         self.imageProcessWidget.dataChangedSig.connect(self.update_data)

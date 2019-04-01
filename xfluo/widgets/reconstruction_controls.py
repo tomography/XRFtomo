@@ -59,13 +59,13 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         button2size = 122.5
         button3size = 78.3
         button4size = 58.75
-        self.combo = QtWidgets.QComboBox(self)
-        self.combo.setMaximumWidth(button1size)
-        self.combo.setMinimumWidth(button1size)
+        self.combo1 = QtWidgets.QComboBox(self)
+        self.combo1.setMaximumWidth(button1size)
+        self.combo1.setMinimumWidth(button1size)
         self.method = QtWidgets.QComboBox(self)
         self.method.setMaximumWidth(button1size)
         self.method.setMinimumWidth(button1size)
-        self.btn = QtWidgets.QPushButton('Sinogram')
+        self.btn = QtWidgets.QPushButton('Reconstruct')
         self.btn.setMaximumWidth(button1size)
         self.btn.setMinimumWidth(button1size)
 
@@ -73,9 +73,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.save.setMaximumWidth(button4size)
         self.save.setMinimumWidth(button4size)
         self.save.setHidden(True)
-        self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.sld.setMaximumWidth(button4size)
-        self.sld.setMinimumWidth(button4size)
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setMaximumWidth(button3size)
         self.lbl.setMinimumWidth(button3size)
@@ -86,9 +83,9 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.lbl2 = QtWidgets.QLabel("Center")
         self.lbl2.setMaximumWidth(52.3)
         self.lbl2.setMinimumWidth(52.3)
-        self.centerLbl = QtWidgets.QLineEdit("0")
-        self.centerLbl.setMaximumWidth(160)
-        self.centerLbl.setMinimumWidth(160)
+        self.centerTextBox = QtWidgets.QLineEdit("0")
+        self.centerTextBox.setMaximumWidth(160)
+        self.centerTextBox.setMinimumWidth(160)
         self.threshLbl = QtWidgets.QLabel("threshold")
         self.threshLbl.setMaximumWidth(button3size)
         self.threshLbl.setMinimumWidth(button3size)
@@ -99,9 +96,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.threshBtn.setMaximumWidth(button3size)
         self.threshBtn.setMinimumWidth(button3size)
 
-        self.centerLbl.setEnabled(False)
-        self.methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad"]
-
+        self.centerTextBox.setEnabled(False)
         self.mulBtn = QtWidgets.QPushButton("x 10")
         self.mulBtn.setMaximumWidth(button2size)
         self.mulBtn.setMinimumWidth(button2size)
@@ -142,7 +137,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         centerBox = QtWidgets.QHBoxLayout()
         centerBox.addWidget(self.cbox)
         centerBox.addWidget(self.lbl2)
-        centerBox.addWidget(self.centerLbl)
+        centerBox.addWidget(self.centerTextBox)
         threshBox = QtWidgets.QHBoxLayout()
         threshBox.addWidget(self.threshLbl)
         threshBox.addWidget(self.threshLe)
@@ -166,16 +161,13 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         deltaBox.addWidget(self.deltaName)
         deltaBox.addWidget(self.delta)
 
-        for k in range(len(self.methodname)):
-            self.method.addItem(self.methodname[k])
         vb = QtWidgets.QVBoxLayout()
-        vb.addWidget(self.combo)
+        vb.addWidget(self.combo1)
         vb.addWidget(self.method)
         vb.addWidget(self.btn)
         vb.addWidget(self.save)
         vb.addLayout(centerBox)
         vb.addLayout(threshBox)
-        vb.addWidget(self.sld)
         vb.addWidget(self.lbl)
         vb.addLayout(mdBox)
         vb.addLayout(maxBox)

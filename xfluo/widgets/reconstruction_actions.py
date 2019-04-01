@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -35,7 +32,7 @@
 # THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENTn SHALL UChicago     #
 # Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
 # INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
 # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
@@ -46,42 +43,96 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from PyQt5 import QtWidgets, QtGui
+from PyQt5.QtCore import pyqtSignal
+import numpy as np
+from pylab import *
+import xfluo
+import matplotlib.pyplot as plt
+from scipy import ndimage, optimize, signal
+import tomopy
 
-from xfluo.file_io.reader import *
-from xfluo.file_io.writer import *
-from xfluo.file_io.converter import *
+class ReconstructionActions(QtWidgets.QWidget):
+	dataSig = pyqtSignal(np.ndarray, name='dataSig')
+	fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
 
-from xfluo.models.element_table import *
-from xfluo.models.file_table import *
+	def __init__(self):
+		super(ReconstructionActions, self).__init__()
 
-from xfluo.widgets.file_loader import *
-from xfluo.widgets.histogram import *
+	def reconstruct(self, data, element, box_checked, center, method, beta, delta, iters, thetas):
+		'''
+		load data for reconstruction and load variables for reconstruction
+		make it sure that data doesn't have infinity or nan as one of
+		entries
+		'''
+		recData = data[element, :, :, :]
+		recData[recData == inf] = True
+		recData[np.isnan(recData)] = True
+		recCenter = np.array(center, dtype=float32)
 
-from xfluo.widgets.hotspot import *
-from xfluo.widgets.hotspot_controls import *
-from xfluo.widgets.hotspot_actions import *
+		if box_checked:
+			recCenter = None
+		print("working fine")
 
-from xfluo.widgets.image_and_histogram import *
-from xfluo.widgets.image_process import *
-from xfluo.widgets.image_process_controls import *
-from xfluo.widgets.image_process_actions import *
+		if method == 0:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
+				algorithm='mlem', center=recCenter, num_iter=iters)
+		elif method == 1:
+			self.recon= tomopy.recon(recData, thetas, 
+				algorithm='gridrec', emission=True)
+		elif method == 2:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
+				algorithm='art', num_iter=iters)
+		elif method == 3:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
+				algorithm='pml_hybrid', center=recCenter, 
+				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
+		elif method == 4:
+			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='pml_quad', center=recCenter,
+				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
 
-from xfluo.widgets.reconstruction import *
-from xfluo.widgets.reconstruction_controls import *
-from xfluo.widgets.reconstruction_actions import *
+		self.recon = tomopy.remove_nan(self.recon)
+		return self.recon
 
-from xfluo.widgets.sinogram import *
-from xfluo.widgets.sinogram_controls import *
-from xfluo.widgets.sinogram_view import *
-from xfluo.widgets.sinogram_actions import *
+	def reconMultiply(self):
+		'''
+		multiply reconstruction by 10
+		'''
+		self.recon = self.recon * 10
+		return self.recon
+	def reconDivide(self):
+		'''
+		divide reconstuction by 10
+		'''
+		self.recon = self.recon / 10
+		return self.recon
 
+	def threshold(self, recon, threshold_value):
+		'''
+		set threshhold for reconstruction
+		'''
+		self.recon = recon
+		self.recon[np.where(self.recon <= threshold_value)] = 0  # np.min(self.rec)
+		return self.rec
 
+	def saveRecTiff(self, recon):
 
+		try:
+			global debugging
+			savedir = QtGui.QFileDialog.getSaveFileName()
 
-try:
-    import pkg_resources
-    __version__ = pkg_resources.working_set.require("xfluo")[0].version
-except:
-    pass
+			#MAC OS:
+			if sys.platform == "darwin":
+				savedir = str(savedir[0])
+			#Linux:
+			if sys.platform == "linux" or "linux2":
+				savedir = str(savedir)
+
+			if savedir == "":
+				raise IndexError
+			print(savedir)
+			recon = tomopy.circ_mask(recon, axis=0)
+			xfluo.write_tiff_stack(recon, fname=self.savedir)
+		except IndexError:
+			print("type the header name")
