@@ -194,7 +194,6 @@ class FileTableWidget(QtWidgets.QWidget):
         except KeyError:
             pass
 
-
     def getImgTags(self):
         fpath = self.fileTableModel.getFirstCheckedFilePath()
         self.img = h5py.File(fpath,"r")

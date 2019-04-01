@@ -161,7 +161,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.save.setHidden(False)
 
     def update_recon_image(self):
-        index = self.ViewControl.sld.value()
+        index = self.imgAndHistoWidget.sld.value()
         try:
             self.ViewControl.maxText.setText(str(self.recon[index, :, :].max()))
             self.ViewControl.minText.setText(str(self.recon[index, :, :].min()))

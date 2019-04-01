@@ -51,6 +51,7 @@ import xfluo
 import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
 import tomopy
+import dxchange
 
 class ReconstructionActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
@@ -127,12 +128,12 @@ class ReconstructionActions(QtWidgets.QWidget):
 				savedir = str(savedir[0])
 			#Linux:
 			if sys.platform == "linux" or "linux2":
-				savedir = str(savedir)
+				savedir = str(savedir[0])
 
 			if savedir == "":
 				raise IndexError
 			print(savedir)
 			recon = tomopy.circ_mask(recon, axis=0)
-			xfluo.write_tiff_stack(recon, fname=self.savedir)
+			dxchange.writer.write_tiff(recon, fname=savedir)
 		except IndexError:
 			print("type the header name")
