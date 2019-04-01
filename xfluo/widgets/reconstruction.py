@@ -86,7 +86,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         for k in arange(len(methodname)):
             self.ViewControl.method.addItem(methodname[k])
 
-        self.actions = xfluo.ImageProcessActions()
+        self.actions = xfluo.ReconstructionActions()
         self.elementChanged()
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.centerTextBox.setText(str(self.p1[2]))
