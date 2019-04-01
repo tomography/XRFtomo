@@ -220,7 +220,11 @@ class FileTableWidget(QtWidgets.QWidget):
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
 
-            indx = self.imgTags.index(self.auto_image_tag)
+            #bug where saved image-tag parameter will default to "MAPS" which is excluded from the new dataset image tag list.
+            try:
+                indx = self.imgTags.index(self.auto_image_tag)
+            except:
+                indx = 0
             self.imageTag.setCurrentIndex(indx)
 
         else:
