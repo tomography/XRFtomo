@@ -52,6 +52,7 @@ import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
 import tomopy
 import dxchange
+import os
 
 class ReconstructionActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
@@ -116,24 +117,3 @@ class ReconstructionActions(QtWidgets.QWidget):
 		self.recon = recon
 		self.recon[np.where(self.recon <= threshold_value)] = 0  # np.min(self.rec)
 		return self.rec
-
-	def saveRecTiff(self, recon):
-
-		try:
-			global debugging
-			savedir = QtGui.QFileDialog.getSaveFileName()
-
-			#MAC OS:
-			if sys.platform == "darwin":
-				savedir = str(savedir[0])
-			#Linux:
-			if sys.platform == "linux" or "linux2":
-				savedir = str(savedir[0])
-
-			if savedir == "":
-				raise IndexError
-			print(savedir)
-			recon = tomopy.circ_mask(recon, axis=0)
-			dxchange.writer.write_tiff(recon, fname=savedir)
-		except IndexError:
-			print("type the header name")

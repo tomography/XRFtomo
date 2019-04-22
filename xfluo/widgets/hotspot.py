@@ -47,6 +47,7 @@ import xfluo
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from pylab import *
+import numpy as np
 
 # from widgets.image_and_histogram_widget import ImageAndHistogramWidget
 # from widgets.hotspot_controls_widget import HotspotControlsWidget
@@ -57,6 +58,7 @@ class HotspotWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
     sldRangeChanged = pyqtSignal(int,np.ndarray, np.ndarray, name="sldRangeChanged")
     fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
+    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
 
     def __init__(self):
         super(HotspotWidget, self).__init__()
@@ -69,8 +71,18 @@ class HotspotWidget(QtWidgets.QWidget):
         projViewBox.addWidget(self.ViewControl)
         projViewBox.addWidget(self.imgAndHistoWidget, 10)
         self.setLayout(projViewBox)
+        self.x_shifts = None
+        self.y_shifts = None
+        self.centers = None
 
-    def showHotSpot(self, data, element_names, thetas, fnames):
+    def showHotSpot(self, data, element_names, thetas, fnames, x_shifts, y_shifts, centers):
+        self.actions = xfluo.HotspotActions()
+        self.x_shifts = x_shifts
+        self.y_shifts = y_shifts
+        self.centers = centers
+        self.actions.x_shifts = self.x_shifts
+        self.actions.y_shifts = self.y_shifts
+        self.actions.centers = self.centers
         self.fnames = fnames
         self.data = data
         self.thetas = thetas
@@ -84,7 +96,6 @@ class HotspotWidget(QtWidgets.QWidget):
         for k in arange(5):
             self.ViewControl.combo2.addItem(str(k+1))
 
-        self.actions = xfluo.HotspotActions()
         # self.ViewControl.combo.currentIndexChanged.connect(self.saveHotSpotPos)
         self.ViewControl.combo3.setVisible(False)
         self.elementChanged()
@@ -181,6 +192,7 @@ class HotspotWidget(QtWidgets.QWidget):
             self.ViewControl.btn3.setEnabled(True)
             self.ViewControl.btn2.setEnabled(True)
             self.ViewControl.btn1.setEnabled(True)
+            self.ViewControl.btn4.setEnabled(True)
 
         if command == 'Skip':
             self.posMat[int(hs_group), int(hs_number)] = [0, 0]
@@ -197,7 +209,8 @@ class HotspotWidget(QtWidgets.QWidget):
         data = self.data
         posMat = self.posMat
         element = self.ViewControl.combo1.currentIndex()
-        self.actions.hotspot2line(element, boxSize, hs_group, posMat, data)
+        self.x_shifts, self.y_shifts, self.centers = self.actions.hotspot2line(element, boxSize, hs_group, posMat, data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         self.ViewControl.btn4.setEnabled(True)
 
     def hotspot2sine_params(self):
@@ -206,7 +219,8 @@ class HotspotWidget(QtWidgets.QWidget):
         posMat = self.posMat
         element = self.ViewControl.combo1.currentIndex()
         thetas = self.thetas
-        self.actions.hotspot2sine(element, boxSize, hs_group, posMat, data, thetas)
+        self.x_shifts, self.y_shifts, self.centers = self.actions.hotspot2sine(element, boxSize, hs_group, posMat, data, thetas)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         self.ViewControl.btn4.setEnabled(True)
 
     def setY_params(self):
@@ -214,11 +228,12 @@ class HotspotWidget(QtWidgets.QWidget):
         data = self.data
         posMat = self.posMat
         element = self.ViewControl.combo1.currentIndex()
-        self.actions.setY(element, boxSize, hs_group, posMat, data)
+        self.x_shifts, self.y_shifts, self.centers = self.actions.setY(element, boxSize, hs_group, posMat, data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         self.ViewControl.btn4.setEnabled(True)
 
     def clrHotspot_params(self):
-        self.posMat = self.actions.clrHotspot()
+        self.posMat = self.actions.clrHotspot(self.posMat)
         self.ViewControl.btn4.setEnabled(False)
         self.ViewControl.btn3.setEnabled(False)
         self.ViewControl.btn2.setEnabled(False)

@@ -55,6 +55,7 @@ from scipy import ndimage, optimize, signal
 class ReconstructionWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, name='elementChangedSig')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
+    reconChangedSig = pyqtSignal(np.ndarray, name='reconChangedSig')
 
     def __init__(self):
         super(ReconstructionWidget, self).__init__()
@@ -68,12 +69,22 @@ class ReconstructionWidget(QtWidgets.QWidget):
         mainHBox.addWidget(self.ViewControl)
         mainHBox.addWidget(self.imgAndHistoWidget, 10)
         self.setLayout(mainHBox)
+        self.x_shifts = None
+        self.y_shifts = None
+        self.centers = None
 
-    def showReconstruct(self, data, elements, fnames, thetas):
+    def showReconstruct(self, data, elements, fnames, thetas, x_shifts, y_shifts, centers):
         '''
         load window for reconstruction window
         '''
-        self.p1 = [100, 100, data.shape[3] / 2]
+        self.actions = xfluo.ReconstructionActions()
+        self.write = xfluo.SaveOptions()
+        self.x_shifts = x_shifts
+        self.y_shifts = y_shifts
+        self.centers = centers
+        self.actions.x_shifts = self.x_shifts
+        self.actions.y_shifts = self.y_shifts
+        self.actions.centers = self.centers
         self.fnames = fnames
         self.data = data
         self.y_range = self.data.shape[2]
@@ -86,12 +97,10 @@ class ReconstructionWidget(QtWidgets.QWidget):
         for k in arange(len(methodname)):
             self.ViewControl.method.addItem(methodname[k])
 
-        self.actions = xfluo.ReconstructionActions()
         self.elementChanged()
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
-        self.ViewControl.centerTextBox.setText(str(self.p1[2]))
+        self.ViewControl.centerTextBox.setText(str(self.centers[2]))
         self.ViewControl.btn.clicked.connect(self.reconstruct_params)
-        self.ViewControl.save.clicked.connect(self.call_saveRecTiff)
         self.ViewControl.mulBtn.setEnabled(False)
         self.ViewControl.divBtn.setEnabled(False)
         self.ViewControl.mulBtn.clicked.connect(self.call_reconMultiply)
@@ -136,12 +145,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.recon = self.actions.reconDivide(self.recon)
         self.update_recon_image()
 
-    def call_saveRecTiff(self):
-        rec = self.recon
-        self.actions.saveRecTiff(rec)
-
     def reconstruct_params(self):
-
         self.ViewControl.lbl.setText("Reconstruction is currently running")
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
@@ -158,7 +162,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
         self.ViewControl.lbl.setText("Done")
-        self.ViewControl.save.setHidden(False)
+        self.reconChangedSig.emit(self.recon)
 
     def update_recon_image(self):
         index = self.imgAndHistoWidget.sld.value()
@@ -168,7 +172,3 @@ class ReconstructionWidget(QtWidgets.QWidget):
             self.imgAndHistoWidget.view.projView.setImage(self.recon[index, :, :])
         except:
             print("run reconstruction first")
-
-
-
-

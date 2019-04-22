@@ -58,15 +58,9 @@ class HotspotActions(QtWidgets.QWidget):
 	def __init__(self):
 		super(HotspotActions, self).__init__()
 		self.hotSpotNumb = 0
-
-	# def saveHotSpotPos(self):
-	#     # self.projView.view.hotSpotNumb=0
-	#     self.projViewElement = self.projViewControl.combo.currentIndex()
-	#     self.projView.view.data = self.data[self.projViewElement, :, :, :]
-	#     self.projView.view.posMat = zeros(
-	#         [5, self.data.shape[1], 2])  ## Later change 5 -> how many data are in the combo box.
-	#     self.projView.view.projView.setImage(self.data[self.projViewElement, 0, :, :])
-
+		self.x_shifts = None
+		self.y_shifts = None
+		self.centers = None
 
 	def hotspot2line(self, element, boxSize, hs_group, posMat, data):
 		'''
@@ -78,10 +72,6 @@ class HotspotActions(QtWidgets.QWidget):
 #****************
 		num_projections = data.shape[1]
 		boxSize2 = int(boxSize / 2)
-		p1 = [100, 100, int(data.shape[3] / 2)]
-		self.xshift = zeros(num_projections, dtype=np.int)
-		self.yshift = zeros(num_projections, dtype=np.int)
-
 		for j in arange(num_projections):
 
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
@@ -94,12 +84,13 @@ class HotspotActions(QtWidgets.QWidget):
 			if hs_y_pos[j] == 0:
 				yyshift = 0
 
-			self.xshift[j] += xxshift
-			self.yshift[j] += yyshift
+			self.x_shifts[j] += xxshift
+			self.y_shifts[j] += yyshift
 
-		p1[2] = hs_x_pos[0]
+		self.centers[2] = hs_x_pos[0]
 
 		print("align done")
+		return self.x_shifts, self.y_shifts, self.centers
 
 	def hotspot2sine(self, element, boxSize, hs_group, posMat, data, theta):
 		'''
@@ -111,11 +102,7 @@ class HotspotActions(QtWidgets.QWidget):
 #****************
 		num_projections = data.shape[1]
 		boxSize2 = int(boxSize / 2)
-		p1 = [100, 100, int(data.shape[3] / 2)]
-		self.xshift = zeros(num_projections, dtype=np.int)
-		self.yshift = zeros(num_projections, dtype=np.int)
 		theta  = np.asarray(theta)
-
 		for j in arange(num_projections):
 
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
@@ -126,10 +113,9 @@ class HotspotActions(QtWidgets.QWidget):
 			if hs_y_pos[j] == 0:
 				yyshift = 0
 
-			self.xshift[j] += xxshift
-			self.yshift[j] += yyshift
+			self.x_shifts[j] += xxshift
+			self.y_shifts[j] += yyshift
 
-		# global hotspotXPos, hotspotYPos
 		hotspotXPos = zeros(num_projections, dtype=np.int)
 		hotspotYPos = zeros(num_projections, dtype=np.int)
 		for i in arange(num_projections):
@@ -144,19 +130,21 @@ class HotspotActions(QtWidgets.QWidget):
 		if hs_group == 0:
 			self.fitCenterOfMass(com, x=theta_tmp)
 		else:
-			self.fitCenterOfMass2(com, p1, x=theta_tmp)
-		self.alignCenterOfMass2(hotspotProj, self.xshift, data)
+			self.fitCenterOfMass2(com, self.centers, x=theta_tmp)
+		self.alignCenterOfMass2(hotspotProj, data)
 
 		## yfit
 		for i in hotspotProj:
-			self.yshift[i] += int(hotspotYPos[hotspotProj[0]]) - int(hotspotYPos[i])
-			data[:, i, :, :] = np.roll(data[:, i, :, :], self.yshift[i], axis=1)
+			self.y_shifts[i] += int(hotspotYPos[hotspotProj[0]]) - int(hotspotYPos[i])
+			data[:, i, :, :] = np.roll(data[:, i, :, :], self.y_shifts[i], axis=1)
 			print(int(hotspotYPos[0]) - int(hotspotYPos[i]))
 
 		#update reconstruction slider value
-		# self.recon.sld.setValue(self.p1[2])
+		# self.recon.sld.setValue(self.centers[2])
 
 		print("align done")
+		return self.x_shifts, self.y_shifts, self.centers
+		
 
 	def setY(self, element, boxSize, hs_group, posMat, data):
 		'''
@@ -167,9 +155,6 @@ class HotspotActions(QtWidgets.QWidget):
 #****************
 		num_projections = data.shape[1]
 		boxSize2 = int(boxSize / 2)
-		p1 = [100, 100, int(data.shape[3] / 2)]
-		self.xshift = zeros(num_projections, dtype=np.int)
-		self.yshift = zeros(num_projections, dtype=np.int)
 		for j in arange(num_projections):
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
 				yyshift = int(round(boxSize2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
@@ -178,7 +163,7 @@ class HotspotActions(QtWidgets.QWidget):
 			if hs_y_pos[j] == 0:
 				yyshift = 0
 
-			self.yshift[j] += yyshift
+			self.y_shifts[j] += yyshift
 
 		print("align done")
 
@@ -189,8 +174,6 @@ class HotspotActions(QtWidgets.QWidget):
 		hs_x_pos = zeros(num_projections, dtype=np.int)
 		hs_y_pos = zeros(num_projections, dtype=np.int)
 		hs_array = zeros([num_projections, boxSize, boxSize], dtype=np.int)
-		self.xshift = zeros(num_projections, dtype=np.int)
-		self.yshift = zeros(num_projections, dtype=np.int)
 
 		for i in arange(num_projections):
 			hs_x_pos[i] = int(round(self.posMat[hs_group, i, 0]))
@@ -237,25 +220,25 @@ class HotspotActions(QtWidgets.QWidget):
 		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
 		errfunc = lambda p, x, y: fitfunc(p, x) - y
 		p0 = [100, 100, 100]
-		p1, success = optimize.leastsq(errfunc, p0, args=(x, com))
-		self.centerOfMassDiff = fitfunc(p1, x) - com
+		self.centers, success = optimize.leastsq(errfunc, p0, args=(x, com))
+		self.centerOfMassDiff = fitfunc(x) - com
 		print(self.centerOfMassDiff)
 
-	def fitCenterOfMass2(self, com, p1, x):
-		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p1[2]
+	def fitCenterOfMass2(self, com, x):
+		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + self.centers[2]
 		errfunc = lambda p, x, y: fitfunc(p, x) - y
 		p0 = [100, 100]
 		p2, success = optimize.leastsq(errfunc, p0, args=(x, com))
 		self.centerOfMassDiff = fitfunc(p2, x) - com
 		print(self.centerOfMassDiff)
 
-	def alignCenterOfMass2(self, hotspotProj, xshift, data):
+	def alignCenterOfMass2(self, hotspotProj, data):
 
 		j = 0
 		for i in hotspotProj:
-			xshift[i] += int(self.centerOfMassDiff[j])
+			self.x_shifts[i] += int(self.centerOfMassDiff[j])
 
-			data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(xshift[i])), axis=2)
+			data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(self.x_shifts[i])), axis=2)
 			j += 1
 
 		#set some label to be show that the alignment has completed. perhaps print this in a logbox
@@ -289,6 +272,6 @@ class HotspotActions(QtWidgets.QWidget):
 		width_y = float(width_y)
 		return lambda x, y: height * exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
 
-	def clrHotspot(self):
-		self.posMat[...] = zeros_like(self.posMat)
-		return self.posMat
+	def clrHotspot(self, posMat):
+		posMat[...] = zeros_like(posMat)
+		return posMat

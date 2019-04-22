@@ -56,6 +56,7 @@ import numpy as np
 class SinogramWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
+    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
 
     def __init__(self):
         super(SinogramWidget, self).__init__()
@@ -72,6 +73,9 @@ class SinogramWidget(QtWidgets.QWidget):
         self.hist.setMinimumSize(120,120)
         self.hist.setMaximumWidth(120)
         self.hist.setImageItem(self.sinoView.projView)
+        self.x_shifts = None
+        self.y_shifts = None
+        self.centers = None
 
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(self.lbl)
@@ -88,10 +92,18 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.setLayout(sinoBox)
 
-    def showSinogram(self, data, element_names, thetas):
+    def showSinogram(self, data, element_names, thetas, fnames, x_shifts, y_shifts, centers):
         '''
         loads sinogram tabS
         '''
+        self.actions = xfluo.SinogramActions()
+        self.x_shifts = x_shifts
+        self.y_shifts = y_shifts
+        self.centers = centers
+        self.actions.x_shifts = self.x_shifts
+        self.actions.y_shifts = self.y_shifts
+        self.actions.centers = self.centers
+        self.fnames = fnames
         self.thetas = thetas
         self.data = data
         self.ViewControl.combo1.clear()
@@ -100,8 +112,16 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.actions = xfluo.SinogramActions()
         self.elementChanged()
-        self.ViewControl.btn.clicked.connect(self.centerOfMass_params)
-        self.ViewControl.btn2.setVisible(False)
+        self.ViewControl.btn1.clicked.connect(self.centerOfMass_params)
+        # self.ViewControl.btn1.clicked.connect(self.centerOfMass2_params)
+        self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
+        self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
+        # self.ViewControl.btn4.clicked.connect(self.centerofMass2Sine_params)
+        self.ViewControl.btn5.clicked.connect(self.matchTermplate_params)
+        # self.ViewControl.btn6.clicked.connect(self.alignFromText_params)
+        self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
+        # self.ViewControl.btn8.clicked.connect(self.alignfromHotspotxt_params)
+
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
         self.sld.valueChanged.connect(self.imageSliderChanged)
@@ -164,14 +184,66 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def centerOfMass_params(self):
         element, row, data, thetas = self.get_params()
-        self.data = self.actions.runCenterOfMass2(element, row, data, thetas)
+        self.data, self.x_shifts = self.actions.runCenterOfMass(element, row, data, thetas)
         self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+        
+    # def centerOfMass2_params(self):
+    #     element, row, data, thetas = self.get_params()
+    #     self.data, self.x_shifts, self.centers = self.actions.runCenterOfMass2(element, row, data, thetas)
+    #     self.dataChangedSig.emit(self.data)
+    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+    #     return
 
-    def shiftEvent_params(self, shift_number, column_number):
+    def shiftEvent_params(self, shift_dir, column_number):
         sinoData = self.sinogramData
         data = self.data
-        self.data, self.sinogramData = self.actions.shift(sinoData, data, shift_number, column_number)
+        self.data, self.sinogramData = self.actions.shift(sinoData, data, shift_dir, column_number)
+        self.x_shifts += shift_dir
         self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+
+    def crossCorrelate_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate(element, data)
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+
+    def phaseCorrelate_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        self.data, self.ViewControl.combo1.currentIndex()
+        self.data, self.x_shifts, self.y_shifts = self.actions.phaseCorrelate(element, data)
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+
+    def matchTermplate_params(self):
+        self.actions.matchTemmplate()
+        pass
+
+    # def alignFromText_params(self):
+    #     data = self.data
+    #     self.data, self.x_shifts, self.y_shifts, self.centers = self.actions.alignFromText(data)
+    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+    #     self.dataChangedSig.emit(self.data)
+    #     return
+
+    def alignFromText2_params(self):
+        data = self.data
+        self.data, self.x_shifts, self.y_shifts = self.actions.alignFromText2(data)
+        self.dataChangedSig.emit(self.data)
+        # self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+
+    # def alignfromHotspotxt_params(self):
+    #     self.actions.alignfromHotspotxt()
+    #     pass
 
     def get_params(self):
         element = self.ViewControl.combo1.currentIndex()

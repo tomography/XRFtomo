@@ -56,7 +56,6 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         super(SinogramView, self).__init__()
         self.keylist = []
         self.hotSpotNumb = 0
-        
         self.initUI()
 
     def initUI(self):
@@ -82,6 +81,9 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         self.y_pos = int(round(self.moving_y))
 
     def wheelEvent(self, ev):
+        '''
+        keep this here. It overrides the built in wheel event in order to keep the mouse wheel disabled.
+        '''
         pass
 
     def keyPressEvent(self, ev):
@@ -108,3 +110,4 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
                 col_number = int(self.x_pos / 10)
                 print(col_number)
                 self.keyPressSig.emit(-1, col_number)
+ 

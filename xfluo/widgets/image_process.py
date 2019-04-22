@@ -57,6 +57,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
     # shiftSig = pyqtSignal(str, name='sliderChangedSig')
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
+    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
     ySizeChanged = pyqtSignal(int, name='ySizeChanged')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
     fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
@@ -73,8 +74,20 @@ class ImageProcessWidget(QtWidgets.QWidget):
         mainHBox.addWidget(self.ViewControl)
         mainHBox.addWidget(self.imgAndHistoWidget, 10)
         self.setLayout(mainHBox)
+        self.x_shifts = None
+        self.y_shifts = None
+        self.centers = None
 
-    def showImgProcess(self, data, element_names, thetas, fnames):
+
+    def showImgProcess(self, data, element_names, thetas, fnames, x_shifts, y_shifts, centers):
+        self.actions = xfluo.ImageProcessActions()
+        self.x_shifts = x_shifts
+        self.y_shifts = y_shifts
+        self.centers = centers
+        self.actions.x_shifts = self.x_shifts
+        self.actions.y_shifts = self.y_shifts
+        self.actions.centers = self.centers
+
         self.fnames = fnames
         self.data = data
         self.thetas = thetas
@@ -86,7 +99,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         for k in arange(num_projections):
             self.ViewControl.combo2.addItem(str(k+1))
 
-        self.actions = xfluo.ImageProcessActions()
         self.elementChanged()
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
@@ -159,22 +171,41 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def shift_process(self, command):
         index = self.imgAndHistoWidget.sld.value()
         if command == 'left':
+            self.x_shifts[index] -=1
             self.actions.shiftProjectionLeft(self.data, index) 
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'right':
+            self.x_shifts[index] +=1
             self.actions.shiftProjectionRight(self.data, index) 
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'up':
+            self.y_shifts[index] +=1
             self.actions.shiftProjectionUp(self.data, index) 
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'down':
+            self.y_shifts[index] -=1
             self.actions.shiftProjectionDown(self.data, index) 
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shiftLeft':
+            self.x_shifts -=1
             self.actions.shiftDataLeft(self.data) 
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shiftRight':
+            self.x_shifts +=1
             self.actions.shiftDataRight(self.data) 
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shigtUp':
+            self.y_shifts +=1
             self.actions.shiftDataUp(self.data, self.thetas) 
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shiftDown':
+            self.x_shifts -=1
             self.actions.shiftDataDown(self.data, self.thetas) 
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'Delete':
+            self.x_shifts = np.delete(self.x_shifts, index)
+            self.y_shifts = np.delete(self.y_shifts, index)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
             self.exclude_params()
 
     def background_value_params(self):
@@ -256,6 +287,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         This sends a signal one level up indicating that the data array has changed
         and to update adjacent tabs with new data
         '''
+
         self.dataChangedSig.emit(data)
 
 

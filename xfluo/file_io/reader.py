@@ -53,7 +53,6 @@ Module for importing raw data files.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-
 import dxchange
 
 __author__ = "Francesco De Carlo"
@@ -63,7 +62,6 @@ __docformat__ = 'restructuredtext en'
 __all__ = ['read_projection',
            'read_elements',
            'find_index']
-
 
 def find_index(a_list, element):
     try:

@@ -110,4 +110,3 @@ def convert_to_array(path_files, element_index, theta_index, img_tag, data_tag, 
     data[data == inf] = 0.0001
 
     return data
-

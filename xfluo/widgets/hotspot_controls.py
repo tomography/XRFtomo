@@ -94,18 +94,18 @@ class HotspotControlsWidget(QtWidgets.QWidget):
 
         for i in range(5):
             self.combo2.addItem(str(i + 1))
-        self.btn1 = QtWidgets.QPushButton("Hotspots to a line")
-        self.btn1.setMaximumWidth(button1size)
-        self.btn1.setMinimumWidth(button1size)
-        self.btn2 = QtWidgets.QPushButton("Hotspots to a sine curve")
-        self.btn2.setMaximumWidth(button1size)
-        self.btn2.setMinimumWidth(button1size)
+        self.btn1 = QtWidgets.QPushButton("fit to a line")
+        self.btn1.setMaximumWidth(button2size)
+        self.btn1.setMinimumWidth(button2size)
+        self.btn2 = QtWidgets.QPushButton("fit to sine curve")
+        self.btn2.setMaximumWidth(button2size)
+        self.btn2.setMinimumWidth(button2size)
         self.btn3 = QtWidgets.QPushButton("set y")
-        self.btn3.setMaximumWidth(button1size)
-        self.btn3.setMinimumWidth(button1size)
-        self.btn4 = QtWidgets.QPushButton("Clear hotspot data")
-        self.btn4.setMaximumWidth(button1size)
-        self.btn4.setMinimumWidth(button1size)
+        self.btn3.setMaximumWidth(button2size)
+        self.btn3.setMinimumWidth(button2size)
+        self.btn4 = QtWidgets.QPushButton("Clear data")
+        self.btn4.setMaximumWidth(button2size)
+        self.btn4.setMinimumWidth(button2size)
 
         hb1 = QtWidgets.QHBoxLayout()
         hb1.addWidget(self.boxSizeLbl)
@@ -113,19 +113,26 @@ class HotspotControlsWidget(QtWidgets.QWidget):
         hb1.addWidget(self.boxDownBtn)
         hb1.addWidget(self.boxSizeTxt)
 
+        hb2 = QtWidgets.QHBoxLayout()
+        hb2.addWidget(self.lbl3)
+        hb2.addWidget(self.combo2)
+
         hb3 = QtWidgets.QHBoxLayout()
-        hb3.addWidget(self.lbl3)
-        hb3.addWidget(self.combo2)
+        hb3.addWidget(self.btn1)
+        hb3.addWidget(self.btn2)        
+
+        hb4 = QtWidgets.QHBoxLayout()
+        hb4.addWidget(self.btn3)
+        hb4.addWidget(self.btn4)
 
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addLayout(hb1)
 
         vb2 = QtWidgets.QVBoxLayout()
+        vb2.addLayout(hb2)
         vb2.addLayout(hb3)
-        vb2.addWidget(self.btn1)
-        vb2.addWidget(self.btn2)
-        vb2.addWidget(self.btn3)
-        vb2.addWidget(self.btn4)
+        vb2.addLayout(hb4)
+
 
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)

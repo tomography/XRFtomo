@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 # #########################################################################
-# Copyright (c) 2015, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
-# Copyright 2015. UChicago Argonne, LLC. This software was produced       #
+# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
 # under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
 # Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
 # U.S. Department of Energy. The U.S. Government has rights to use,       #
@@ -47,248 +47,100 @@
 # #########################################################################
 
 """
-Module for data I/O.
+Module for importing raw data files.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+import dxchange
+import string
+from PyQt5 import QtGui
+from pylab import *
 
-from tomopy.misc.corr import adjust_range
-import tomopy.util.dtype as dt
-import numpy as np
-import os
-import six
-import h5py
-import logging
+class SaveOptions(object):
 
-logger = logging.getLogger(__name__)
+	def save_hotspot_positions(self, element, data, x_shift, y_shift) :
+		'''
+		save hotspot positions. first apply shift information then sync with shift information
+		all positions are with respect to the pixel positions of the original data
+		'''
 
+	def save_alignemnt_information(self,fnames, x_shift, y_shift, centers):
+		'''
+		3D array [projection, x, y]
+		fnames 
+		'''
+		num_files = len(x_shift)
+		try:
+			alignFileName = QtGui.QFileDialog.getSaveFileName()[0]
+			if str(alignFileName).rfind(".txt") == -1:
+				alignFileName = str(alignFileName) + ".txt"
+			print(str(alignFileName))
+			file = open(alignFileName, "w")
+			file.writelines("rotation axis, " + str(centers[2]) + "\n")
+			for i in arange(num_files):
+				file.writelines(fnames[i] + ", " + str(x_shift[i]) + ", " + str(y_shift[i]) + "\n")
+			file.close()
+		except IOError:
+			print("choose file please")
 
-def _check_import(modname):
-    try:
-        return __import__(modname)
-    except ImportError:
-        logger.warn(modname + ' module not found')
-        return None
+	def save_center_position(self, angle, cen_pos):
+		'''
+		save center pixel position and possibly motor position as a 3D array
+		in order to apply to raw data, first apply the shifts then apply/load 
+		center position
+		'''
+		pass
 
-dxfile = _check_import('dxfile')
+	# def save_motor_position(self, angle, x_pos, y_pos):
+	# 	'''
+	# 	save motor positions along with corresponding angle position
+	# 	'''
+	# 	pass
 
-
-__author__ = "Doga Gursoy"
-__credits__ = "Francesco De Carlo"
-__copyright__ = "Copyright (c) 2015, UChicago Argonne, LLC."
-__docformat__ = 'restructuredtext en'
-__all__ = ['write_dxf',
-           'write_hdf5',
-           'write_npy',
-           'write_tiff',
-           'write_tiff_stack']
-
-
-def get_body(fname, digit=None):
-    """
-    Get file name after extension removed.
-    """
-    body = os.path.splitext(fname)[0]
-    if digit is not None:
-        body = ''.join(body[:-digit])
-    return body
-
-
-def get_extension(fname):
-    """
-    Get file extension.
-    """
-    return '.' + fname.split(".")[-1]
-
-
-def _init_dirs(fname):
-    """
-    Initialize directories for saving output files.
-
-    Parameters
-    ----------
-    fname : str
-        Output file name.
-    """
-    dname = os.path.dirname(os.path.abspath(fname))
-    if not os.path.exists(dname):
-        os.makedirs(dname)
+	def save_sinogram(self, data, row, all_rows = False):
+		'''
+		saves sinogram or array of sinograms for each row
+		'''
+		pass
 
 
-def _suggest_new_fname(fname, digit):
-    """
-    Suggest new string with an attached (or increased) value indexing
-    at the end of a given string.
+	def save_projections(self, data):
+		'''
+		save projections as tiffs
+		'''
+		pass
 
-    For example if "myfile.tiff" exist, it will return "myfile-1.tiff".
+	def save_reconstruction(self, recon):
+		try:
+			global debugging
+			savedir = str(QtGui.QFileDialog.getSaveFileName())
 
-    Parameters
-    ----------
-    fname : str
-        Output file name.
-    digit : int, optional
-        Number of digits in indexing stacked files.
+			if savedir == "":
+				raise IndexError
+			print(savedir)
+			recon = tomopy.circ_mask(recon, axis=0)
+			dxchange.writer.write_tiff_stack(recon, fname=savedir)
+		except IndexError:
+			print("type the header name")
 
-    Returns
-    -------
-    str
-        Indexed new string.
-    """
-    if os.path.isfile(fname):
-        body = get_body(fname)
-        ext = get_extension(fname)
-        indq = 1
-        file_exist = False
-        while not file_exist:
-            fname = body + '-' + '{0:0={1}d}'.format(indq, digit) + ext
-            if not os.path.isfile(fname):
-                file_exist = True
-            else:
-                indq += 1
-    return fname
+	def export_h5(self):
 
+		#angle
+		#x_shifts (pixels)
+		#y_shifts (pixels)
+		#hotspot_x [ lisr entry]
+		#hotspor_y [ list entry]
+		#centers
+		#projections
 
-def _init_write(arr, fname, ext, dtype, overwrite):
-    if not (isinstance(fname, six.string_types)):
-        fname = 'tmp/data' + ext
-    else:
-        if not fname.endswith(ext):
-            fname = fname + ext
-    fname = os.path.abspath(fname)
-    if not overwrite:
-        fname = _suggest_new_fname(fname, digit=1)
-    _init_dirs(fname)
-    if dtype is not None:
-        arr = dt.as_dtype(arr, dtype)
-    return fname, arr
+		#row
+		#sinogram (function of row)
+		#reconstruction
+
+		'''
+		saves all selected information to a new or existing h5 file
+		'''
+		pass
 
 
-def write_hdf5(
-        data, fname='tmp/data.h5', gname='exchange',
-        dtype=None, overwrite=False):
-    """
-    Write data to hdf5 file in a specific group.
 
-    Parameters
-    ----------
-    data : ndarray
-        Array data to be saved.
-    fname : str
-        File name to which the data is saved. ``.h5`` extension
-        will be appended if it does not already have one.
-    gname : str, optional
-        Path to the group inside hdf5 file where data will be written.
-    dtype : data-type, optional
-        By default, the data-type is inferred from the input data.
-    overwrite: bool, optional
-        if True, overwrites the existing file if the file exists.
-    """
-    fname, data = _init_write(data, fname, '.h5', dtype, overwrite)
-    f = h5py.File(fname, 'w')
-    ds = f.create_dataset('implements', data=gname)
-    exchangeGrp = f.create_group(gname)
-    ds = exchangeGrp.create_dataset('data', data=data)
-    f.close()
-
-
-def write_dxf(
-        data, fname='tmp/data.h5', axes='theta:y:x',
-        dtype=None, overwrite=False):
-    """
-    Write data to a data exchange hdf5 file.
-
-    Parameters
-    ----------
-    data : ndarray
-        Array data to be saved.
-    fname : str
-        File name to which the data is saved. ``.h5`` extension
-        will be appended if it does not already have one.
-    axes : str
-        Attribute labels for the data array axes.
-    dtype : data-type, optional
-        By default, the data-type is inferred from the input data.
-    overwrite: bool, optional
-        if True, overwrites the existing file if the file exists.
-    """
-    fname, data = _init_write(data, fname, '.h5', dtype, overwrite)
-    f = dxfile.dxtomo.File(fname, mode='w')
-    f.add_entry(dxfile.dxtomo.Entry.data(data={
-                'value': data, 'units': 'counts',
-                'description': 'transmission', 'axes': axes}))
-    f.close()
-
-
-def write_npy(
-        data, fname='tmp/data.npy', dtype=None, overwrite=False):
-    """
-    Write data to a binary file in NumPy ``.npy`` format.
-
-    Parameters
-    ----------
-    data : ndarray
-        Array data to be saved.
-    fname : str
-        File name to which the data is saved. ``.npy`` extension
-        will be appended if it does not already have one.
-    """
-    fname, data = _init_write(data, fname, '.npy', dtype, overwrite)
-    np.save(fname, data)
-
-
-def write_tiff(
-        data, fname='tmp/data.tiff', dtype=None, overwrite=False):
-    """
-    Write image data to a tiff file.
-
-    Parameters
-    ----------
-    data : ndarray
-        Array data to be saved.
-    fname : str
-        File name to which the data is saved. ``.tiff`` extension
-        will be appended if it does not already have one.
-    dtype : data-type, optional
-        By default, the data-type is inferred from the input data.
-    overwrite: bool, optional
-        if True, overwrites the existing file if the file exists.
-    """
-    fname, data = _init_write(data, fname, '.tiff', dtype, overwrite)
-    import tifffile
-    tifffile.imsave(fname, data)
-
-
-def write_tiff_stack(
-        data, fname='tmp/data.tiff', dtype=None, axis=0, digit=5,
-        start=0, overwrite=False):
-    """
-    Write data to stack of tiff file.
-
-    Parameters
-    ----------
-    data : ndarray
-        Array data to be saved.
-    fname : str
-        Base file name to which the data is saved. ``.tiff`` extension
-        will be appended if it does not already have one.
-    dtype : data-type, optional
-        By default, the data-type is inferred from the input data.
-    axis : int, optional
-        Axis along which stacking is performed.
-    start : int, optional
-        First index of file in stack for saving.
-    digit : int, optional
-        Number of digits in indexing stacked files.
-    overwrite: bool, optional
-        if True, overwrites the existing file if the file exists.
-    """
-    fname, data = _init_write(data, fname, '.tiff', dtype, True)
-    body = get_body(fname)
-    ext = get_extension(fname)
-    _data = np.swapaxes(data, 0, axis)
-    for m in range(start, start + data.shape[axis]):
-        _fname = body + '_' + '{0:0={1}d}'.format(m, digit) + ext
-        if not overwrite:
-            _fname = _suggest_new_fname(_fname, digit=1)
-        write_tiff(_data[m - start], _fname, overwrite=overwrite)
