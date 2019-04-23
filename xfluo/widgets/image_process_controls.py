@@ -53,8 +53,8 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.xSize = 20
-        self.ySize = 20
+        self.xSize = 10
+        self.ySize = 10
         button1size = 250       #long button (1 column)
         button2size = 122.5     #mid button (2 column)
         button3size = 73.3      #small button (almost third)
@@ -76,18 +76,12 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.yDownBtn.setMaximumWidth(button4size)
         self.yDownBtn.setMinimumWidth(button4size)
         self.yDownBtn.clicked.connect(self.yDown)
-        self.bgBtn = QtWidgets.QPushButton("Bg Value")
-        self.bgBtn.setMaximumWidth(button2size)
-        self.bgBtn.setMinimumWidth(button2size)
-        self.delHotspotBtn = QtWidgets.QPushButton("Delete HS")
-        self.delHotspotBtn.setMaximumWidth(button2size)
-        self.delHotspotBtn.setMinimumWidth(button2size)
         self.normalizeBtn = QtWidgets.QPushButton("Normalize")
         self.normalizeBtn.setMaximumWidth(button2size)
         self.normalizeBtn.setMinimumWidth(button2size)
-        self.cutBtn = QtWidgets.QPushButton("Cut")
-        self.cutBtn.setMaximumWidth(button2size)
-        self.cutBtn.setMinimumWidth(button2size)
+        self.cropBtn = QtWidgets.QPushButton("Crop")
+        self.cropBtn.setMaximumWidth(button2size)
+        self.cropBtn.setMinimumWidth(button2size)
         self.gaussian33Btn = QtWidgets.QPushButton("3*3 gauss")
         self.gaussian33Btn.setMaximumWidth(button2size)
         self.gaussian33Btn.setMinimumWidth(button2size)
@@ -106,31 +100,6 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.testButton = QtWidgets.QPushButton("test btn")
         self.testButton.setMaximumWidth(button2size)
         self.testButton.setMinimumWidth(button2size)
-        self.shift_img_left = QtWidgets.QPushButton("shft img left")
-        self.shift_img_left.setMaximumWidth(button2size)
-        self.shift_img_left.setMinimumWidth(button2size)
-        self.shift_img_right = QtWidgets.QPushButton("shft img right")
-        self.shift_img_right.setMaximumWidth(button2size)
-        self.shift_img_right.setMinimumWidth(button2size)
-        self.shift_img_up = QtWidgets.QPushButton("shft img up")
-        self.shift_img_up.setMaximumWidth(button2size)
-        self.shift_img_up.setMinimumWidth(button2size)
-        self.shift_img_down = QtWidgets.QPushButton("shft img down")
-        self.shift_img_down.setMaximumWidth(button2size)
-        self.shift_img_down.setMinimumWidth(button2size)
-
-        self.shift_all_left = QtWidgets.QPushButton("shft all left")
-        self.shift_all_left.setMaximumWidth(button2size)
-        self.shift_all_left.setMinimumWidth(button2size)
-        self.shift_all_right = QtWidgets.QPushButton("shft all right")
-        self.shift_all_right.setMaximumWidth(button2size)
-        self.shift_all_right.setMinimumWidth(button2size)
-        self.shift_all_up = QtWidgets.QPushButton("shft all up")
-        self.shift_all_up.setMaximumWidth(button2size)
-        self.shift_all_up.setMinimumWidth(button2size)
-        self.shift_all_down = QtWidgets.QPushButton("shift all down")
-        self.shift_all_down.setMaximumWidth(button2size)
-        self.shift_all_down.setMinimumWidth(button2size)
 
         self.xSizeLbl = QtWidgets.QLabel("x Size")
         self.xSizeLbl.setMaximumWidth(button4size)
@@ -162,28 +131,9 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb2.addWidget(self.yDownBtn)
         hb2.addWidget(self.ySizeTxt)
 
-        hb3 = QtWidgets.QHBoxLayout()
-        hb3.addWidget(self.shift_img_up)
-        hb4 = QtWidgets.QHBoxLayout()
-        hb4.addWidget(self.shift_img_left)
-        hb4.addWidget(self.shift_img_right)
-        hb5 = QtWidgets.QHBoxLayout()
-        hb5.addWidget(self.shift_img_down)
-
-        hb6 = QtWidgets.QHBoxLayout()
-        hb6.addWidget(self.shift_all_up)
-        hb7 = QtWidgets.QHBoxLayout()
-        hb7.addWidget(self.shift_all_left)
-        hb7.addWidget(self.shift_all_right)
-        hb8 = QtWidgets.QHBoxLayout()
-        hb8.addWidget(self.shift_all_down)
-
-        hb9 = QtWidgets.QHBoxLayout()
-        hb9.addWidget(self.bgBtn, )
-        hb9.addWidget(self.delHotspotBtn)
         hb10 = QtWidgets.QHBoxLayout()
         hb10.addWidget(self.normalizeBtn)
-        hb10.addWidget(self.cutBtn)
+        hb10.addWidget(self.cropBtn)
         hb11 = QtWidgets.QHBoxLayout()
         hb11.addWidget(self.gaussian33Btn)
         hb11.addWidget(self.gaussian55Btn)
@@ -198,18 +148,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb1.addLayout(hb1)
         vb1.addLayout(hb2)
 
-        vb2 = QtWidgets.QVBoxLayout()
-        vb2.addLayout(hb3)
-        vb2.addLayout(hb4)
-        vb2.addLayout(hb5)
-
-        vb3 = QtWidgets.QVBoxLayout()
-        vb3.addLayout(hb6)
-        vb3.addLayout(hb7)
-        vb3.addLayout(hb8)
-
         vb4 = QtWidgets.QVBoxLayout()
-        vb4.addLayout(hb9)
         vb4.addLayout(hb10)
         vb4.addLayout(hb11)
         vb4.addLayout(hb12)
@@ -219,8 +158,6 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb5.addWidget(self.combo1)
         vb5.addWidget(self.combo2)
         vb5.addLayout(vb1)
-        vb5.addLayout(vb2)
-        vb5.addLayout(vb3)
         vb5.addLayout(vb4)
 
         self.setLayout(vb5)
@@ -234,23 +171,23 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
     def xUp(self):
         self.changeXSize()
         self.changeYSize()
-        self.xSize += 1
+        self.xSize += 2
         self.xSizeTxt.setText(str(self.xSize))
 
     def xDown(self):
         self.changeXSize()
         self.changeYSize()
-        self.xSize -= 1
+        self.xSize -= 2
         self.xSizeTxt.setText(str(self.xSize))
 
     def yUp(self):
         self.changeXSize()
         self.changeYSize()
-        self.ySize += 1
+        self.ySize += 2
         self.ySizeTxt.setText(str(self.ySize))
 
     def yDown(self):
         self.changeXSize()
         self.changeYSize()
-        self.ySize -= 1
+        self.ySize -= 2
         self.ySizeTxt.setText(str(self.ySize))

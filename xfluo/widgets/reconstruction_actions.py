@@ -32,7 +32,7 @@
 # THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENTn SHALL UChicago     #
 # Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
 # INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
 # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
@@ -43,71 +43,77 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-
-from PyQt5 import QtCore
-import pyqtgraph
-import numpy as np
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
+import numpy as np
+from pylab import *
+import xfluo
+import matplotlib.pyplot as plt
+from scipy import ndimage, optimize, signal
+import tomopy
+import dxchange
+import os
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
-    keyPressSig = pyqtSignal(int, int, name= 'keyPressSig')
+class ReconstructionActions(QtWidgets.QWidget):
+	dataSig = pyqtSignal(np.ndarray, name='dataSig')
+	fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
 
-    def __init__(self):
-        super(SinogramView, self).__init__()
-        self.keylist = []
-        self.hotSpotNumb = 0
-        self.initUI()
+	def __init__(self):
+		super(ReconstructionActions, self).__init__()
 
-    def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
-        self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
-        self.p1.scene().sigMouseClicked.connect(self.mouseClick)
-        self.p1.setMouseEnabled(x=False, y=False)
+	def reconstruct(self, data, element, box_checked, center, method, beta, delta, iters, thetas):
+		'''
+		load data for reconstruction and load variables for reconstruction
+		make it sure that data doesn't have infinity or nan as one of
+		entries
+		'''
+		recData = data[element, :, :, :]
+		recData[recData == inf] = True
+		recData[np.isnan(recData)] = True
+		recCenter = np.array(center, dtype=float32)
 
-    def mouseMoved(self, evt):
-        self.moving_x = self.p1.vb.mapSceneToView(evt).x()
-        self.moving_y = self.p1.vb.mapSceneToView(evt).y()
+		if box_checked:
+			recCenter = None
+		print("working fine")
 
-    def mouseClick(self, evt):
-        self.x_pos = int(round(self.moving_x))
-        self.y_pos = int(round(self.moving_y))
+		if method == 0:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
+				algorithm='mlem', center=recCenter, num_iter=iters)
+		elif method == 1:
+			self.recon= tomopy.recon(recData, thetas, 
+				algorithm='gridrec', emission=True)
+		elif method == 2:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
+				algorithm='art', num_iter=iters)
+		elif method == 3:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
+				algorithm='pml_hybrid', center=recCenter, 
+				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
+		elif method == 4:
+			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='pml_quad', center=recCenter,
+				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
 
-    def mouseReleaseEvent(self, ev):
-        self.x_pos = int(round(self.moving_x))
-        self.y_pos = int(round(self.moving_y))
+		self.recon = tomopy.remove_nan(self.recon)
+		return self.recon
 
-    def wheelEvent(self, ev):
-        '''
-        keep this here. It overrides the built in wheel event in order to keep the mouse wheel disabled.
-        '''
-        pass
+	def reconMultiply(self):
+		'''
+		multiply reconstruction by 10
+		'''
+		self.recon = self.recon * 10
+		return self.recon
+	def reconDivide(self):
+		'''
+		divide reconstuction by 10
+		'''
+		self.recon = self.recon / 10
+		return self.recon
 
-    def keyPressEvent(self, ev):
-        self.firstrelease = True
-        astr = ev.key()
-        self.keylist.append(astr)
-
-    def keyReleaseEvent(self, ev):
-        if self.firstrelease == True:
-            self.processMultipleKeys(self.keylist)
-
-        self.firstrelease = False
-        del self.keylist[-1]
-
-    def processMultipleKeys(self, keyspressed):
-        if len(keyspressed) ==1:
-
-            if keyspressed[0] == QtCore.Qt.Key_Up:
-                col_number = int(self.x_pos / 10)
-                print(col_number)
-                self.keyPressSig.emit(1, col_number)
-
-            if keyspressed[0] == QtCore.Qt.Key_Down:
-                col_number = int(self.x_pos / 10)
-                print(col_number)
-                self.keyPressSig.emit(-1, col_number)
- 
+	def threshold(self, recon, threshold_value):
+		'''
+		set threshhold for reconstruction
+		'''
+		self.recon = recon
+		self.recon[np.where(self.recon <= threshold_value)] = 0  # np.min(self.rec)
+		return self.rec

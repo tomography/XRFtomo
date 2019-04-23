@@ -52,7 +52,7 @@ import h5py
 import numpy as np
 import os
 
-__author__ = "Fabricio Marin"
+__author__ = "Arthur T. Glowacki"
 __copyright__ = "Copyright (c) 2018-19, UChicago Argonne, LLC."
 __version__ = "0.0.1"
 __docformat__ = 'restructuredtext en'
@@ -78,9 +78,9 @@ class ElementTableModel(QtCore.QAbstractTableModel):
     def columnCount(self, parent):
         return len(self.columns)
     # commented to fix compile error. Please defing int = ...
-    # def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
-    #     if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
-    #         return self.columns[section]
+    def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
+        if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+            return self.columns[section]
 
     def flags(self, index):
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
@@ -114,7 +114,7 @@ class ElementTableModel(QtCore.QAbstractTableModel):
         else:
             return QtCore.QVariant()
 
-    def loadElementNames(self, filePath):
+    def loadElementNames(self, filePath, image_tag, element_tag):
         if filePath is None:
             return
         self.arrayData = []
@@ -122,7 +122,7 @@ class ElementTableModel(QtCore.QAbstractTableModel):
         self.layoutAboutToBeChanged.emit()
         try:
             hFile = h5py.File(filePath)
-            elements = hFile['/MAPS/channel_names']
+            elements = hFile["{}/{}".format(image_tag,element_tag)]
             for i in range(len(elements)):
                 self.arrayData += [TableArrayItem(elements[i].decode('UTF-8'))]
         except:
@@ -138,3 +138,4 @@ class ElementTableModel(QtCore.QAbstractTableModel):
     def setAllChecked(self, value):
         for i in range(len(self.arrayData)):
             self.setData(self.index(i, self.COL_MAP), value, QtCore.Qt.CheckStateRole)
+
