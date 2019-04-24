@@ -43,24 +43,132 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-import xfluo
 from PyQt5 import QtWidgets
-# from widgets.image_and_histogram_widget import ImageAndHistogramWidget
-# from widgets.reconstruction_controls_widget import ReconstructionControlsWidget
-
+from PyQt5.QtCore import pyqtSignal
+import numpy as np
+from pylab import *
+import xfluo
+import matplotlib.pyplot as plt
+from scipy import ndimage, optimize, signal
+# import tomopy
 
 class ReconstructionWidget(QtWidgets.QWidget):
+    elementChangedSig = pyqtSignal(int, name='elementChangedSig')
+    sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
+    reconChangedSig = pyqtSignal(np.ndarray, name='reconChangedSig')
+
     def __init__(self):
         super(ReconstructionWidget, self).__init__()
-
         self.initUI()
 
     def initUI(self):
-        self.recon = xfluo.ReconstructionControlsWidget()
-        self.recon.sld.setVisible(False)
-        self.projView = xfluo.ImageAndHistogramWidget()
-        self.projView.lbl5.setText(str('Slice'))
-        projViewBox = QtWidgets.QHBoxLayout()
-        projViewBox.addWidget(self.recon)
-        projViewBox.addWidget(self.projView, 10)
-        self.setLayout(projViewBox)
+        self.ViewControl = xfluo.ReconstructionControlsWidget()
+        self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
+        self.imgAndHistoWidget.lbl5.setText(str('Slice'))
+        mainHBox = QtWidgets.QHBoxLayout()
+        mainHBox.addWidget(self.ViewControl)
+        mainHBox.addWidget(self.imgAndHistoWidget, 10)
+        self.setLayout(mainHBox)
+        self.x_shifts = None
+        self.y_shifts = None
+        self.centers = None
+
+    def showReconstruct(self, data, elements, fnames, thetas, x_shifts, y_shifts, centers):
+        '''
+        load window for reconstruction window
+        '''
+        self.actions = xfluo.ReconstructionActions()
+        self.write = xfluo.SaveOptions()
+        self.x_shifts = x_shifts
+        self.y_shifts = y_shifts
+        self.centers = centers
+        self.actions.x_shifts = self.x_shifts
+        self.actions.y_shifts = self.y_shifts
+        self.actions.centers = self.centers
+        self.fnames = fnames
+        self.data = data
+        self.y_range = self.data.shape[2]
+        self.thetas = thetas
+        self.ViewControl.combo1.clear()
+        self.ViewControl.method.clear()
+        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad"]
+        for j in elements:
+            self.ViewControl.combo1.addItem(j)
+        for k in arange(len(methodname)):
+            self.ViewControl.method.addItem(methodname[k])
+
+        self.elementChanged()
+        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+        self.ViewControl.centerTextBox.setText(str(self.centers[2]))
+        self.ViewControl.btn.clicked.connect(self.reconstruct_params)
+        self.ViewControl.mulBtn.setEnabled(False)
+        self.ViewControl.divBtn.setEnabled(False)
+        self.ViewControl.mulBtn.clicked.connect(self.call_reconMultiply)
+        self.ViewControl.divBtn.clicked.connect(self.call_reconDivide)
+        self.ViewControl.cbox.clicked.connect(self.cboxClicked)
+        self.ViewControl.threshBtn.clicked.connect(self.call_threshold)
+        self.imgAndHistoWidget.sld.setRange(0, self.y_range - 1)
+        self.imgAndHistoWidget.sld.valueChanged.connect(self.update_recon_image)
+
+    def call_threshold(self):
+        '''
+        set threshhold for reconstruction
+        '''
+        threshValue = float(self.ViewControl.threshLe.text())
+        self.recon = self.actions.threshhold(self.recon, threshValue)
+
+    def cboxClicked(self):
+        if self.ViewControl.cbox.isChecked():
+            self.ViewControl.centerTextBox.setEnabled(True)
+        else:
+            self.ViewControl.centerTextBox.setEnabled(False)
+
+    def elementChanged(self):
+        element = self.ViewControl.combo1.currentIndex()
+        self.updateElementSlot(element)
+        self.elementChangedSig.emit(element)
+
+    def updateElementSlot(self, element):
+        self.ViewControl.combo1.setCurrentIndex(element)
+
+    def call_reconMultiply(self):
+        '''
+        multiply reconstruction by 10
+        '''
+        self.recon = self.actions.reconMultiply(self.recon)
+        self.update_recon_image()
+
+    def call_reconDivide(self):
+        '''
+        divide reconstuction by 10
+        '''
+        self.recon = self.actions.reconDivide(self.recon)
+        self.update_recon_image()
+
+    def reconstruct_params(self):
+        self.ViewControl.lbl.setText("Reconstruction is currently running")
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        box_checked = self.ViewControl.cbox.isChecked()
+        center = np.array(float(self.ViewControl.centerTextBox.text()), dtype=float32)
+        method = self.ViewControl.method.currentIndex()
+        beta = float(self.ViewControl.beta.text())
+        delta = float(self.ViewControl.delta.text())
+        iters = int(self.ViewControl.iters.text())
+        thetas = self.thetas
+
+        self.recon = self.actions.reconstruct(data, element, box_checked, center, method, beta, delta, iters, thetas)
+        self.ViewControl.mulBtn.setEnabled(True)
+        self.ViewControl.divBtn.setEnabled(True)
+        self.update_recon_image()
+        self.ViewControl.lbl.setText("Done")
+        self.reconChangedSig.emit(self.recon)
+
+    def update_recon_image(self):
+        index = self.imgAndHistoWidget.sld.value()
+        try:
+            self.ViewControl.maxText.setText(str(self.recon[index, :, :].max()))
+            self.ViewControl.minText.setText(str(self.recon[index, :, :].min()))
+            self.imgAndHistoWidget.view.projView.setImage(self.recon[index, :, :])
+        except:
+            print("run reconstruction first")

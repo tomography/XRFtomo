@@ -53,7 +53,6 @@ Module for importing raw data files.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-
 import dxchange
 
 __author__ = "Francesco De Carlo"
@@ -64,17 +63,16 @@ __all__ = ['read_projection',
            'read_elements',
            'find_index']
 
-
 def find_index(a_list, element):
     try:
         return a_list.tolist().index(element)
     except ValueError:
         return None
 
-def read_elements(h5fname):
-    return(dxchange.read_hdf5(h5fname, "MAPS/channel_names"))
+def read_elements(h5fname, img_tag, element_tag):
+    return(dxchange.read_hdf5(h5fname, "{}/{}".format(img_tag, element_tag)))
 
-def read_projection(fname, element, theta_index):
+def read_projection(fname, element, theta_index, img_tag, data_tag, element_tag):
     """
     Reads a projection for a given element from an hdf file.
 
@@ -94,10 +92,17 @@ def read_projection(fname, element, theta_index):
     ndarray
         projection
     """
+    if theta_index == None:
+        print(fname)
+        projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
+        theta = dxchange.read_hdf5(fname, "{}/theta".format(img_tag))
+        elements = read_elements(fname, img_tag, element_tag)
 
-    projections = dxchange.read_hdf5(fname, "MAPS/XRF_roi")
-    theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1]
-    elements = read_elements(fname)
+    else:
+        print(fname)
+        projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
+        theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1]
+        elements = read_elements(fname, img_tag, element_tag)
 
     return projections[find_index(elements, element)], theta
 

@@ -49,9 +49,9 @@ from PyQt5 import QtCore, QtWidgets
 import pyqtgraph
 
 class ImageAndHistogramWidget(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, parent):
         super(ImageAndHistogramWidget, self).__init__()
-
+        self.parent = parent
         self.initUI()
 
     def initUI(self):
@@ -72,7 +72,7 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
 
         btn1.clicked.connect(self.updatePanel)
 
-        self.view = xfluo.HistogramWidget()
+        self.view = xfluo.HistogramWidget(self)
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
@@ -99,9 +99,8 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_N:
-            self.sld.setValue(self.sld.value + 1)
+            self.sld.setValue(self.sld.value() + 1)
 
     def updatePanel(self):
-        self.lbl2.setText(str(self.view.projView.iniX))
-        self.lbl4.setText(str(self.view.projView.iniY))
-
+        self.lbl2.setText(str(self.view.x_pos))
+        self.lbl4.setText(str(self.view.y_pos))
