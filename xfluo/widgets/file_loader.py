@@ -182,6 +182,7 @@ class FileTableWidget(QtWidgets.QWidget):
             print("select directory")
 
     def onLoadDirectory(self):
+        self.version = False
         self.parent.params.input_path = self.dirLineEdit.text()
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         self.fileTableModel.setAllChecked(True)

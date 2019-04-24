@@ -98,7 +98,7 @@ class XfluoGui(QtGui.QMainWindow):
         savephysicalPosition = QtGui.QAction('Save angle and motor positions', self)
         # savephysicalPosition,triggered.connect(self.save_motor_position)
 
-        saveToHDF = QtGui.QAction('Save to h5 file')
+        saveToHDF = QtGui.QAction('Save to h5 file', self)
         # export_h5.triggered.connect(self.export_h5)
 
         saveAlignemtInfoAction = QtGui.QAction("save alignment", self)

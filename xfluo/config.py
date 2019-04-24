@@ -78,7 +78,7 @@ SECTIONS['file-io'] = {
         'default': '2xfm:m53.VAL',
         'type': str,
         'help': "theta PV name",
-        'choices': ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL']},
+        'choices': ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL','9idbTAU:SM:ST:ActPos']},
     'selected-elements': {
         'default': '[0,1]',
         'type': str,
