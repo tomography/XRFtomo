@@ -87,7 +87,7 @@ class XfluoGui(QtGui.QMainWindow):
         #openTiffFolderAction.triggered.connect(self.openTiffFolder)
 
         saveImageAction = QtGui.QAction('Save Projections', self)
-        #saveImageAction.triggered.connect(self.saveImage)
+        saveImageAction.triggered.connect(self.saveProjections)
 
         # saveHotSpotPosAction = QtGui.QAction('save hotspot positions',self)
         # saveHotSpotPosAction.triggered.connect(self.save_hotspot_positions)
@@ -296,9 +296,22 @@ class XfluoGui(QtGui.QMainWindow):
         self.writer.save_alignemnt_information(self.fnames, self.x_shifts, self.y_shifts, self.centers)
         return
 
+    def saveProjections(self):
+        self.writer.save_projections(self.fnames, self.data, self.element_array)
+        return
+
+    def saveSinogram(self):
+        self.sinodata = "get sinodata somehow "
+        return
+
+    def saveH5(self):
+        #get bunch of data,
+        #save bunh of data in such a way that can be easely imported
+        pass
+
     def loadImages(self):
         file_array = self.fileTableWidget.fileTableModel.arrayData
-        element_array = self.fileTableWidget.elementTableModel.arrayData
+        self.element_array = self.fileTableWidget.elementTableModel.arrayData
         #for fidx in range(len(file_array)):
 
     def updateImages(self):

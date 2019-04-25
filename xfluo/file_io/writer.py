@@ -55,15 +55,12 @@ import dxchange
 import string
 from PyQt5 import QtGui
 from pylab import *
+import tomopy
+import os
+from PIL import Image
+
 
 class SaveOptions(object):
-
-	def save_hotspot_positions(self, element, data, x_shift, y_shift) :
-		'''
-		save hotspot positions. first apply shift information then sync with shift information
-		all positions are with respect to the pixel positions of the original data
-		'''
-
 	def save_alignemnt_information(self,fnames, x_shift, y_shift, centers):
 		'''
 		3D array [projection, x, y]
@@ -83,32 +80,22 @@ class SaveOptions(object):
 		except IOError:
 			print("choose file please")
 
-	def save_center_position(self, angle, cen_pos):
-		'''
-		save center pixel position and possibly motor position as a 3D array
-		in order to apply to raw data, first apply the shifts then apply/load 
-		center position
-		'''
-		pass
-
-	# def save_motor_position(self, angle, x_pos, y_pos):
-	# 	'''
-	# 	save motor positions along with corresponding angle position
-	# 	'''
-	# 	pass
-
-	def save_sinogram(self, data, row, all_rows = False):
-		'''
-		saves sinogram or array of sinograms for each row
-		'''
-		pass
-
-
-	def save_projections(self, data):
+	def save_projections(self, fnames, data, element_names):
 		'''
 		save projections as tiffs
 		'''
-		pass
+		savedir = str(QtGui.QFileDialog.getSaveFileName())
+		for j in arange(data.shape[0]):			#elemen t index
+			path = savedir + "/" + element_names[j]
+			try:
+				os.makedirs(path)
+			except e:
+				print(e)
+			for i in arange(data.shape[1]):		#angle index
+				temp_img = data[j, i, :, :]
+				temp = Image.fromarray(temp_img.astype(np.float32))
+				index = string.rfind(fnames[i], "/")
+				temp.save(path + fnames[i][index:-3] + ".tif")
 
 	def save_reconstruction(self, recon):
 		try:
@@ -123,6 +110,14 @@ class SaveOptions(object):
 		except IndexError:
 			print("type the header name")
 
+	def save_sinogram(self, sinodata):
+		'''
+		saves sinogram or array of sinograms for each row
+		'''
+		j = Image.fromarray(sinodata.astype(np.float32))
+		j.save("sinogram.tif")
+		return
+		
 	def export_h5(self):
 
 		#angle
@@ -142,5 +137,16 @@ class SaveOptions(object):
 		'''
 		pass
 
+	def save_center_position(self, angle, cen_pos):
+		'''
+		save center pixel position and possibly motor position as a 3D array
+		in order to apply to raw data, first apply the shifts then apply/load 
+		center position
+		'''
+		pass
 
-
+	def save_motor_position(self, angle, x_pos, y_pos):
+	# 	'''
+	# 	save motor positions along with corresponding angle position
+	# 	'''
+		pass
