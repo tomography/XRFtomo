@@ -98,25 +98,33 @@ class SaveOptions(object):
 
 	def save_reconstruction(self, recon):
 		try:
-			global debugging
-			savedir = str(QtGui.QFileDialog.getSaveFileName())
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
 
 			if savedir == "":
 				raise IndexError
-			print(savedir)
 			recon = tomopy.circ_mask(recon, axis=0)
 			dxchange.writer.write_tiff_stack(recon, fname=savedir)
 		except IndexError:
 			print("type the header name")
+		return
 
 	def save_sinogram(self, sinodata):
 		'''
 		saves sinogram or array of sinograms for each row
 		'''
-		j = Image.fromarray(sinodata.astype(np.float32))
-		j.save("sinogram.tif")
+		savedir = QtGui.QFileDialog.getSaveFileName()[0]
+
+		try:
+			os.makedirs(savedir)
+			if savedir == "":
+				raise IndexError
+
+			temp_img = Image.fromarray(sinodata.astype(np.float32))
+			temp_img.save(savedir + "/" + "sinogram.tiff")
+		except IndexError:
+			print("type the header name")
 		return
-		
+
 	def export_h5(self):
 
 		#angle
