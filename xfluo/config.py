@@ -44,21 +44,47 @@ SECTIONS['gui'] = {
         'action': 'store_true'}}
 
 SECTIONS['file-io'] = {
-    'input-path': {
-        'default': '.',
-        'type': str,
-        'help': "Path of the last used directory",
-        'metavar': 'PATH'},
     'input-file-path': {
         'default': '.',
         'type': str,
         'help': "Name of the last file used",
         'metavar': 'PATH'},
+    'input-path': {
+        'default': '.',
+        'type': str,
+        'help': "Path of the last used directory",
+        'metavar': 'PATH'},
+    'image-tag': {
+        'default': 'MAPS',
+        'type': str,
+        'help': "image tag for h5 file",
+        'metavar': 'PATH'},
+    'data-tag': {
+        'default': 'XRF_roi',
+        'type': str,
+        'help': "data tag for h5 file",
+        'metavar': 'PATH'},
+    'element-tag': {
+        'default': 'channel_names',
+        'type': str,
+        'help': "element tag for h5 file",
+        'metavar': 'PATH'},
+    'sorted-angles': {
+        'default': 'True',
+        'type': bool,
+        'help': "sort interlaced dataset by projection angle",
+        'metavar': 'PATH'},
     'theta-pv': {
         'default': '2xfm:m53.VAL',
         'type': str,
         'help': "theta PV name",
-        'choices': ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL']}}
+        'choices': ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL','9idbTAU:SM:ST:ActPos']},
+    'selected-elements': {
+        'default': '[0,1]',
+        'type': str,
+        'help': "list of selected elements indexes",
+        'metavar': 'PATH'}
+        }
 
 SECTIONS['reconstruction'] = {
     'binning': {
@@ -212,8 +238,8 @@ def write(config_file, args=None, sections=None):
         for name, opts in SECTIONS[section].items():
             if args and sections and section in sections and hasattr(args, name.replace('-', '_')):
                 value = getattr(args, name.replace('-', '_'))
-
                 if isinstance(value, list):
+                    print(type(value), value)
                     value = ', '.join(value)
             else:
                 value = opts['default'] if opts['default'] is not None else ''

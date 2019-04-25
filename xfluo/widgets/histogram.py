@@ -45,44 +45,90 @@
 
 
 from PyQt5 import QtCore
+from PyQt5.QtCore import pyqtSignal
 import pyqtgraph
 
-
 class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
+    shiftSig = pyqtSignal(str, name='sliderChangedSig')
+    keyPressSig = pyqtSignal(str, name= 'keyPressSig')
 
-    def __init__(self):
+    def __init__(self, parent):
         super(HistogramWidget, self).__init__()
-
-        self.initUI()
-        self.boxSize = 20
+        self.parent = parent
         self.hotSpotNumb = 0
-        self.xSize = 20
-        self.ySize = 20
+        self.xSize = 10
+        self.ySize = 10
+        self.x_pos = 5
+        self.y_pos = -5
+        self.keylist = []
+        self.initUI()
 
     def initUI(self):
-        self.p1 = self.addPlot()
+        self.p1 = self.addPlot(enableMouse = False)
         self.projView = pyqtgraph.ImageItem()
         self.projView.rotate(-90)
         self.projView.iniX = 0
-        self.projView.iniY = 0
-        self.ROI = pyqtgraph.ROI([self.projView.iniX, self.projView.iniY], [20, 20])
+        self.projView.iniY = -10
+        self.ROI = pyqtgraph.ROI([self.projView.iniX, self.projView.iniY], [10, 10])
         self.p1.addItem(self.projView)
         self.p1.addItem(self.ROI)
+        self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
+        self.p1.scene().sigMouseClicked.connect(self.mouseClick)
+        self.p1.setMouseEnabled(x=False, y=False)
+
+    def mouseMoved(self, evt):
+        self.moving_x = self.p1.vb.mapSceneToView(evt).x()
+        self.moving_y = self.p1.vb.mapSceneToView(evt).y()
+
+    def mouseClick(self, evt):
+        self.x_pos = int(round(self.moving_x))
+        self.y_pos = int(round(self.moving_y))
+        self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
 
     def mouseReleaseEvent(self, ev):
-        self.ROI.setPos([self.projView.iniX - self.xSize / 2, -self.projView.iniY - self.ySize / 2])
+        self.x_pos = int(round(self.moving_x))
+        self.y_pos = int(round(self.moving_y))
+        self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
+
+    def wheelEvent(self, ev):
+        pass
 
     def keyPressEvent(self, ev):
-        if ev.key() == QtCore.Qt.Key_N:
-            if self.hotSpotNumb < self.data.shape[0]:
-                self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = self.projView.iniY
-                self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = self.projView.iniX
-                self.hotSpotNumb += 1
-                if self.hotSpotNumb < self.data.shape[0]:
-                    self.projView.setImage(self.data[self.hotSpotNumb, :, :])
-        if ev.key() == QtCore.Qt.Key_S:
-            self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = 0
-            self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = 0
-            if self.hotSpotNumb < self.data.shape[0] - 1:
-                self.hotSpotNumb += 1
-                self.projView.setImage(self.data[self.hotSpotNumb, :, :])
+        self.firstrelease = True
+        astr = ev.key()
+        self.keylist.append(astr)
+
+    def keyReleaseEvent(self, ev):
+        if self.firstrelease == True:
+            self.processMultipleKeys(self.keylist)
+
+        self.firstrelease = False
+        del self.keylist[-1]
+
+    def processMultipleKeys(self, keyspressed):
+        if len(keyspressed) ==1:
+            if keyspressed[0]== QtCore.Qt.Key_Left:
+                self.shiftSig.emit('left')
+            if keyspressed[0] == QtCore.Qt.Key_Right:
+                self.shiftSig.emit('right')
+            if keyspressed[0] == QtCore.Qt.Key_Up:
+                self.shiftSig.emit('up')
+            if keyspressed[0] == QtCore.Qt.Key_Down:
+                self.shiftSig.emit('down')
+            if keyspressed[0] == QtCore.Qt.Key_N:
+                self.keyPressSig.emit('Next')
+            if keyspressed[0] == QtCore.Qt.Key_S:
+                self.keyPressSig.emit('Skip')
+            if keyspressed[0] == QtCore.Qt.Key_Delete:
+                self.shiftSig.emit('Delete')
+
+        if len(keyspressed) == 2:
+            if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Left:
+                self.shiftSig.emit('shiftLeft')
+            if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Right:
+                self.shiftSig.emit('shiftRight')
+            if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Up:
+                self.shiftSig.emit('shiftUp')
+            if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Down:
+                self.shiftSig.emit('shiftDown')
+

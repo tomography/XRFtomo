@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -43,71 +46,101 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
+"""
+Module for importing raw data files.
+"""
 
-from PyQt5 import QtCore
-import pyqtgraph
-import numpy as np
-from PyQt5.QtCore import pyqtSignal
+from __future__ import (absolute_import, division, print_function, unicode_literals)
+import dxchange
+import string
+from PyQt5 import QtGui
+from pylab import *
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
-    keyPressSig = pyqtSignal(int, int, name= 'keyPressSig')
+class SaveOptions(object):
 
-    def __init__(self):
-        super(SinogramView, self).__init__()
-        self.keylist = []
-        self.hotSpotNumb = 0
-        self.initUI()
+	def save_hotspot_positions(self, element, data, x_shift, y_shift) :
+		'''
+		save hotspot positions. first apply shift information then sync with shift information
+		all positions are with respect to the pixel positions of the original data
+		'''
 
-    def initUI(self):
-        self.show()
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
-        self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
-        self.p1.scene().sigMouseClicked.connect(self.mouseClick)
-        self.p1.setMouseEnabled(x=False, y=False)
+	def save_alignemnt_information(self,fnames, x_shift, y_shift, centers):
+		'''
+		3D array [projection, x, y]
+		fnames 
+		'''
+		num_files = len(x_shift)
+		try:
+			alignFileName = QtGui.QFileDialog.getSaveFileName()[0]
+			if str(alignFileName).rfind(".txt") == -1:
+				alignFileName = str(alignFileName) + ".txt"
+			print(str(alignFileName))
+			file = open(alignFileName, "w")
+			file.writelines("rotation axis, " + str(centers[2]) + "\n")
+			for i in arange(num_files):
+				file.writelines(fnames[i] + ", " + str(x_shift[i]) + ", " + str(y_shift[i]) + "\n")
+			file.close()
+		except IOError:
+			print("choose file please")
 
-    def mouseMoved(self, evt):
-        self.moving_x = self.p1.vb.mapSceneToView(evt).x()
-        self.moving_y = self.p1.vb.mapSceneToView(evt).y()
+	def save_center_position(self, angle, cen_pos):
+		'''
+		save center pixel position and possibly motor position as a 3D array
+		in order to apply to raw data, first apply the shifts then apply/load 
+		center position
+		'''
+		pass
 
-    def mouseClick(self, evt):
-        self.x_pos = int(round(self.moving_x))
-        self.y_pos = int(round(self.moving_y))
+	# def save_motor_position(self, angle, x_pos, y_pos):
+	# 	'''
+	# 	save motor positions along with corresponding angle position
+	# 	'''
+	# 	pass
 
-    def mouseReleaseEvent(self, ev):
-        self.x_pos = int(round(self.moving_x))
-        self.y_pos = int(round(self.moving_y))
+	def save_sinogram(self, data, row, all_rows = False):
+		'''
+		saves sinogram or array of sinograms for each row
+		'''
+		pass
 
-    def wheelEvent(self, ev):
-        '''
-        keep this here. It overrides the built in wheel event in order to keep the mouse wheel disabled.
-        '''
-        pass
 
-    def keyPressEvent(self, ev):
-        self.firstrelease = True
-        astr = ev.key()
-        self.keylist.append(astr)
+	def save_projections(self, data):
+		'''
+		save projections as tiffs
+		'''
+		pass
 
-    def keyReleaseEvent(self, ev):
-        if self.firstrelease == True:
-            self.processMultipleKeys(self.keylist)
+	def save_reconstruction(self, recon):
+		try:
+			global debugging
+			savedir = str(QtGui.QFileDialog.getSaveFileName())
 
-        self.firstrelease = False
-        del self.keylist[-1]
+			if savedir == "":
+				raise IndexError
+			print(savedir)
+			recon = tomopy.circ_mask(recon, axis=0)
+			dxchange.writer.write_tiff_stack(recon, fname=savedir)
+		except IndexError:
+			print("type the header name")
 
-    def processMultipleKeys(self, keyspressed):
-        if len(keyspressed) ==1:
+	def export_h5(self):
 
-            if keyspressed[0] == QtCore.Qt.Key_Up:
-                col_number = int(self.x_pos / 10)
-                print(col_number)
-                self.keyPressSig.emit(1, col_number)
+		#angle
+		#x_shifts (pixels)
+		#y_shifts (pixels)
+		#hotspot_x [ lisr entry]
+		#hotspor_y [ list entry]
+		#centers
+		#projections
 
-            if keyspressed[0] == QtCore.Qt.Key_Down:
-                col_number = int(self.x_pos / 10)
-                print(col_number)
-                self.keyPressSig.emit(-1, col_number)
- 
+		#row
+		#sinogram (function of row)
+		#reconstruction
+
+		'''
+		saves all selected information to a new or existing h5 file
+		'''
+		pass
+
+
+
