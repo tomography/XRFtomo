@@ -297,7 +297,7 @@ class XfluoGui(QtGui.QMainWindow):
         return
 
     def saveProjections(self):
-        self.writer.save_projections(self.fnames, self.data, self.element_array)
+        self.writer.save_projections(self.fnames, self.data, self.elements)
         return
 
     def saveSinogram(self):
@@ -317,20 +317,20 @@ class XfluoGui(QtGui.QMainWindow):
     def updateImages(self):
         self.data_history = []
         self.x_shifts_history = []
-        self.y_shifts_history = []   
+        self.y_shifts_history = []
         # self.centers_history = []
         self.from_undo = False
-        self.data, elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
+        self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
         self.centers = [100,100,self.data.shape[3]//2]
         self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
         self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
         self.data_history.append(self.data.copy())
         self.original_data = self.data.copy()
 
-        self.imageProcessWidget.showImgProcess(self.data, elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        self.hotspotWidget.showHotSpot(self.data, elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        self.sinogramWidget.showSinogram(self.data, elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        self.reconstructionWidget.showReconstruct(self.data, elements, self.fnames, self.thetas, self.x_shifts, self.y_shifts, self.centers)
+        self.imageProcessWidget.showImgProcess(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        self.hotspotWidget.showHotSpot(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        self.sinogramWidget.showSinogram(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        self.reconstructionWidget.showReconstruct(self.data, self.elements, self.fnames, self.thetas, self.x_shifts, self.y_shifts, self.centers)
 
         self.tab_widget.removeTab(1)
         self.tab_widget.removeTab(2)
@@ -344,7 +344,7 @@ class XfluoGui(QtGui.QMainWindow):
         #slider change
         self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
         self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
-       
+
         #element dropdown change
         self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
         self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
@@ -366,7 +366,7 @@ class XfluoGui(QtGui.QMainWindow):
         #filenames changed
         self.imageProcessWidget.fnamesChanged.connect(self.hotspotWidget.updateFileDisplay)
 
-        #alignment changed 
+        #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
         self.hotspotWidget.alignmentChangedSig.connect(self.update_alignment)
         self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)

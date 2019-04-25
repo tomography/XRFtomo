@@ -84,7 +84,7 @@ class SaveOptions(object):
 		'''
 		save projections as tiffs
 		'''
-		savedir = str(QtGui.QFileDialog.getSaveFileName())
+		savedir = QtGui.QFileDialog.getSaveFileName()[0]
 		for j in arange(data.shape[0]):			#elemen t index
 			path = savedir + "/" + element_names[j]
 			try:
@@ -94,8 +94,7 @@ class SaveOptions(object):
 			for i in arange(data.shape[1]):		#angle index
 				temp_img = data[j, i, :, :]
 				temp = Image.fromarray(temp_img.astype(np.float32))
-				index = string.rfind(fnames[i], "/")
-				temp.save(path + fnames[i][index:-3] + ".tif")
+				temp.save(path+"/"+element_names[j]+"_"+fnames[i]+".tiff")
 
 	def save_reconstruction(self, recon):
 		try:
