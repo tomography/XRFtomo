@@ -86,17 +86,21 @@ class XfluoGui(QtGui.QMainWindow):
         #openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
         #openTiffFolderAction.triggered.connect(self.openTiffFolder)
 
-        saveImageAction = QtGui.QAction('Save Projections', self)
-        #saveImageAction.triggered.connect(self.saveImage)
+        saveProjectionAction = QtGui.QAction('Save Projections', self)
+        saveProjectionAction.triggered.connect(self.saveProjections)
 
         # saveHotSpotPosAction = QtGui.QAction('save hotspot positions',self)
         # saveHotSpotPosAction.triggered.connect(self.save_hotspot_positions)
 
         saveSinogramAction = QtGui.QAction('Save Sinogram', self)
-        #saveSinogramAction.triggered.connect(self.saveSinogram)
+        saveSinogramAction.triggered.connect(self.saveSinogram)
 
         savephysicalPosition = QtGui.QAction('Save angle and motor positions', self)
         # savephysicalPosition,triggered.connect(self.save_motor_position)
+
+        saveReconstructionAction = QtGui.QAction('Save Reconstruction', self)
+        saveReconstructionAction.triggered.connect(self.saveReconstruction)
+
 
         saveToHDF = QtGui.QAction('Save to h5 file', self)
         # export_h5.triggered.connect(self.export_h5)
@@ -252,8 +256,9 @@ class XfluoGui(QtGui.QMainWindow):
         #self.editMenu.setDisabled(True)
 
         self.afterConversionMenu = menubar.addMenu('Save items')
-        self.afterConversionMenu.addAction(saveImageAction)
+        self.afterConversionMenu.addAction(saveProjectionAction)
         # self.afterConversionMenu.addAction(saveHotSpotPosAction)
+        self.afterConversionMenu.addAction(saveReconstructionAction)
         self.afterConversionMenu.addAction(saveAlignemtInfoAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(savephysicalPosition)
@@ -296,28 +301,54 @@ class XfluoGui(QtGui.QMainWindow):
         self.writer.save_alignemnt_information(self.fnames, self.x_shifts, self.y_shifts, self.centers)
         return
 
+    def saveProjections(self):
+        self.writer.save_projections(self.fnames, self.data, self.elements)
+        return
+
+    def saveSinogram(self):
+        try:
+            self.writer.save_sinogram(self.sino)
+        except AttributeError:
+            print("no sinogram data exists, something is not right")
+        return
+
+    def saveReconstruction(self, recon):
+        try:
+            self.writer.save_reconstruction(self.recon)
+        except AttributeError:
+            print("reconstructed data does not exist, run reconstruction first")
+        return
+
+    def saveH5(self):
+        #get bunch of data,
+        #save bunh of data in such a way that can be easely imported
+        pass
+
     def loadImages(self):
         file_array = self.fileTableWidget.fileTableModel.arrayData
-        element_array = self.fileTableWidget.elementTableModel.arrayData
+        self.element_array = self.fileTableWidget.elementTableModel.arrayData
         #for fidx in range(len(file_array)):
 
     def updateImages(self):
         self.data_history = []
         self.x_shifts_history = []
-        self.y_shifts_history = []   
+        self.y_shifts_history = []
         # self.centers_history = []
         self.from_undo = False
-        self.data, elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
+        self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
         self.centers = [100,100,self.data.shape[3]//2]
         self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
         self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
         self.data_history.append(self.data.copy())
         self.original_data = self.data.copy()
 
-        self.imageProcessWidget.showImgProcess(self.data, elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        self.hotspotWidget.showHotSpot(self.data, elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        self.sinogramWidget.showSinogram(self.data, elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        self.reconstructionWidget.showReconstruct(self.data, elements, self.fnames, self.thetas, self.x_shifts, self.y_shifts, self.centers)
+        #update sinogram image
+        self.sinogramWidget.sinoChangedSig.connect(self.update_sino_data)
+
+        self.imageProcessWidget.showImgProcess(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        self.hotspotWidget.showHotSpot(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        self.sinogramWidget.showSinogram(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        self.reconstructionWidget.showReconstruct(self.data, self.elements, self.fnames, self.thetas, self.x_shifts, self.y_shifts, self.centers)
 
         self.tab_widget.removeTab(1)
         self.tab_widget.removeTab(2)
@@ -331,7 +362,7 @@ class XfluoGui(QtGui.QMainWindow):
         #slider change
         self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
         self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
-       
+
         #element dropdown change
         self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
         self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
@@ -353,7 +384,7 @@ class XfluoGui(QtGui.QMainWindow):
         #filenames changed
         self.imageProcessWidget.fnamesChanged.connect(self.hotspotWidget.updateFileDisplay)
 
-        #alignment changed 
+        #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
         self.hotspotWidget.alignmentChangedSig.connect(self.update_alignment)
         self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)
@@ -361,11 +392,17 @@ class XfluoGui(QtGui.QMainWindow):
         #update_reconstructed_data
         self.reconstructionWidget.reconChangedSig.connect(self.update_recon_data)
 
+
+
         # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_alignment(self.x_shifts, self.y_shifts)
 
     def update_recon_data(self, recon):
         self.recon = recon.copy()
+        return
+
+    def update_sino_data(self, sino):
+        self.sino = sino.copy()
         return
 
     def update_data(self, data):

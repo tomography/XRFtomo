@@ -57,6 +57,7 @@ class SinogramWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
     alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
+    sinoChangedSig = pyqtSignal(np.ndarray, name="sinoChangedSig")
 
     def __init__(self):
         super(SinogramWidget, self).__init__()
@@ -178,6 +179,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.sinogramData[isinf(self.sinogramData)] = 0.001
         self.sinoView.projView.setImage(self.sinogramData)
+        self.sinoChangedSig.emit(self.sinogramData)
         # self.view.projView.setRect(QtCore.QRect(round(self.theta[0]), 0, round(self.theta[-1])- round(self.theta[0]), self.sinogramData.shape[1]))
         # self.sinoView.projData = self.sinogramData
         return

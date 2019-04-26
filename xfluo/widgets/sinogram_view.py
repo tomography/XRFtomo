@@ -103,11 +103,9 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
 
             if keyspressed[0] == QtCore.Qt.Key_Up:
                 col_number = int(self.x_pos / 10)
-                print(col_number)
                 self.keyPressSig.emit(1, col_number)
 
             if keyspressed[0] == QtCore.Qt.Key_Down:
                 col_number = int(self.x_pos / 10)
-                print(col_number)
                 self.keyPressSig.emit(-1, col_number)
  

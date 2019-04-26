@@ -1,4 +1,20 @@
-python
-numpy
-dxchange
+make python 3.7 conda environment:
+conda create -n py37 python=3.7
+source activate py37
+
+Have these packages installed:
+numpy		 conda install numpy
+dxchange	 conda install -c conda-forge dxchange 
+pyqt5		 conda install -c conda-forge pyqt 
+matplotlib	 conda install -c conda-forge matplotlib 
+pyqtgraph 	 conda install -c conda-forge pyqtgraph 
+
+
+To install: 
+navigate to xfluo directory and run installer
+	python settings.py install
+naigate to xfluo/bin and run initializer
+	python xfluo init
+now run the gui in the same directory
+	python xfluo gui
 
