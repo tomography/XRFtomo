@@ -146,12 +146,6 @@ class FileTableWidget(QtWidgets.QWidget):
         self.onThetaUpdate()
         # self.saveDataBtn.setEnabled(False)
 
-        hBox0 = QtWidgets.QHBoxLayout()
-        hBox0.addWidget(dirLabel)
-        hBox0.addWidget(self.dirLineEdit)
-        hBox0.addWidget(self.extLineEdit)
-        hBox0.addWidget(self.dirBrowseBtn)
-
         hBox1 = QtWidgets.QHBoxLayout()
         hBox1.addWidget(thetaLabel)
         hBox1.addWidget(self.thetaLineEdit)
@@ -185,21 +179,30 @@ class FileTableWidget(QtWidgets.QWidget):
         hBox7 = QtWidgets.QHBoxLayout()
         hBox7.addWidget(self.saveDataBtn)
         
-        vBox = QtWidgets.QVBoxLayout()
-        vBox.addLayout(hBox0)
-        vBox.addLayout(hBox1)
-        vBox.addLayout(hBox2)
-        vBox.addLayout(hBox3)
-        vBox.addLayout(hBox4)
-        vBox.addLayout(hBox5)
-        vBox.addLayout(hBox6)
-        vBox.addLayout(hBox7)
+        vBox1 = QtWidgets.QVBoxLayout()
+        vBox1.addLayout(hBox1)
+        vBox1.addLayout(hBox2)
+        vBox1.addLayout(hBox3)
+        vBox1.addLayout(hBox4)
+        vBox1.addLayout(hBox5)
+        vBox1.addLayout(hBox6)
+        vBox1.addLayout(hBox7)
         
-        hBox8 = QtWidgets.QHBoxLayout()
-        hBox8.addLayout(vBox)
-        hBox8.addWidget(self.fileTableView)
-        hBox8.addWidget(self.elementTableView)
-        self.setLayout(hBox8)
+        layout0 = QtWidgets.QHBoxLayout()
+        layout0.addWidget(dirLabel)
+        layout0.addWidget(self.dirLineEdit)
+        layout0.addWidget(self.extLineEdit)
+        layout0.addWidget(self.dirBrowseBtn)
+        
+        layout1 = QtWidgets.QHBoxLayout()
+        layout1.addLayout(vBox1)
+        layout1.addWidget(self.fileTableView)
+        layout1.addWidget(self.elementTableView)
+        
+        mainLayout = QtWidgets.QVBoxLayout()
+        mainLayout.addLayout(layout0)
+        mainLayout.addLayout(layout1)
+        self.setLayout(mainLayout)
         
     def operator(self):
         pass
