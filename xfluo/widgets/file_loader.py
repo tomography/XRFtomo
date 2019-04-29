@@ -64,6 +64,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.auto_image_tag = self.parent.params.image_tag
         self.auto_data_tag = self.parent.params.data_tag
         self.auto_element_tag = self.parent.params.element_tag
+        #self.auto_detector_tag = self.parent.params.detector_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
         self.initUI()
@@ -84,7 +85,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.elementTableView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.elementTableView.customContextMenuRequested.connect(self.onElementTableContextMenu)
 
-        dirLabel = QtWidgets.QLabel('Directory')
+        dirLabel = QtWidgets.QLabel('Directory:')
         self.dirLineEdit = QtWidgets.QLineEdit(self.auto_input_path)
         self.dirLineEdit.returnPressed.connect(self.onLoadDirectory)
         self.extLineEdit = QtWidgets.QLineEdit('*.h5')
@@ -92,81 +93,137 @@ class FileTableWidget(QtWidgets.QWidget):
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
         self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
         self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
-        self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL']
+        
+        self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL', '9idbTAU:SM:ST:ActPos']
         thetaCompleter = QtWidgets.QCompleter(self.thetaOptions)
-        thetaLabel = QtWidgets.QLabel('Theta PV')
+        thetaLabel = QtWidgets.QLabel('Theta PV:')
+        thetaLabel.setFixedWidth(90)
         self.thetaLineEdit = QtWidgets.QLineEdit(self.auto_theta_pv)
         self.thetaLineEdit.setCompleter(thetaCompleter)
         self.thetaLineEdit.textChanged.connect(self.onThetaPVChange)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
-        imageTag_label = QtWidgets.QLabel('Image Tag:')
+        self.thetaLineEdit.setFixedWidth(122.5)
+        
+        imageTag_label = QtWidgets.QLabel('Image tag:')
+        imageTag_label.setFixedWidth(90)
         self.imageTag = QtWidgets.QComboBox()
         self.imageTag.currentIndexChanged.connect(self.getDataTag)
-        dataTag_label = QtWidgets.QLabel('Data Tag:')
+        self.imageTag.setFixedWidth(122.5)
+        
+        dataTag_label = QtWidgets.QLabel('')
+        dataTag_label.setFixedWidth(90)
         self.dataTag = QtWidgets.QComboBox()
-        elementTag_label = QtWidgets.QLabel('Element Tag:')
+       #self.dataTag.currentIndexChanged.connect(self.getDataTag)
+        self.dataTag.setFixedWidth(122.5)
+        
+        elementTag_label = QtWidgets.QLabel('Elements:')
+        elementTag_label.setFixedWidth(90)
         self.elementTag = QtWidgets.QComboBox()
         self.elementTag.currentIndexChanged.connect(self.getElementList)
-        operator_label = QtWidgets.QLabel('Operator:')
+        self.elementTag.setFixedWidth(122.5)
+        
+        operator_label = QtWidgets.QLabel('Math operator:')
+        operator_label.setFixedWidth(90)
         self.operator_option = QtWidgets.QComboBox()
-        operators = ['+', '-', '*', '/']
+        operators = ['/', '+', '-', '*',]
         self.operator_option.currentIndexChanged.connect(self.operator)
+        self.operator_option.setFixedWidth(122.5)
         for k in arange(len(operators)):
             self.operator_option.addItem(operators[k])
 
-        scalar_label = QtWidgets.QLabel('scalar names:')
+        scalar_label = QtWidgets.QLabel('Detector:')
+        scalar_label.setFixedWidth(90)
         self.scalar_option = QtWidgets.QComboBox()
-        self.scalar_option.setMaximumWidth(250)
         self.elementTag.currentIndexChanged.connect(self.getscalars)
-
+        self.scalar_option.setFixedWidth(122.5)
+        
         # self.thetaUpdatehBtn = QtWidgets.QPushButton('Update')
         # self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
+        
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
         try:
             self.onLoadDirectory()
         except:
-            print("invalid directory or file, try new folder or remove problematic file")
+            print("Invalid directory or file; Try a new folder or remove problematic files.")
         self.onThetaUpdate()
         # self.saveDataBtn.setEnabled(False)
-
-        hBox0 = QtWidgets.QHBoxLayout()
-        hBox0.addWidget(dirLabel)
-        hBox0.addWidget(self.dirLineEdit)
-        hBox0.addWidget(self.extLineEdit)
-        hBox0.addWidget(self.dirBrowseBtn)
+        
+        message_label = QtWidgets.QLabel('Messages:')
+        self.message = QtWidgets.QTextEdit()
+        self.message.setReadOnly(True)
+        self.message.setMaximumHeight(20)
+        self.message.setText('')
 
         hBox1 = QtWidgets.QHBoxLayout()
         hBox1.addWidget(thetaLabel)
         hBox1.addWidget(self.thetaLineEdit)
-        hBox1.addWidget(self.saveDataBtn)
-
+        hBox1.setAlignment(QtCore.Qt.AlignLeft)
 
         hBox2 = QtWidgets.QHBoxLayout()
         hBox2.addWidget(imageTag_label)
         hBox2.addWidget(self.imageTag)
-        hBox2.addWidget(dataTag_label)
-        hBox2.addWidget(self.dataTag)
-        hBox2.addWidget(elementTag_label)
-        hBox2.addWidget(self.elementTag)
-        hBox2.addWidget(operator_label)
-        hBox2.addWidget(self.operator_option)
-        hBox2.addWidget(scalar_label)
-        hBox2.addWidget(self.scalar_option)
-
-        vBox = QtWidgets.QVBoxLayout()
-        vBox.addLayout(hBox0)
-        vBox.addLayout(hBox1)
-        vBox.addLayout(hBox2)
-        vBox.addWidget(self.fileTableView)
-        vBox.addWidget(self.elementTableView)
-        self.setLayout(vBox)
-
+        hBox2.setAlignment(QtCore.Qt.AlignLeft)
+        
+        hBox3 = QtWidgets.QHBoxLayout()
+        hBox3.addWidget(dataTag_label)
+        hBox3.addWidget(self.dataTag)
+        hBox3.setAlignment(QtCore.Qt.AlignLeft)
+        
+        hBox4 = QtWidgets.QHBoxLayout()
+        hBox4.addWidget(elementTag_label)
+        hBox4.addWidget(self.elementTag)
+        hBox4.setAlignment(QtCore.Qt.AlignLeft)
+        
+        hBox5 = QtWidgets.QHBoxLayout()
+        hBox5.addWidget(operator_label)
+        hBox5.addWidget(self.operator_option)
+        hBox5.setAlignment(QtCore.Qt.AlignLeft)
+        
+        hBox6 = QtWidgets.QHBoxLayout()
+        hBox6.addWidget(scalar_label)
+        hBox6.addWidget(self.scalar_option)
+        hBox6.setAlignment(QtCore.Qt.AlignLeft)
+        
+        hBox7 = QtWidgets.QHBoxLayout()
+        hBox7.addWidget(self.saveDataBtn)
+        
+        vBox1 = QtWidgets.QVBoxLayout()
+        vBox1.addLayout(hBox1)
+        vBox1.addLayout(hBox2)
+        vBox1.addLayout(hBox3)
+        vBox1.addLayout(hBox4)
+        vBox1.addLayout(hBox5)
+        vBox1.addLayout(hBox6)
+        vBox1.addLayout(hBox7)
+        
+        layout0 = QtWidgets.QHBoxLayout()
+        layout0.addWidget(dirLabel)
+        layout0.addWidget(self.dirLineEdit)
+        layout0.addWidget(self.extLineEdit)
+        layout0.addWidget(self.dirBrowseBtn)
+        
+        layout1 = QtWidgets.QHBoxLayout()
+        layout1.addLayout(vBox1)
+        layout1.addWidget(self.fileTableView)
+        layout1.addWidget(self.elementTableView)
+        
+        layout2 = QtWidgets.QHBoxLayout()
+        layout2 = QtWidgets.QHBoxLayout()
+        layout2.addWidget(message_label)
+        layout2.addWidget(self.message)
+        
+        mainLayout = QtWidgets.QVBoxLayout()
+        mainLayout.addLayout(layout0)
+        mainLayout.addLayout(layout1)
+        mainLayout.addLayout(layout2)
+        self.setLayout(mainLayout)
+        
 
     def operator(self):
         pass
 
-    def getscalars(self):
+    def getscalars(self):  #use Detector instead of scaler on the gui
         pass
 
     def onThetaPVChange(self):
@@ -200,35 +257,40 @@ class FileTableWidget(QtWidgets.QWidget):
         self.img = h5py.File(fpath,"r")
         self.imgTags = list(self.img.keys())
         self.version = self.checkVersion()
+        
+        # for new HDF files
         if self.version:
+            self.message.setText('exchange_0: '+ self.img['exchange_0']['description'][0].decode('utf-8')
+                                  + '; exchange_1: '+ self.img['exchange_1']['description'][0].decode('utf-8')
+                                  + '; exchang_2: '+ self.img['exchange_2']['description'][0].decode('utf-8')
+                                  + '; exchange_3: '+ self.img['exchange_3']['description'][0].decode('utf-8')
+                                  )
             self.thetaLineEdit.setEnabled(False)
             self.dataTag.setEnabled(False)
             self.elementTag.setEnabled(False)
-            self.operator_option.setEnabled(True)
-            self.scalar_option.setEnabled(True)
-            self.scalar_options = {}
-            scalar_list = list(self.img['exchange_1']['scaler_names'])
-            scalar_list = [scalar_list[i].decode() for i in range(len(scalar_list))]
-            self.scalar_option.clear()
 
             if 'MAPS' in self.imgTags:
                 self.imgTags.remove('MAPS')
-            if 'exchange_0' in self.imgTags:
-                self.imgTags.remove('exchange_0')
+            #if 'exchange_0' in self.imgTags:
+                #self.imgTags.remove('exchange_0')
 
-            for i in range(len(scalar_list)):
-                 self.scalar_option.addItem(scalar_list[i])
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
+            
+            if 'exchange' in self.imgTags:
+                indx = self.imgTags.index('exchange')
+                self.imageTag.setCurrentIndex(indx)
+            else: 
 
-            #bug where saved image-tag parameter will default to "MAPS" which is excluded from the new dataset image tag list.
-            try:
-                indx = self.imgTags.index(self.auto_image_tag)
-            except:
-                indx = 0
-            self.imageTag.setCurrentIndex(indx)
+                try:
+                    indx = self.imgTags.index(self.auto_image_tag)
+                except:
+                    indx = 0
+                self.imageTag.setCurrentIndex(indx)
+                
 
         else:
+            self.message.clear()
             self.thetaLineEdit.setEnabled(True)
             self.dataTag.setEnabled(True)
             self.elementTag.setEnabled(True)
@@ -240,8 +302,9 @@ class FileTableWidget(QtWidgets.QWidget):
             indx = self.imgTags.index(self.auto_image_tag)
             self.imageTag.setCurrentIndex(indx)
 
-    def getDataTag(self):
-        if self.version:
+    def getDataTag(self):  #no name on the GUI; the one below image tag
+        # for new HDF files        
+        if self.version: 
             indx = self.imageTag.currentIndex()
             if indx == -1:
                 return
@@ -253,36 +316,85 @@ class FileTableWidget(QtWidgets.QWidget):
             self.elementTag.clear()
             self.elementTag.addItem('image_names')
             self.parent.params.elementTag = self.elementTag
-
+            # for exchange_0
+            if self.imageTag.currentText() == 'exchange_0':
+                self.scalar_option.clear()
+                self.operator_option.setEnabled(False)
+                self.scalar_option.setEnabled(False)
+            else:
+                self.operator_option.setEnabled(True)
+                self.scalar_option.setEnabled(True)
+                self.scalar_options = {}
+                scalar_list = list(self.img['exchange_1']['scaler_names'])
+                scalar_list = [scalar_list[i].decode() for i in range(len(scalar_list))]
+                self.scalar_option.clear()
+                
+                for i in range(len(scalar_list)):
+                    self.scalar_option.addItem(scalar_list[i])
 
         else: 
-            self.dataTags = {}
-            self.elementTags = {}
-
-            for i in range(len(self.imgTags)):
-                self.dataTags[i] = list(self.img[self.imgTags[i]])
-                self.elementTags[i] = list(self.img[self.imgTags[i]])
-                indx = self.imageTag.currentIndex()
-                if indx == -1:
-                    return
-            try:
+            # for old 2IDE HDF files with "exchange"
+            if self.imageTag.currentText() == 'exchange':
+                self.message.setText('exchange: Fitted normalized by DS-IC')
                 self.dataTag.clear()
+                self.dataTag.addItem('images')
                 self.elementTag.clear()
-                for i in range(len(self.dataTags[indx])):
-                    self.dataTag.addItem(self.dataTags[indx][i])
-                    self.elementTag.addItem(self.dataTags[indx][i])
-            except KeyError:        #This error happens when resetting image tags as a result of reloading the same dataset
-                pass
+                self.elementTag.addItem('images_names')
+                self.thetaLineEdit.setEnabled(True)
+                self.dataTag.setEnabled(False)
+                self.elementTag.setEnabled(False)
+                self.operator_option.setEnabled(False)
+                self.scalar_option.clear()
+                self.scalar_option.setEnabled(False)
+            # for old 2IDE HDF files without "exchange"    
+            else: 
+                # for read 
+                self.message.clear()
+                self.dataTags = {}
+                self.elementTags = {}
+                self.scalar_options = {}
 
-            try:
-                indx2 = self.dataTags[indx].index(self.auto_data_tag)
-                self.dataTag.setCurrentIndex(indx2)
-                indx3 = self.elementTags[indx].index(self.auto_element_tag)
-                self.elementTag.setCurrentIndex(indx3)
-            except ValueError:
-                pass
-            self.parent.params.image_tag = self.imageTag.currentText()
-            self.parent.params.data_tag = self.dataTag.currentText()
+                for i in range(len(self.imgTags)):
+                    self.dataTags[i] = list(self.img[self.imgTags[i]])
+                    self.elementTags[i] = list(self.img[self.imgTags[i]])
+                    indx = self.imageTag.currentIndex()
+                    if indx == -1:
+                        return
+                try:
+                    self.dataTag.clear()
+                    self.elementTag.clear()
+                    for i in range(len(self.dataTags[indx])):
+                        self.dataTag.addItem(self.dataTags[indx][i])
+                        self.elementTag.addItem(self.dataTags[indx][i])
+                except KeyError:        #This error happens when resetting image tags as a result of reloading the same dataset
+                    pass
+
+                try:
+                    indx2 = self.dataTags[indx].index(self.auto_data_tag)
+                    self.dataTag.setCurrentIndex(indx2)
+                    indx3 = self.elementTags[indx].index(self.auto_element_tag)
+                    self.elementTag.setCurrentIndex(indx3)
+                except ValueError:
+                    pass
+                
+                scalar_list = list(self.img['MAPS']['scaler_names'])
+                scalar_list = [scalar_list[i].decode() for i in range(len(scalar_list))]
+                self.scalar_option.clear()
+                
+                for i in range(len(scalar_list)):
+                    self.scalar_option.addItem(scalar_list[i])
+                    
+                self.parent.params.image_tag = self.imageTag.currentText()
+                self.parent.params.data_tag = self.dataTag.currentText()
+                #self.parent.params.detector_tag = self.scaler_option.currentText()
+                
+                self.thetaLineEdit.setEnabled(True)
+                self.dataTag.setEnabled(True)
+                self.elementTag.setEnabled(True)
+                self.operator_option.setEnabled(True)
+                self.scalar_option.setEnabled(True)
+                
+                
 
     def getElementList(self):
 
@@ -304,7 +416,7 @@ class FileTableWidget(QtWidgets.QWidget):
             self.parent.params.data_tag = self.dataTag.currentText()
             self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
             self.elementTableModel.setAllChecked(False)
-            self.elementTableModel.setChecked(self.auto_selected_elements, (True))
+            self.elementTableModel.setChecked(self.auto_selected_elements, (True))              
 
     def checkVersion(self):
         echange_bool = list(self.img)
@@ -348,7 +460,7 @@ class FileTableWidget(QtWidgets.QWidget):
             action = menu.exec_(self.elementTableView.mapToGlobal(pos))
             if action == check_action or action == uncheck_action:
                 self.elementTableModel.setChecked(rows, (check_action == action))
-
+        
     def onSaveDataInMemory(self):
 
         files = [i.filename for i in self.fileTableModel.arrayData]

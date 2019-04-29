@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='xfluo',
-    author='Fabricio Martin, Chris Roehrig, Arthur Glowacki, Francesco De Carlo, Si Chen',
+    author='Fabricio Marin, Chris Roehrig, Arthur Glowacki, Francesco De Carlo, Si Chen',
     packages=find_packages(),
     version=open('VERSION').read().strip(),
     description = 'Pre-processing tools for x-ray fluorescence.',
