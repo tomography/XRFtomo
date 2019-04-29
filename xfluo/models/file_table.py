@@ -153,7 +153,7 @@ class FileTableModel(QtCore.QAbstractTableModel):
         self.layoutChanged.emit()
         self.dataChanged.emit(topLeft, bottomRight)
 
-    def loadThetas(self, thetaPV):
+    def loadThetasLegacy(self, thetaPV):
         thetaBytes = thetaPV.encode('ascii')
         topLeft = self.index(0, self.COL_THETA)
         bottomRight = self.index(len(self.arrayData), self.COL_THETA)
@@ -168,7 +168,7 @@ class FileTableModel(QtCore.QAbstractTableModel):
                 pass
         self.dataChanged.emit(topLeft, bottomRight)
     
-    def loadThetas2(self, img_tag):
+    def loadThetas(self, img_tag):
         topLeft = self.index(0, self.COL_THETA)
         bottomRight = self.index(len(self.arrayData), self.COL_THETA)
         for i in range(len(self.arrayData)):
