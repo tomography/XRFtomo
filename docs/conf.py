@@ -322,9 +322,9 @@ class Mock(object):
     def __radd__(self, other):
         return Mock()
 
-MOCK_MODULES = ['numpy', 'numpy.ma', 'h5py', 'tomopy', 'tomopy.util', 'tomopy.util.dtype',
-                'tifffile', 'dxchange', 'matplotlib', 'matplotlib.pylab', 'PyQt5', 'PyQt5.QtCore','pyqtgraph',
-                'glob', 'pylab','sys.path']
+MOCK_MODULES = ['numpy', 'numpy.ma', 'numpy.random', 'h5py', 'tomopy', 'tomopy.util', 'tomopy.util.dtype',
+                'tifffile', 'dxchange', 'matplotlib', 'matplotlib.pylab', 'matplotlib.pyplot', 'PyQt5', 
+                'PyQt5.QtCore','pyqtgraph', 'glob', 'pylab','sys.path', 'scipy', 'scipy.fftpack']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
