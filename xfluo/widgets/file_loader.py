@@ -425,13 +425,13 @@ class FileTableWidget(QtWidgets.QWidget):
 
     def onThetaUpdate(self):
         if self.version:
-            self.fileTableModel.loadThetas2(self.imageTag.currentText())
+            self.fileTableModel.loadThetas(self.imageTag.currentText())
             if self.parent.params.sorted_angles == True:
                 self.fileTableView.sortByColumn(1, 0)
             self.parent.params.input_path = self.dirLineEdit.text()
 
         else:
-            self.fileTableModel.loadThetas(self.thetaLineEdit.text())
+            self.fileTableModel.loadThetasLegacy(self.thetaLineEdit.text())
             if self.parent.params.sorted_angles == True:
                 self.fileTableView.sortByColumn(1, 0)
             self.parent.params.theta_pv = self.thetaLineEdit.text()
@@ -486,5 +486,5 @@ class FileTableWidget(QtWidgets.QWidget):
         element_index = [elements.index(j) for j in self.use_elements]
         self.parent.params.selected_elements = str(element_index)
 
-        self.data = xfluo.convert_to_array(path_files, element_index, theta_index, img_tag, data_tag, element_tag)
+        self.data = xfluo.read(path_files, element_index, theta_index, img_tag, data_tag, element_tag)
         return self.data, self.use_elements, self.use_thetas, use_files

@@ -51,7 +51,6 @@ from __future__ import (absolute_import, division, print_function,
 
 from xfluo.file_io.reader import *
 from xfluo.file_io.writer import *
-from xfluo.file_io.converter import *
 
 from xfluo.models.element_table import *
 from xfluo.models.file_table import *

@@ -99,10 +99,10 @@ class FileTableModel(QtCore.QAbstractTableModel):
     def columnCount(self, parent):
         return len(self.columns)
 
-    # commented to fix compile error. Please defing int = ...
-    def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
-        if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
-            return self.columns[section]
+    # fdc 04/30/2019 commented to fix compile error. Please defing int = ...
+    # def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
+    #     if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+    #         return self.columns[section]
 
     def flags(self, index):
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
@@ -153,7 +153,7 @@ class FileTableModel(QtCore.QAbstractTableModel):
         self.layoutChanged.emit()
         self.dataChanged.emit(topLeft, bottomRight)
 
-    def loadThetas(self, thetaPV):
+    def loadThetasLegacy(self, thetaPV):
         thetaBytes = thetaPV.encode('ascii')
         topLeft = self.index(0, self.COL_THETA)
         bottomRight = self.index(len(self.arrayData), self.COL_THETA)
@@ -168,7 +168,7 @@ class FileTableModel(QtCore.QAbstractTableModel):
                 pass
         self.dataChanged.emit(topLeft, bottomRight)
     
-    def loadThetas2(self, img_tag):
+    def loadThetas(self, img_tag):
         topLeft = self.index(0, self.COL_THETA)
         bottomRight = self.index(len(self.arrayData), self.COL_THETA)
         for i in range(len(self.arrayData)):
