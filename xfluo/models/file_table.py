@@ -99,10 +99,10 @@ class FileTableModel(QtCore.QAbstractTableModel):
     def columnCount(self, parent):
         return len(self.columns)
 
-    # commented to fix compile error. Please defing int = ...
-    def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
-        if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
-            return self.columns[section]
+    # fdc 04/30/2019 commented to fix compile error. Please defing int = ...
+    # def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
+    #     if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+    #         return self.columns[section]
 
     def flags(self, index):
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
