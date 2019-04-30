@@ -20,6 +20,9 @@ def init(args):
     else:
         raise RuntimeError("{0} already exists".format(args.config))
 
+def rec(args):
+    from xfluo import reco
+    reco.tomo(args)
 
 def gui(args):
     try:
@@ -38,6 +41,7 @@ def main():
 
     cmd_parsers = [
         ('init',        init,           (),                             "Create configuration file"),
+        ('rec',         rec,            tomo_params,                    "Run tomographic reconstruction using the parameters selected with the GUI"),
         ('gui',         gui,            gui_params,                     "GUI for xfluo tomographic reconstruction"),
     ]
 
