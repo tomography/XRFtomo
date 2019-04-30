@@ -1,8 +1,4 @@
-import os
 import logging
-import glob
-import tempfile
-import sys
 import numpy as np
 import tomopy
 
