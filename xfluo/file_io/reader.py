@@ -55,6 +55,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import dxchange
 import numpy as np 
+import xfluo
 
 __author__ = "Francesco De Carlo, Fabricio S. Marin"
 __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
@@ -65,11 +66,37 @@ __all__ = ['read_projection',
            'find_index',
            'read_mic_xrf']
 
+
 def find_index(a_list, element):
     try:
         return a_list.tolist().index(element)
     except ValueError:
         return None
+
+
+def find_elements(channel_names):
+    """
+    Extract a sorted element list from a channel list.
+
+    Parameters
+    ----------
+    channel_names : list
+        List of channel names
+
+    Returns
+    -------
+    elements : list
+        Sorted list of elements
+    
+    """
+
+    elements = []
+    for i in range(1, 110, 1): 
+         elements.append(str(xfluo.ELEMENTS[i].symbol))
+
+    elements = sorted(set(channel_names) & set(elements), key = channel_names.index)
+
+    return elements
 
 
 def read_elements(h5fname, img_tag, element_tag):
