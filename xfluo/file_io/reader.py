@@ -75,6 +75,7 @@ def find_index(a_list, element):
 def read_elements(h5fname, img_tag, element_tag):
     return(dxchange.read_hdf5(h5fname, "{}/{}".format(img_tag, element_tag)))
 
+
 def read_channel_names(h5fname):
     b_channel_names = dxchange.read_hdf5(h5fname, "MAPS/channel_names")
     channel_names = []
@@ -98,63 +99,53 @@ def read_projection(fname, element, img_tag, data_tag, element_tag):
 
     Returns
     -------
-    ndarray
+    ndarray: ndarray
         projection
     
     """
 
     elements = read_elements(fname, img_tag, element_tag)
 
-    # if theta_index == None:
-    #     print(fname)
-    #     projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
-    #     # theta = dxchange.read_hdf5(fname, "{}/theta".format(img_tag))
-
-    # else:
     print(fname)
     projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
-        # theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1]
 
     return projections[find_index(elements, element)]
 
 
-def read_projection_old(fname, element, theta_index, img_tag, data_tag, element_tag):
+def read_theta(path_files, theta_index, img_tag):
     """
-    Reads a projection for a given element from an hdf file.
+    Reads hdf file and returns theta
 
     Parameters
     ----------
-    fname : str
-        String defining the file name
-    element : 
-        String defining the element to select
-    theta_index :
-        index where theta is saved under in the hdf MAPS/extra_pvs_as_csv tag
+    path_files: list
+        List of path+filenames
+    theta_index : int
+        Index where theta is saved under in the hdf MAPS/extra_pvs_as_csv tag.
+        This is:
+                2-ID-E:             663 
+                2-ID-E prior 2017:  657 
+                BNP:                  8
+    img_tag: str
+        image tag for hdf file
 
     Returns
     -------
-    float
-        projection angle
-    ndarray
-        projection
+    ndarray: ndarray
+        1D array [theta]
     """
 
-    elements = read_elements(fname, img_tag, element_tag)
-
-    if theta_index == None:
-        print(fname)
-        projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
-        theta = dxchange.read_hdf5(fname, "{}/theta".format(img_tag))
-
-    else:
-        print(fname)
-        projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
-        theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1]
-
-    return projections[find_index(elements, element)], theta
+    for i in range(len(path_files)):
+        if theta_index == None:
+            theta = float(dxchange.read_hdf5(path_files[i], "{}/theta".format(img_tag)))
+            print(theta)
+        else:
+            theta = float(dxchange.read_hdf5(path_files[i], "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1])
+            print(theta)
+    return theta
 
 
-def read_mic_xrf(path_files, element_index, theta_index, img_tag, data_tag, element_tag):
+def read_mic_xrf(path_files, element_index, img_tag, data_tag, element_tag):
 
     """
     Converts hdf files to numpy arrays for plotting and manipulation.
@@ -165,8 +156,12 @@ def read_mic_xrf(path_files, element_index, theta_index, img_tag, data_tag, elem
         List of path+filenames
     use_elements : list
         List of string element names selected in checkboxes
-    theta_index: int
-        index position of theta PV
+    theta_index : int
+        Index where theta is saved under in the hdf MAPS/extra_pvs_as_csv tag.
+        This is:
+                2-ID-E:             663 
+                2-ID-E prior 2017:  657 
+                BNP:                  8
     img_tag: str
         image tag for hdf file
     data_tag: str
@@ -202,6 +197,6 @@ def read_mic_xrf(path_files, element_index, theta_index, img_tag, data_tag, elem
             data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
     data[np.isnan(data)] = 0.0001
     data[data == np.inf] = 0.0001
-
+   
     return data
 

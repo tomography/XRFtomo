@@ -486,5 +486,5 @@ class FileTableWidget(QtWidgets.QWidget):
         element_index = [elements.index(j) for j in self.use_elements]
         self.parent.params.selected_elements = str(element_index)
 
-        self.data = xfluo.read_mic_xrf(path_files, element_index, theta_index, img_tag, data_tag, element_tag)
+        self.data = xfluo.read_mic_xrf(path_files, element_index, img_tag, data_tag, element_tag)
         return self.data, self.use_elements, self.use_thetas, use_files
