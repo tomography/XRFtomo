@@ -63,7 +63,7 @@ __docformat__ = 'restructuredtext en'
 __all__ = ['read_projection',
            'read_elements',
            'find_index',
-           'read']
+           'read_mic_xrf']
 
 def find_index(a_list, element):
     try:
@@ -110,7 +110,7 @@ def read_projection(fname, element, theta_index, img_tag, data_tag, element_tag)
     return projections[find_index(elements, element)], theta
 
 
-def read(path_files, element_index, theta_index, img_tag, data_tag, element_tag):
+def read_mic_xrf(path_files, element_index, theta_index, img_tag, data_tag, element_tag):
 
     """
     Converts hdf files to numpy arrays for plotting and manipulation.
