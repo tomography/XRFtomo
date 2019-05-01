@@ -71,10 +71,54 @@ def find_index(a_list, element):
     except ValueError:
         return None
 
+
 def read_elements(h5fname, img_tag, element_tag):
     return(dxchange.read_hdf5(h5fname, "{}/{}".format(img_tag, element_tag)))
 
-def read_projection(fname, element, theta_index, img_tag, data_tag, element_tag):
+def read_channel_names(h5fname):
+    b_channel_names = dxchange.read_hdf5(h5fname, "MAPS/channel_names")
+    channel_names = []
+    for i, e in enumerate(b_channel_names):
+        channel_names.append(e.decode('utf-8'))
+    return(channel_names)
+
+
+def read_projection(fname, element, img_tag, data_tag, element_tag):
+    """
+    Reads a projection for a given element from a single xrf hdf file.
+
+    Parameters
+    ----------
+    fname : str
+        String defining the file name
+
+    element : 
+        String defining the element to select
+    
+
+    Returns
+    -------
+    ndarray
+        projection
+    
+    """
+
+    elements = read_elements(fname, img_tag, element_tag)
+
+    # if theta_index == None:
+    #     print(fname)
+    #     projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
+    #     # theta = dxchange.read_hdf5(fname, "{}/theta".format(img_tag))
+
+    # else:
+    print(fname)
+    projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
+        # theta = dxchange.read_hdf5(fname, "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1]
+
+    return projections[find_index(elements, element)]
+
+
+def read_projection_old(fname, element, theta_index, img_tag, data_tag, element_tag):
     """
     Reads a projection for a given element from an hdf file.
 
@@ -138,7 +182,7 @@ def read_mic_xrf(path_files, element_index, theta_index, img_tag, data_tag, elem
     elements = read_elements(path_files[0], img_tag, element_tag)
     max_y, max_x = 0, 0
     for i in range(len(path_files)):
-        proj, dummy = read_projection(path_files[i], elements[0], theta_index, img_tag, data_tag, element_tag)
+        proj = read_projection(path_files[i], elements[0], img_tag, data_tag, element_tag)
         if proj.shape[0] > max_y:
             max_y = proj.shape[0]
         if proj.shape[1] > max_x:
@@ -150,7 +194,7 @@ def read_mic_xrf(path_files, element_index, theta_index, img_tag, data_tag, elem
         indx = element_index[i]
 
         for j in range(len(path_files)):
-            proj, theta = read_projection(path_files[j], elements[indx], theta_index, img_tag, data_tag, element_tag)
+            proj = read_projection(path_files[j], elements[indx], img_tag, data_tag, element_tag)
             img_y = proj.shape[0]
             img_x = proj.shape[1]
             dx = np.floor((max_x-img_x)/2).astype(int)
