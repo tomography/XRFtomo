@@ -53,6 +53,7 @@ from xfluo.file_io.reader import *
 from xfluo.file_io.writer import *
 
 from xfluo.reco import *
+from xfluo.elements import *
 
 from xfluo.models.element_table import *
 from xfluo.models.file_table import *

@@ -5,6 +5,8 @@ API reference
 
 .. toctree::
 
+   api/xfluo.reco
+   api/xfluo.elements
    api/xfluo.file_io.reader
    api/xfluo.models.file_table
    api/xfluo.models.element_table
