@@ -295,36 +295,5 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #ztexinfo_no_detailmenu = False
 
-# picked from http://read-the-docs.readthedocs.org/en/latest/faq.html
-class Mock(object):
-
-    __all__ = []
-
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        return Mock()
-
-    @classmethod
-    def __getattr__(cls, name):
-        return Mock()
-    def __mul__(self, other):
-        return Mock()
-    def __rmul__(self, other):
-        return Mock()
-    def __pow__(self, other):
-        return Mock()
-    def __div__(self, other):
-        return Mock()
-    def __add__(self, other):
-        return Mock()
-    def __radd__(self, other):
-        return Mock()
-
-MOCK_MODULES = ['numpy', 'numpy.ma', 'h5py', 'tomopy', 'tomopy.util', 'tomopy.util.dtype',
-                'tifffile', 'dxchange', 'matplotlib', 'matplotlib.pylab', 'PyQt5', 'pyqtgraph',
-                'glob', 'pylab']
-
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = Mock()
+# http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_mock_imports
+autodoc_mock_imports = "numpy h5py tomopy tifffile dxchange matplotlib PyQt5 pyqtgraph glob pylab sys scipy".split()
