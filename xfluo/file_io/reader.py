@@ -61,22 +61,23 @@ __author__ = "Francesco De Carlo, Fabricio S. Marin"
 __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
 __version__ = "0.0.1"
 __docformat__ = 'restructuredtext en'
-__all__ = ['read_projection',
-           'read_elements',
-           'find_index',
+__all__ = ['find_elements',
+           'read_theta',
+           'read_projection',
+           'read_channel_names',
            'read_mic_xrf']
 
 
 def find_index(a_list, element):
     try:
-        return a_list.tolist().index(element)
+        return a_list.index(element)
     except ValueError:
         return None
 
 
 def find_elements(channel_names):
     """
-    Extract a sorted element list from a channel list.
+    Extract a sorted element list from a channel list
 
     Parameters
     ----------
@@ -99,29 +100,48 @@ def find_elements(channel_names):
     return elements
 
 
-def read_elements(h5fname, img_tag, element_tag):
-    return(dxchange.read_hdf5(h5fname, "{}/{}".format(img_tag, element_tag)))
+def read_channel_names(fname, hdf_tag, channel_tag):
+    """
+    Read the channel names
 
+    Parameters
+    ----------
+    fname : str
+        String defining the file name
+    hdf_tag : str
+        String defining the hdf5 data_tag name (ex. MAPS)
+    channel_tag : str
+        String defining the hdf5 channel tag name (ex. channel_names)
 
-def read_channel_names(h5fname):
-    b_channel_names = dxchange.read_hdf5(h5fname, "MAPS/channel_names")
+    Returns
+    -------
+    channel_names : list
+        List of channel names
+    
+    """
+    b_channel_names = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, channel_tag))
     channel_names = []
     for i, e in enumerate(b_channel_names):
         channel_names.append(e.decode('utf-8'))
     return(channel_names)
 
 
-def read_projection(fname, element, img_tag, data_tag, element_tag):
+def read_projection(fname, element, hdf_tag, roi_tag, channel_tag):
     """
-    Reads a projection for a given element from a single xrf hdf file.
+    Reads a projection for a given element from a single xrf hdf file
 
     Parameters
     ----------
     fname : str
         String defining the file name
-
-    element : 
+    element : str
         String defining the element to select
+    hdf_tag : str
+        String defining the hdf5 data_tag name (ex. MAPS)
+    roi_tag: str
+        data tag for corresponding roi_tag (ex. XRF_roi)
+    channel_tag : str
+        String defining the hdf5 channel tag name (ex. channel_names)
     
 
     Returns
@@ -131,15 +151,15 @@ def read_projection(fname, element, img_tag, data_tag, element_tag):
     
     """
 
-    elements = read_elements(fname, img_tag, element_tag)
+    elements = read_channel_names(fname, hdf_tag, channel_tag)
 
     print(fname)
-    projections = dxchange.read_hdf5(fname, "{}/{}".format(img_tag,data_tag))
+    projections = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, roi_tag))
 
     return projections[find_index(elements, element)]
 
 
-def read_theta(path_files, theta_index, img_tag):
+def read_theta(path_files, theta_index, hdf_tag):
     """
     Reads hdf file and returns theta
 
@@ -148,13 +168,10 @@ def read_theta(path_files, theta_index, img_tag):
     path_files: list
         List of path+filenames
     theta_index : int
-        Index where theta is saved under in the hdf MAPS/extra_pvs_as_csv tag.
-        This is:
-                2-ID-E:             663 
-                2-ID-E prior 2017:  657 
-                BNP:                  8
-    img_tag: str
-        image tag for hdf file
+        Index where theta is saved under in the hdf MAPS/extra_pvs_as_csv tag
+        This is: 2-ID-E: 663; 2-ID-E (prior 2017): *657*; BNP: 8
+    hdf_tag : str
+        String defining the hdf5 data_tag name (ex. MAPS)
 
     Returns
     -------
@@ -164,47 +181,42 @@ def read_theta(path_files, theta_index, img_tag):
 
     for i in range(len(path_files)):
         if theta_index == None:
-            theta = float(dxchange.read_hdf5(path_files[i], "{}/theta".format(img_tag)))
+            theta = float(dxchange.read_hdf5(path_files[i], "{}/theta".format(hdf_tag)))
             print(theta)
         else:
-            theta = float(dxchange.read_hdf5(path_files[i], "MAPS/extra_pvs_as_csv")[theta_index].split(b',')[1])
+            theta = float(dxchange.read_hdf5(path_files[i], "{}/extra_pvs_as_csv".format(hdf_tag))[theta_index].split(b',')[1])
             print(theta)
     return theta
 
 
-def read_mic_xrf(path_files, element_index, img_tag, data_tag, element_tag):
-
+def read_mic_xrf(path_files, element_index, hdf_tag, roi_tag, channel_tag):
     """
-    Converts hdf files to numpy arrays for plotting and manipulation.
+    Converts hdf files to numpy arrays for plotting and manipulation
 
     Parameters
     ----------
     path_files: list
-        List of path+filenames
-    use_elements : list
-        List of string element names selected in checkboxes
+        List of (path + filenames)
     theta_index : int
-        Index where theta is saved under in the hdf MAPS/extra_pvs_as_csv tag.
-        This is:
-                2-ID-E:             663 
-                2-ID-E prior 2017:  657 
-                BNP:                  8
-    img_tag: str
-        image tag for hdf file
-    data_tag: str
-        data tag for corresponding image tag 
-    element_tag: str
-        The element tag contianing a list of elements for the particular data tag.
+        Index where theta is saved under in the hdf MAPS/extra_pvs_as_csv tag
+        This is: 2-ID-E: 663; 2-ID-E (prior 2017): *657*; BNP: 8
+    hdf_tag : str
+        String defining the hdf5 data_tag name (ex. MAPS)
+    roi_tag: str
+        data tag for corresponding roi_tag (ex. XRF_roi)
+    channel_tag : str
+        String defining the hdf5 channel tag name (ex. channel_names)
+
     Returns
     -------
     ndarray: ndarray
         4D array [elements, projection, y, x]
     """
 
-    elements = read_elements(path_files[0], img_tag, element_tag)
+    elements = read_channel_names(path_files[0], hdf_tag, channel_tag)
     max_y, max_x = 0, 0
     for i in range(len(path_files)):
-        proj = read_projection(path_files[i], elements[0], img_tag, data_tag, element_tag)
+        proj = read_projection(path_files[i], elements[0], hdf_tag, roi_tag, channel_tag)
         if proj.shape[0] > max_y:
             max_y = proj.shape[0]
         if proj.shape[1] > max_x:
@@ -216,7 +228,7 @@ def read_mic_xrf(path_files, element_index, img_tag, data_tag, element_tag):
         indx = element_index[i]
 
         for j in range(len(path_files)):
-            proj = read_projection(path_files[j], elements[indx], img_tag, data_tag, element_tag)
+            proj = read_projection(path_files[j], elements[indx], hdf_tag, roi_tag, channel_tag)
             img_y = proj.shape[0]
             img_x = proj.shape[1]
             dx = np.floor((max_x-img_x)/2).astype(int)

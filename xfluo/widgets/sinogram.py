@@ -44,7 +44,7 @@
 # #########################################################################
 
 import xfluo
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
 
 # from widgets.sinogram_view import SinogramView
@@ -92,6 +92,18 @@ class SinogramWidget(QtWidgets.QWidget):
         sinoBox.addWidget(self.hist, 10)
 
         self.setLayout(sinoBox)
+
+        palette = self.lcd.palette()
+        # foreground color
+        palette.setColor(palette.WindowText, QtGui.QColor(85, 85, 255))
+        # background color
+        palette.setColor(palette.Background, QtGui.QColor(0, 170, 255))
+        # "light" border
+        palette.setColor(palette.Light, QtGui.QColor(255, 255, 0))
+        # "dark" border
+        palette.setColor(palette.Dark, QtGui.QColor(0, 0, 0))
+        # set the palette
+        self.lcd.setPalette(palette)
 
     def showSinogram(self, data, element_names, thetas, fnames, x_shifts, y_shifts, centers):
         '''
