@@ -11,3 +11,4 @@
    .. autosummary::
    
       read_projection
+      read_mic_xrf
