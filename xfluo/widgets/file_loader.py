@@ -310,11 +310,11 @@ class FileTableWidget(QtWidgets.QWidget):
                 return
             
             self.dataTag.clear()
-            self.dataTag.addItem('images')
+            self.dataTag.addItem('data')
             self.parent.params.image_tag = self.imageTag.currentText()
             self.parent.params.data_tag = self.dataTag
             self.elementTag.clear()
-            self.elementTag.addItem('image_names')
+            self.elementTag.addItem('data_names')
             self.parent.params.elementTag = self.elementTag
             # for exchange_0
             if self.imageTag.currentText() == 'exchange_0':
