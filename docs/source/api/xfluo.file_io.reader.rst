@@ -10,5 +10,8 @@
 
    .. autosummary::
    
+      find_elements
+      read_theta
       read_projection
+      read_channel_names
       read_mic_xrf

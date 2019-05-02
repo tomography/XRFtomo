@@ -44,7 +44,7 @@
 # #########################################################################
 
 import xfluo
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
 from pylab import *
 import numpy as np
@@ -60,6 +60,7 @@ class HotspotWidget(QtWidgets.QWidget):
     fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
     alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
 
+
     def __init__(self):
         super(HotspotWidget, self).__init__()
         self.initUI()
@@ -74,6 +75,18 @@ class HotspotWidget(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
+
+        palette = self.imgAndHistoWidget.lcd.palette()
+        # foreground color
+        palette.setColor(palette.WindowText, QtGui.QColor(85, 85, 255))
+        # background color
+        palette.setColor(palette.Background, QtGui.QColor(0, 170, 255))
+        # "light" border
+        palette.setColor(palette.Light, QtGui.QColor(255, 255, 0))
+        # "dark" border
+        palette.setColor(palette.Dark, QtGui.QColor(0, 0, 0))
+        # set the palette
+        self.imgAndHistoWidget.lcd.setPalette(palette)
 
     def showHotSpot(self, data, element_names, thetas, fnames, x_shifts, y_shifts, centers):
         self.actions = xfluo.HotspotActions()
