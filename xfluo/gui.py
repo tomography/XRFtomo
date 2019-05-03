@@ -86,26 +86,26 @@ class XfluoGui(QtGui.QMainWindow):
         #openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
         #openTiffFolderAction.triggered.connect(self.openTiffFolder)
 
-        saveProjectionAction = QtGui.QAction('Save Projections', self)
+        saveProjectionAction = QtGui.QAction('Projections', self)
         saveProjectionAction.triggered.connect(self.saveProjections)
 
         # saveHotSpotPosAction = QtGui.QAction('save hotspot positions',self)
         # saveHotSpotPosAction.triggered.connect(self.save_hotspot_positions)
 
-        saveSinogramAction = QtGui.QAction('Save Sinogram', self)
+        saveSinogramAction = QtGui.QAction('Sinogram', self)
         saveSinogramAction.triggered.connect(self.saveSinogram)
 
-        savephysicalPosition = QtGui.QAction('Save angle and motor positions', self)
+        savephysicalPosition = QtGui.QAction('Angle and motor positions', self)
         # savephysicalPosition,triggered.connect(self.save_motor_position)
 
-        saveReconstructionAction = QtGui.QAction('Save Reconstruction', self)
+        saveReconstructionAction = QtGui.QAction('Reconstruction', self)
         saveReconstructionAction.triggered.connect(self.saveReconstruction)
 
 
-        saveToHDF = QtGui.QAction('Save to h5 file', self)
+        saveToHDF = QtGui.QAction('HDF file', self)
         # export_h5.triggered.connect(self.export_h5)
 
-        saveAlignemtInfoAction = QtGui.QAction("save alignment", self)
+        saveAlignemtInfoAction = QtGui.QAction("Alignment", self)
         saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
 
         #selectElementAction = QtGui.QAction('Select Element', self)
@@ -255,7 +255,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.editMenu.addAction(restoreAction)
         #self.editMenu.setDisabled(True)
 
-        self.afterConversionMenu = menubar.addMenu('Save items')
+        self.afterConversionMenu = menubar.addMenu('Save')
         self.afterConversionMenu.addAction(saveProjectionAction)
         # self.afterConversionMenu.addAction(saveHotSpotPosAction)
         self.afterConversionMenu.addAction(saveReconstructionAction)
