@@ -127,9 +127,10 @@ class SaveOptions(object):
 
 	def save_dxhdf(self, fnames, data, element_names):
 		'''
-		saves all selected information to a new tomo data exchange hdf5 file
+		saves all selected information to a new data exchange hdf5 file following the 
+		dxfile definition
 
-		add import dxfile.dxtomo as dx
+		uncomment import dxfile.dxtomo as dx
 
 		'''
 	    # experimenter_affiliation="Argonne National Laboratory" 
