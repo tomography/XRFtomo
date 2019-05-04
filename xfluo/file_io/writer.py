@@ -125,23 +125,33 @@ class SaveOptions(object):
 			print("type the header name")
 		return
 
-	def export_h5(self):
+	def save_dxhdf(self, fnames, data, element_names):
+		'''
+		saves all selected information to a new tomo data exchange hdf5 file
 
-		#angle
-		#x_shifts (pixels)
-		#y_shifts (pixels)
-		#hotspot_x [ lisr entry]
-		#hotspor_y [ list entry]
-		#centers
-		#projections
-
-		#row
-		#sinogram (function of row)
-		#reconstruction
+		add import dxfile.dxtomo as dx
 
 		'''
-		saves all selected information to a new or existing h5 file
-		'''
+	    # experimenter_affiliation="Argonne National Laboratory" 
+	    # instrument_name="2-ID-E XRF"  
+	    # sample_name = "test data set"
+
+	    # # Open DataExchange file
+	    # f = dx.File(fname, mode='w')
+	     
+	    # # Write the Data Exchange HDF5 file.
+	    # f.add_entry(dx.Entry.experimenter(affiliation={'value': experimenter_affiliation}))
+	    # f.add_entry(dx.Entry.instrument(name={'value': instrument_name}))
+	    # f.add_entry(dx.Entry.sample(name={'value': sample_name}))
+
+	    # f.add_entry(dx.Entry.data(data={'value': proj, 'units':'ug/cm^2'}))
+	    # f.add_entry(dx.Entry.data(theta={'value': theta, 'units':'degrees'}))
+
+	    # elem = [x.encode('utf-8') for x in elem]
+	    # f.add_entry(dx.Entry.data(elements={'value': elem, 'units':'ug/cm^2'}))
+
+	    # f.close()
+
 		pass
 
 	def save_center_position(self, angle, cen_pos):

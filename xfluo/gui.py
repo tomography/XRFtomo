@@ -102,8 +102,8 @@ class XfluoGui(QtGui.QMainWindow):
         saveReconstructionAction.triggered.connect(self.saveReconstruction)
 
 
-        saveToHDF = QtGui.QAction('HDF file', self)
-        # export_h5.triggered.connect(self.export_h5)
+        saveToHDFAction = QtGui.QAction('HDF file', self)
+        saveToHDFAction.triggered.connect(self.saveToHDF)
 
         saveAlignemtInfoAction = QtGui.QAction("Alignment", self)
         saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
@@ -262,7 +262,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveAlignemtInfoAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(savephysicalPosition)
-        self.afterConversionMenu.addAction(saveToHDF)
+        self.afterConversionMenu.addAction(saveToHDFAction)
 
         #self.afterConversionMenu.addAction(saveThetaTxtAction)
         # self.afterConversionMenu.addAction(selectElementAction)
@@ -302,27 +302,32 @@ class XfluoGui(QtGui.QMainWindow):
         return
 
     def saveProjections(self):
-        self.writer.save_projections(self.fnames, self.data, self.elements)
+        try:
+            self.writer.save_projections(self.fnames, self.data, self.elements)
+        except AttributeError:
+            print("projection data do not exist")
         return
 
     def saveSinogram(self):
         try:
             self.writer.save_sinogram(self.sino)
         except AttributeError:
-            print("no sinogram data exists, something is not right")
+            print("sinogram data do not exist")
         return
 
     def saveReconstruction(self, recon):
         try:
             self.writer.save_reconstruction(self.recon)
         except AttributeError:
-            print("reconstructed data does not exist, run reconstruction first")
+            print("reconstructed data do not exist")
         return
 
-    def saveH5(self):
-        #get bunch of data,
-        #save bunh of data in such a way that can be easely imported
-        pass
+    def saveToHDF(self):
+        try:
+            self.writer.save_dxhdf(self.fnames, self.data, self.elements)
+        except AttributeError:
+            print("projection data do not exist")
+        return
 
     def loadImages(self):
         file_array = self.fileTableWidget.fileTableModel.arrayData
