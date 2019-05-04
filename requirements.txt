@@ -10,12 +10,13 @@ pyqt5		 conda install -c conda-forge pyqt
 matplotlib	 conda install -c conda-forge matplotlib 
 pyqtgraph 	 conda install -c conda-forge pyqtgraph 
 
-
-To install: 
-navigate to xfluo directory and run installer
+To clone the repository:
+    git clone https://github.com/decarlof/xfluo.git xfluo
+To install:
+    cd xfluo
 	python setup.py install
-to run initializer
+To run initializer:
 	python bin/xfluo init
-to run the gui
+To run the gui:
 	python bin/xfluo gui
 
