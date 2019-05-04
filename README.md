@@ -19,7 +19,10 @@ Create a python 3.7 conda environment:
     $ conda create -n py37 python=3.7
     $ source activate py37
 
-Make sure that the packages listed in the requirements.txt file are installed
+Make sure that the packages listed in the requirements.txt file are installed using
+
+    $ conda install -c conda-forge dxchange
+    $ conda install -c conda-forge ... 
 
 
 Installation
