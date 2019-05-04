@@ -11,6 +11,19 @@ Features
 * X-ray fluorescence data processing.
 
 
+Pre-requisites
+==============
+
+Create a python 3.7 conda environment:
+
+    $ conda create -n py37 python=3.7
+    $ source activate py37
+
+Make sure that the packages listed in the requirements.txt file are installed using
+
+    $ conda install -c conda-forge dxchange
+    $ conda install -c conda-forge ... 
+
 
 Installation
 ============
@@ -19,7 +32,7 @@ Installation
     $ cd xfluo
     $ python setup.py install
 
-in a prepared virtualenv or as root for system-wide installation.
+in the prepared virtualenv or as root for system-wide installation.
 
 
 Usage
