@@ -125,10 +125,10 @@ class SaveOptions(object):
 			print("type the header name")
 		return
 
-	def save_dxhdf(self, fnames, data, element_names):
+	def save_dxfile(self, fnames, data, element_names):
 		'''
 		saves all selected information to a new data exchange hdf5 file following the 
-		dxfile definition
+		dxfile definition at http://dxfile.readthedocs.io/
 
 		uncomment import dxfile.dxtomo as dx
 
