@@ -4,7 +4,8 @@ source activate py37
 
 Have these packages installed:
 numpy		 conda install numpy
-dxchange	 conda install -c conda-forge dxchange 
+dxfile       conda install -c conda-forge dxfile 
+dxchange     conda install -c conda-forge dxchange 
 pyqt5		 conda install -c conda-forge pyqt 
 matplotlib	 conda install -c conda-forge matplotlib 
 pyqtgraph 	 conda install -c conda-forge pyqtgraph 
@@ -12,9 +13,9 @@ pyqtgraph 	 conda install -c conda-forge pyqtgraph
 
 To install: 
 navigate to xfluo directory and run installer
-	python settings.py install
-naigate to xfluo/bin and run initializer
-	python xfluo init
-now run the gui in the same directory
-	python xfluo gui
+	python setup.py install
+to run initializer
+	python bin/xfluo init
+to run the gui
+	python bin/xfluo gui
 
