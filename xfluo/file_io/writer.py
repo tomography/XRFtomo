@@ -58,7 +58,7 @@ from pylab import *
 import tomopy
 import os
 from PIL import Image
-
+#import dxfile.dxtomo as dx
 
 class SaveOptions(object):
 	def save_alignemnt_information(self,fnames, x_shift, y_shift, centers):
