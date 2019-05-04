@@ -1,10 +1,8 @@
 import argparse
 import sys
 import logging
-# import configparser as configparser
 import configparser
 from collections import OrderedDict
-# import ufot.util as util
 import numpy as np
 
 
