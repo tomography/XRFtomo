@@ -48,8 +48,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 # from models.element_table_model import ElementTableModel
 import xfluo
 import h5py
-from pylab import *
-
+import numpy as np
 # from file_io.reader import read_projection
 
 
@@ -128,7 +127,7 @@ class FileTableWidget(QtWidgets.QWidget):
         operators = ['/', '+', '-', '*',]
         self.operator_option.currentIndexChanged.connect(self.operator)
         self.operator_option.setFixedWidth(122.5)
-        for k in arange(len(operators)):
+        for k in np.arange(len(operators)):
             self.operator_option.addItem(operators[k])
 
         scalar_label = QtWidgets.QLabel('Detector:')
@@ -473,8 +472,8 @@ class FileTableWidget(QtWidgets.QWidget):
         data_tag = self.dataTag.currentText()
         element_tag = self.elementTag.currentText()
 
-        k = arange(len(files))
-        l = arange(len(elements))
+        k = np.arange(len(files))
+        l = np.arange(len(elements))
         use_files =[files[j] for j in k if use[j]==True]
         self.use_thetas = np.asarray([thetas[j] for j in k if use[j]==True])
         self.use_elements = [elements[j] for j in l if use2[j]==True]
