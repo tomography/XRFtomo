@@ -153,37 +153,53 @@ class FileTableModel(QtCore.QAbstractTableModel):
         self.layoutChanged.emit()
         self.dataChanged.emit(topLeft, bottomRight)
 
-    def loadThetasLegacy(self, thetaPV):
-        thetaBytes = thetaPV.encode('ascii')
-        topLeft = self.index(0, self.COL_THETA)
-        bottomRight = self.index(len(self.arrayData), self.COL_THETA)
-        for i in range(len(self.arrayData)):
-            try:
-                hFile = h5py.File(self.directory+'/'+self.arrayData[i].filename)
-                extra_pvs = hFile['/MAPS/extra_pvs']
-                self.idx = np.where(extra_pvs[0] == thetaBytes)
-                if len(self.idx[0]) > 0:
-                    self.arrayData[i].theta = float(extra_pvs[1][self.idx[0][0]])
-            except:
-                pass
-        self.dataChanged.emit(topLeft, bottomRight)
+    # def loadThetasLegacy(self, thetaPV):
+    #     thetaBytes = thetaPV.encode('ascii')
+    #     topLeft = self.index(0, self.COL_THETA)
+    #     bottomRight = self.index(len(self.arrayData), self.COL_THETA)
+    #     for i in range(len(self.arrayData)):
+    #         try:
+    #             hFile = h5py.File(self.directory+'/'+self.arrayData[i].filename)
+    #             extra_pvs = hFile['/MAPS/extra_pvs']
+    #             self.idx = np.where(extra_pvs[0] == thetaBytes)
+    #             if len(self.idx[0]) > 0:
+    #                 self.arrayData[i].theta = float(extra_pvs[1][self.idx[0][0]])
+    #         except:
+    #             pass
+    #     self.dataChanged.emit(topLeft, bottomRight)
     
-    def loadThetas(self, img_tag):
+    # def loadThetas(self, img_tag):
+    #     topLeft = self.index(0, self.COL_THETA)
+    #     bottomRight = self.index(len(self.arrayData), self.COL_THETA)
+    #     for i in range(len(self.arrayData)):
+    #         try:
+    #             hFile = h5py.File(self.directory+'/'+self.arrayData[i].filename)
+    #             self.arrayData[i].theta = float(hFile[img_tag]['theta'].value)
+    #         except:
+    #             pass
+    #     self.dataChanged.emit(topLeft, bottomRight)
+
+
+    def update_thetas(self, thetas):
         topLeft = self.index(0, self.COL_THETA)
         bottomRight = self.index(len(self.arrayData), self.COL_THETA)
         for i in range(len(self.arrayData)):
-            try:
-                hFile = h5py.File(self.directory+'/'+self.arrayData[i].filename)
-                self.arrayData[i].theta = float(hFile[img_tag]['theta'].value)
-            except:
-                pass
+            self.arrayData[i].theta = thetas[i]
         self.dataChanged.emit(topLeft, bottomRight)
-
+        return 
+        
     def getFirstCheckedFilePath(self):
         for i in range(len(self.arrayData)):
             if self.arrayData[i].use is True:
                 return self.directory+'/'+self.arrayData[i].filename
         return None
+
+    def getAllFiles(self):
+        path_files = []
+        for i in range(len(self.arrayData)):
+            if self.arrayData[i].use is True:
+                path_files.append(self.directory+'/'+self.arrayData[i].filename)
+        return path_files
 
     def setChecked(self, rows, value):
         for i in rows:

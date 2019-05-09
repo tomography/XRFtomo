@@ -51,6 +51,7 @@ import h5py
 from pylab import *
 
 # from file_io.reader import read_projection
+from xfluo.file_io.reader import *
 
 
 class FileTableWidget(QtWidgets.QWidget):
@@ -107,13 +108,13 @@ class FileTableWidget(QtWidgets.QWidget):
         imageTag_label = QtWidgets.QLabel('Image tag:')
         imageTag_label.setFixedWidth(90)
         self.imageTag = QtWidgets.QComboBox()
-        self.imageTag.currentIndexChanged.connect(self.getDataTag)
+        # self.imageTag.currentIndexChanged.connect(self.getDataTag)
         self.imageTag.setFixedWidth(122.5)
         
         dataTag_label = QtWidgets.QLabel('')
         dataTag_label.setFixedWidth(90)
         self.dataTag = QtWidgets.QComboBox()
-       #self.dataTag.currentIndexChanged.connect(self.getDataTag)
+        # self.dataTag.currentIndexChanged.connect(self.getDataTag)
         self.dataTag.setFixedWidth(122.5)
         
         elementTag_label = QtWidgets.QLabel('Elements:')
@@ -136,17 +137,9 @@ class FileTableWidget(QtWidgets.QWidget):
         self.scalar_option = QtWidgets.QComboBox()
         self.elementTag.currentIndexChanged.connect(self.getscalars)
         self.scalar_option.setFixedWidth(122.5)
-        
-        # self.thetaUpdatehBtn = QtWidgets.QPushButton('Update')
-        # self.thetaUpdatehBtn.clicked.connect(self.onThetaUpdate)
-        
+
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
-        try:
-            self.onLoadDirectory()
-        except:
-            print("Invalid directory or file; Try a new folder or remove problematic files.")
-        self.onThetaUpdate()
         # self.saveDataBtn.setEnabled(False)
         
         message_label = QtWidgets.QLabel('Messages:')
@@ -218,6 +211,12 @@ class FileTableWidget(QtWidgets.QWidget):
         mainLayout.addLayout(layout1)
         mainLayout.addLayout(layout2)
         self.setLayout(mainLayout)
+
+        try:
+            self.onLoadDirectory()
+        except:
+            print("Invalid directory or file; Try a new folder or remove problematic files.")
+        self.onThetaUpdate()
         
 
     def operator(self):
@@ -239,7 +238,7 @@ class FileTableWidget(QtWidgets.QWidget):
             print("select directory")
 
     def onLoadDirectory(self):
-        self.version = False
+        self.version = 0
         self.parent.params.input_path = self.dirLineEdit.text()
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         self.fileTableModel.setAllChecked(True)
@@ -259,7 +258,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.version = self.checkVersion()
         
         # for new HDF files
-        if self.version:
+        if self.version == 1:
             self.message.setText('exchange_0: '+ self.img['exchange_0']['description'][0].decode('utf-8')
                                   + '; exchange_1: '+ self.img['exchange_1']['description'][0].decode('utf-8')
                                   + '; exchang_2: '+ self.img['exchange_2']['description'][0].decode('utf-8')
@@ -274,8 +273,8 @@ class FileTableWidget(QtWidgets.QWidget):
             #if 'exchange_0' in self.imgTags:
                 #self.imgTags.remove('exchange_0')
 
-            for i in range(len(self.imgTags)):
-                self.imageTag.addItem(self.imgTags[i])
+            for i in self.imgTags:
+                self.imageTag.addItem(i)
             
             if 'exchange' in self.imgTags:
                 indx = self.imgTags.index('exchange')
@@ -289,7 +288,7 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.imageTag.setCurrentIndex(indx)
                 
 
-        else:
+        if self.version == 0:
             self.message.clear()
             self.thetaLineEdit.setEnabled(True)
             self.dataTag.setEnabled(True)
@@ -299,17 +298,20 @@ class FileTableWidget(QtWidgets.QWidget):
 
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
-            indx = self.imgTags.index(self.auto_image_tag)
+            if self.auto_image_tag in self.imgTags:
+                indx = self.imgTags.index(self.auto_image_tag)
+            else:
+                indx = self.imgTags.index("MAPS")
             self.imageTag.setCurrentIndex(indx)
 
     def getDataTag(self):  #no name on the GUI; the one below image tag
         # for new HDF files        
-        if self.version: 
+        if self.version == 1:
             indx = self.imageTag.currentIndex()
             if indx == -1:
                 return
             
-            self.dataTag.clear()
+            # self.dataTag.clear()
             self.dataTag.addItem('data')
             self.parent.params.image_tag = self.imageTag.currentText()
             self.parent.params.data_tag = self.dataTag
@@ -332,7 +334,7 @@ class FileTableWidget(QtWidgets.QWidget):
                 for i in range(len(scalar_list)):
                     self.scalar_option.addItem(scalar_list[i])
 
-        else: 
+        if self.version == 0:
             # for old 2IDE HDF files with "exchange"
             if self.imageTag.currentText() == 'exchange':
                 self.message.setText('exchange: Fitted normalized by DS-IC')
@@ -366,7 +368,10 @@ class FileTableWidget(QtWidgets.QWidget):
                     for i in range(len(self.dataTags[indx])):
                         self.dataTag.addItem(self.dataTags[indx][i])
                         self.elementTag.addItem(self.dataTags[indx][i])
-                except KeyError:        #This error happens when resetting image tags as a result of reloading the same dataset
+
+                    if self.auto_element_tag in self.dataTags:
+                        self.elementTag.setCurrentText(self.auto_element_tag)
+                except KeyError:
                     pass
 
                 try:
@@ -394,21 +399,8 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.operator_option.setEnabled(True)
                 self.scalar_option.setEnabled(True)
                 
-                
-
     def getElementList(self):
-
-        if self.version:
-            fpath = self.fileTableModel.getFirstCheckedFilePath()
-            image_tag = self.imageTag.currentText()
-            element_tag = self.elementTag.currentText()
-            self.parent.params.element_tag = self.imageTag.currentText()
-            self.parent.params.data_tag = self.dataTag
-            self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
-            self.elementTableModel.setAllChecked(False)
-            self.elementTableModel.setChecked(self.auto_selected_elements, (True))
-            
-        else:
+        if self.version == 0:   #legacy data
             fpath = self.fileTableModel.getFirstCheckedFilePath()
             image_tag = self.imageTag.currentText()
             element_tag = self.elementTag.currentText()
@@ -416,26 +408,40 @@ class FileTableWidget(QtWidgets.QWidget):
             self.parent.params.data_tag = self.dataTag.currentText()
             self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
             self.elementTableModel.setAllChecked(False)
-            self.elementTableModel.setChecked(self.auto_selected_elements, (True))              
+            self.elementTableModel.setChecked(self.auto_selected_elements, (True))   
+
+        if self.version == 1:   #9idbdata
+            fpath = self.fileTableModel.getFirstCheckedFilePath()
+            image_tag = self.imageTag.currentText()
+            element_tag = self.elementTag.currentText()
+            self.parent.params.element_tag = self.imageTag.currentText()
+            self.parent.params.data_tag = self.dataTag.currentText()
+            self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
+            self.elementTableModel.setAllChecked(False)
+            self.elementTableModel.setChecked(self.auto_selected_elements, (True))
+            
+        # if self.version == 2:   #2ide data
+
 
     def checkVersion(self):
-        echange_bool = list(self.img)
-        version_bool =  'exchange_1' in echange_bool
-        return version_bool
+        #temporary definition of 'version'
+        exchange_bool = list(self.img)
+        self.version = 'exchange_1' in exchange_bool
+        return self.version
 
     def onThetaUpdate(self):
-        if self.version:
-            self.fileTableModel.loadThetas(self.imageTag.currentText())
-            if self.parent.params.sorted_angles == True:
-                self.fileTableView.sortByColumn(1, 0)
-            self.parent.params.input_path = self.dirLineEdit.text()
+        # version defines file format and how to read thetas from it.
+        path_files = self.fileTableModel.getAllFiles()
+        #get path_files list
+        thetaPV = self.thetaLineEdit.text()
+        thetas = load_thetas(path_files, self.imageTag.currentText(), self.version, thetaPV)
 
-        else:
-            self.fileTableModel.loadThetasLegacy(self.thetaLineEdit.text())
-            if self.parent.params.sorted_angles == True:
-                self.fileTableView.sortByColumn(1, 0)
-            self.parent.params.theta_pv = self.thetaLineEdit.text()
-            self.parent.params.input_path = self.dirLineEdit.text()
+        self.parent.params.theta_pv = thetaPV
+        self.parent.params.input_path = self.dirLineEdit.text()
+        self.fileTableModel.update_thetas(thetas)
+        if self.parent.params.sorted_angles == True:
+            self.fileTableView.sortByColumn(1, 0)
+        return
 
     def onFileTableContextMenu(self, pos):
         if self.fileTableView.selectionModel().selection().indexes():
@@ -460,7 +466,7 @@ class FileTableWidget(QtWidgets.QWidget):
             action = menu.exec_(self.elementTableView.mapToGlobal(pos))
             if action == check_action or action == uncheck_action:
                 self.elementTableModel.setChecked(rows, (check_action == action))
-        
+
     def onSaveDataInMemory(self):
 
         files = [i.filename for i in self.fileTableModel.arrayData]
@@ -479,10 +485,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.use_thetas = np.asarray([thetas[j] for j in k if use[j]==True])
         self.use_elements = [elements[j] for j in l if use2[j]==True]
 
-        if self.version:
-            theta_index = None
-        else:
-            theta_index = int(self.fileTableModel.idx[0])
+
         element_index = [elements.index(j) for j in self.use_elements]
         self.parent.params.selected_elements = str(element_index)
 

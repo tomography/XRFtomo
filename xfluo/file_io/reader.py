@@ -56,6 +56,7 @@ from __future__ import (absolute_import, division, print_function,
 import dxchange
 import numpy as np 
 import xfluo
+import h5py
 
 __author__ = "Francesco De Carlo, Fabricio S. Marin"
 __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
@@ -65,7 +66,11 @@ __all__ = ['find_elements',
            'read_theta',
            'read_projection',
            'read_channel_names',
-           'read_mic_xrf']
+           'read_mic_xrf',
+           'load_thetas',
+           'load_thetas_legacy',
+           'load_thetas_9idb',
+           'load_thetas_2ide']
 
 
 def find_index(a_list, element):
@@ -188,6 +193,55 @@ def read_theta(path_files, theta_index, hdf_tag):
             print(theta)
     return theta
 
+
+def load_thetas(path_files, data_tag, version, *thetaPV):
+    
+    if version == 0:
+        return load_thetas_legacy(path_files, thetaPV[0])
+
+    if version == 1:
+        return load_thetas_9idb(path_files, data_tag)
+
+    if version == 2:
+        return load_thetas_2ide(path_files, data_tag)
+
+
+def load_thetas_legacy( path_files, thetaPV):
+    thetaBytes = thetaPV.encode('ascii')
+    thetas = []
+    for i in range(len(path_files)):
+        try:
+            hFile = h5py.File(path_files[i])
+            extra_pvs = hFile['/MAPS/extra_pvs']
+            idx = np.where(extra_pvs[0] == thetaBytes)
+            if len(idx[0]) > 0:
+                thetas.append(float(extra_pvs[1][idx[0][0]]))
+        except:
+            pass
+    return thetas
+
+def load_thetas_9idb(path_files, data_tag):
+    thetas = []
+    for i in range(len(path_files)):
+        try:
+            hFile = h5py.File(path_files[i])
+            thetas.append(float(hFile[data_tag]['theta'].value[0]))
+        except:
+            pass
+    return thetas
+
+def load_thetas_2ide(path_files, data_tag):
+    thetas = []
+    for i in range(len(path_files)):
+        try:
+            hFile = h5py.File(path_files[i])
+            thetas.append(float(hFile[data_tag]['theta'].value[0]))
+        except:
+            pass
+    return thetas
+
+def load_thetas_13(path_files, data_tag):
+    pass
 
 def read_mic_xrf(path_files, element_index, hdf_tag, roi_tag, channel_tag):
     """
