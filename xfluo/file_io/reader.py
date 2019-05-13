@@ -70,7 +70,8 @@ __all__ = ['find_elements',
            'load_thetas',
            'load_thetas_legacy',
            'load_thetas_9idb',
-           'load_thetas_2ide']
+           'load_thetas_2ide',
+           'read_exchange_file']
 
 
 def find_index(a_list, element):
@@ -293,3 +294,12 @@ def read_mic_xrf(path_files, element_index, hdf_tag, roi_tag, channel_tag):
    
     return data
 
+def read_exchange_file(fname):
+    data, elements, thetas = [],[],[]
+    hFile = h5py.File(fname[0])
+    tmp_elements = hFile['exchange']['elements'].value
+    elements = [x.decode('utf-8') for x in tmp_elements]
+    thetas = hFile['exchange']['theta'].value
+    data = hFile['exchange']['data'].value
+
+    return data, elements, thetas

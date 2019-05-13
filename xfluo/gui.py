@@ -48,7 +48,7 @@ import sys
 import xfluo
 import xfluo.config as config
 from pylab import *
-
+from xfluo.file_io.reader import *
 # from widgets.file_widget import  FileTableWidget
 # from widgets.image_process_widget import ImageProcessWidget
 # from widgets.hotspot_widget import HotspotWidget
@@ -76,6 +76,10 @@ class XfluoGui(QtGui.QMainWindow):
         closeAction = QtGui.QAction('Quit', self)
         closeAction.triggered.connect(sys.exit)
         closeAction.setShortcut('Ctrl+X')
+
+        openExchangeAction = QtGui.QAction('open exchange file', self)
+        openExchangeAction.triggered.connect(self.openExchange)
+        openExchangeAction.setShortcut('Ctrl+O')
 
         #openFileAction = QtGui.QAction('Open File', self)
         #openFileAction.triggered.connect(self.openfile)
@@ -224,6 +228,7 @@ class XfluoGui(QtGui.QMainWindow):
         ## Top menu bar [file   Convert Option    Alignment   After saving in memory]
         menubar = self.menuBar()
         self.fileMenu = menubar.addMenu('&File')
+        self.fileMenu.addAction(openExchangeAction)
         # self.fileMenu.addAction(configurationAction) #to replace readconfiguration Action
         # self.fileMenu.addAction(readConfigAction)
         ##self.fileMenu.addAction(openFileAction)
@@ -284,6 +289,28 @@ class XfluoGui(QtGui.QMainWindow):
             print("no folder has been selected")
         return folderName
 
+    def openExchange(self):
+        fname = QtGui.QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
+        data, self.elements, thetas = xfluo.read_exchange_file(fname)
+
+        sort_angle_index = np.argsort(thetas)
+        self.thetas= thetas[sort_angle_index]
+        self.data = data[:,sort_angle_index,:,:]
+        self.fnames = ["projection {}".format(x) for x in self.thetas]
+        # for j in elements:
+        #     self.imageProcessWidget.ViewControl.combo1.addItem(j)
+        #     self.hotspotWidget.ViewControl.combo1.addItem(j)
+        #     self.sinogramWidget.ViewControl.combo1.addItem(j)
+        #     self.reconstructionWidget.ViewControl.combo1.addItem(j)
+
+        # self.imageProcessWidget.updateSldRange(0,thetas)
+        # self.hotspotWidget.updateSldRange(0,data,thetas)
+
+        self.updateImages(True)
+
+        return
+
+
     def onTabChanged(self, index):
         if self.prevTab == self.TAB_FILE:
             self.loadImages()
@@ -334,13 +361,18 @@ class XfluoGui(QtGui.QMainWindow):
         self.element_array = self.fileTableWidget.elementTableModel.arrayData
         #for fidx in range(len(file_array)):
 
-    def updateImages(self):
+    def updateImages(self, from_open=False):
         self.data_history = []
         self.x_shifts_history = []
         self.y_shifts_history = []
         # self.centers_history = []
         self.from_undo = False
-        self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
+
+        if not from_open:
+            self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
+        else:
+            pass
+
         self.centers = [100,100,self.data.shape[3]//2]
         self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
         self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
