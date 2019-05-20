@@ -52,6 +52,12 @@ import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
 import scipy.fftpack as spf
 import string
+import cv2
+from PIL import Image, ImageChops, ImageOps
+import tomopy
+
+
+
 
 class SinogramActions(QtWidgets.QWidget):
     dataSig = pyqtSignal(np.ndarray, name='dataSig')
@@ -196,47 +202,228 @@ class SinogramActions(QtWidgets.QWidget):
         self.alignmentDone()
         return data, self.x_shifts, self.y_shifts
 
+    def align_y(self, element, data):
+        self.data = data
+        num_projections = data.shape[1]
+        tmp_data = data[element,:,:,:]
+        bounds = self.get_boundaries(tmp_data,5)
+        y_bot = np.asarray(bounds[3])
+        self.y_shifts = y_bot[0]-y_bot
+        # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
+
+        for i in range(num_projections):
+            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(self.y_shifts[i])), axis=1)
+
+        self.alignmentDone()
+        return self.y_shifts, self.data 
+
+    def get_boundaries(self, data, coeff):
+        bounds = {}
+        bounds[0] = [] #x_left
+        bounds[1] = [] #x_right
+        bounds[2] = [] #y_top
+        bounds[3] = [] #y_bottom
+
+        num_proj = len(data)
+        for i in range(num_proj):
+            col_sum = np.sum(data[i], axis=0)/data[i].shape[1]
+            row_sum = np.sum(data[i], axis=1)/data[i].shape[0]
+            noise_col = np.sort(col_sum[col_sum > 0])[:1]
+            noise_row = np.sort(row_sum[row_sum > 0])[:1]
+            
+            if noise_col <= noise_row:
+                noise = noise_col
+            else:
+                noise = noise_row
+
+            upper_thresh_col = np.sort(col_sum)[::-1][:1]
+            diffcol = upper_thresh_col - noise
+            y_thresh = diffcol*coeff/100 + noise
+
+            upper_thresh_row = np.sort(row_sum)[::-1][:1]
+            diffrow = upper_thresh_row - noise
+            x_thresh = diffrow*coeff/100 + noise
+
+            for j in range(len(col_sum)):
+                if col_sum[j] >= y_thresh:
+                    bounds[0].append(j)
+                    break
+            for j in range(len(col_sum)):
+                if col_sum[len(col_sum)-j-1] >= y_thresh:
+                    bounds[1].append(len(col_sum)-j-1)
+                    break
+            for j in range(len(row_sum)):
+                if row_sum[len(row_sum)-j-1] >= x_thresh:
+                    bounds[2].append(len(row_sum)-j-1)
+                    break
+            for j in range(len(row_sum)):
+                if row_sum[j] >= x_thresh:
+                    bounds[3].append(j)
+                    break       
+        return bounds  
+
+
+    def experimental3(self, element, data, thetas, crop_pixels):
+
+        num_angles = len(thetas)
+        indx = np.arange(num_angles)
+        half_1 = thetas[:num_angles//2]
+        indx_1 = indx[:num_angles//2]
+        half_2 = thetas[num_angles//2+1:]
+        half_2 = np.flip(half_2)
+        indx_2 = indx[num_angles//2+1:]
+        indx_2 = np.flip(indx_2)
+
+        if len(half_1) != len(half_2):
+            half_1 = half_1[:-1]
+        
+        for i in range(len(half_1)):
+            a = data[element,indx_1[i],:,:]
+            b = data[element,indx_2[i],:,:]
+            b = np.flip(b, axis=1)
+
+            fa = spf.fft2(a)
+            fb = spf.fft2(b)
+            shape = a.shape           
+            c = abs(spf.ifft2(fa * fb.conjugate()))
+            t0, t1 = np.unravel_index(np.argmax(c), a.shape)
+            if t0 > shape[0] // 2:
+                t0 -= shape[0]
+            if t1 > shape[1] // 2:
+                t1 -= shape[1]
+
+            data[:, indx_2[i], :, :] = np.roll(data[:, indx_2[i], :, :], t0, axis=1)
+            # data[:, indx_2[i], :, :] = np.roll(data[:, indx_2[i], :, :], t1, axis=2)
+
+            # self.x_shifts[indx_2[i]] += t1
+            self.y_shifts[indx_2[i]] += t0
+
+        return data, self.x_shifts, self.y_shifts
+
+    def experimental(self, element, data, thetas):
+        num_angles = len(thetas)
+        indx = np.arange(num_angles)
+        half_1 = thetas[:num_angles//2]
+        indx_1 = indx[:num_angles//2]
+        half_2 = thetas[num_angles//2+1:]
+        half_2 = np.flip(half_2)
+        indx_2 = indx[num_angles//2+1:]
+        indx_2 = np.flip(indx_2)
+
+        if len(half_1) != len(half_2):
+            half_1 = half_1[:-1]
+        
+        for i in range(len(half_1)):
+        # for i in range(2):
+            im1 = data[element,indx_1[i],:,:]
+            im2 = data[element,indx_2[i],:,:]
+            im2 = np.flip(im2, axis=1)
+            im1 = np.float32(im1)
+            im2 = np.float32(im2)
+            xshift, yshift = self.OCV_align(im1,im2,10,True, False)
+
+            data[:, indx_2[i], :, :] = np.roll(data[:, indx_2[i], :, :], int(round(yshift)), axis=1)
+            # data[:, indx_2[i], :, :] = np.roll(data[:, indx_2[i], :, :], int(round(xshift)), axis=2)
+
+            self.y_shifts[indx_2[i]] += int(round(yshift))
+            # self.x_shifts[indx_2[i]] += int(round(xshift))
+
+        return data, self.x_shifts, self.y_shifts
+
+    def OCV_align(self,im1,im2,crop_factor=10,blur=True, display=False):
+        #blur
+        if blur:
+            kernel = np.ones((5,5),np.float32)/25
+            im1 = cv2.filter2D(im1,-1, kernel)
+            im2 = cv2.filter2D(im2,-1, kernel)
+        im1 = np.flip(im1, axis=1)
+        im2 = np.flip(im2, axis=1)
+
+        #crop
+        if crop_factor>0:
+            im2 = im2[crop_factor:-crop_factor, crop_factor:-crop_factor]
+
+        # Find size of image1
+        sz = im1.shape
+         
+        # Define the motion model
+        warp_mode = cv2.MOTION_TRANSLATION
+         
+        # Define 2x3 or 3x3 matrices and initialize the matrix to identity
+        if warp_mode == cv2.MOTION_HOMOGRAPHY:
+            warp_matrix = np.eye(3, 3, dtype=np.float32)
+        else:
+            warp_matrix = np.eye(2, 3, dtype=np.float32)
+         
+        # Specify the number of iterations.
+        number_of_iterations = 5000
+         
+        # Specify the threshold of the increment
+        # in the correlation coefficient between two iterations
+        termination_eps = 1e-10
+         
+        # Define termination criteria
+        criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations,  termination_eps)
+         
+        # Run the ECC algorithm. The results are stored in warp_matrix.
+        (cc, warp_matrix) = cv2.findTransformECC (im1, im2, warp_matrix, warp_mode, criteria)
+
+        xshift = warp_matrix[1][2]
+        yshift = warp_matrix[0][2]
+        print(xshift,yshift)
+
+        if display:
+            if warp_mode == cv2.MOTION_HOMOGRAPHY :
+                # Use warpPerspective for Homography 
+                im2_aligned = cv2.warpPerspective (im2, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
+            else :
+                # Use warpAffine for Translation, Euclidean and Affine
+                im2_aligned = cv2.warpAffine(im2, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);
+
+            background = Image.fromarray(im1)
+            overlay = Image.fromarray(im2_aligned)
+            background = background.convert("RGBA")
+            overlay = overlay.convert("RGBA")
+            new_img = Image.blend(background, overlay, 0.5)
+
+            fig =plt.figure(figsize=(3, 1))
+
+            fig.add_subplot(2,3,1)
+            plt.imshow(background)
+
+            fig.add_subplot(2,3,2)
+            plt.imshow(overlay)
+
+            fig.add_subplot(2,3,3)
+            plt.imshow(new_img)
+
+            plt.show()
+
+        return xshift, yshift
+
+    def iterative_align(self,element, data, thetas, iters=5):
+        num_projections = data.shape[1]
+        prj = data[element,:,:,:]
+        prj = tomopy.remove_nan(prj, val=0.0)
+        prj = tomopy.remove_neg(prj, val=0.0)
+        prj[np.where(prj == np.inf)] = 0.0
+        self.thetas = thetas
+        prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=(0, 0),
+                            blur=True, rin=0.8, rout=0.95, center=None,
+                            algorithm='mlem',
+                            upsample_factor=100,
+                            save=False, debug=True)
+        self.x_shifts = np.round(sx).astype(int)
+        self.y_shifts = np.round(sy).astype(int)
+
+        for i in range(num_projections):
+            data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(self.y_shifts[i])), axis=1)
+            data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(self.x_shifts[i])), axis=2)
+        
+        return self.x_shifts, self.y_shifts, data
+
     def matchTermplate(self):
         pass
-
-    # def alignFromText(self, data):
-    #     '''
-    #     align by reading text file that saved prior image registration
-    #     alignment info is saved in following format: name of the file, xshift, yshift
-    #     by locating where the comma(,) is we can extract information:
-    #     name of the file(string before first comma),
-    #     yshift(string after first comma before second comma),
-    #     xshift(string after second comma)
-    #     '''
-
-    #     try:
-    #         fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
-    #         ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
-
-    #         fname = open(fileName[0], 'r')
-    #         read = fname.readlines()
-    #         datacopy = zeros(data.shape)
-    #         datacopy[...] = data[...]
-    #         data[np.isnan(data)] = 1
-    #         num_projections = data.shape[1]
-    #         for i in arange(num_projections):
-    #             onlyfilenameIndex = fname[i].rfind("/")
-    #             for j in arange(len(read)):
-    #                 if string.find(read[j], fname[i][onlyfilenameIndex + 1:]) != -1:
-    #                     secondcol = read[j].rfind(",")  ## find second ,
-    #                     firstcol = read[j][:secondcol].rfind(",")
-    #                     self.y_shifts[i] += int(float(read[j][secondcol + 1:-1]))
-    #                     self.x_shifts[i] += int(float(read[j][firstcol + 1:secondcol]))
-    #                     data[:, i, :, :] = np.roll(data[:, i, :, :], self.x_shifts[i], axis=2)
-    #                     data[:, i, :, :] = np.roll(data[:, i, :, :], self.y_shifts[i], axis=1)
-    #                 if string.find(read[j], "rotation axis") != -1:
-    #                     commapos = read[j].rfind(",")
-    #                     self.centers[2] = float(read[j][commapos + 1:-1])
-    #         f.close()
-    #         self.alignmentDone()
-    #         return data, self.x_shifts, self.y_shifts, self.centers
-    #     except IOError:
-    #         print("choose file please")
 
     def alignFromText2(self, data):
         '''

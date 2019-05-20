@@ -129,9 +129,9 @@ class SinogramWidget(QtWidgets.QWidget):
         # self.ViewControl.btn1.clicked.connect(self.centerOfMass2_params)
         self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
-        # self.ViewControl.btn4.clicked.connect(self.centerofMass2Sine_params)
-        self.ViewControl.btn5.clicked.connect(self.matchTermplate_params)
-        # self.ViewControl.btn6.clicked.connect(self.alignFromText_params)
+        self.ViewControl.btn4.clicked.connect(self.experimental_params)
+        self.ViewControl.btn5.clicked.connect(self.align_y_params)
+        self.ViewControl.btn6.clicked.connect(self.iter_align_params)
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
         # self.ViewControl.btn8.clicked.connect(self.alignfromHotspotxt_params)
 
@@ -191,6 +191,8 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.sinogramData[isinf(self.sinogramData)] = 0.001
         self.sinoView.projView.setImage(self.sinogramData)
+        self.sinoView.projView.setRect(QtCore.QRect(round(self.thetas[0]), 0, round(self.thetas[-1])- round(self.thetas[0]), self.sinogramData.shape[1]))
+
         self.sinoChangedSig.emit(self.sinogramData)
         # self.view.projView.setRect(QtCore.QRect(round(self.theta[0]), 0, round(self.theta[-1])- round(self.theta[0]), self.sinogramData.shape[1]))
         # self.sinoView.projData = self.sinogramData
@@ -198,7 +200,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def centerOfMass_params(self):
         element, row, data, thetas = self.get_params()
-        self.data, self.x_shifts = self.actions.runCenterOfMass(element, row, data, thetas)
+        self.data, self.x_shifts = self.actions.runCenterOfMass(element, row, data, self.thetas)
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
@@ -230,15 +232,42 @@ class SinogramWidget(QtWidgets.QWidget):
     def phaseCorrelate_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        self.data, self.ViewControl.combo1.currentIndex()
         self.data, self.x_shifts, self.y_shifts = self.actions.phaseCorrelate(element, data)
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
 
-    def matchTermplate_params(self):
-        self.actions.matchTemmplate()
-        pass
+    def experimental_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        thetas= self.thetas
+        self.data, self.x_shifts, self.y_shifts =self.actions.experimental(element, data, thetas) 
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+
+    def align_y_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        # thetas= self.thetas
+        self.y_shifts, self.data = self.actions.align_y(element, data) 
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+        
+    # def matchTermplate_params(self):
+    #     self.actions.matchTemmplate()
+    #     pass
+
+    def iter_align_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        thetas = self.thetas
+        sx =  self.actions.iterative_align(element, data, thetas, 2)
+        self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, 2)
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
 
     # def alignFromText_params(self):
     #     data = self.data

@@ -255,8 +255,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         thetas = self.thetas
-        index = projection        
-        self.fnames.pop(index)    
+        index = projection    
+        self.fnames.pop(index)
         num_files = len(self.fnames)
         temp_thetas = np.delete(thetas, projection, 0)
 

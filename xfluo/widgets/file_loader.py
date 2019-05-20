@@ -52,7 +52,6 @@ import numpy as np
 # from file_io.reader import read_projection
 from xfluo.file_io.reader import *
 
-
 class FileTableWidget(QtWidgets.QWidget):
     def __init__(self, parent):
         super(FileTableWidget, self).__init__()
@@ -64,6 +63,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.auto_image_tag = self.parent.params.image_tag
         self.auto_data_tag = self.parent.params.data_tag
         self.auto_element_tag = self.parent.params.element_tag
+        self.auto_quant_names = self.parent.params.quant_name
         #self.auto_detector_tag = self.parent.params.detector_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
@@ -93,7 +93,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
         self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
         self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
-        
+
         self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL', '9idbTAU:SM:ST:ActPos']
         thetaCompleter = QtWidgets.QCompleter(self.thetaOptions)
         thetaLabel = QtWidgets.QLabel('Theta PV:')
@@ -103,44 +103,38 @@ class FileTableWidget(QtWidgets.QWidget):
         self.thetaLineEdit.textChanged.connect(self.onThetaPVChange)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
         self.thetaLineEdit.setFixedWidth(122.5)
-        
+
         imageTag_label = QtWidgets.QLabel('Image tag:')
         imageTag_label.setFixedWidth(90)
         self.imageTag = QtWidgets.QComboBox()
         # self.imageTag.currentIndexChanged.connect(self.getDataTag)
+        self.imageTag.currentIndexChanged.connect(self.getQuantOptions)
+        self.imageTag.currentIndexChanged.connect(self.getElementList)
+
         self.imageTag.setFixedWidth(122.5)
-        
+
         dataTag_label = QtWidgets.QLabel('')
         dataTag_label.setFixedWidth(90)
         self.dataTag = QtWidgets.QComboBox()
         # self.dataTag.currentIndexChanged.connect(self.getDataTag)
         self.dataTag.setFixedWidth(122.5)
-        
+
         elementTag_label = QtWidgets.QLabel('Elements:')
         elementTag_label.setFixedWidth(90)
         self.elementTag = QtWidgets.QComboBox()
         self.elementTag.currentIndexChanged.connect(self.getElementList)
         self.elementTag.setFixedWidth(122.5)
-        
-        operator_label = QtWidgets.QLabel('Math operator:')
-        operator_label.setFixedWidth(90)
-        self.operator_option = QtWidgets.QComboBox()
-        operators = ['/', '+', '-', '*',]
-        self.operator_option.currentIndexChanged.connect(self.operator)
-        self.operator_option.setFixedWidth(122.5)
-        for k in np.arange(len(operators)):
-            self.operator_option.addItem(operators[k])
 
-        scalar_label = QtWidgets.QLabel('Detector:')
-        scalar_label.setFixedWidth(90)
-        self.scalar_option = QtWidgets.QComboBox()
-        self.elementTag.currentIndexChanged.connect(self.getscalars)
-        self.scalar_option.setFixedWidth(122.5)
+        quant_label = QtWidgets.QLabel('Normalize by:')
+        quant_label.setFixedWidth(90)
+        self.quant_options = QtWidgets.QComboBox()
+        # self.quant_options.currentIndexChanged.connect(self.getQuantOptions)
+        self.quant_options.setFixedWidth(122.5)
 
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
         # self.saveDataBtn.setEnabled(False)
-        
+
         message_label = QtWidgets.QLabel('Messages:')
         self.message = QtWidgets.QTextEdit()
         self.message.setReadOnly(True)
@@ -156,55 +150,50 @@ class FileTableWidget(QtWidgets.QWidget):
         hBox2.addWidget(imageTag_label)
         hBox2.addWidget(self.imageTag)
         hBox2.setAlignment(QtCore.Qt.AlignLeft)
-        
+
         hBox3 = QtWidgets.QHBoxLayout()
         hBox3.addWidget(dataTag_label)
         hBox3.addWidget(self.dataTag)
         hBox3.setAlignment(QtCore.Qt.AlignLeft)
-        
+
         hBox4 = QtWidgets.QHBoxLayout()
         hBox4.addWidget(elementTag_label)
         hBox4.addWidget(self.elementTag)
         hBox4.setAlignment(QtCore.Qt.AlignLeft)
-        
+
         hBox5 = QtWidgets.QHBoxLayout()
-        hBox5.addWidget(operator_label)
-        hBox5.addWidget(self.operator_option)
+        hBox5.addWidget(quant_label)
+        hBox5.addWidget(self.quant_options)
         hBox5.setAlignment(QtCore.Qt.AlignLeft)
-        
-        hBox6 = QtWidgets.QHBoxLayout()
-        hBox6.addWidget(scalar_label)
-        hBox6.addWidget(self.scalar_option)
-        hBox6.setAlignment(QtCore.Qt.AlignLeft)
-        
+
         hBox7 = QtWidgets.QHBoxLayout()
         hBox7.addWidget(self.saveDataBtn)
-        
+
         vBox1 = QtWidgets.QVBoxLayout()
         vBox1.addLayout(hBox1)
         vBox1.addLayout(hBox2)
         vBox1.addLayout(hBox3)
         vBox1.addLayout(hBox4)
         vBox1.addLayout(hBox5)
-        vBox1.addLayout(hBox6)
+        # vBox1.addLayout(hBox6)
         vBox1.addLayout(hBox7)
-        
+
         layout0 = QtWidgets.QHBoxLayout()
         layout0.addWidget(dirLabel)
         layout0.addWidget(self.dirLineEdit)
         layout0.addWidget(self.extLineEdit)
         layout0.addWidget(self.dirBrowseBtn)
-        
+
         layout1 = QtWidgets.QHBoxLayout()
         layout1.addLayout(vBox1)
         layout1.addWidget(self.fileTableView)
         layout1.addWidget(self.elementTableView)
-        
+
         layout2 = QtWidgets.QHBoxLayout()
         layout2 = QtWidgets.QHBoxLayout()
         layout2.addWidget(message_label)
         layout2.addWidget(self.message)
-        
+
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.addLayout(layout0)
         mainLayout.addLayout(layout1)
@@ -216,13 +205,6 @@ class FileTableWidget(QtWidgets.QWidget):
         except:
             print("Invalid directory or file; Try a new folder or remove problematic files.")
         self.onThetaUpdate()
-        
-
-    def operator(self):
-        pass
-
-    def getscalars(self):  #use Detector instead of scaler on the gui
-        pass
 
     def onThetaPVChange(self):
         self.parent.params.theta_pv =  self.thetaLineEdit.text()
@@ -246,6 +228,7 @@ class FileTableWidget(QtWidgets.QWidget):
             self.getImgTags()
             self.getDataTag()
             self.getElementList()
+            self.getQuantOptions()
             self.onThetaUpdate()
         except KeyError:
             pass
@@ -255,7 +238,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.img = h5py.File(fpath,"r")
         self.imgTags = list(self.img.keys())
         self.version = self.checkVersion()
-        
+
         # for new HDF files
         if self.version == 1:
             self.message.setText('exchange_0: '+ self.img['exchange_0']['description'][0].decode('utf-8')
@@ -274,26 +257,25 @@ class FileTableWidget(QtWidgets.QWidget):
 
             for i in self.imgTags:
                 self.imageTag.addItem(i)
-            
+
             if 'exchange' in self.imgTags:
                 indx = self.imgTags.index('exchange')
                 self.imageTag.setCurrentIndex(indx)
-            else: 
+            else:
 
                 try:
                     indx = self.imgTags.index(self.auto_image_tag)
                 except:
                     indx = 0
                 self.imageTag.setCurrentIndex(indx)
-                
+
 
         if self.version == 0:
             self.message.clear()
             self.thetaLineEdit.setEnabled(True)
             self.dataTag.setEnabled(True)
             self.elementTag.setEnabled(True)
-            self.operator_option.setEnabled(False)
-            self.scalar_option.setEnabled(False)
+            self.quant_options.setEnabled(True)
 
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
@@ -304,13 +286,13 @@ class FileTableWidget(QtWidgets.QWidget):
             self.imageTag.setCurrentIndex(indx)
 
     def getDataTag(self):  #no name on the GUI; the one below image tag
-        # for new HDF files        
+        # for new HDF files
         if self.version == 1:
             indx = self.imageTag.currentIndex()
             if indx == -1:
                 return
-            
-            # self.dataTag.clear()
+
+            self.dataTag.clear()
             self.dataTag.addItem('data')
             self.parent.params.image_tag = self.imageTag.currentText()
             self.parent.params.data_tag = self.dataTag
@@ -319,19 +301,12 @@ class FileTableWidget(QtWidgets.QWidget):
             self.parent.params.elementTag = self.elementTag
             # for exchange_0
             if self.imageTag.currentText() == 'exchange_0':
-                self.scalar_option.clear()
-                self.operator_option.setEnabled(False)
-                self.scalar_option.setEnabled(False)
+                #temp
+                self.quant_options.setEnabled(False)
+
             else:
-                self.operator_option.setEnabled(True)
-                self.scalar_option.setEnabled(True)
-                self.scalar_options = {}
-                scalar_list = list(self.img['exchange_1']['scaler_names'])
-                scalar_list = [scalar_list[i].decode() for i in range(len(scalar_list))]
-                self.scalar_option.clear()
-                
-                for i in range(len(scalar_list)):
-                    self.scalar_option.addItem(scalar_list[i])
+                self.quant_options.setEnabled(True)
+
 
         if self.version == 0:
             # for old 2IDE HDF files with "exchange"
@@ -344,16 +319,14 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.thetaLineEdit.setEnabled(True)
                 self.dataTag.setEnabled(False)
                 self.elementTag.setEnabled(False)
-                self.operator_option.setEnabled(False)
-                self.scalar_option.clear()
-                self.scalar_option.setEnabled(False)
-            # for old 2IDE HDF files without "exchange"    
-            else: 
-                # for read 
+                self.quant_options.setEnabled(False)
+
+            # for old 2IDE HDF files without "exchange"
+            else:
+                # for read
                 self.message.clear()
                 self.dataTags = {}
                 self.elementTags = {}
-                self.scalar_options = {}
 
                 for i in range(len(self.imgTags)):
                     self.dataTags[i] = list(self.img[self.imgTags[i]])
@@ -380,24 +353,20 @@ class FileTableWidget(QtWidgets.QWidget):
                     self.elementTag.setCurrentIndex(indx3)
                 except ValueError:
                     pass
-                
+
                 scalar_list = list(self.img['MAPS']['scaler_names'])
                 scalar_list = [scalar_list[i].decode() for i in range(len(scalar_list))]
-                self.scalar_option.clear()
-                
-                for i in range(len(scalar_list)):
-                    self.scalar_option.addItem(scalar_list[i])
-                    
+
+
                 self.parent.params.image_tag = self.imageTag.currentText()
                 self.parent.params.data_tag = self.dataTag.currentText()
                 #self.parent.params.detector_tag = self.scaler_option.currentText()
-                
+
                 self.thetaLineEdit.setEnabled(True)
                 self.dataTag.setEnabled(True)
                 self.elementTag.setEnabled(True)
-                self.operator_option.setEnabled(True)
-                self.scalar_option.setEnabled(True)
-                
+                self.quant_options.setEnabled(True)
+
     def getElementList(self):
         if self.version == 0:   #legacy data
             fpath = self.fileTableModel.getFirstCheckedFilePath()
@@ -407,7 +376,7 @@ class FileTableWidget(QtWidgets.QWidget):
             self.parent.params.data_tag = self.dataTag.currentText()
             self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
             self.elementTableModel.setAllChecked(False)
-            self.elementTableModel.setChecked(self.auto_selected_elements, (True))   
+            self.elementTableModel.setChecked(self.auto_selected_elements, (True))
 
         if self.version == 1:   #9idbdata
             fpath = self.fileTableModel.getFirstCheckedFilePath()
@@ -418,9 +387,89 @@ class FileTableWidget(QtWidgets.QWidget):
             self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
             self.elementTableModel.setAllChecked(False)
             self.elementTableModel.setChecked(self.auto_selected_elements, (True))
-            
-        # if self.version == 2:   #2ide data
 
+        # if self.version == 2:   #2ide data
+    def getQuantOptions(self):
+        self.quant_options.clear()
+        img_tag = self.imageTag.currentText()
+        try:
+            if self.version == 0:   #legacy data
+                quant_names = ['SRcurrent', 'us_ic', 'ds_ic']
+                for i in range(len(quant_names)):
+                    self.quant_options.addItem(quant_names[i])
+
+            if self.version == 1:   #9idbdata
+                quant_names = list(self.img[img_tag]['quant_names'])
+                quant_names = [quant_names[i].decode() for i in range(len(quant_names))]
+                for i in range(len(quant_names)):
+                    self.quant_options.addItem(quant_names[i])
+                default_idx = quant_names.index("DS_IC")
+                self.quant_options.setCurrentIndex(default_idx)
+
+            self.quant_exists = True
+
+        except:
+            self.quant_exists = False
+
+        return
+
+    def normalizeData(self, data, exchange_tag, elem_indices):
+        scalar_list = list(self.img[exchange_tag]['scaler_names'])
+        scalar_list = [scalar_list[i].decode() for i in range(len(scalar_list))]
+        scaler_idx = scalar_list.index(self.quant_options.currentText())
+        scaler = self.img[exchange_tag]['scalers'][scaler_idx]
+        scaler[np.isnan(scaler)] = 0.0001
+        scaler[scaler == np.inf] = 0.0001
+
+        if self.version == 0:
+            quant_names = ['SRcurrent','us_ic','ds_ic']
+            quant_idx = quant_names.index(self.quant_options.currentText())
+            l = np.arange(len(elem_indices))
+            quant =self.img[exchange_tag]['XRF_roi_quant'][quant_idx][0]
+            quant = [quant[j] for j in l if elem_indices[j]==True]
+
+        if self.version == 1:
+            quant_names = list(self.img[exchange_tag]['quant_names'])
+            quant_names = [quant_names[i].decode() for i in range(len(quant_names))]
+            quant_idx = quant_names.index(self.quant_options.currentText())
+            l = np.arange(len(elem_indices))
+            quant = self.img[exchange_tag]['quant'][quant_idx][0]
+            quant = [quant[j] for j in l if elem_indices[j]==True]
+
+            for i in range(len(quant)):
+                if quant[i] <= 0.0:
+                    quant[i] = 0.001
+
+        for i in range(len(quant)):
+            data[i] = data[i]/quant[i]
+
+        scaler = self.padScalers(data, scaler)
+        normalized_data = data/scaler
+        norm_median = []
+        norm_std = []
+        
+        for j in range(normalized_data.shape[0]):
+            for i in range(normalized_data.shape[1]):
+                norm_median = np.median(normalized_data[j,i,:,:])
+                ones_arr = np.ones_like(normalized_data[j,i])
+                norm_std = np.std(normalized_data[j,i,:,:])
+                normalized_data[j,i] = [normalized_data[j,i] <= 10*norm_median]*normalized_data[j,i]
+        return normalized_data
+
+    def padScalers(self, data, scaler):
+        data_x = data.shape[3]
+        data_y = data.shape[2]
+        scaler_x = scaler.shape[1]
+        scaler_y = scaler.shape[0]
+        diffx = data_x - scaler_x
+        diffy = data_y - scaler_y
+        dx = diffx//2
+        dy = diffy//2
+
+        mask = np.ones((data_y,data_x))
+        mask[dy:scaler_y+dy, dx:scaler_x+dx] = scaler
+
+        return mask
 
     def checkVersion(self):
         #temporary definition of 'version'
@@ -434,6 +483,8 @@ class FileTableWidget(QtWidgets.QWidget):
         #get path_files list
         thetaPV = self.thetaLineEdit.text()
         thetas = load_thetas(path_files, self.imageTag.currentText(), self.version, thetaPV)
+        if len(thetas) == 0:
+            thetas = np.ones(len(path_files))
 
         self.parent.params.theta_pv = thetaPV
         self.parent.params.input_path = self.dirLineEdit.text()
@@ -484,9 +535,11 @@ class FileTableWidget(QtWidgets.QWidget):
         self.use_thetas = np.asarray([thetas[j] for j in k if use[j]==True])
         self.use_elements = [elements[j] for j in l if use2[j]==True]
 
-
         element_index = [elements.index(j) for j in self.use_elements]
         self.parent.params.selected_elements = str(element_index)
 
         self.data = xfluo.read_mic_xrf(path_files, element_index, img_tag, data_tag, element_tag)
+        if self.quant_exists:
+            self.data = self.normalizeData(self.data, img_tag, use2)
+
         return self.data, self.use_elements, self.use_thetas, use_files

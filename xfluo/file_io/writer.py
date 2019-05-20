@@ -103,7 +103,7 @@ class SaveOptions(object):
 			if savedir == "":
 				raise IndexError
 			recon = tomopy.circ_mask(recon, axis=0)
-			dxchange.writer.write_tiff_stack(recon, fname=savedir)
+			dxchange.writer.write_tiff(recon, fname=savedir)
 		except IndexError:
 			print("type the header name")
 		return
