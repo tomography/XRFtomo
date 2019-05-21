@@ -369,8 +369,6 @@ class XfluoGui(QtGui.QMainWindow):
 
         if not from_open:
             self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
-        else:
-            pass
 
         self.centers = [100,100,self.data.shape[3]//2]
         self.x_shifts = zeros(self.data.shape[1], dtype=np.int)

@@ -354,10 +354,6 @@ class FileTableWidget(QtWidgets.QWidget):
                 except ValueError:
                     pass
 
-                scalar_list = list(self.img['MAPS']['scaler_names'])
-                scalar_list = [scalar_list[i].decode() for i in range(len(scalar_list))]
-
-
                 self.parent.params.image_tag = self.imageTag.currentText()
                 self.parent.params.data_tag = self.dataTag.currentText()
                 #self.parent.params.detector_tag = self.scaler_option.currentText()
@@ -406,70 +402,31 @@ class FileTableWidget(QtWidgets.QWidget):
                 default_idx = quant_names.index("DS_IC")
                 self.quant_options.setCurrentIndex(default_idx)
 
-            self.quant_exists = True
-
+            # self.quant_exists = True
         except:
-            self.quant_exists = False
+            # default_idx = quant_names.index("None")
+            # self.quant_exists = False
+            self.quant_options.addItem('None')
 
         return
 
-    def normalizeData(self, data, exchange_tag, elem_indices):
-        scalar_list = list(self.img[exchange_tag]['scaler_names'])
-        scalar_list = [scalar_list[i].decode() for i in range(len(scalar_list))]
-        scaler_idx = scalar_list.index(self.quant_options.currentText())
-        scaler = self.img[exchange_tag]['scalers'][scaler_idx]
-        scaler[np.isnan(scaler)] = 0.0001
-        scaler[scaler == np.inf] = 0.0001
-
-        if self.version == 0:
-            quant_names = ['SRcurrent','us_ic','ds_ic']
-            quant_idx = quant_names.index(self.quant_options.currentText())
-            l = np.arange(len(elem_indices))
-            quant =self.img[exchange_tag]['XRF_roi_quant'][quant_idx][0]
-            quant = [quant[j] for j in l if elem_indices[j]==True]
-
-        if self.version == 1:
-            quant_names = list(self.img[exchange_tag]['quant_names'])
-            quant_names = [quant_names[i].decode() for i in range(len(quant_names))]
-            quant_idx = quant_names.index(self.quant_options.currentText())
-            l = np.arange(len(elem_indices))
-            quant = self.img[exchange_tag]['quant'][quant_idx][0]
-            quant = [quant[j] for j in l if elem_indices[j]==True]
-
-            for i in range(len(quant)):
-                if quant[i] <= 0.0:
-                    quant[i] = 0.001
-
-        for i in range(len(quant)):
-            data[i] = data[i]/quant[i]
-
-        scaler = self.padScalers(data, scaler)
-        normalized_data = data/scaler
-        norm_median = []
-        norm_std = []
-        
-        for j in range(normalized_data.shape[0]):
-            for i in range(normalized_data.shape[1]):
-                norm_median = np.median(normalized_data[j,i,:,:])
-                ones_arr = np.ones_like(normalized_data[j,i])
-                norm_std = np.std(normalized_data[j,i,:,:])
-                normalized_data[j,i] = [normalized_data[j,i] <= 10*norm_median]*normalized_data[j,i]
-        return normalized_data
-
-    def padScalers(self, data, scaler):
-        data_x = data.shape[3]
-        data_y = data.shape[2]
-        scaler_x = scaler.shape[1]
-        scaler_y = scaler.shape[0]
-        diffx = data_x - scaler_x
-        diffy = data_y - scaler_y
-        dx = diffx//2
-        dy = diffy//2
-
-        mask = np.ones((data_y,data_x))
-        mask[dy:scaler_y+dy, dx:scaler_x+dx] = scaler
-
-        return mask
+    def normalizeData(self, data, quants, scalers):
+        quants[quants <= 0] = 1
+        scalers[scalers <= 0] = 1
+        num_elements = data.shape[0]
+        num_files = data.shape[1]
+        #normalize
+        for i in range(num_elements):
+            for j in range(num_files):
+                data[i,j,:,:] = data[i,j,:,:]/quants[i,j]/scalers[j]
+                norm_median = np.median(data[i,j,:,:])
+                norm_mean = np.mean(data[i,j,:,:])
+                norm_std = np.std(data[i,j,:,:])
+                norm_max = 20*norm_mean
+                median_arr = np.ones_like(data[i,j])*norm_mean
+                data[i,j] = [data[i,j] <= norm_max]*data[i,j,:,:]
+                data[i,j] = data[i,j] + [data[i,j] == 1]*np.ones_like(data[i,j])*norm_max
+        return data
 
     def checkVersion(self):
         #temporary definition of 'version'
@@ -523,23 +480,25 @@ class FileTableWidget(QtWidgets.QWidget):
         path_files = [self.fileTableModel.directory + '/' + s for s in files]
         thetas = [i.theta for i in self.fileTableModel.arrayData]
         elements = [i.element_name for i in self.elementTableModel.arrayData]
-        use = [i.use for i in self.fileTableModel.arrayData]
-        use2 = [i.use for i in self.elementTableModel.arrayData]
-        img_tag = self.imageTag.currentText()
+        files_bool = [i.use for i in self.fileTableModel.arrayData]
+        elements_bool = [i.use for i in self.elementTableModel.arrayData]
+
+        hdf_tag = self.imageTag.currentText()
         data_tag = self.dataTag.currentText()
         element_tag = self.elementTag.currentText()
+        scaler_name = self.quant_options.currentText()
 
         k = np.arange(len(files))
         l = np.arange(len(elements))
-        use_files =[files[j] for j in k if use[j]==True]
-        self.use_thetas = np.asarray([thetas[j] for j in k if use[j]==True])
-        self.use_elements = [elements[j] for j in l if use2[j]==True]
 
-        element_index = [elements.index(j) for j in self.use_elements]
-        self.parent.params.selected_elements = str(element_index)
+        files = [files[j] for j in k if files_bool[j]==True]
+        thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
+        elements = [elements[j] for j in l if elements_bool[j]==True]
 
-        self.data = xfluo.read_mic_xrf(path_files, element_index, img_tag, data_tag, element_tag)
-        if self.quant_exists:
-            self.data = self.normalizeData(self.data, img_tag, use2)
+        self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
+        data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
+        
+        # if self.quant_options.currentText() != 'None':
+        self.data = self.normalizeData(data, quants, scalers)
 
-        return self.data, self.use_elements, self.use_thetas, use_files
+        return data, elements, thetas, files
