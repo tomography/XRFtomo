@@ -202,13 +202,28 @@ class SinogramActions(QtWidgets.QWidget):
         self.alignmentDone()
         return data, self.x_shifts, self.y_shifts
 
-    def align_y(self, element, data):
+    def align_y_top(self, element, data):
         self.data = data
         num_projections = data.shape[1]
         tmp_data = data[element,:,:,:]
         bounds = self.get_boundaries(tmp_data,5)
         y_bot = np.asarray(bounds[3])
         self.y_shifts = y_bot[0]-y_bot
+        # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
+
+        for i in range(num_projections):
+            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(self.y_shifts[i])), axis=1)
+
+        self.alignmentDone()
+        return self.y_shifts, self.data 
+
+    def align_y_bottom(self, element, data):
+        self.data = data
+        num_projections = data.shape[1]
+        tmp_data = data[element,:,:,:]
+        bounds = self.get_boundaries(tmp_data,50)
+        y_top = np.asarray(bounds[2])
+        self.y_shifts = y_top[0]-y_top
         # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
 
         for i in range(num_projections):

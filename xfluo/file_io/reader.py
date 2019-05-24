@@ -73,7 +73,6 @@ __all__ = ['find_elements',
            'load_thetas_2ide',
            'read_exchange_file']
 
-
 def find_index(a_list, element):
     try:
         return a_list.index(element)

@@ -130,10 +130,10 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
         self.ViewControl.btn4.clicked.connect(self.experimental_params)
-        self.ViewControl.btn5.clicked.connect(self.align_y_params)
+        self.ViewControl.btn5.clicked.connect(self.align_y_top_params)
         self.ViewControl.btn6.clicked.connect(self.iter_align_params)
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
-        # self.ViewControl.btn8.clicked.connect(self.alignfromHotspotxt_params)
+        self.ViewControl.btn8.clicked.connect(self.align_y_bottom_params)
 
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
@@ -246,11 +246,20 @@ class SinogramWidget(QtWidgets.QWidget):
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
 
-    def align_y_params(self):
+    def align_y_top_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
         # thetas= self.thetas
-        self.y_shifts, self.data = self.actions.align_y(element, data) 
+        self.y_shifts, self.data = self.actions.align_y_top(element, data) 
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+
+    def align_y_bottom_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        # thetas= self.thetas
+        self.y_shifts, self.data = self.actions.align_y_bottom(element, data) 
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return

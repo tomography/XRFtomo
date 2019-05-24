@@ -390,7 +390,7 @@ class FileTableWidget(QtWidgets.QWidget):
         img_tag = self.imageTag.currentText()
         try:
             if self.version == 0:   #legacy data
-                quant_names = ['SRcurrent', 'us_ic', 'ds_ic']
+                quant_names = ['None', 'SRcurrent', 'us_ic', 'ds_ic']
                 for i in range(len(quant_names)):
                     self.quant_options.addItem(quant_names[i])
 

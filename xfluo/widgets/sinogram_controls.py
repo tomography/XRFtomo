@@ -55,7 +55,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
     def initUI(self):
         button1size = 250
-        buton2size = 122.5
+        button2size = 122.5
         button3size = 73.3
         button4size = 58.75
 
@@ -78,24 +78,28 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.btn4.setMaximumWidth(button1size)
         self.btn4.setMinimumWidth(button1size)
 
-        self.btn5 = QtWidgets.QPushButton('align in y')
-        self.btn5.setMaximumWidth(button1size)
-        self.btn5.setMinimumWidth(button1size)
+        self.btn5 = QtWidgets.QPushButton('align y top')
+        self.btn5.setMaximumWidth(button2size)
+        self.btn5.setMinimumWidth(button2size)
 
         self.btn6 = QtWidgets.QPushButton('iterative alignment')
         self.btn6.setMaximumWidth(button1size)
         self.btn6.setMinimumWidth(button1size)
 
-        self.btn7 = QtWidgets.QPushButton('align from txt2')
+        self.btn7 = QtWidgets.QPushButton('align from txt')
         self.btn7.setMaximumWidth(button1size)
         self.btn7.setMinimumWidth(button1size)
 
-        # self.btn8 = QtWidgets.QPushButton('align from hotpsot txt')
-        # self.btn8.setMaximumWidth(button1size)
-        # self.btn8.setMinimumWidth(button1size)
+        self.btn8 = QtWidgets.QPushButton('align y bottom')
+        self.btn8.setMaximumWidth(button2size)
+        self.btn8.setMinimumWidth(button2size)
 
         self.lbl = QtWidgets.QLabel()
         self.lbl.setText("")
+
+        hb = QtWidgets.QHBoxLayout()
+        hb.addWidget(self.btn5)
+        hb.addWidget(self.btn8)
 
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)
@@ -103,10 +107,9 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb.addWidget(self.btn2)
         vb.addWidget(self.btn3)
         vb.addWidget(self.btn4)
-        vb.addWidget(self.btn5)
         vb.addWidget(self.btn6)
         vb.addWidget(self.btn7)
-        # vb.addWidget(self.btn8)
+        vb.addLayout(hb)
         vb.addWidget(self.lbl)
         # vb.addLayout(hb)
         self.setLayout(vb)
