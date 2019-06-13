@@ -238,6 +238,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.img = h5py.File(fpath,"r")
         self.imgTags = list(self.img.keys())
         self.version = self.checkVersion()
+        self.description = []
 
         # for new HDF files
         if self.version == 1:
@@ -252,15 +253,25 @@ class FileTableWidget(QtWidgets.QWidget):
 
             if 'MAPS' in self.imgTags:
                 self.imgTags.remove('MAPS')
-            #if 'exchange_0' in self.imgTags:
-                #self.imgTags.remove('exchange_0')
 
-            for i in self.imgTags:
-                self.imageTag.addItem(i)
+            try:
+
+                for i in self.img:
+                    if i !='MAPS':
+                        self.description.append(self.img[i]['description'][0].decode('utf-8'))
+
+                for i in self.description:
+                    self.imageTag.addItem(i)
+
+            except:
+
+                for i in self.imgTags:
+                    self.imageTag.addItem(i)
 
             if 'exchange' in self.imgTags:
                 indx = self.imgTags.index('exchange')
                 self.imageTag.setCurrentIndex(indx)
+
             else:
 
                 try:
@@ -268,7 +279,6 @@ class FileTableWidget(QtWidgets.QWidget):
                 except:
                     indx = 0
                 self.imageTag.setCurrentIndex(indx)
-
 
         if self.version == 0:
             self.message.clear()
@@ -294,18 +304,18 @@ class FileTableWidget(QtWidgets.QWidget):
 
             self.dataTag.clear()
             self.dataTag.addItem('data')
-            self.parent.params.image_tag = self.imageTag.currentText()
-            self.parent.params.data_tag = self.dataTag
+            self.parent.params.image_tag = self.imgTags[self.imageTag.currentIndex()]
+            self.parent.params.data_tag = self.dataTag.currentText()
             self.elementTag.clear()
             self.elementTag.addItem('data_names')
             self.parent.params.elementTag = self.elementTag
             # for exchange_0
-            if self.imageTag.currentText() == 'exchange_0':
-                #temp
-                self.quant_options.setEnabled(False)
-
-            else:
-                self.quant_options.setEnabled(True)
+            # if self.imgTags[self.imageTag.currentIndex()] == 'exchange_0':
+            #     #temp
+            #     self.quant_options.setEnabled(False)
+            #
+            # else:
+            #     self.quant_options.setEnabled(True)
 
 
         if self.version == 0:
@@ -376,9 +386,10 @@ class FileTableWidget(QtWidgets.QWidget):
 
         if self.version == 1:   #9idbdata
             fpath = self.fileTableModel.getFirstCheckedFilePath()
-            image_tag = self.imageTag.currentText()
+            image_tag = self.imgTags[self.imageTag.currentIndex()]
+
             element_tag = self.elementTag.currentText()
-            self.parent.params.element_tag = self.imageTag.currentText()
+            self.parent.params.element_tag = self.imgTags[self.imageTag.currentIndex()]
             self.parent.params.data_tag = self.dataTag.currentText()
             self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
             self.elementTableModel.setAllChecked(False)
@@ -387,7 +398,7 @@ class FileTableWidget(QtWidgets.QWidget):
         # if self.version == 2:   #2ide data
     def getQuantOptions(self):
         self.quant_options.clear()
-        img_tag = self.imageTag.currentText()
+        img_tag = self.imgTags[self.imageTag.currentIndex()]
         try:
             if self.version == 0:   #legacy data
                 quant_names = ['None', 'SRcurrent', 'us_ic', 'ds_ic']
@@ -399,9 +410,9 @@ class FileTableWidget(QtWidgets.QWidget):
                 quant_names = [quant_names[i].decode() for i in range(len(quant_names))]
                 for i in range(len(quant_names)):
                     self.quant_options.addItem(quant_names[i])
-                default_idx = quant_names.index("DS_IC")
-                self.quant_options.setCurrentIndex(default_idx)
-
+                # default_idx = quant_names.index("DS_IC")
+                # self.quant_options.setCurrentIndex(default_idx)
+            # self.quant_options.setEnabled(True)
             # self.quant_exists = True
         except:
             # default_idx = quant_names.index("None")
@@ -439,7 +450,7 @@ class FileTableWidget(QtWidgets.QWidget):
         path_files = self.fileTableModel.getAllFiles()
         #get path_files list
         thetaPV = self.thetaLineEdit.text()
-        thetas = load_thetas(path_files, self.imageTag.currentText(), self.version, thetaPV)
+        thetas = load_thetas(path_files, self.imgTags[self.imageTag.currentIndex()], self.version, thetaPV)
         if len(thetas) == 0:
             thetas = np.ones(len(path_files))
 
@@ -483,7 +494,7 @@ class FileTableWidget(QtWidgets.QWidget):
         files_bool = [i.use for i in self.fileTableModel.arrayData]
         elements_bool = [i.use for i in self.elementTableModel.arrayData]
 
-        hdf_tag = self.imageTag.currentText()
+        hdf_tag = self.imgTags[self.imageTag.currentIndex()]
         data_tag = self.dataTag.currentText()
         element_tag = self.elementTag.currentText()
         scaler_name = self.quant_options.currentText()

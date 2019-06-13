@@ -148,7 +148,7 @@ class SinogramActions(QtWidgets.QWidget):
         regShift[col_number] += shift_number
         for i in arange(num_projections):
             data[:,i,:,:] = np.roll(data[:,i,:,:], regShift[i], axis=2)
-        return data, sinogramData
+        return data, sinogramData  
 
     def crossCorrelate(self, element, data):
 
@@ -474,9 +474,6 @@ class SinogramActions(QtWidgets.QWidget):
             return data, self.x_shifts, self.y_shifts
         except IOError:
             print("choose file please")
-
-    # def alignfromHotspotxt(self):
-    #     pass
 
     def alignmentDone(self):
         '''send message that alignment has been done'''

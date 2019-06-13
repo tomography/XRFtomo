@@ -278,13 +278,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
 
-    # def alignFromText_params(self):
-    #     data = self.data
-    #     self.data, self.x_shifts, self.y_shifts, self.centers = self.actions.alignFromText(data)
-    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-    #     self.dataChangedSig.emit(self.data)
-    #     return
-
     def alignFromText2_params(self):
         data = self.data
         self.data, self.x_shifts, self.y_shifts = self.actions.alignFromText2(data)

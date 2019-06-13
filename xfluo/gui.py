@@ -127,6 +127,9 @@ class XfluoGui(QtGui.QMainWindow):
         runReconstructAction = QtGui.QAction("Reconstruction", self)
         #runReconstructAction.triggered.connect(self.runReconstruct)
 
+        runTransRecAction = QtGui.QAction("Transmission Recon", self)
+        #runTransRecAction.triggered.connect(self.runTransReconstruct)
+
         # selectImageTagAction = QtGui.QAction("Select Image Tag", self)
         #selectImageTagAction.triggered.connect(self.selectImageTag)
 
@@ -154,10 +157,13 @@ class XfluoGui(QtGui.QMainWindow):
         restoreAction = QtGui.QAction("Restore", self)
         restoreAction.triggered.connect(self.restore)
 
+        keyMapAction = QtGui.QAction('key map settings', self)
+        keyMapAction.triggered.connect(self.keyMapSettings)
+
         # readConfigAction = QtGui.QAction("Read configuration file", self)
         #readConfigAction.triggered.connect(self.readConfigFile)
 
-        runCenterOfMassAction = QtGui.QAction("run center of mass action", self)
+        # runCenterOfMassAction = QtGui.QAction("run center of mass action", self)
         #runCenterOfMassAction.triggered.connect(self.centerOfMassWindow)
 
         # alignCenterOfMassAction = QtGui.QAction("Align by fitting center of mass position into sine curve", self)
@@ -171,9 +177,6 @@ class XfluoGui(QtGui.QMainWindow):
 
         # exportDataAction = QtGui.QAction("export data", self)
         #exportDataAction.triggered.connect(self.export_data)
-
-        runTransRecAction = QtGui.QAction("Transmission Recon", self)
-        #runTransRecAction.triggered.connect(self.runTransReconstruct)
 
         # saveHotSpotPosAction = QtGui.QAction("Save Hot Spot Pos", self)
         #saveHotSpotPosAction.triggered.connect(self.saveHotSpotPos)
@@ -268,6 +271,9 @@ class XfluoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(savephysicalPosition)
         self.afterConversionMenu.addAction(saveToHDFAction)
+
+        self.helpMenu = menubar.addMenu('&Help')
+        self.helpMenu.addAction(keyMapAction)
 
         #self.afterConversionMenu.addAction(saveThetaTxtAction)
         # self.afterConversionMenu.addAction(selectElementAction)
@@ -487,6 +493,17 @@ class XfluoGui(QtGui.QMainWindow):
         self.update_data(self.data)
         # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_alignment(self.x_shifts, self.y_shifts)
+
+    def keyMapSettings(self):
+        msg = QtGui.QMessageBox()
+        msg.setIcon(QtGui.QMessageBox.Information)
+        msg.setText("Undo: \t\t Ctr+Z \n\n shift projection up: \t up  \n\n"
+                    "shift projection down: \t down  \n\n shift projection left: \t left  \n\n"
+                    "shift projection right: \t right  \n\n shift stack up: \t Shift + up \n\n"
+                    "shift stack down: \t Shift + down \n\n shift stack left: \t Shift + left \n\n"
+                    "shift stack right: \t Shift + right \n\n exclude projection: \t Delete" )
+        msg.setWindowTitle("key map")
+        msg.exec_()
 
     def update_alignment(self, x_shifts, y_shifts):
         self.x_shifts = x_shifts

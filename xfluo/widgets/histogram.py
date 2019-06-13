@@ -70,8 +70,11 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         self.projView.iniX = 0
         self.projView.iniY = -10
         self.ROI = pyqtgraph.ROI([self.projView.iniX, self.projView.iniY], [10, 10])
+        # self.cross_h = p1.pyqtgraph.PlotItem.addLine(x=10, y=10, z=0)
         self.p1.addItem(self.projView)
         self.p1.addItem(self.ROI)
+        self.cross_v = self.p1.addLine(x=10)
+        self.cross_h = self.p1.addLine(y=-10)
         self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
         self.p1.scene().sigMouseClicked.connect(self.mouseClick)
         self.p1.setMouseEnabled(x=False, y=False)
@@ -86,9 +89,51 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
 
     def mouseReleaseEvent(self, ev):
-        self.x_pos = int(round(self.moving_x))
-        self.y_pos = int(round(self.moving_y))
-        self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
+        x_pos = int(round(self.moving_x))
+        y_pos = int(round(self.moving_y))
+        frame_height = self.projView.width()
+        frame_width = self.projView.height()
+        self.x_pos, self.y_pos = self.update_roi(x_pos, y_pos, self.xSize, self.ySize, frame_height, frame_width)
+
+        if ev.button() == 1:
+            self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
+
+        if ev.button() == 2: 
+            self.p1.items[3].setValue(self.x_pos)
+            self.p1.items[4].setValue(self.y_pos)
+
+    def update_roi(self, x_pos, y_pos, x_size, y_size, frame_height, frame_width):
+        print(x_pos, y_pos, x_pos-x_size/2, y_pos-y_size/2)
+
+        max_y = frame_height
+        max_x = frame_width
+
+        roi_left =x_pos-x_size/2
+        roi_right = x_pos+x_size/2
+        roi_top = y_pos+y_size/2
+        roi_bottom = y_pos-y_size/2
+
+        ## if way far left
+        if roi_left <= 0 :
+            print("case 1")
+            x_pos = x_size/2
+
+        ## if way far right
+        if roi_right>= max_x:
+            print("case 2")
+            x_pos = max_x - x_size/2
+
+        ## if way far above
+        if roi_top >= 0 :
+            print("case 3")
+            y_pos = -y_size/2
+
+        ## if way far below
+        if roi_bottom <= -max_y:
+            print("case 4")
+            y_pos = -max_y + y_size/2
+
+        return x_pos, y_pos
 
     def wheelEvent(self, ev):
         pass

@@ -111,6 +111,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.end_indx.editingFinished.connect(self.update_y_range)
         self.ViewControl.start_indx.editingFinished.connect(self.update_y_range)
         self.imgAndHistoWidget.sld.setRange(0, self.y_range - 1)
+        self.imgAndHistoWidget.lcd.display(0)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.update_recon_image)
 
     def call_threshold(self):
@@ -181,9 +182,11 @@ class ReconstructionWidget(QtWidgets.QWidget):
         else:
             self.imgAndHistoWidget.sld.setRange(0, end_indx-start_indx - 1)
             self.imgAndHistoWidget.sld.setValue(0)
+            self.imgAndHistoWidget.lcd.display(0)
 
     def update_recon_image(self):
         index = self.imgAndHistoWidget.sld.value()
+        self.imgAndHistoWidget.lcd.display(index)
         try:
             self.ViewControl.maxText.setText(str(self.recon[index, :, :].max()))
             self.ViewControl.minText.setText(str(self.recon[index, :, :].min()))
