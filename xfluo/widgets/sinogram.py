@@ -145,7 +145,6 @@ class SinogramWidget(QtWidgets.QWidget):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
         self.lcd.display(index)
-        print(index)
         self.sld.setValue(index)
         self.sinogram(element)
         self.show()
@@ -190,17 +189,17 @@ class SinogramWidget(QtWidgets.QWidget):
             self.sinogramData[i * 10:(i + 1) * 10, :] = sinodata[i, self.sld.value()-1, :]
 
         self.sinogramData[isinf(self.sinogramData)] = 0.001
-        self.sinoView.projView.setImage(self.sinogramData)
+        self.sinoView.projView.setImage(self.sinogramData, border='w')
         self.sinoView.projView.setRect(QtCore.QRect(round(self.thetas[0]), 0, round(self.thetas[-1])- round(self.thetas[0]), self.sinogramData.shape[1]))
 
         self.sinoChangedSig.emit(self.sinogramData)
-        # self.view.projView.setRect(QtCore.QRect(round(self.theta[0]), 0, round(self.theta[-1])- round(self.theta[0]), self.sinogramData.shape[1]))
-        # self.sinoView.projData = self.sinogramData
         return
 
     def centerOfMass_params(self):
         element, row, data, thetas = self.get_params()
-        self.data, self.x_shifts = self.actions.runCenterOfMass(element, row, data, self.thetas)
+        data = self.data
+        thetas = self.thetas
+        self.data, self.x_shifts = self.actions.runCenterOfMass(element, row, data, thetas)
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
@@ -212,10 +211,12 @@ class SinogramWidget(QtWidgets.QWidget):
     #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
     #     return
 
-    def shiftEvent_params(self, shift_dir, column_number):
+    def shiftEvent_params(self, shift_dir, col_number):
         sinoData = self.sinogramData
         data = self.data
-        self.data, self.sinogramData = self.actions.shift(sinoData, data, shift_dir, column_number)
+        thetas = self.thetas
+
+        self.data, self.sinogramData = self.actions.shift(sinoData, data, shift_dir, col_number)
         self.x_shifts += shift_dir
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)

@@ -450,7 +450,11 @@ class FileTableWidget(QtWidgets.QWidget):
         path_files = self.fileTableModel.getAllFiles()
         #get path_files list
         thetaPV = self.thetaLineEdit.text()
-        thetas = load_thetas(path_files, self.imgTags[self.imageTag.currentIndex()], self.version, thetaPV)
+        try:
+            thetas = load_thetas(path_files, self.imgTags[self.imageTag.currentIndex()], self.version, thetaPV)
+        except:
+            thetas=[]
+            self.message.setText("directory probably not mounted.")
         if len(thetas) == 0:
             thetas = np.ones(len(path_files))
 

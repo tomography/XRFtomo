@@ -52,7 +52,8 @@ import matplotlib.pyplot as plt
 
 class ImageProcessActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
-
+	thetaSig = pyqtSignal(np.ndarray, name='thetaSig')
+	
 	def __init__(self):
 		super(ImageProcessActions, self).__init__()
 	
@@ -167,8 +168,9 @@ class ImageProcessActions(QtWidgets.QWidget):
 			num_projections -= 1
 
 		self.dataSig.emit(data)
-		return projection, data, thetas
-					
+		self.thetaSig.emit(thetas)
+		# return projection, data, thetas
+		return
 	def noise_analysis(self, img):
 		meanNoise, stdNoise = self.copy_background(img)
 		flattened = img.reshape(np.size(img))

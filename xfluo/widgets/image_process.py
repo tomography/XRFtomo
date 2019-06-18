@@ -57,6 +57,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
     # shiftSig = pyqtSignal(str, name='sliderChangedSig')
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
+    thetaChangedSig = pyqtSignal(np.ndarray, name='thetaChangedSig')
     alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
     ySizeChanged = pyqtSignal(int, name='ySizeChanged')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
@@ -130,6 +131,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.imgAndHistoWidget.view.shiftSig.connect(self.shift_process)
         self.actions.dataSig.connect(self.send_data)
+        self.actions.thetaSig.connect(self.send_thetas)
         self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
         self.imgAndHistoWidget.file_name_title.setText(str(fnames[0]))
@@ -152,12 +154,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.lcd.display(angle)
         self.imgAndHistoWidget.sld.setValue(index)
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
 
     def updateElementSlot(self, element, projection = None):
         if projection == None:
            projection =  self.imgAndHistoWidget.sld.value()
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :])
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :], border='w')
         self.ViewControl.combo1.setCurrentIndex(element)
         self.ViewControl.combo2.setCurrentIndex(projection)
 
@@ -178,7 +180,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def imageChanged(self):
         index = self.imgAndHistoWidget.sld.value()
         element = self.ViewControl.combo1.currentIndex()
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
 
     def shift_process(self, command):
         index = self.imgAndHistoWidget.sld.value()
@@ -267,7 +269,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
             num_files -= 1
 
         self.updateSldRange(index, temp_thetas)
-        projection, self.data, self.thetas = self.actions.exclude_projection(projection, data, thetas)
+        # projection, self.data, self.thetas = self.actions.exclude_projection(projection, data, thetas)
+        self.actions.exclude_projection(projection, data, thetas)
         self.dataChangedSig.emit(self.data)
         self.sldRangeChanged.emit(index, self.data,  self.thetas)
         self.updateFileDisplay(self.fnames, index)
@@ -302,5 +305,11 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.dataChangedSig.emit(data)
 
+    def send_thetas(self, thetas):
+        '''
+        This sends a signal one level up indicating that the data array has changed
+        and to update adjacent tabs with new data
+        '''
 
+        self.thetaChangedSig.emit(thetas)
 

@@ -148,17 +148,17 @@ class HotspotWidget(QtWidgets.QWidget):
     def imageChanged(self):
         index = self.imgAndHistoWidget.sld.value()
         element = self.ViewControl.combo1.currentIndex()
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
 
     def updateSliderSlot(self, index):
         angle = round(self.thetas[index])
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.lcd.display(angle)
         self.imgAndHistoWidget.sld.setValue(index)
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
         
     def updateElementSlot(self, element, projection):
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :])
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :], border='w')
         self.ViewControl.combo1.setCurrentIndex(element)
         self.ViewControl.combo2.setCurrentIndex(projection)
 
@@ -169,7 +169,7 @@ class HotspotWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.sld.setRange(0, len(thetas) -1)
         self.imgAndHistoWidget.lcd.display(thetas[projection])
         self.imgAndHistoWidget.sld.setValue(projection)
-        self.imgAndHistoWidget.view.projView.setImage(data[element, projection])
+        self.imgAndHistoWidget.view.projView.setImage(data[element, projection], border='w')
         self.posMat = np.zeros((5,int(data.shape[1]), 2))
 
     def updateFileDisplay(self, fnames, index):

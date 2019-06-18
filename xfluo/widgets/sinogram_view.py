@@ -64,21 +64,21 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         self.projView = pyqtgraph.ImageItem()
         self.projView.rotate(0)
         self.p1.addItem(self.projView)
-        self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
-        self.p1.scene().sigMouseClicked.connect(self.mouseClick)
+        self.p1.items[0].scene().sigMouseMoved.connect(self.mouseMoved)
+        self.p1.items[0].scene().sigMouseClicked.connect(self.mouseClick)
         self.p1.setMouseEnabled(x=False, y=False)
 
     def mouseMoved(self, evt):
-        self.moving_x = self.p1.vb.mapSceneToView(evt).x()
-        self.moving_y = self.p1.vb.mapSceneToView(evt).y()
+        self.moving_x = self.projView.mapFromDevice(evt).x()
+        self.moving_y = self.projView.mapFromDevice(evt).y()
 
     def mouseClick(self, evt):
         self.x_pos = int(round(self.moving_x))
         self.y_pos = int(round(self.moving_y))
 
     def mouseReleaseEvent(self, ev):
-        self.x_pos = int(round(self.moving_x))
-        self.y_pos = int(round(self.moving_y))
+        self.x_pos = int(self.moving_x)
+        self.y_pos = int(self.moving_y)
 
     def wheelEvent(self, ev):
         '''
@@ -102,10 +102,10 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         if len(keyspressed) ==1:
 
             if keyspressed[0] == QtCore.Qt.Key_Up:
-                col_number = int(self.x_pos / 10)
+                col_number = int(self.x_pos/10)
                 self.keyPressSig.emit(1, col_number)
 
             if keyspressed[0] == QtCore.Qt.Key_Down:
-                col_number = int(self.x_pos / 10)
+                col_number = int(self.x_pos/10)
                 self.keyPressSig.emit(-1, col_number)
  

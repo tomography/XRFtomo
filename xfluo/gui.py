@@ -413,6 +413,9 @@ class XfluoGui(QtGui.QMainWindow):
         self.imageProcessWidget.dataChangedSig.connect(self.update_data)
         self.sinogramWidget.dataChangedSig.connect(self.update_data)
 
+        # theta update
+        self.imageProcessWidget.thetaChangedSig.connect(self.update_theta)
+
         #data dimensions changed
         self.imageProcessWidget.ySizeChanged.connect(self.sinogramWidget.yChanged)
         # self.actions = xfluo.ImageProcessActions(self)
@@ -461,6 +464,13 @@ class XfluoGui(QtGui.QMainWindow):
                 del self.data_history[0]
         return
 
+    def update_theta(self, thetas):
+        self.thetas = thetas
+        self.imageProcessWidget.thetas = self.thetas
+        self.hotspotWidget.thetas = self.thetas
+        self.sinogramWidget.thetas = self.thetas
+        return
+        
     def undo(self):
         if len(self.data_history) <= 1:
             print("maximum history state reached, cannot undo further")
