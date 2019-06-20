@@ -171,7 +171,7 @@ class SinogramActions(QtWidgets.QWidget):
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
             self.x_shifts[i + 1] += t1
-            self.y_shifts[i + 1] += t0
+            self.y_shifts[i + 1] += -t0
 
         self.alignmentDone()
         return data, self.x_shifts, self.y_shifts
@@ -198,7 +198,7 @@ class SinogramActions(QtWidgets.QWidget):
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
             self.x_shifts[i + 1] += t1
-            self.y_shifts[i + 1] += t0
+            self.y_shifts[i + 1] += -t0
         self.alignmentDone()
         return data, self.x_shifts, self.y_shifts
 
@@ -208,11 +208,12 @@ class SinogramActions(QtWidgets.QWidget):
         tmp_data = data[element,:,:,:]
         bounds = self.get_boundaries(tmp_data,5)
         y_bot = np.asarray(bounds[3])
-        self.y_shifts = y_bot[0]-y_bot
+        translate = y_bot[0]-y_bot
         # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
+        self.y_shifts -=translate
 
         for i in range(num_projections):
-            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(self.y_shifts[i])), axis=1)
+            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(translate[i])), axis=1)
 
         self.alignmentDone()
         return self.y_shifts, self.data 
@@ -223,14 +224,14 @@ class SinogramActions(QtWidgets.QWidget):
         tmp_data = data[element,:,:,:]
         bounds = self.get_boundaries(tmp_data,50)
         y_top = np.asarray(bounds[2])
-        self.y_shifts = y_top[0]-y_top
+        translate = y_top[0]-y_top
         # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
-
+        self.y_shifts -=translate
         for i in range(num_projections):
-            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(self.y_shifts[i])), axis=1)
+            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(translate[i])), axis=1)
 
         self.alignmentDone()
-        return self.y_shifts, self.data 
+        return self.y_shifts, self.data
 
     def get_boundaries(self, data, coeff):
         bounds = {}
@@ -466,7 +467,7 @@ class SinogramActions(QtWidgets.QWidget):
                 self.y_shifts[i] += int(float(read[j][secondcol + 1:-1]))
                 self.x_shifts[i] += int(float(read[j][firstcol + 1:secondcol]))
                 data[:, i, :, :] = np.roll(data[:, i, :, :], self.x_shifts[i], axis=2)
-                data[:, i, :, :] = np.roll(data[:, i, :, :], self.y_shifts[i], axis=1)
+                data[:, i, :, :] = np.roll(data[:, i, :, :], -self.y_shifts[i], axis=1)
 
             file.close()
             self.alignmentDone()

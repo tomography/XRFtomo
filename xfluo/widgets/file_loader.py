@@ -107,9 +107,9 @@ class FileTableWidget(QtWidgets.QWidget):
         imageTag_label = QtWidgets.QLabel('Image tag:')
         imageTag_label.setFixedWidth(90)
         self.imageTag = QtWidgets.QComboBox()
-        # self.imageTag.currentIndexChanged.connect(self.getDataTag)
-        self.imageTag.currentIndexChanged.connect(self.getQuantOptions)
-        self.imageTag.currentIndexChanged.connect(self.getElementList)
+        self.imageTag.activated.connect(self.getDataTag)
+        self.imageTag.activated.connect(self.getQuantOptions)
+        self.imageTag.activated.connect(self.getElementList)
 
         self.imageTag.setFixedWidth(122.5)
 
@@ -268,32 +268,29 @@ class FileTableWidget(QtWidgets.QWidget):
                 for i in self.imgTags:
                     self.imageTag.addItem(i)
 
-            if 'exchange' in self.imgTags:
-                indx = self.imgTags.index('exchange')
-                self.imageTag.setCurrentIndex(indx)
-
-            else:
-
-                try:
-                    indx = self.imgTags.index(self.auto_image_tag)
-                except:
-                    indx = 0
-                self.imageTag.setCurrentIndex(indx)
-
         if self.version == 0:
             self.message.clear()
             self.thetaLineEdit.setEnabled(True)
             self.dataTag.setEnabled(True)
             self.elementTag.setEnabled(True)
             self.quant_options.setEnabled(True)
-
+            
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
+
+            # if 'exchange' in self.imgTags and 'MAPS' in self.imgTags:
+            #     self.imgTags.remove('MAPS')
+
             if self.auto_image_tag in self.imgTags:
                 indx = self.imgTags.index(self.auto_image_tag)
             else:
-                indx = self.imgTags.index("MAPS")
+                indx = 0
             self.imageTag.setCurrentIndex(indx)
+
+
+            # else:
+            #     indx = self.imgTags.index("MAPS")
+            # self.imageTag.setCurrentIndex(indx)
 
     def getDataTag(self):  #no name on the GUI; the one below image tag
         # for new HDF files

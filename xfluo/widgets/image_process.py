@@ -213,7 +213,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.actions.shiftDataUp(self.data, self.thetas) 
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shiftDown':
-            self.x_shifts -=1
+            self.y_shifts -=1
             self.actions.shiftDataDown(self.data, self.thetas) 
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'Delete':
