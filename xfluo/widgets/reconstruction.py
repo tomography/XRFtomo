@@ -72,6 +72,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
+        self.recon = None
 
     def showReconstruct(self, data, elements, fnames, thetas, x_shifts, y_shifts, centers):
         '''
@@ -91,7 +92,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.thetas = thetas
         self.ViewControl.combo1.clear()
         self.ViewControl.method.clear()
-        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad"]
+        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
         for j in elements:
             self.ViewControl.combo1.addItem(j)
         for k in arange(len(methodname)):

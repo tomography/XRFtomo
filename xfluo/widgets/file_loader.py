@@ -100,7 +100,7 @@ class FileTableWidget(QtWidgets.QWidget):
         thetaLabel.setFixedWidth(90)
         self.thetaLineEdit = QtWidgets.QLineEdit(self.auto_theta_pv)
         self.thetaLineEdit.setCompleter(thetaCompleter)
-        self.thetaLineEdit.textChanged.connect(self.onThetaPVChange)
+        # self.thetaLineEdit.textChanged.connect(self.onThetaPVChange)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
         self.thetaLineEdit.setFixedWidth(122.5)
 
@@ -206,21 +206,16 @@ class FileTableWidget(QtWidgets.QWidget):
             print("Invalid directory or file; Try a new folder or remove problematic files.")
         self.onThetaUpdate()
 
-    def onThetaPVChange(self):
-        self.parent.params.theta_pv =  self.thetaLineEdit.text()
-
     def onDirBrowse(self):
         try:
             folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
             self.dirLineEdit.setText(folderName)
-            self.parent.params.input_path = self.dirLineEdit.text()
             self.onLoadDirectory()
         except:
             print("select directory")
 
     def onLoadDirectory(self):
         self.version = 0
-        self.parent.params.input_path = self.dirLineEdit.text()
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         self.fileTableModel.setAllChecked(True)
         try:
@@ -301,11 +296,8 @@ class FileTableWidget(QtWidgets.QWidget):
 
             self.dataTag.clear()
             self.dataTag.addItem('data')
-            self.parent.params.image_tag = self.imgTags[self.imageTag.currentIndex()]
-            self.parent.params.data_tag = self.dataTag.currentText()
             self.elementTag.clear()
             self.elementTag.addItem('data_names')
-            self.parent.params.elementTag = self.elementTag
             # for exchange_0
             # if self.imgTags[self.imageTag.currentIndex()] == 'exchange_0':
             #     #temp
@@ -361,10 +353,6 @@ class FileTableWidget(QtWidgets.QWidget):
                 except ValueError:
                     pass
 
-                self.parent.params.image_tag = self.imageTag.currentText()
-                self.parent.params.data_tag = self.dataTag.currentText()
-                #self.parent.params.detector_tag = self.scaler_option.currentText()
-
                 self.thetaLineEdit.setEnabled(True)
                 self.dataTag.setEnabled(True)
                 self.elementTag.setEnabled(True)
@@ -375,8 +363,6 @@ class FileTableWidget(QtWidgets.QWidget):
             fpath = self.fileTableModel.getFirstCheckedFilePath()
             image_tag = self.imageTag.currentText()
             element_tag = self.elementTag.currentText()
-            self.parent.params.element_tag = element_tag
-            self.parent.params.data_tag = self.dataTag.currentText()
             self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
             self.elementTableModel.setAllChecked(False)
             self.elementTableModel.setChecked(self.auto_selected_elements, (True))
@@ -384,10 +370,7 @@ class FileTableWidget(QtWidgets.QWidget):
         if self.version == 1:   #9idbdata
             fpath = self.fileTableModel.getFirstCheckedFilePath()
             image_tag = self.imgTags[self.imageTag.currentIndex()]
-
             element_tag = self.elementTag.currentText()
-            self.parent.params.element_tag = self.imgTags[self.imageTag.currentIndex()]
-            self.parent.params.data_tag = self.dataTag.currentText()
             self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
             self.elementTableModel.setAllChecked(False)
             self.elementTableModel.setChecked(self.auto_selected_elements, (True))
@@ -455,8 +438,6 @@ class FileTableWidget(QtWidgets.QWidget):
         if len(thetas) == 0:
             thetas = np.ones(len(path_files))
 
-        self.parent.params.theta_pv = thetaPV
-        self.parent.params.input_path = self.dirLineEdit.text()
         self.fileTableModel.update_thetas(thetas)
         if self.parent.params.sorted_angles == True:
             self.fileTableView.sortByColumn(1, 0)
@@ -486,6 +467,12 @@ class FileTableWidget(QtWidgets.QWidget):
             if action == check_action or action == uncheck_action:
                 self.elementTableModel.setChecked(rows, (check_action == action))
 
+    def reset_widgets(self):
+        self.parent.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
+        self.parent.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
+        self.parent.reconstructionWidget.recon = []
+        self.parent.sinogramWidget.sld.setValue(0)
+        
     def onSaveDataInMemory(self):
 
         files = [i.filename for i in self.fileTableModel.arrayData]
@@ -507,10 +494,28 @@ class FileTableWidget(QtWidgets.QWidget):
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
 
+        #update auto-load parameters
+        self.parent.params.input_path = self.dirLineEdit.text()
+        self.parent.params.theta_pv = self.thetaLineEdit.text()
+        self.parent.params.image_tag = self.imgTags[self.imageTag.currentIndex()]
+        self.parent.params.data_tag = self.dataTag.currentText()
+        self.parent.params.element_tag = element_tag
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
+        #self.parent.params.detector_tag = self.scaler_option.currentText()
+
+        if len(elements) == 0:
+            self.message.setText('no element selected.')
+            return [], [] , [], []
+        else:
+            self.message.setText('loading files...')
+
         data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
         
         # if self.quant_options.currentText() != 'None':
         self.data = self.normalizeData(data, quants, scalers)
+        self.message.setText('finished loading')
+
+        self.reset_widgets()
 
         return data, elements, thetas, files
+
