@@ -94,6 +94,10 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.btn8.setMaximumWidth(button2size)
         self.btn8.setMinimumWidth(button2size)
 
+        self.btn9 = QtWidgets.QPushButton('cross correlate 2')
+        self.btn9.setMaximumWidth(button2size)
+        self.btn9.setMinimumWidth(button2size)
+
         self.lbl = QtWidgets.QLabel()
         self.lbl.setText("")
 
@@ -109,6 +113,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb.addWidget(self.btn4)
         vb.addWidget(self.btn6)
         vb.addWidget(self.btn7)
+        vb.addWidget(self.btn9)
         vb.addLayout(hb)
         vb.addWidget(self.lbl)
         # vb.addLayout(hb)

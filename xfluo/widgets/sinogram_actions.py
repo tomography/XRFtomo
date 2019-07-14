@@ -176,6 +176,30 @@ class SinogramActions(QtWidgets.QWidget):
         self.alignmentDone()
         return data, self.x_shifts, self.y_shifts
 
+    def crossCorrelate2(self, element, data):
+
+
+        a = np.fliplr(data[element, -1, :, :])
+        b = data[element, 0, :, :]
+
+        fa = spf.fft2(a)
+        fb = spf.fft2(b)
+        shape = a.shape
+        c = abs(spf.ifft2(fa * fb.conjugate()))
+        t0, t1 = np.unravel_index(np.argmax(c), a.shape)
+        if t0 > shape[0] // 2:
+            t0 -= shape[0]
+        if t1 > shape[1] // 2:
+            t1 -= shape[1]
+
+        data[:, 0, :, :] = np.roll(data[:, 0, :, :], t0, axis=1)
+        # data[:, 0, :, :] = np.roll(data[:, 0, :, :], t1, axis=2)
+        # self.x_shifts[0] += t1
+        self.y_shifts[0] += -t0
+
+        self.alignmentDone()
+        return data, self.x_shifts, self.y_shifts
+
     def phaseCorrelate(self, element, data):
 
         num_projections = data.shape[1]

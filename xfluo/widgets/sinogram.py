@@ -134,6 +134,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.btn6.clicked.connect(self.iter_align_params)
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
         self.ViewControl.btn8.clicked.connect(self.align_y_bottom_params)
+        self.ViewControl.btn9.clicked.connect(self.crossCorrelate2_params)
 
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
@@ -226,6 +227,14 @@ class SinogramWidget(QtWidgets.QWidget):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
         self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate(element, data)
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+
+    def crossCorrelate2_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate2(element, data)
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
