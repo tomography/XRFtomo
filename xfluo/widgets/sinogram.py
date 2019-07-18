@@ -218,7 +218,7 @@ class SinogramWidget(QtWidgets.QWidget):
         thetas = self.thetas
 
         self.data, self.sinogramData = self.actions.shift(sinoData, data, shift_dir, col_number)
-        self.x_shifts += shift_dir
+        self.x_shifts[col_number] += shift_dir
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
