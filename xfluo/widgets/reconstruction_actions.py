@@ -43,7 +43,7 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal
 import numpy as np
 from pylab import *
@@ -106,6 +106,17 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 		self.recon = tomopy.remove_nan(self.recon)
 		return self.recon
+	def reconstructAll(self, data, element_names, box_checked, center, method, beta, delta, iters, thetas):
+		print("This will take a while")
+		save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+		num_elements = data.shape[0]
+		for i in range(num_elements):
+			print("running reconstruction for:", element_names[i])
+			recon = self.reconstruct(data, i, box_checked, center, method, beta, delta, iters, thetas)
+			savedir = save_path+'/'+element_names[i]
+			xfluo.SaveOptions.save_reconstruction(self, recon, savedir)
+
+		return recon
 
 	def reconMultiply(self):
 		'''

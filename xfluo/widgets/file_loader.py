@@ -407,13 +407,14 @@ class FileTableWidget(QtWidgets.QWidget):
         num_elements = data.shape[0]
         num_files = data.shape[1]
         #normalize
+        data = data / quants[:, :, None, None] / scalers
         for i in range(num_elements):
+            norm_median = np.median(data[i, :, :, :])
+            norm_mean = np.mean(data[i, :, :, :])
+            norm_std = np.std(data[i, :, :, :])
+            elem_max = np.max(data[i, :, :, :])
+            norm_max = 3*norm_std + norm_mean
             for j in range(num_files):
-                data[i,j,:,:] = data[i,j,:,:]/quants[i,j]/scalers[j]
-                norm_median = np.median(data[i,j,:,:])
-                norm_mean = np.mean(data[i,j,:,:])
-                norm_std = np.std(data[i,j,:,:])
-                norm_max = 20*norm_mean
                 median_arr = np.ones_like(data[i,j])*norm_mean
                 data[i,j] = [data[i,j] <= norm_max]*data[i,j,:,:]
                 data[i,j] = data[i,j] + [data[i,j] == 1]*np.ones_like(data[i,j])*norm_max

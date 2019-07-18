@@ -102,6 +102,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.centerTextBox.setText(str(self.centers[2]))
         self.ViewControl.btn.clicked.connect(self.reconstruct_params)
+        self.ViewControl.btn2.clicked.connect(self.reconstruct_all_params)
         self.ViewControl.mulBtn.setEnabled(False)
         self.ViewControl.divBtn.setEnabled(False)
         self.ViewControl.mulBtn.clicked.connect(self.call_reconMultiply)
@@ -170,6 +171,30 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.update_recon_image()
         self.ViewControl.lbl.setText("Done")
         self.reconChangedSig.emit(self.recon)
+
+    def reconstruct_all_params(self):
+        self.ViewControl.lbl.setText("Reconstruction is currently running")
+        #figure out how to get a list of all selected elements
+        num_elements = self.ViewControl.combo1.count()
+        element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
+        box_checked = self.ViewControl.cbox.isChecked()
+        center = np.array(float(self.ViewControl.centerTextBox.text()), dtype=float32)
+        method = self.ViewControl.method.currentIndex()
+        beta = float(self.ViewControl.beta.text())
+        delta = float(self.ViewControl.delta.text())
+        iters = int(self.ViewControl.iters.text())
+        thetas = self.thetas
+        start_indx = int(self.ViewControl.start_indx.text())
+        end_indx = int(self.ViewControl.end_indx.text())
+        data = self.data[:,:,start_indx:end_indx,:]
+
+        self.recon = self.actions.reconstructAll(data, element_names, box_checked, center, method, beta, delta, iters, thetas)
+        self.ViewControl.mulBtn.setEnabled(True)
+        self.ViewControl.divBtn.setEnabled(True)
+        self.update_recon_image()
+        self.ViewControl.lbl.setText("Done")
+        self.reconChangedSig.emit(self.recon)
+
 
     def update_y_range(self):
         start_indx = int(self.ViewControl.start_indx.text())

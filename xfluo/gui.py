@@ -109,6 +109,9 @@ class XfluoGui(QtGui.QMainWindow):
         saveToHDFAction = QtGui.QAction('HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
 
+        saveToNumpyAction = QtGui.QAction("Numpy file", self)
+        saveToNumpyAction.triggered.connect(self.saveToNumpy)
+
         saveAlignemtInfoAction = QtGui.QAction("Alignment", self)
         saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
 
@@ -271,6 +274,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(savephysicalPosition)
         self.afterConversionMenu.addAction(saveToHDFAction)
+        self.afterConversionMenu.addAction(saveToNumpyAction)
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(keyMapAction)
@@ -359,6 +363,13 @@ class XfluoGui(QtGui.QMainWindow):
             self.writer.save_dxhdf(self.fnames, self.data, self.elements)
         except AttributeError:
             print("projection data do not exist")
+        return 
+
+    def saveToNumpy(self):
+        try:
+            self.writer.save_numpy_array(self.data, self.thetas, self.elements)
+        except AttributeError:
+            print("data has not been imported first")
         return
 
     def loadImages(self):
