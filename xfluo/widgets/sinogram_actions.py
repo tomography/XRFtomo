@@ -545,6 +545,8 @@ class SinogramActions(QtWidgets.QWidget):
             self.alignmentDone()
             # return data, self.x_shifts, self.y_shifts, self.centers
             return data, self.x_shifts, self.y_shifts
+        except IndexError:
+            print("index missmatch between align file and current dataset ")
         except IOError:
             print("choose file please")
 

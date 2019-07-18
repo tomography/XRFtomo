@@ -96,9 +96,11 @@ class SaveOptions(object):
 				temp = Image.fromarray(temp_img.astype(np.float32))
 				temp.save(path+"/"+element_names[j]+"_"+fnames[i]+".tiff")
 
-	def save_reconstruction(self, recon):
+	def save_reconstruction(self, recon, savedir=None):
+
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			if savedir == None:
+				savedir = QtGui.QFileDialog.getSaveFileName()[0]
 
 			if savedir == "":
 				raise IndexError
@@ -168,3 +170,19 @@ class SaveOptions(object):
 	# 	save motor positions along with corresponding angle position
 	# 	'''
 		pass
+
+	def save_numpy_array(self, data, thetas, elements):
+		try:
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+
+			if savedir == "":
+				raise IndexError
+
+			np.save(savedir,elements, delimiter = ",", fmt="%s")
+			np.save(savedir+"_thetas",thetas)
+			np.save(savedir,data)
+
+		except IndexError:
+			print("type the header name")
+		return
+
