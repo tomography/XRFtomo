@@ -82,7 +82,12 @@ class SinogramActions(QtWidgets.QWidget):
             numb2 = sum(temp)
             for j in arange(data.shape[3]):
                 temp2[j] = temp[j] * j
+            if numb2 <= 0:
+                print(numb2)
+                numb2 = 1
             numb = float(sum(temp2)) / numb2
+            if numb == NaN:
+                numb = 0.000
             com[i] = numb
 
         x=thetas
@@ -178,6 +183,7 @@ class SinogramActions(QtWidgets.QWidget):
 
     def crossCorrelate2(self, element, data):
 
+        num_projections = data.shape[1]//2
 
         a = np.fliplr(data[element, -1, :, :])
         b = data[element, 0, :, :]
@@ -196,6 +202,48 @@ class SinogramActions(QtWidgets.QWidget):
         # data[:, 0, :, :] = np.roll(data[:, 0, :, :], t1, axis=2)
         # self.x_shifts[0] += t1
         self.y_shifts[0] += -t0
+
+        half_num = data.shape[1]//2
+        for i in arange(half_num - 1):
+            j = -1*(i+1)
+
+            a = data[element, i, :, :]
+            b = data[element, i + 1, :, :]
+
+            fa = spf.fft2(a)
+            fb = spf.fft2(b)
+            shape = a.shape
+            c = abs(spf.ifft2(fa * fb.conjugate()))
+            t0, t1 = np.unravel_index(np.argmax(c), a.shape)
+            if t0 > shape[0] // 2:
+                t0 -= shape[0]
+            if t1 > shape[1] // 2:
+                t1 -= shape[1]
+
+            data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
+            data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
+            self.x_shifts[i + 1] += t1
+            self.y_shifts[i + 1] += -t0
+
+
+            a = data[element, j, :, :]
+            b = data[element, j - 1, :, :]
+
+            fa = spf.fft2(a)
+            fb = spf.fft2(b)
+            shape = a.shape
+            c = abs(spf.ifft2(fa * fb.conjugate()))
+            t0, t1 = np.unravel_index(np.argmax(c), a.shape)
+            if t0 > shape[0] // 2:
+                t0 -= shape[0]
+            if t1 > shape[1] // 2:
+                t1 -= shape[1]
+
+            data[:, j - 1, :, :] = np.roll(data[:, j - 1, :, :], t0, axis=1)
+            data[:, j - 1, :, :] = np.roll(data[:, j - 1, :, :], t1, axis=2)
+            self.x_shifts[j - 1] += t1
+            self.y_shifts[j - 1] += -t0
+
 
         self.alignmentDone()
         return data, self.x_shifts, self.y_shifts
@@ -246,7 +294,7 @@ class SinogramActions(QtWidgets.QWidget):
         self.data = data
         num_projections = data.shape[1]
         tmp_data = data[element,:,:,:]
-        bounds = self.get_boundaries(tmp_data,50)
+        bounds = self.get_boundaries(tmp_data,70)
         y_top = np.asarray(bounds[2])
         translate = y_top[0]-y_top
         # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
