@@ -187,6 +187,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		plt.imshow(noise_generator, cmap=gray(), interpolation='nearest')
 		show()
 
+
 	def saveHotspot(self):
 		# if self.hotSpotNumb < self.data.shape[0]:
 		# self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = self.projView.iniY
