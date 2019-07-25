@@ -178,7 +178,7 @@ class SaveOptions(object):
 			if savedir == "":
 				raise IndexError
 
-			np.save(savedir,elements, delimiter = ",", fmt="%s")
+			np.savetxt(savedir+"_elements",elements, delimiter = ",", fmt="%s")
 			np.save(savedir+"_thetas",thetas)
 			np.save(savedir,data)
 

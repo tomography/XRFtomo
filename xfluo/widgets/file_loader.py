@@ -282,7 +282,6 @@ class FileTableWidget(QtWidgets.QWidget):
                 indx = 0
             self.imageTag.setCurrentIndex(indx)
 
-
             # else:
             #     indx = self.imgTags.index("MAPS")
             # self.imageTag.setCurrentIndex(indx)
@@ -305,7 +304,6 @@ class FileTableWidget(QtWidgets.QWidget):
             #
             # else:
             #     self.quant_options.setEnabled(True)
-
 
         if self.version == 0:
             # for old 2IDE HDF files with "exchange"
@@ -398,7 +396,6 @@ class FileTableWidget(QtWidgets.QWidget):
             # default_idx = quant_names.index("None")
             # self.quant_exists = False
             self.quant_options.addItem('None')
-
         return
 
     def normalizeData(self, data, quants, scalers):
