@@ -396,7 +396,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.original_data = self.data.copy()
 
         #update sinogram image
-        self.sinogramWidget.sinoChangedSig.connect(self.update_sino_data)
+        self.sinogramWidget.sinoChangedSig.connect(self.update_sino)
 
         self.imageProcessWidget.showImgProcess(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
         self.hotspotWidget.showHotSpot(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
@@ -446,16 +446,16 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)
 
         #update_reconstructed_data
-        self.reconstructionWidget.reconChangedSig.connect(self.update_recon_data)
+        self.reconstructionWidget.reconChangedSig.connect(self.update_recon)
 
         # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_alignment(self.x_shifts, self.y_shifts)
 
-    def update_recon_data(self, recon):
+    def update_recon(self, recon):
         self.recon = recon.copy()
         return
 
-    def update_sino_data(self, sino):
+    def update_sino(self, sino):
         self.sino = sino.copy()
         return
 
@@ -483,7 +483,18 @@ class XfluoGui(QtGui.QMainWindow):
         self.hotspotWidget.thetas = self.thetas
         self.sinogramWidget.thetas = self.thetas
         return
-        
+    
+    def clear_all(self):
+    
+        self.update_alignment([],[])
+        self.update_theta([])
+        # self.update_data([])
+        self.update_recon([])
+        self.update_sino([])
+
+        return
+
+
     def undo(self):
         if len(self.data_history) <= 1:
             print("maximum history state reached, cannot undo further")
@@ -535,8 +546,8 @@ class XfluoGui(QtGui.QMainWindow):
         self.imageProcessWidget.x_shifts = self.x_shifts
         self.imageProcessWidget.y_shifts = self.y_shifts
         # self.imageProcessWidget.centers = self.centers
-        self.imageProcessWidget.actions.x_shifts = self.x_shifts
-        self.imageProcessWidget.actions.y_shifts = self.y_shifts
+        # self.imageProcessWidget.actions.x_shifts = self.x_shifts
+        # self.imageProcessWidget.actions.y_shifts = self.y_shifts
         # self.imageProcessWidget.actions.centers = self.centers
         self.hotspotWidget.x_shifts = self.x_shifts
         self.hotspotWidget.y_shifts = self.y_shifts

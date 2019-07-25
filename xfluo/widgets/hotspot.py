@@ -68,6 +68,8 @@ class HotspotWidget(QtWidgets.QWidget):
     def initUI(self):
         self.ViewControl =xfluo.HotspotControlsWidget()
         self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
+        self.actions = xfluo.HotspotActions()
+
         projViewBox = QtWidgets.QHBoxLayout()
         projViewBox.addWidget(self.ViewControl)
         projViewBox.addWidget(self.imgAndHistoWidget, 10)
@@ -89,7 +91,6 @@ class HotspotWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.lcd.setPalette(palette)
 
     def showHotSpot(self, data, element_names, thetas, fnames, x_shifts, y_shifts, centers):
-        self.actions = xfluo.HotspotActions()
         self.x_shifts = x_shifts
         self.y_shifts = y_shifts
         self.centers = centers

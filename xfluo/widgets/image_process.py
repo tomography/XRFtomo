@@ -71,6 +71,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def initUI(self):
         self.ViewControl = xfluo.ImageProcessControlsWidget()
         self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
+        self.actions = xfluo.ImageProcessActions()
         mainHBox = QtWidgets.QHBoxLayout()
         mainHBox.addWidget(self.ViewControl)
         mainHBox.addWidget(self.imgAndHistoWidget, 10)
@@ -93,7 +94,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
 
     def showImgProcess(self, data, element_names, thetas, fnames, x_shifts, y_shifts, centers):
-        self.actions = xfluo.ImageProcessActions()
+
         self.x_shifts = x_shifts
         self.y_shifts = y_shifts
         self.centers = centers
@@ -127,7 +128,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
         self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
-        self.ViewControl.testButton.clicked.connect(self.analysis_params)
+        self.ViewControl.testButton.clicked.connect(self.save_analysis)
 
         self.imgAndHistoWidget.view.shiftSig.connect(self.shift_process)
         self.actions.dataSig.connect(self.send_data)
@@ -184,6 +185,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def shift_process(self, command):
         index = self.imgAndHistoWidget.sld.value()
+        if command == 'A':
+            self.imgAndHistoWidget.sld.setValue(self.imgAndHistoWidget.sld.value() - 1)
+            self.imageSliderChanged()
+        if command == 'D':
+            self.imgAndHistoWidget.sld.setValue(self.imgAndHistoWidget.sld.value() + 1)
+            self.imageSliderChanged()
         if command == 'left':
             self.x_shifts[index] -=1
             self.actions.shiftProjectionLeft(self.data, index) 
@@ -228,7 +235,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def patch_params(self): 
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.actions.patch(self.data, img, elem, proj, x_pos, y_pos, x_size, y_size)
+        self.actions.patch(self.data, img, element, projection, x_pos, y_pos, x_size, y_size)
 
     def normalize_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -252,6 +259,19 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def analysis_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         self.actions.noise_analysis(img)
+
+    def bounding_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        img = data[element, projection, :,:]
+        self.actions.bounding_analysis(img)
+    
+    def save_analysis(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        thetas = self.thetas
+        img = data[element, projection, :,:]
+        self.actions.save_bound_anlysis(data, element, thetas)
 
     def exclude_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()

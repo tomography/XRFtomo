@@ -475,7 +475,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.sinogramWidget.sld.setValue(0)
         
     def onSaveDataInMemory(self):
-
+        self.parent.clear_all()
         files = [i.filename for i in self.fileTableModel.arrayData]
         path_files = [self.fileTableModel.directory + '/' + s for s in files]
         thetas = [i.theta for i in self.fileTableModel.arrayData]

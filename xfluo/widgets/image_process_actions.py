@@ -43,12 +43,13 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal
 import numpy as np
 from pylab import *
 import xfluo
 import matplotlib.pyplot as plt
+
 
 class ImageProcessActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
@@ -113,9 +114,9 @@ class ImageProcessActions(QtWidgets.QWidget):
 					int(round(x_pos) - x_size/2):int(round(x_pos) + x_size/2)]
 		print("done")
 
-		self.data = temp_data
-		self.dataSig.emit(self.data)
-		return self.data
+		data = temp_data
+		self.dataSig.emit(data)
+		return data
 
 	def gauss33(self):
 		result = self.gauss2D(shape=(3, 3), sigma=1.3)
@@ -186,6 +187,148 @@ class ImageProcessActions(QtWidgets.QWidget):
 		figure()
 		plt.imshow(noise_generator, cmap=gray(), interpolation='nearest')
 		show()
+
+	def bounding_analysis(self, projection):
+		bounds = self.find_bounds(projection, 20)
+		rowsum = np.sum(projection, axis=0)/projection.shape[0]
+		colsum = np.sum(projection, axis=1)/projection.shape[1]
+
+		fig = plt.figure(figsize=(5,5.5))
+		#ax1, ax2, ax3 = top right, middle
+		ax1 = plt.subplot2grid((3, 3), (0, 0), colspan=2)
+		ax2 = plt.subplot2grid((3, 3), (1, 2), rowspan=2)
+		ax3 = plt.subplot2grid((3, 3), (1, 0), colspan=2, rowspan=2, sharey=ax2, sharex=ax1)
+		ax1.get_xaxis().set_visible(False)
+		# ax1.get_yaxis().set_visible(False)
+		#ax2.get_xaxis().set_visible(False)
+		ax2.get_yaxis().set_visible(False)
+
+		ax1.plot(rowsum)
+		ax1.axvline(bounds[0], c='r')
+		ax1.axvline(bounds[1], c='r')
+		ax3.imshow(projection)
+		ax3.set_aspect(aspect=projection.shape[1] / projection.shape[0])
+		ax3.axvline(bounds[0], c='r')
+		ax3.axvline(bounds[1], c='r')
+		ax3.axhline(bounds[2], c='r')
+		ax3.axhline(bounds[3], c='r')
+		ax2.plot(colsum, np.arange(projection.shape[0]))
+		ax2.axhline(bounds[2], c='r')
+		ax2.axhline(bounds[3], c='r')
+
+		# fig2 = plt.figure(figsize=(5,5.5))
+		#
+		# downx = 10
+		# downy = 100
+		# proj = self.rebin(projection, downx,downy)
+		# rowsum = np.sum(proj, axis=0)/proj.shape[0]
+		# colsum = np.sum(proj, axis=1)/proj.shape[1]
+		#
+		#
+		# #ax1, ax2, ax3 = top right, middle
+		# ax1 = plt.subplot2grid((3, 3), (0, 0), colspan=2)
+		# ax2 = plt.subplot2grid((3, 3), (1, 2), rowspan=2)
+		# ax3 = plt.subplot2grid((3, 3), (1, 0), colspan=2, rowspan=2, sharey=ax2, sharex=ax1)
+		# ax1.get_xaxis().set_visible(False)
+		# # ax1.get_yaxis().set_visible(False)
+		# #ax2.get_xaxis().set_visible(False)
+		# ax2.get_yaxis().set_visible(False)
+		#
+		# ax1.plot(rowsum)
+		# ax1.axvline(bounds[0], c='r')
+		# ax1.axvline(bounds[1], c='r')
+		# ax3.imshow(proj)
+		# ax3.set_aspect(aspect=proj.shape[1] / proj.shape[0])
+		# ax3.axvline(bounds[0], c='r')
+		# ax3.axvline(bounds[1], c='r')
+		# ax3.axhline(bounds[2], c='r')
+		# ax3.axhline(bounds[3], c='r')
+		# ax2.plot(colsum, np.arange(proj.shape[0]))
+		# ax2.axhline(bounds[2], c='r')
+		# ax2.axhline(bounds[3], c='r')
+		#
+		#
+		# plt.tight_layout()
+		#
+		#
+		#
+		# plt.show()
+		return fig
+
+	def rebin(self, projection, x=100, y=100):
+
+		numrows=projection.shape[0]
+		numcols=projection.shape[1]
+		newrows= round(numrows/round(numrows*(y/100)))
+		newcols= round(numcols/round(numcols*(x/100)))
+
+		projection = projection[::newrows, ::newcols].repeat(newcols, axis=1).repeat(newrows,axis=0)[:numrows, :numcols]
+
+		# projection = projection[::newrows, :].repeat(newrows, axis=0)[:numrows, :]
+
+		return projection
+
+
+	def find_bounds(self, projection, coeff):
+		bounds = {}
+		bounds[0] = [] #x_left
+		bounds[1] = [] #x_right
+		bounds[2] = [] #y_top
+		bounds[3] = [] #y_bottom
+		
+		col_sum = np.sum(projection, axis=0)/projection.shape[0]
+		row_sum = np.sum(projection, axis=1)/projection.shape[1]
+		noise_col = np.sort(col_sum[col_sum > 0])[:1]
+		noise_row = np.sort(row_sum[row_sum > 0])[:1]
+
+		if noise_col <= noise_row:
+			noise = noise_col
+		else:
+			noise = noise_row
+
+		upper_thresh_col = np.median(col_sum)
+		diffcol = upper_thresh_col - noise
+		y_thresh = diffcol*coeff/100 + noise
+
+		upper_thresh_row = np.median(row_sum)
+		diffrow = upper_thresh_row - noise
+		x_thresh = diffrow*coeff/100 + noise
+
+		for j in range(len(col_sum)):
+			if col_sum[j] >= y_thresh:
+				bounds[0].append(j)
+				break
+		for j in range(len(col_sum)):
+			if col_sum[len(col_sum)-j-1] >= y_thresh:
+				bounds[1].append(len(col_sum)-j-1)
+				break
+		for j in range(len(row_sum)):
+			if row_sum[len(row_sum)-j-1] >= x_thresh:
+				bounds[2].append(len(row_sum)-j-1)
+				break
+		for j in range(len(row_sum)):
+			if row_sum[j] >= x_thresh:
+				bounds[3].append(j)
+				break
+		return bounds  
+
+	def save_bound_anlysis(self,data,element,thetas):
+		save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+		num_projections = data.shape[1]
+
+		for i in range(num_projections):
+			projection = data[element,i,:,:]
+			projection = self.rebin(projection,10,100)
+			fig = self.bounding_analysis(projection)
+			angle = str(thetas[i])
+			fig.axes[2].set_title(angle)
+			fig.savefig(save_path+'/'+angle+'.png')
+		return
+
+
+
+
+
 
 	def saveHotspot(self):
 		# if self.hotSpotNumb < self.data.shape[0]:

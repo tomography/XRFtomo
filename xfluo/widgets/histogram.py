@@ -166,7 +166,10 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
                 self.keyPressSig.emit('Skip')
             if keyspressed[0] == QtCore.Qt.Key_Delete:
                 self.shiftSig.emit('Delete')
-
+            if keyspressed[0] == QtCore.Qt.Key_A:
+                self.shiftSig.emit('A')
+            if keyspressed[0] == QtCore.Qt.Key_D:
+                self.shiftSig.emit('D')
         if len(keyspressed) == 2:
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Left:
                 self.shiftSig.emit('shiftLeft')

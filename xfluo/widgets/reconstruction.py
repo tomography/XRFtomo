@@ -64,6 +64,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
     def initUI(self):
         self.ViewControl = xfluo.ReconstructionControlsWidget()
         self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
+        self.actions = xfluo.ReconstructionActions()
+
         self.imgAndHistoWidget.lbl5.setText(str('Slice'))
         mainHBox = QtWidgets.QHBoxLayout()
         mainHBox.addWidget(self.ViewControl)
@@ -78,7 +80,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         '''
         load window for reconstruction window
         '''
-        self.actions = xfluo.ReconstructionActions()
+
         self.write = xfluo.SaveOptions()
         self.x_shifts = x_shifts
         self.y_shifts = y_shifts
@@ -164,6 +166,11 @@ class ReconstructionWidget(QtWidgets.QWidget):
         start_indx = int(self.ViewControl.start_indx.text())
         end_indx = int(self.ViewControl.end_indx.text())
         data = self.data[:,:,start_indx:end_indx,:]
+
+        #clear previous recon first.		
+        self.recon = np.array([])		
+        # self.update_recon_image()		
+        self.reconChangedSig.emit(self.recon)
 
         self.recon = self.actions.reconstruct(data, element, box_checked, center, method, beta, delta, iters, thetas)
         self.ViewControl.mulBtn.setEnabled(True)

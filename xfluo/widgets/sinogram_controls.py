@@ -58,6 +58,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         button2size = 122.5
         button3size = 73.3
         button4size = 58.75
+        self.slopeVal = 0
 
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setMaximumWidth(button1size)
@@ -74,7 +75,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.btn3.setMaximumWidth(button1size)
         self.btn3.setMinimumWidth(button1size)
 
-        self.btn4 = QtWidgets.QPushButton('experimental')
+        self.btn4 = QtWidgets.QPushButton('cross correlate 2')
         self.btn4.setMaximumWidth(button1size)
         self.btn4.setMinimumWidth(button1size)
 
@@ -94,16 +95,24 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.btn8.setMaximumWidth(button2size)
         self.btn8.setMinimumWidth(button2size)
 
-        self.btn9 = QtWidgets.QPushButton('cross correlate 2')
+        self.btn9 = QtWidgets.QPushButton('adjust_sino')
         self.btn9.setMaximumWidth(button2size)
         self.btn9.setMinimumWidth(button2size)
 
         self.lbl = QtWidgets.QLabel()
         self.lbl.setText("")
 
+        self.slopeText = QtWidgets.QLineEdit(str(self.slopeVal))
+        self.slopeText.setMaximumWidth(button2size)
+        self.slopeText.setMinimumWidth(button2size)
+
         hb = QtWidgets.QHBoxLayout()
         hb.addWidget(self.btn5)
         hb.addWidget(self.btn8)
+
+        hb2 = QtWidgets.QHBoxLayout()
+        hb2.addWidget(self.btn9)
+        hb2.addWidget(self.slopeText)
 
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)
@@ -113,7 +122,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb.addWidget(self.btn4)
         vb.addWidget(self.btn6)
         vb.addWidget(self.btn7)
-        vb.addWidget(self.btn9)
+        vb.addLayout(hb2)
         vb.addLayout(hb)
         vb.addWidget(self.lbl)
         # vb.addLayout(hb)

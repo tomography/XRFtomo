@@ -66,6 +66,8 @@ class SinogramWidget(QtWidgets.QWidget):
     def initUI(self):
         self.ViewControl = xfluo.SinogramControlsWidget()
         self.sinoView = xfluo.SinogramView()
+        self.actions = xfluo.SinogramActions()
+
         self.lbl = QtWidgets.QLabel('Row y')
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.sld.setValue(1)
@@ -109,7 +111,7 @@ class SinogramWidget(QtWidgets.QWidget):
         '''
         loads sinogram tabS
         '''
-        self.actions = xfluo.SinogramActions()
+
         self.x_shifts = x_shifts
         self.y_shifts = y_shifts
         self.centers = centers
@@ -129,12 +131,13 @@ class SinogramWidget(QtWidgets.QWidget):
         # self.ViewControl.btn1.clicked.connect(self.centerOfMass2_params)
         self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
-        self.ViewControl.btn4.clicked.connect(self.experimental_params)
+        self.ViewControl.btn4.clicked.connect(self.crossCorrelate2_params)
         self.ViewControl.btn5.clicked.connect(self.align_y_top_params)
         self.ViewControl.btn6.clicked.connect(self.iter_align_params)
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
         self.ViewControl.btn8.clicked.connect(self.align_y_bottom_params)
-        self.ViewControl.btn9.clicked.connect(self.crossCorrelate2_params)
+        self.ViewControl.btn9.clicked.connect(self.adjust_sino_params)
+
 
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
@@ -233,8 +236,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def crossCorrelate2_params(self):
         data = self.data
-        element = self.ViewControl.combo1.currentIndex()
-        self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate2(element, data)
+        self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate2(data)
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
@@ -243,15 +245,6 @@ class SinogramWidget(QtWidgets.QWidget):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
         self.data, self.x_shifts, self.y_shifts = self.actions.phaseCorrelate(element, data)
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-        return
-
-    def experimental_params(self):
-        data = self.data
-        element = self.ViewControl.combo1.currentIndex()
-        thetas= self.thetas
-        self.data, self.x_shifts, self.y_shifts =self.actions.experimental(element, data, thetas) 
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
@@ -274,6 +267,17 @@ class SinogramWidget(QtWidgets.QWidget):
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
         
+    def adjust_sino_params(self):
+        sinogramData = self.sinogramData
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        delta = int(self.ViewControl.slopeText.text())
+        x_shifts, self. data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, element, delta)
+        self.x_shifts += x_shifts
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+
     # def matchTermplate_params(self):
     #     self.actions.matchTemmplate()
     #     pass
@@ -282,8 +286,8 @@ class SinogramWidget(QtWidgets.QWidget):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
         thetas = self.thetas
-        sx =  self.actions.iterative_align(element, data, thetas, 2)
-        self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, 2)
+        # sx =  self.actions.iterative_align(element, data, thetas, 2)
+        self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, 3)
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
