@@ -83,7 +83,6 @@ class SinogramActions(QtWidgets.QWidget):
             for j in arange(data.shape[3]):
                 temp2[j] = temp[j] * j
             if numb2 <= 0:
-                print(numb2)
                 numb2 = 1
             numb = float(sum(temp2)) / numb2
             if numb == NaN:
@@ -143,13 +142,11 @@ class SinogramActions(QtWidgets.QWidget):
             shape = a.shape
             c = abs(spf.ifft2(fa * fb.conjugate()))
             t0, t1 = np.unravel_index(np.argmax(c), a.shape)
-            print('t:',t0,t1)
             
             if t0 > shape[0] // 2:
                 t0 -= shape[0]
             if t1 > shape[1] // 2:
                 t1 -= shape[1]
-            # print('shape:',shape)
 
 
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
@@ -297,10 +294,8 @@ class SinogramActions(QtWidgets.QWidget):
         prj[np.where(prj == np.inf)] = 0.0
         self.thetas = thetas
         prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=(0,0),
-                            blur=True, rin=0.8, rout=0.95, center=None,
-                            algorithm='mlem',
-                            upsample_factor=100,
-                            save=False, debug=True)
+                            blur=True, rin=0.8, rout=0.95, center=None, algorithm='mlem', 
+                            upsample_factor=100, save=False, debug=True)
         self.x_shifts = np.round(sx).astype(int)
         self.y_shifts = np.round(sy).astype(int)
 

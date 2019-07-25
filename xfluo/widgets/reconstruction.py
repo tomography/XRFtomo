@@ -167,17 +167,13 @@ class ReconstructionWidget(QtWidgets.QWidget):
         end_indx = int(self.ViewControl.end_indx.text())
         data = self.data[:,:,start_indx:end_indx,:]
 
-        #clear previous recon first.		
-        self.recon = np.array([])		
-        # self.update_recon_image()		
-        self.reconChangedSig.emit(self.recon)
-
         self.recon = self.actions.reconstruct(data, element, box_checked, center, method, beta, delta, iters, thetas)
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
         self.ViewControl.lbl.setText("Done")
         self.reconChangedSig.emit(self.recon)
+        return
 
     def reconstruct_all_params(self):
         self.ViewControl.lbl.setText("Reconstruction is currently running")
@@ -201,7 +197,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.update_recon_image()
         self.ViewControl.lbl.setText("Done")
         self.reconChangedSig.emit(self.recon)
-
+        return
 
     def update_y_range(self):
         start_indx = int(self.ViewControl.start_indx.text())

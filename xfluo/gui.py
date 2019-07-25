@@ -467,15 +467,18 @@ class XfluoGui(QtGui.QMainWindow):
         self.hotspotWidget.imageChanged()
         self.sinogramWidget.data = self.data
         self.sinogramWidget.imageChanged()
+        self.reconstructionWidget.data = self.data
 
         if self.from_undo:
             return
         else:
             print('undo save event')
-            self.data_history.append(self.data.copy())
+            self.data_history.append(data.copy())
             if len(self.data_history) > 10:
                 del self.data_history[0]
-        return
+            print(len(self.data_history))
+
+        return self.data_history
 
     def update_theta(self, thetas):
         self.thetas = thetas
@@ -485,19 +488,19 @@ class XfluoGui(QtGui.QMainWindow):
         return
     
     def clear_all(self):
-    
-        self.update_alignment([],[])
-        self.update_theta([])
-        # self.update_data([])
-        self.update_recon([])
-        self.update_sino([])
+        pass
+        # self.update_alignment([],[])
+        # self.update_theta([])
+        # # self.update_data([])
+        # self.update_recon([])
+        # self.update_sino([])
 
         return
-
+ 
 
     def undo(self):
-        if len(self.data_history) <= 1:
-            print("maximum history state reached, cannot undo further")
+        if len(self.data_history) <=1:
+            print("maximum history stplt.imshow(self.data_history[1][0])ate reached, cannot undo further")
         else:
             del self.data_history[-1]
             del self.x_shifts_history[-1]
@@ -509,11 +512,12 @@ class XfluoGui(QtGui.QMainWindow):
             # self.centers = self.centers_history[-1]
 
             self.from_undo = True
-            self.update_data(self.data)
+            self.update_data(np.copy(self.data))
             # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
             self.update_alignment(self.x_shifts, self.y_shifts)
         self.from_undo = False
         print(len(self.data_history))
+        return
 
     def restore(self):
         num_projections = self.original_data.shape[1]

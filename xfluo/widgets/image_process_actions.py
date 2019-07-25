@@ -188,7 +188,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		plt.imshow(noise_generator, cmap=gray(), interpolation='nearest')
 		show()
 
-<<<<<<< HEAD
 	def bounding_analysis(self, projection):
 		bounds = self.find_bounds(projection, 20)
 		rowsum = np.sum(projection, axis=0)/projection.shape[0]
@@ -326,12 +325,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 			fig.savefig(save_path+'/'+angle+'.png')
 		return
 
-
-
-
-
-=======
->>>>>>> 0526c2075b22be8552027a829713031e223279ac
 
 	def saveHotspot(self):
 		# if self.hotSpotNumb < self.data.shape[0]:

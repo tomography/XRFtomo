@@ -90,13 +90,17 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         self.firstrelease = True
         astr = ev.key()
         self.keylist.append(astr)
+        return
 
     def keyReleaseEvent(self, ev):
         if self.firstrelease == True:
             self.processMultipleKeys(self.keylist)
 
         self.firstrelease = False
-        del self.keylist[-1]
+        try:
+            del self.keylist[-1]
+        except:
+            pass
 
     def processMultipleKeys(self, keyspressed):
         if len(keyspressed) ==1:
