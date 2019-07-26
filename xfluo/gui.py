@@ -208,6 +208,47 @@ class XfluoGui(QtGui.QMainWindow):
         self.reconstructionWidget = xfluo.ReconstructionWidget()
         self.writer = xfluo.SaveOptions()
 
+        self.sinogramWidget.sinoChangedSig.connect(self.update_sino)
+
+        #slider change
+        self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
+        self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
+
+        #element dropdown change
+        self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
+        self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
+        self.sinogramWidget.elementChangedSig.connect(self.reconstructionWidget.updateElementSlot)
+        self.reconstructionWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
+
+        # data update
+        self.imageProcessWidget.dataChangedSig.connect(self.update_data)
+        self.sinogramWidget.dataChangedSig.connect(self.update_data)
+
+        # theta update
+        self.imageProcessWidget.thetaChangedSig.connect(self.update_theta)
+
+        #data dimensions changed
+        self.imageProcessWidget.ySizeChanged.connect(self.sinogramWidget.yChanged)
+        # self.actions = xfluo.ImageProcessActions(self)
+
+        #slider range change
+        self.imageProcessWidget.sldRangeChanged.connect(self.hotspotWidget.updateSldRange)
+        self.hotspotWidget.sldRangeChanged.connect(self.imageProcessWidget.updateSldRange)
+        # self.sinogramWidget
+        #filenames changed
+        self.imageProcessWidget.fnamesChanged.connect(self.hotspotWidget.updateFileDisplay)
+
+        #alignment changed
+        self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
+        self.hotspotWidget.alignmentChangedSig.connect(self.update_alignment)
+        self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)
+
+        #update_reconstructed_data
+        self.reconstructionWidget.reconChangedSig.connect(self.update_recon)
+
+
+
+
         self.prevTab = 0
         self.TAB_FILE = 0
         self.TAB_IMAGE_PROC = 1
@@ -396,7 +437,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.original_data = self.data.copy()
 
         #update sinogram image
-        self.sinogramWidget.sinoChangedSig.connect(self.update_sino)
 
         self.imageProcessWidget.showImgProcess(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
         self.hotspotWidget.showHotSpot(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
@@ -412,41 +452,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.tab_widget.insertTab(3, self.sinogramWidget, "Alignment")
         self.tab_widget.insertTab(4, self.reconstructionWidget, "Reconstruction")
 
-        #slider change
-        self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
-        self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
 
-        #element dropdown change
-        self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
-        self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
-        self.sinogramWidget.elementChangedSig.connect(self.reconstructionWidget.updateElementSlot)
-        self.reconstructionWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
-
-        # data update
-        self.imageProcessWidget.dataChangedSig.connect(self.update_data)
-        self.sinogramWidget.dataChangedSig.connect(self.update_data)
-
-        # theta update
-        self.imageProcessWidget.thetaChangedSig.connect(self.update_theta)
-
-        #data dimensions changed
-        self.imageProcessWidget.ySizeChanged.connect(self.sinogramWidget.yChanged)
-        # self.actions = xfluo.ImageProcessActions(self)
-
-        #slider range change
-        self.imageProcessWidget.sldRangeChanged.connect(self.hotspotWidget.updateSldRange)
-        self.hotspotWidget.sldRangeChanged.connect(self.imageProcessWidget.updateSldRange)
-        # self.sinogramWidget
-        #filenames changed
-        self.imageProcessWidget.fnamesChanged.connect(self.hotspotWidget.updateFileDisplay)
-
-        #alignment changed
-        self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
-        self.hotspotWidget.alignmentChangedSig.connect(self.update_alignment)
-        self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)
-
-        #update_reconstructed_data
-        self.reconstructionWidget.reconChangedSig.connect(self.update_recon)
 
         # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_alignment(self.x_shifts, self.y_shifts)

@@ -74,6 +74,7 @@ class HotspotWidget(QtWidgets.QWidget):
         projViewBox.addWidget(self.ViewControl)
         projViewBox.addWidget(self.imgAndHistoWidget, 10)
         self.setLayout(projViewBox)
+        self.data = np.ndarray(shape=(1, 10, 10, 10), dtype=float)
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None

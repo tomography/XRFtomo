@@ -66,7 +66,18 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
         self.actions = xfluo.ReconstructionActions()
 
+        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+        self.ViewControl.btn.clicked.connect(self.reconstruct_params)
+        self.ViewControl.btn2.clicked.connect(self.reconstruct_all_params)
+        self.ViewControl.mulBtn.clicked.connect(self.call_reconMultiply)
+        self.ViewControl.divBtn.clicked.connect(self.call_reconDivide)
+        self.ViewControl.cbox.clicked.connect(self.cboxClicked)
+        self.ViewControl.threshBtn.clicked.connect(self.call_threshold)
+        self.ViewControl.end_indx.editingFinished.connect(self.update_y_range)
+        self.ViewControl.start_indx.editingFinished.connect(self.update_y_range)
+        self.imgAndHistoWidget.sld.valueChanged.connect(self.update_recon_image)
         self.imgAndHistoWidget.lbl5.setText(str('Slice'))
+
         mainHBox = QtWidgets.QHBoxLayout()
         mainHBox.addWidget(self.ViewControl)
         mainHBox.addWidget(self.imgAndHistoWidget, 10)
@@ -80,7 +91,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         '''
         load window for reconstruction window
         '''
-
         self.write = xfluo.SaveOptions()
         self.x_shifts = x_shifts
         self.y_shifts = y_shifts
@@ -101,22 +111,13 @@ class ReconstructionWidget(QtWidgets.QWidget):
             self.ViewControl.method.addItem(methodname[k])
 
         self.elementChanged()
-        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.centerTextBox.setText(str(self.centers[2]))
-        self.ViewControl.btn.clicked.connect(self.reconstruct_params)
-        self.ViewControl.btn2.clicked.connect(self.reconstruct_all_params)
         self.ViewControl.mulBtn.setEnabled(False)
         self.ViewControl.divBtn.setEnabled(False)
-        self.ViewControl.mulBtn.clicked.connect(self.call_reconMultiply)
-        self.ViewControl.divBtn.clicked.connect(self.call_reconDivide)
-        self.ViewControl.cbox.clicked.connect(self.cboxClicked)
-        self.ViewControl.threshBtn.clicked.connect(self.call_threshold)
         self.ViewControl.end_indx.setText((str(self.data.shape[2])))
-        self.ViewControl.end_indx.editingFinished.connect(self.update_y_range)
-        self.ViewControl.start_indx.editingFinished.connect(self.update_y_range)
+
         self.imgAndHistoWidget.sld.setRange(0, self.y_range - 1)
         self.imgAndHistoWidget.lcd.display(0)
-        self.imgAndHistoWidget.sld.valueChanged.connect(self.update_recon_image)
 
     def call_threshold(self):
         '''
