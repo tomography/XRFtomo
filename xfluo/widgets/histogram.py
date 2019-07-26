@@ -148,7 +148,11 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
             self.processMultipleKeys(self.keylist)
 
         self.firstrelease = False
-        del self.keylist[-1]
+        try:    #complains about an index error for some reason.
+            del self.keylist[-1]
+        except:
+            pass
+
 
     def processMultipleKeys(self, keyspressed):
         if len(keyspressed) ==1:

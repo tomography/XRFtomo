@@ -472,7 +472,6 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.sinogramWidget.sld.setValue(0)
         
     def onSaveDataInMemory(self):
-        self.parent.clear_all()
         files = [i.filename for i in self.fileTableModel.arrayData]
         path_files = [self.fileTableModel.directory + '/' + s for s in files]
         thetas = [i.theta for i in self.fileTableModel.arrayData]
@@ -507,6 +506,8 @@ class FileTableWidget(QtWidgets.QWidget):
         else:
             self.message.setText('loading files...')
 
+
+        self.parent.clear_all()
         data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
         
         # if self.quant_options.currentText() != 'None':

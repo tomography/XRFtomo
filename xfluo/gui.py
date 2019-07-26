@@ -488,9 +488,11 @@ class XfluoGui(QtGui.QMainWindow):
         return
     
     def clear_all(self):
-        pass
-        # self.update_alignment([],[])
-        # self.update_theta([])
+        self.data_history = []
+        self.x_shifts_history = []
+        self.y_shifts_history = []
+        self.update_alignment([],[])
+        self.update_theta([])
         # # self.update_data([])
         # self.update_recon([])
         # self.update_sino([])
