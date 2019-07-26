@@ -148,6 +148,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
         projection = self.ViewControl.combo2.currentIndex()
+        print("TODO: during startup, 'projection' is undefined. ")
         self.updateElementSlot(element, projection)
         self.elementChangedSig.emit(element, projection)
 
