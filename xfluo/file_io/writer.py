@@ -127,6 +127,27 @@ class SaveOptions(object):
 			print("type the header name")
 		return
 
+	def save_sinogram2(self, data, element_names):
+		'''
+		saves sinogram or array of sinograms for each row
+		'''
+		savedir = QtGui.QFileDialog.getSaveFileName()[0]
+		if savedir == "":
+			return
+		else:
+			os.makedirs(savedir)
+
+		num_elements = data.shape[0]
+		num_projections = data.shape[1]
+		sinogramData = np.sum(data, axis=2)
+		sinogramData[isinf(sinogramData)] = 0.001
+
+		for i in range(num_elements):
+			element = element_names[i]
+			temp_img = Image.fromarray(sinogramData[i].astype(np.float32))
+			temp_img.save(savedir + "/"+element+"_sinogram.tiff")
+		return
+
 	def save_dxfile(self, fnames, data, element_names):
 		'''
 		saves all selected information to a new data exchange hdf5 file following the 

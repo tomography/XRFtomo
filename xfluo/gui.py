@@ -99,12 +99,14 @@ class XfluoGui(QtGui.QMainWindow):
         saveSinogramAction = QtGui.QAction('Sinogram', self)
         saveSinogramAction.triggered.connect(self.saveSinogram)
 
+        saveSinogram2Action = QtGui.QAction('Sinogram2', self)
+        saveSinogram2Action.triggered.connect(self.saveSinogram2)
+
         savephysicalPosition = QtGui.QAction('Angle and motor positions', self)
         # savephysicalPosition,triggered.connect(self.save_motor_position)
 
         saveReconstructionAction = QtGui.QAction('Reconstruction', self)
         saveReconstructionAction.triggered.connect(self.saveReconstruction)
-
 
         saveToHDFAction = QtGui.QAction('HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
@@ -313,6 +315,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveReconstructionAction)
         self.afterConversionMenu.addAction(saveAlignemtInfoAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
+        self.afterConversionMenu.addAction(saveSinogram2Action)
         self.afterConversionMenu.addAction(savephysicalPosition)
         self.afterConversionMenu.addAction(saveToHDFAction)
         self.afterConversionMenu.addAction(saveToNumpyAction)
@@ -388,6 +391,13 @@ class XfluoGui(QtGui.QMainWindow):
     def saveSinogram(self):
         try:
             self.writer.save_sinogram(self.sino)
+        except AttributeError:
+            print("sinogram data do not exist")
+        return
+
+    def saveSinogram2(self):
+        try:
+            self.writer.save_sinogram2(self.data, self.elements)
         except AttributeError:
             print("sinogram data do not exist")
         return
