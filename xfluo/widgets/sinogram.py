@@ -102,11 +102,12 @@ class SinogramWidget(QtWidgets.QWidget):
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addWidget(self.sinoView)
         vb1.addLayout(hb0)
+        vb1.maximumSize()
 
         sinoBox = QtWidgets.QHBoxLayout()
         sinoBox.addWidget(self.ViewControl)
         sinoBox.addLayout(vb1)
-        sinoBox.addWidget(self.hist, 10)
+        sinoBox.addWidget(self.hist)
 
         self.setLayout(sinoBox)
 

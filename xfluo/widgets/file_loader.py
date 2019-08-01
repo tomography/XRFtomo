@@ -134,6 +134,8 @@ class FileTableWidget(QtWidgets.QWidget):
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
         # self.saveDataBtn.setEnabled(False)
+        self.saveDataBtn.setFixedWidth(220.5)
+
 
         message_label = QtWidgets.QLabel('Messages:')
         self.message = QtWidgets.QTextEdit()
@@ -168,6 +170,7 @@ class FileTableWidget(QtWidgets.QWidget):
 
         hBox7 = QtWidgets.QHBoxLayout()
         hBox7.addWidget(self.saveDataBtn)
+        hBox7.setAlignment(QtCore.Qt.AlignLeft)
 
         vBox1 = QtWidgets.QVBoxLayout()
         vBox1.addLayout(hBox1)

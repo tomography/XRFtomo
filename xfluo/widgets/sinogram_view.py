@@ -59,7 +59,6 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         self.initUI()
 
     def initUI(self):
-        self.show()
         self.p1 = self.addPlot()
         self.projView = pyqtgraph.ImageItem()
         self.projView.rotate(0)
@@ -67,6 +66,7 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         self.p1.items[0].scene().sigMouseMoved.connect(self.mouseMoved)
         self.p1.items[0].scene().sigMouseClicked.connect(self.mouseClick)
         self.p1.setMouseEnabled(x=False, y=False)
+        self.show()
 
     def mouseMoved(self, evt):
         self.moving_x = self.projView.mapFromDevice(evt).x()
