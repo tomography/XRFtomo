@@ -61,64 +61,65 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         button4size = 58.75     #textbox size (less than a third)
 
         self.xUpBtn = QtWidgets.QPushButton("x: +")
-        self.xUpBtn.setMaximumWidth(button4size)
-        self.xUpBtn.setMinimumWidth(button4size)
+        self.xUpBtn.setFixedWidth(button4size)
         self.xUpBtn.clicked.connect(self.xUp)
+
         self.xDownBtn = QtWidgets.QPushButton("x: -")
-        self.xDownBtn.setMaximumWidth(button4size)
-        self.xDownBtn.setMinimumWidth(button4size)
+        self.xDownBtn.setFixedWidth(button4size)
         self.xDownBtn.clicked.connect(self.xDown)
+
         self.yUpBtn = QtWidgets.QPushButton("y: +")
-        self.yUpBtn.setMaximumWidth(button4size)
-        self.yUpBtn.setMinimumWidth(button4size)
+        self.yUpBtn.setFixedWidth(button4size)
+
         self.yUpBtn.clicked.connect(self.yUp)
         self.yDownBtn = QtWidgets.QPushButton("y: -")
-        self.yDownBtn.setMaximumWidth(button4size)
-        self.yDownBtn.setMinimumWidth(button4size)
+        self.yDownBtn.setFixedWidth(button4size)
         self.yDownBtn.clicked.connect(self.yDown)
+
         self.normalizeBtn = QtWidgets.QPushButton("Normalize")
-        self.normalizeBtn.setMaximumWidth(button2size)
-        self.normalizeBtn.setMinimumWidth(button2size)
+        self.normalizeBtn.setFixedWidth(button2size)
+
         self.cropBtn = QtWidgets.QPushButton("Crop")
-        self.cropBtn.setMaximumWidth(button2size)
-        self.cropBtn.setMinimumWidth(button2size)
+        self.cropBtn.setFixedWidth(button2size)
+
         self.gaussian33Btn = QtWidgets.QPushButton("3*3 gauss")
-        self.gaussian33Btn.setMaximumWidth(button2size)
-        self.gaussian33Btn.setMinimumWidth(button2size)
+        self.gaussian33Btn.setFixedWidth(button2size)
+
         self.gaussian55Btn = QtWidgets.QPushButton("5*5 gauss")
-        self.gaussian55Btn.setMaximumWidth(button2size)
-        self.gaussian55Btn.setMinimumWidth(button2size)
+        self.gaussian55Btn.setFixedWidth(button2size)
+
         self.captureBackground = QtWidgets.QPushButton("copy Bg")
-        self.captureBackground.setMaximumWidth(button2size)
-        self.captureBackground.setMinimumWidth(button2size)
+        self.captureBackground.setFixedWidth(button2size)
+
         self.setBackground = QtWidgets.QPushButton("Set Bg")
-        self.setBackground.setMaximumWidth(button2size)
-        self.setBackground.setMinimumWidth(button2size)
+        self.setBackground.setFixedWidth(button2size)
+
         self.deleteProjection = QtWidgets.QPushButton("Delete Frame")
-        self.deleteProjection.setMaximumWidth(button2size)
-        self.deleteProjection.setMinimumWidth(button2size)
+        self.deleteProjection.setFixedWidth(button2size)
+
         self.testButton = QtWidgets.QPushButton("test btn")
-        self.testButton.setMaximumWidth(button2size)
-        self.testButton.setMinimumWidth(button2size)
+        self.testButton.setFixedWidth(button2size)
+
+        self.histogramButton = QtWidgets.QPushButton("histo(total signal)")
+        self.histogramButton.setFixedWidth(button2size)
 
         self.xSizeLbl = QtWidgets.QLabel("x Size")
-        self.xSizeLbl.setMaximumWidth(button4size)
-        self.xSizeLbl.setMinimumWidth(button4size)
+        self.xSizeLbl.setFixedWidth(button4size)
+
         self.ySizeLbl = QtWidgets.QLabel("y Size")
-        self.ySizeLbl.setMaximumWidth(button4size)
-        self.ySizeLbl.setMinimumWidth(button4size)
+        self.ySizeLbl.setFixedWidth(button4size)
+
         self.xSizeTxt = QtWidgets.QLineEdit(str(self.xSize))
-        self.xSizeTxt.setMaximumWidth(button4size)
-        self.xSizeTxt.setMinimumWidth(button4size)
+        self.xSizeTxt.setFixedWidth(button4size)
+
         self.ySizeTxt = QtWidgets.QLineEdit(str(self.ySize))
-        self.ySizeTxt.setMaximumWidth(button4size)
-        self.ySizeTxt.setMinimumWidth(button4size)
+        self.ySizeTxt.setFixedWidth(button4size)
+
         self.combo1 = QtWidgets.QComboBox()
-        self.combo1.setMaximumWidth(button1size)
-        self.combo1.setMinimumWidth(button1size)
+        self.combo1.setFixedWidth(button1size)
+
         self.combo2 = QtWidgets.QComboBox()
-        self.combo2.setMaximumWidth(button1size)
-        self.combo2.setMinimumWidth(button1size)
+        self.combo2.setFixedWidth(button1size)
 
         hb1 = QtWidgets.QHBoxLayout()
         hb1.addWidget(self.xSizeLbl)

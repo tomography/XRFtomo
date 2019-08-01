@@ -87,6 +87,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
         self.ViewControl.testButton.clicked.connect(self.save_analysis)
+        self.ViewControl.histogramButton.clicked.connect(self.histo_signal)
         self.imgAndHistoWidget.view.shiftSig.connect(self.shift_process)
         self.actions.dataSig.connect(self.send_data)
         self.actions.thetaSig.connect(self.send_thetas)
@@ -298,6 +299,29 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.updateFileDisplay(self.fnames, index)
         self.fnamesChanged.emit(self.fnames,index)
         self.imageSliderChanged()
+
+
+
+    def histo_signal(self, data, element_names):
+        num_elements = data.shape[0]
+        num_projections = data.shape[1]
+        histo_arr = np.ndarray(shape=(num_elements,num_projections), dtype=float)
+        histo_mean = np.ndarray(shape=(num_elements), dtype=float)
+
+        for i in range(num_elements):
+            for j in range(num_projections):
+                histo_arr[i,j] = np.sum(data[i,j])
+            histo_mean[i] = np.mean(histo_arr[i])
+
+        fig = plt.figure(figsize=(5,7))
+        #ax1, ax2, ax3 = top right, middle
+        ax1 = plt.subplot2grid((3, 3), (0, 0), rowspan=3)
+        ax2 = plt.subplot2grid((3, 3), (1, 0), rowspan=3)
+        ax3 = plt.subplot2grid((3, 3), (2, 0), rowspan=3)
+
+        ax1.hist(histo_arr[0], num_projections)
+        ax2.hist(histo_arr[1], num_projections)
+        ax3.hist(histo_arr[2], num_projections)
 
     def updateSldRange(self, index, thetas):
         element = self.ViewControl.combo1.currentIndex()
