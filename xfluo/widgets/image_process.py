@@ -122,7 +122,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.actions.x_shifts = self.x_shifts
         self.actions.y_shifts = self.y_shifts
         self.actions.centers = self.centers
-
+        self.element_names = element_names
         self.fnames = fnames
         self.data = data
         self.thetas = thetas
@@ -300,9 +300,16 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.fnamesChanged.emit(self.fnames,index)
         self.imageSliderChanged()
 
+    def data_scale_factor(self):
+        #sf = get txtbox value
+        
+        # return self.data *= sf
+        pass
 
 
-    def histo_signal(self, data, element_names):
+    def histo_signal(self):
+        data = self.data
+        element_names = self.element_names
         num_elements = data.shape[0]
         num_projections = data.shape[1]
         histo_arr = np.ndarray(shape=(num_elements,num_projections), dtype=float)
@@ -315,13 +322,29 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         fig = plt.figure(figsize=(5,7))
         #ax1, ax2, ax3 = top right, middle
-        ax1 = plt.subplot2grid((3, 3), (0, 0), rowspan=3)
-        ax2 = plt.subplot2grid((3, 3), (1, 0), rowspan=3)
-        ax3 = plt.subplot2grid((3, 3), (2, 0), rowspan=3)
+        ax1 = plt.subplot2grid((3, 3), (0, 0), colspan=3)
+        ax2 = plt.subplot2grid((3, 3), (1, 0), colspan=3)
+        ax3 = plt.subplot2grid((3, 3), (2, 0), colspan=3)
 
         ax1.hist(histo_arr[0], num_projections)
         ax2.hist(histo_arr[1], num_projections)
         ax3.hist(histo_arr[2], num_projections)
+
+        ax1.set_title(element_names[0])
+        ax2.set_title(element_names[1])
+        ax3.set_title(element_names[2])
+
+        for i in range(num_elements):
+            print(element_names[i],": ",np.round(histo_mean[i]))
+
+        print("Fe to Ti: ",np.round(histo_mean[1]/histo_mean[0]))
+        print("Ti to Se: ",np.round(histo_mean[0]/histo_mean[2]))
+        print("Fe to Se: ",np.round(histo_mean[1]/histo_mean[2]))
+        # plt.show()
+
+        return
+
+
 
     def updateSldRange(self, index, thetas):
         element = self.ViewControl.combo1.currentIndex()

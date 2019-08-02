@@ -160,6 +160,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb5.addWidget(self.combo2)
         vb5.addLayout(vb1)
         vb5.addLayout(vb4)
+        vb5.addWidget(self.histogramButton)
 
         self.setLayout(vb5)
 

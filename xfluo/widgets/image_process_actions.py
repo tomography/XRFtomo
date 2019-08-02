@@ -172,6 +172,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.thetaSig.emit(thetas)
 		# return projection, data, thetas
 		return
+		
 	def noise_analysis(self, img):
 		meanNoise, stdNoise = self.copy_background(img)
 		flattened = img.reshape(np.size(img))

@@ -146,7 +146,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
 
-
     def imageSliderChanged(self):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
