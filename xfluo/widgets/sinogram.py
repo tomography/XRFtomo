@@ -301,7 +301,10 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def alignFromText2_params(self):
         data = self.data
-        self.data, self.x_shifts, self.y_shifts = self.actions.alignFromText2(data)
+        try:
+            self.data, self.x_shifts, self.y_shifts = self.actions.alignFromText2(data)
+        except TypeError:
+            return
         self.dataChangedSig.emit(self.data)
         # self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)

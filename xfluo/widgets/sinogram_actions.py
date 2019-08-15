@@ -318,6 +318,7 @@ class SinogramActions(QtWidgets.QWidget):
         xshift(string after second comma)
         '''
         try:
+
             fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
             ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
 
@@ -344,6 +345,9 @@ class SinogramActions(QtWidgets.QWidget):
             print("index missmatch between align file and current dataset ")
         except IOError:
             print("choose file please")
+        except TypeError: 
+            print("choose file please")
+        return
 
     def alignmentDone(self):
         '''send message that alignment has been done'''
