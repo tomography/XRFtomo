@@ -328,18 +328,25 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.dataTags = {}
                 self.elementTags = {}
 
-                for i in range(len(self.imgTags)):
+                for i in range(len(self.imgTags)):      #get 'data' tags and element tags
                     self.dataTags[i] = list(self.img[self.imgTags[i]])
                     self.elementTags[i] = list(self.img[self.imgTags[i]])
                     indx = self.imageTag.currentIndex()
                     if indx == -1:
                         return
                 try:
+
+                    self.dataTags[indx] = list(filter(lambda k: 'XRF' in k, self.dataTags[indx]))
+
+                    self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
+
                     self.dataTag.clear()
                     self.elementTag.clear()
                     for i in range(len(self.dataTags[indx])):
                         self.dataTag.addItem(self.dataTags[indx][i])
-                        self.elementTag.addItem(self.dataTags[indx][i])
+
+                    for i in range(len(self.elementTags[indx])):
+                        self.elementTag.addItem(self.elementTags[indx][i])
 
                     if self.auto_element_tag in self.dataTags:
                         self.elementTag.setCurrentText(self.auto_element_tag)
