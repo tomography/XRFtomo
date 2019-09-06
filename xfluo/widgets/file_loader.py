@@ -336,8 +336,9 @@ class FileTableWidget(QtWidgets.QWidget):
                         return
                 try:
 
-                    self.dataTags[indx] = list(filter(lambda k: 'XRF' in k, self.dataTags[indx]))
-
+                    temp_tags1 = list(filter(lambda k: 'XRF' in k, self.dataTags[indx]))
+                    temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
+                    self.dataTags[indx] = temp_tags1 + temp_tags2
                     self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
 
                     self.dataTag.clear()

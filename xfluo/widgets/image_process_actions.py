@@ -57,7 +57,11 @@ class ImageProcessActions(QtWidgets.QWidget):
 	
 	def __init__(self):
 		super(ImageProcessActions, self).__init__()
-	
+		self.hotSpotNumb = 0
+		self.x_shifts = None
+		self.y_shifts = None
+		self.centers = None
+
 	def shiftProjectionUp(self, data, index):
 		data[:,index] = np.roll(data[:, index], -1, axis=1)
 		self.dataSig.emit(data)
@@ -118,29 +122,29 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.dataSig.emit(data)
 		return data
 
-	def gauss33(self):
-		result = self.gauss2D(shape=(3, 3), sigma=1.3)
-		print(result)
-		return result
+	# def gauss33(self):
+	# 	result = self.gauss2D(shape=(3, 3), sigma=1.3)
+	# 	print(result)
+	# 	return result
 
-	def gauss55(self):
-		result = self.gauss2D(shape=(5, 5), sigma=1.3)
-		print(result)
-		return result
+	# def gauss55(self):
+	# 	result = self.gauss2D(shape=(5, 5), sigma=1.3)
+	# 	print(result)
+	# 	return result
 
-	def gauss2D(self, shape=(3, 3), sigma=0.5):
-		"""s
-		2D gaussian mask - should give the same result as MATLAB's
-		fspecial('gaussian',[shape],[sigma])
-		"""
-		m, n = [(ss - 1.) / 2. for ss in shape]
-		y, x = np.ogrid[-m:m + 1, -n:n + 1]
-		h = np.exp(-(x * x + y * y) / (2. * sigma * sigma))
-		h[h < np.finfo(h.dtype).eps * h.max()] = 0
-		sumh = h.sum()
-		if sumh != 0:
-			h /= sumh
-		return h
+	# def gauss2D(self, shape=(3, 3), sigma=0.5):
+	# 	"""s
+	# 	2D gaussian mask - should give the same result as MATLAB's
+	# 	fspecial('gaussian',[shape],[sigma])
+	# 	"""
+	# 	m, n = [(ss - 1.) / 2. for ss in shape]
+	# 	y, x = np.ogrid[-m:m + 1, -n:n + 1]
+	# 	h = np.exp(-(x * x + y * y) / (2. * sigma * sigma))
+	# 	h[h < np.finfo(h.dtype).eps * h.max()] = 0
+	# 	sumh = h.sum()
+	# 	if sumh != 0:
+	# 		h /= sumh
+	# 	return h
 
 	def copy_background(self, img):
 		self.meanNoise = np.mean(img)
@@ -172,160 +176,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.thetaSig.emit(thetas)
 		# return projection, data, thetas
 		return
-		
-	def noise_analysis(self, img):
-		meanNoise, stdNoise = self.copy_background(img)
-		flattened = img.reshape(np.size(img))
-		noise_generator1 = np.random.normal(meanNoise, stdNoise, np.size(flattened)).clip(min=0)
-		noise_generator = np.random.normal(meanNoise, stdNoise, np.shape(img)).clip(min=0)
-
-		figure()
-		plt.plot(np.array(np.ones(np.size(flattened), dtype=int)*meanNoise))
-		plt.plot(flattened)
-		plt.plot(noise_generator1)
-		plt.legend(['Average Noise','Noise','Generated Noise'])
-
-		figure()
-		plt.imshow(noise_generator, cmap=gray(), interpolation='nearest')
-		show()
-
-	def bounding_analysis(self, projection):
-		bounds = self.find_bounds(projection, 20)
-		rowsum = np.sum(projection, axis=0)/projection.shape[0]
-		colsum = np.sum(projection, axis=1)/projection.shape[1]
-
-		fig = plt.figure(figsize=(5,5.5))
-		#ax1, ax2, ax3 = top right, middle
-		ax1 = plt.subplot2grid((3, 3), (0, 0), colspan=2)
-		ax2 = plt.subplot2grid((3, 3), (1, 2), rowspan=2)
-		ax3 = plt.subplot2grid((3, 3), (1, 0), colspan=2, rowspan=2, sharey=ax2, sharex=ax1)
-		ax1.get_xaxis().set_visible(False)
-		# ax1.get_yaxis().set_visible(False)
-		#ax2.get_xaxis().set_visible(False)
-		ax2.get_yaxis().set_visible(False)
-
-		ax1.plot(rowsum)
-		ax1.axvline(bounds[0], c='r')
-		ax1.axvline(bounds[1], c='r')
-		ax3.imshow(projection)
-		ax3.set_aspect(aspect=projection.shape[1] / projection.shape[0])
-		ax3.axvline(bounds[0], c='r')
-		ax3.axvline(bounds[1], c='r')
-		ax3.axhline(bounds[2], c='r')
-		ax3.axhline(bounds[3], c='r')
-		ax2.plot(colsum, np.arange(projection.shape[0]))
-		ax2.axhline(bounds[2], c='r')
-		ax2.axhline(bounds[3], c='r')
-
-		# fig2 = plt.figure(figsize=(5,5.5))
-		#
-		# downx = 10
-		# downy = 100
-		# proj = self.rebin(projection, downx,downy)
-		# rowsum = np.sum(proj, axis=0)/proj.shape[0]
-		# colsum = np.sum(proj, axis=1)/proj.shape[1]
-		#
-		#
-		# #ax1, ax2, ax3 = top right, middle
-		# ax1 = plt.subplot2grid((3, 3), (0, 0), colspan=2)
-		# ax2 = plt.subplot2grid((3, 3), (1, 2), rowspan=2)
-		# ax3 = plt.subplot2grid((3, 3), (1, 0), colspan=2, rowspan=2, sharey=ax2, sharex=ax1)
-		# ax1.get_xaxis().set_visible(False)
-		# # ax1.get_yaxis().set_visible(False)
-		# #ax2.get_xaxis().set_visible(False)
-		# ax2.get_yaxis().set_visible(False)
-		#
-		# ax1.plot(rowsum)
-		# ax1.axvline(bounds[0], c='r')
-		# ax1.axvline(bounds[1], c='r')
-		# ax3.imshow(proj)
-		# ax3.set_aspect(aspect=proj.shape[1] / proj.shape[0])
-		# ax3.axvline(bounds[0], c='r')
-		# ax3.axvline(bounds[1], c='r')
-		# ax3.axhline(bounds[2], c='r')
-		# ax3.axhline(bounds[3], c='r')
-		# ax2.plot(colsum, np.arange(proj.shape[0]))
-		# ax2.axhline(bounds[2], c='r')
-		# ax2.axhline(bounds[3], c='r')
-		#
-		#
-		# plt.tight_layout()
-		#
-		#
-		#
-		# plt.show()
-		return fig
-
-	def rebin(self, projection, x=100, y=100):
-
-		numrows=projection.shape[0]
-		numcols=projection.shape[1]
-		newrows= round(numrows/round(numrows*(y/100)))
-		newcols= round(numcols/round(numcols*(x/100)))
-
-		projection = projection[::newrows, ::newcols].repeat(newcols, axis=1).repeat(newrows,axis=0)[:numrows, :numcols]
-
-		# projection = projection[::newrows, :].repeat(newrows, axis=0)[:numrows, :]
-
-		return projection
-
-
-	def find_bounds(self, projection, coeff):
-		bounds = {}
-		bounds[0] = [] #x_left
-		bounds[1] = [] #x_right
-		bounds[2] = [] #y_top
-		bounds[3] = [] #y_bottom
-		
-		col_sum = np.sum(projection, axis=0)/projection.shape[0]
-		row_sum = np.sum(projection, axis=1)/projection.shape[1]
-		noise_col = np.sort(col_sum[col_sum > 0])[:1]
-		noise_row = np.sort(row_sum[row_sum > 0])[:1]
-
-		if noise_col <= noise_row:
-			noise = noise_col
-		else:
-			noise = noise_row
-
-		upper_thresh_col = np.median(col_sum)
-		diffcol = upper_thresh_col - noise
-		y_thresh = diffcol*coeff/100 + noise
-
-		upper_thresh_row = np.median(row_sum)
-		diffrow = upper_thresh_row - noise
-		x_thresh = diffrow*coeff/100 + noise
-
-		for j in range(len(col_sum)):
-			if col_sum[j] >= y_thresh:
-				bounds[0].append(j)
-				break
-		for j in range(len(col_sum)):
-			if col_sum[len(col_sum)-j-1] >= y_thresh:
-				bounds[1].append(len(col_sum)-j-1)
-				break
-		for j in range(len(row_sum)):
-			if row_sum[len(row_sum)-j-1] >= x_thresh:
-				bounds[2].append(len(row_sum)-j-1)
-				break
-		for j in range(len(row_sum)):
-			if row_sum[j] >= x_thresh:
-				bounds[3].append(j)
-				break
-		return bounds  
-
-	def save_bound_anlysis(self,data,element,thetas):
-		save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
-		num_projections = data.shape[1]
-
-		for i in range(num_projections):
-			projection = data[element,i,:,:]
-			projection = self.rebin(projection,10,100)
-			fig = self.bounding_analysis(projection)
-			angle = str(thetas[i])
-			fig.axes[2].set_title(angle)
-			fig.savefig(save_path+'/'+angle+'.png')
-		return
-
 
 	def saveHotspot(self):
 		# if self.hotSpotNumb < self.data.shape[0]:
@@ -344,3 +194,226 @@ class ImageProcessActions(QtWidgets.QWidget):
 		#     self.hotSpotNumb += 1
 		#     self.projView.setImage(self.data[self.hotSpotNumb, :, :])
 		pass
+
+
+
+
+
+
+
+	def hotspot2line(self, element, x_size, y_size, hs_group, posMat, data):
+		'''
+		save the position of hotspots
+		and align hotspots by fixing hotspots in one position
+		'''
+		self.posMat = posMat
+		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
+#****************
+		num_projections = data.shape[1]
+		for j in arange(num_projections):
+
+			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
+				yyshift = int(round(y_size//2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
+				xxshift = int(round(x_size//2 - hotSpotX[j] - hs_x_pos[j] + hs_x_pos[firstPosOfHotSpot]))
+				data[:, j, :, :] = np.roll(np.roll(data[:, j, :, :], xxshift, axis=2), yyshift, axis=1)
+
+			if hs_x_pos[j] == 0:
+				xxshift = 0
+			if hs_y_pos[j] == 0:
+				yyshift = 0
+
+			self.x_shifts[j] += xxshift
+			self.y_shifts[j] += yyshift
+
+		self.centers[2] = hs_x_pos[0]
+
+		print("align done")
+		return self.x_shifts, self.y_shifts, self.centers
+
+	def hotspot2sine(self, element, x_size, y_size, hs_group, posMat, data, theta):
+		'''
+		save the position of hotspots
+		and align by both x and y directions (self.alignHotSpotPos3_4)
+		'''
+		self.posMat = posMat
+		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
+#****************
+		num_projections = data.shape[1]
+		theta  = np.asarray(theta)
+		for j in arange(num_projections):
+
+			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
+				xxshift = int(round(x_size//2 - hotSpotX[j]))
+				yyshift = int(round(y_size//2 - hotSpotY[j]))
+			if hs_x_pos[j] == 0:
+				xxshift = 0
+			if hs_y_pos[j] == 0:
+				yyshift = 0
+
+			self.x_shifts[j] += xxshift
+			self.y_shifts[j] += yyshift
+
+		hotspotXPos = zeros(num_projections, dtype=np.int)
+		hotspotYPos = zeros(num_projections, dtype=np.int)
+		for i in arange(num_projections):
+			hotspotYPos[i] = int(round(hs_y_pos[i]))
+			hotspotXPos[i] = int(round(hs_x_pos[i]))
+		hotspotProj = np.where(hotspotXPos != 0)[0]
+		print(hotspotProj)
+
+		theta_tmp = theta[hotspotProj]
+		com = hotspotXPos[hotspotProj]
+
+		if hs_group == 0:
+			self.fitCenterOfMass(com, x=theta_tmp)
+		else:
+			self.fitCenterOfMass2(com, self.centers, x=theta_tmp)
+		self.alignCenterOfMass2(hotspotProj, data)
+
+		## yfit
+		for i in hotspotProj:
+			self.y_shifts[i] += int(hotspotYPos[hotspotProj[0]]) - int(hotspotYPos[i])
+			data[:, i, :, :] = np.roll(data[:, i, :, :], self.y_shifts[i], axis=1)
+			print(int(hotspotYPos[0]) - int(hotspotYPos[i]))
+
+		#update reconstruction slider value
+		# self.recon.sld.setValue(self.centers[2])
+
+		print("align done")
+		return self.x_shifts, self.y_shifts, self.centers
+		
+
+	def setY(self, element, x_size, y_size, hs_group, posMat, data):
+		'''
+		loads variables for aligning hotspots in y direction only
+		'''
+		self.posMat = posMat
+		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
+#****************
+		num_projections = data.shape[1]
+		for j in arange(num_projections):
+			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
+				yyshift = int(round(y_size//2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
+				data[:, j, :, :] = np.roll(data[:, j, :, :], yyshift, axis=1)
+
+			if hs_y_pos[j] == 0:
+				yyshift = 0
+
+			self.y_shifts[j] += yyshift
+
+		print("align done")
+
+	def alignment_parameters(self, element, x_size, y_size, hs_group, posMat, data):
+		self.posMat = posMat
+		num_projections = data.shape[1]
+		hs_x_pos = zeros(num_projections, dtype=np.int)
+		hs_y_pos = zeros(num_projections, dtype=np.int)
+		hs_array = zeros([num_projections, y_size, x_size], dtype=np.int)
+
+		for i in arange(num_projections):
+			hs_x_pos[i] = int(round(self.posMat[hs_group, i, 0]))
+			hs_y_pos[i] = int(abs(round(self.posMat[hs_group, i, 1])))
+
+			if hs_x_pos[i] != 0 and hs_y_pos[i] != 0:
+				if hs_y_pos[i] < y_size:	# if ROI is past top edge of projection
+					hs_y_pos[i] = y_size
+				if hs_y_pos[i] > data.shape[2] - y_size: # if ROI is past top bottom of projection
+					hs_y_pos[i] = data.shape[2] - y_size
+				if hs_x_pos[i] < x_size:	# if ROI is past left edge of projection
+					hs_x_pos[i] = x_size
+				if hs_x_pos[i] > data.shape[3] - x_size: # if ROI is past right edge of projection
+					hs_x_pos[i] = data.shape[3] - x_size
+				hs_array[i, :, :] = data[element, i,
+									hs_y_pos[i] - y_size:hs_y_pos[i] + y_size,
+									hs_x_pos[i] - x_size:hs_x_pos[i] + x_size]
+
+		hotSpotX = zeros(num_projections, dtype=np.int)
+		hotSpotY = zeros(num_projections, dtype=np.int)
+		new_hs_array = zeros(hs_array.shape, dtype=np.int)
+		new_hs_array[...] = hs_array[...]
+		firstPosOfHotSpot = 0
+		
+		add = 1
+		for i in arange(num_projections):
+			if hs_x_pos[i] == 0 and hs_y_pos[i] == 0:
+				firstPosOfHotSpot += add
+			if hs_x_pos[i] != 0 or hs_y_pos[i] != 0:
+				img = hs_array[i, :, :]
+				print(img.sum(), i)
+				a, x, y, b, c = self.fitgaussian(img)
+				hotSpotY[i] = x
+				hotSpotX[i] = y
+				yshift_tmp = int(round(y_size - hotSpotY[i]))
+				xshift_tmp = int(round(x_size - hotSpotX[i]))
+				new_hs_array[i, :, :] = np.roll(new_hs_array[i, :, :], xshift_tmp, axis=1)
+				new_hs_array[i, :, :] = np.roll(new_hs_array[i, :, :], yshift_tmp, axis=0)
+				add = 0
+
+		return hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data
+
+
+
+
+
+
+
+
+	def fitCenterOfMass(self, com, x):
+		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
+		errfunc = lambda p, x, y: fitfunc(p, x) - y
+		p0 = [100, 100, 100]
+		self.centers, success = optimize.leastsq(errfunc, p0, args=(x, com))
+		self.centerOfMassDiff = fitfunc(x) - com
+		print(self.centerOfMassDiff)
+
+	def fitCenterOfMass2(self, com, x):
+		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + self.centers[2]
+		errfunc = lambda p, x, y: fitfunc(p, x) - y
+		p0 = [100, 100]
+		p2, success = optimize.leastsq(errfunc, p0, args=(x, com))
+		self.centerOfMassDiff = fitfunc(p2, x) - com
+		print(self.centerOfMassDiff)
+
+	def alignCenterOfMass2(self, hotspotProj, data):
+
+		j = 0
+		for i in hotspotProj:
+			self.x_shifts[i] += int(self.centerOfMassDiff[j])
+
+			data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(self.x_shifts[i])), axis=2)
+			j += 1
+
+		#set some label to be show that the alignment has completed. perhaps print this in a logbox
+		# self.lbl.setText("Alignment has been completed")
+	def fitgaussian(self, data):
+		"""Returns (height, x, y, width_x, width_y)
+		the gaussian parameters of a 2D distribution found by a fit"""
+		params = self.moments(data)
+		errorfunction = lambda p: ravel(self.gaussian(*p)(*indices(data.shape)) - data)
+		p, success = optimize.leastsq(errorfunction, params)
+		return p
+
+	def moments(self, data):
+		"""Returns (height, x, y, width_x, width_y)
+		the gaussian parameters of a 2D distribution by calculating its
+		moments """
+		total = data.sum()
+		X, Y = indices(data.shape)
+		x = (X * data).sum() / total
+		y = (Y * data).sum() / total
+		col = data[:, int(y)]
+		width_x = sqrt(abs((arange(col.size) - y) ** 2 * col).sum() / col.sum())
+		row = data[int(x), :]
+		width_y = sqrt(abs((arange(row.size) - x) ** 2 * row).sum() / row.sum())
+		height = data.max()
+		return height, x, y, width_x, width_y
+
+	def gaussian(self, height, center_x, center_y, width_x, width_y):
+		"""Returns a gaussian function with the given parameters"""
+		width_x = float(width_x)
+		width_y = float(width_y)
+		return lambda x, y: height * exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
+
+	def clrHotspot(self, posMat):
+		posMat[...] = zeros_like(posMat)
+		return posMat

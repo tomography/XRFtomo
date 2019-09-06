@@ -60,6 +60,15 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         button3size = 73.3      #small button (almost third)
         button4size = 58.75     #textbox size (less than a third)
 
+        self.combo1 = QtWidgets.QComboBox()
+        self.combo1.setFixedWidth(button1size)
+
+        self.combo2 = QtWidgets.QComboBox()
+        self.combo2.setFixedWidth(button1size)
+
+        self.combo3 = QtWidgets.QComboBox(self)
+        self.combo3.setFixedWidth(button2size)
+
         self.xUpBtn = QtWidgets.QPushButton("x: +")
         self.xUpBtn.setFixedWidth(button4size)
         self.xUpBtn.clicked.connect(self.xUp)
@@ -82,12 +91,6 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.cropBtn = QtWidgets.QPushButton("Crop")
         self.cropBtn.setFixedWidth(button2size)
 
-        self.gaussian33Btn = QtWidgets.QPushButton("3*3 gauss")
-        self.gaussian33Btn.setFixedWidth(button2size)
-
-        self.gaussian55Btn = QtWidgets.QPushButton("5*5 gauss")
-        self.gaussian55Btn.setFixedWidth(button2size)
-
         self.captureBackground = QtWidgets.QPushButton("copy Bg")
         self.captureBackground.setFixedWidth(button2size)
 
@@ -99,9 +102,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
 
         self.testButton = QtWidgets.QPushButton("test btn")
         self.testButton.setFixedWidth(button2size)
-
-        self.histogramButton = QtWidgets.QPushButton("histo(total signal)")
-        self.histogramButton.setFixedWidth(button2size)
+        self.testButton.setVisible(False)
 
         self.xSizeLbl = QtWidgets.QLabel("x Size")
         self.xSizeLbl.setFixedWidth(button4size)
@@ -115,11 +116,18 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.ySizeTxt = QtWidgets.QLineEdit(str(self.ySize))
         self.ySizeTxt.setFixedWidth(button4size)
 
-        self.combo1 = QtWidgets.QComboBox()
-        self.combo1.setFixedWidth(button1size)
-
-        self.combo2 = QtWidgets.QComboBox()
-        self.combo2.setFixedWidth(button1size)
+        for i in range(5):
+            self.combo3.addItem(str(i + 1))
+        self.btn1 = QtWidgets.QPushButton("fit to a line")
+        self.btn1.setFixedWidth(button2size)
+        self.btn2 = QtWidgets.QPushButton("fit to sine curve")
+        self.btn2.setFixedWidth(button2size)
+        self.btn3 = QtWidgets.QPushButton("set y")
+        self.btn3.setFixedWidth(button2size)
+        self.btn4 = QtWidgets.QPushButton("Clear data")
+        self.btn4.setFixedWidth(button2size)
+        self.lbl3 = QtWidgets.QLabel("hotspot group#")
+        self.lbl3.setFixedWidth(button2size)
 
         hb1 = QtWidgets.QHBoxLayout()
         hb1.addWidget(self.xSizeLbl)
@@ -132,12 +140,19 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb2.addWidget(self.yDownBtn)
         hb2.addWidget(self.ySizeTxt)
 
+        hb3 = QtWidgets.QHBoxLayout()
+        hb3.addWidget(self.lbl3)
+        hb3.addWidget(self.combo3)
+        hb4 = QtWidgets.QHBoxLayout()
+        hb4.addWidget(self.btn1)
+        hb4.addWidget(self.btn2)        
+        hb5 = QtWidgets.QHBoxLayout()
+        hb5.addWidget(self.btn3)
+        hb5.addWidget(self.btn4)
+
         hb10 = QtWidgets.QHBoxLayout()
         hb10.addWidget(self.normalizeBtn)
         hb10.addWidget(self.cropBtn)
-        hb11 = QtWidgets.QHBoxLayout()
-        hb11.addWidget(self.gaussian33Btn)
-        hb11.addWidget(self.gaussian55Btn)
         hb12 = QtWidgets.QHBoxLayout()
         hb12.addWidget(self.captureBackground)
         hb12.addWidget(self.setBackground)
@@ -149,9 +164,14 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb1.addLayout(hb1)
         vb1.addLayout(hb2)
 
+        vb2 = QtWidgets.QVBoxLayout()
+        vb2.addLayout(hb3)
+        vb2.addLayout(hb4)
+        vb2.addLayout(hb5)
+
         vb4 = QtWidgets.QVBoxLayout()
         vb4.addLayout(hb10)
-        vb4.addLayout(hb11)
+        # vb4.addLayout(hb11)
         vb4.addLayout(hb12)
         vb4.addLayout(hb13)
 
@@ -160,7 +180,9 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb5.addWidget(self.combo2)
         vb5.addLayout(vb1)
         vb5.addLayout(vb4)
-        vb5.addWidget(self.histogramButton)
+        vb5.addLayout(vb2)
+
+        # vb5.addWidget(self.histogramButton)
 
         self.setLayout(vb5)
 

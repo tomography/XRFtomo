@@ -553,11 +553,12 @@ class XfluoGui(QtGui.QMainWindow):
     def keyMapSettings(self):
         msg = QtGui.QMessageBox()
         msg.setIcon(QtGui.QMessageBox.Information)
-        msg.setText("Undo: \t\t Ctr+Z \n\n shift projection up: \t up  \n\n"
-                    "shift projection down: \t down  \n\n shift projection left: \t left  \n\n"
-                    "shift projection right: \t right  \n\n shift stack up: \t Shift + up \n\n"
-                    "shift stack down: \t Shift + down \n\n shift stack left: \t Shift + left \n\n"
-                    "shift stack right: \t Shift + right \n\n exclude projection: \t Delete" )
+        msg.setText("Undo: \t\t Ctr+Z \n\nshift projection up: \t up  \n\n"
+                    "shift projection down: \t down  \n\nshift projection left: \t left \n\n"
+                    "shift projection right: \t right  \n\nshift stack up: \t Shift + up \n\n"
+                    "shift stack down: \t Shift + down \n\nshift stack left: \t Shift + left \n\n"
+                    "shift stack right: \t Shift + right \n\nexclude projection: \t Delete \n\n"
+                    "copy background: \t Ctrl + C \n\n paste background \t Ctrl + V" )
         msg.setWindowTitle("key map")
         msg.exec_()
 
