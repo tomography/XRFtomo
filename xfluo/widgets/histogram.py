@@ -183,8 +183,8 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
                 self.keyPressSig.emit('shiftUp')
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Down:
                 self.keyPressSig.emit('shiftDown')
-            if keyspressed[0] == QtCore.Qt.Key_Ctrl and keyspressed[1] == QtCore.Qt.Key_C:
+            if keyspressed[0] == QtCore.Qt.Key_Control and keyspressed[1] == QtCore.Qt.Key_C:
                 self.keyPressSig.emit('Copy')
-            if keyspressed[0] == QtCore.Qt.Key_Ctrl and keyspressed[1] == QtCore.Qt.Key_V:
+            if keyspressed[0] == QtCore.Qt.Key_Control and keyspressed[1] == QtCore.Qt.Key_V:
                 self.keyPressSig.emit('Paste')
 

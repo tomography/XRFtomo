@@ -514,7 +514,6 @@ class XfluoGui(QtGui.QMainWindow):
         # self.update_sino([])
 
         return
- 
 
     def undo(self):
         if len(self.data_history) <=1:
