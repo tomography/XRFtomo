@@ -201,7 +201,7 @@ class HotspotWidget(QtWidgets.QWidget):
         # self.posMat[hs_group, hs_number] = [x_pos, y_pos]
         
         if command == 'Next':
-            self.posMat[int(hs_group), int(hs_number)] = [x_pos, y_pos]
+            self.posMat[int(hs_group), int(hs_number)-1] = [x_pos, y_pos]
             if hs_number < self.posMat.shape[1]:
                 print("n")
                 print("Total projections", self.posMat.shape[1], "current position", hs_number+1, "group number", hs_group + 1)
@@ -217,7 +217,7 @@ class HotspotWidget(QtWidgets.QWidget):
             self.ViewControl.btn4.setEnabled(True)
 
         if command == 'Skip':
-            self.posMat[int(hs_group), int(hs_number)] = [0, 0]
+            self.posMat[int(hs_group), int(hs_number)-1] = [0, 0]
             if hs_number < self.posMat.shape[1]:
                 hs_number += 1
                 self.sliderChangedSig.emit(hs_number)

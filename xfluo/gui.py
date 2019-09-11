@@ -205,7 +205,7 @@ class XfluoGui(QtGui.QMainWindow):
         #     theta_auto_completes = []
         self.fileTableWidget = xfluo.FileTableWidget(self)
         self.imageProcessWidget = xfluo.ImageProcessWidget()
-        self.hotspotWidget = xfluo.HotspotWidget()
+        # self.hotspotWidget = xfluo.HotspotWidget()
         self.sinogramWidget = xfluo.SinogramWidget()
         self.reconstructionWidget = xfluo.ReconstructionWidget()
         self.writer = xfluo.SaveOptions()
@@ -213,12 +213,13 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget.sinoChangedSig.connect(self.update_sino)
 
         #slider change
-        self.imageProcessWidget.sliderChangedSig.connect(self.hotspotWidget.updateSliderSlot)
-        self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
+        self.imageProcessWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
+        # self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
 
         #element dropdown change
-        self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
-        self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
+        # self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
+        self.imageProcessWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
+        # self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
         self.sinogramWidget.elementChangedSig.connect(self.reconstructionWidget.updateElementSlot)
         self.reconstructionWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
 
@@ -234,15 +235,14 @@ class XfluoGui(QtGui.QMainWindow):
         # self.actions = xfluo.ImageProcessActions(self)
 
         #slider range change
-        self.imageProcessWidget.sldRangeChanged.connect(self.hotspotWidget.updateSldRange)
-        self.hotspotWidget.sldRangeChanged.connect(self.imageProcessWidget.updateSldRange)
-        # self.sinogramWidget
+        # self.imageProcessWidget.sldRangeChanged.connect(self.hotspotWidget.updateSldRange)
+        # self.hotspotWidget.sldRangeChanged.connect(self.imageProcessWidget.updateSldRange)
         #filenames changed
-        self.imageProcessWidget.fnamesChanged.connect(self.hotspotWidget.updateFileDisplay)
+        # self.imageProcessWidget.fnamesChanged.connect(self.hotspotWidget.updateFileDisplay)
 
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
-        self.hotspotWidget.alignmentChangedSig.connect(self.update_alignment)
+        # self.hotspotWidget.alignmentChangedSig.connect(self.update_alignment)
         self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)
 
         #update_reconstructed_data
@@ -254,14 +254,14 @@ class XfluoGui(QtGui.QMainWindow):
         self.prevTab = 0
         self.TAB_FILE = 0
         self.TAB_IMAGE_PROC = 1
-        self.TAB_HOTSPOT = 2
+        # self.TAB_HOTSPOT = 2
         self.TAB_SINOGRAM = 3
         self.TAB_RECONSTRUCTION = 4
 
         self.tab_widget = QtWidgets.QTabWidget()
         self.tab_widget.addTab(self.fileTableWidget, 'Files')
         self.tab_widget.addTab(self.imageProcessWidget, "Pre Processing")
-        self.tab_widget.addTab(self.hotspotWidget, "Hotspot")
+        # self.tab_widget.addTab(self.hotspotWidget, "Hotspot")
         self.tab_widget.addTab(self.sinogramWidget, "Alignment")
         self.tab_widget.addTab(self.reconstructionWidget, "Reconstruction")
 
@@ -369,8 +369,8 @@ class XfluoGui(QtGui.QMainWindow):
             self.loadImages()
         elif self.prevTab == self.TAB_IMAGE_PROC:
             pass
-        elif self.prevTab == self.TAB_HOTSPOT:
-            pass
+        # elif self.prevTab == self.TAB_HOTSPOT:
+        #     pass
         elif self.prevTab == self.TAB_SINOGRAM:
             pass
         elif self.prevTab == self.TAB_RECONSTRUCTION:
@@ -449,7 +449,7 @@ class XfluoGui(QtGui.QMainWindow):
         #update sinogram image
 
         self.imageProcessWidget.showImgProcess(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        self.hotspotWidget.showHotSpot(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        # self.hotspotWidget.showHotSpot(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
         self.sinogramWidget.showSinogram(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
         self.reconstructionWidget.showReconstruct(self.data, self.elements, self.fnames, self.thetas, self.x_shifts, self.y_shifts, self.centers)
 
@@ -458,7 +458,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.tab_widget.removeTab(3)
         self.tab_widget.removeTab(4)
         self.tab_widget.insertTab(1, self.imageProcessWidget, "Pre Processing")
-        self.tab_widget.insertTab(2, self.hotspotWidget, "Hotspot")
+        # self.tab_widget.insertTab(2, self.hotspotWidget, "Hotspot")
         self.tab_widget.insertTab(3, self.sinogramWidget, "Alignment")
         self.tab_widget.insertTab(4, self.reconstructionWidget, "Reconstruction")
 
@@ -479,8 +479,8 @@ class XfluoGui(QtGui.QMainWindow):
         self.data = data 
         self.imageProcessWidget.data = self.data
         self.imageProcessWidget.imageChanged()
-        self.hotspotWidget.data = self.data
-        self.hotspotWidget.imageChanged()
+        # self.hotspotWidget.data = self.data
+        # self.hotspotWidget.imageChanged()
         self.sinogramWidget.data = self.data
         self.sinogramWidget.imageChanged()
         self.reconstructionWidget.data = self.data
@@ -499,7 +499,7 @@ class XfluoGui(QtGui.QMainWindow):
     def update_theta(self, thetas):
         self.thetas = thetas
         self.imageProcessWidget.thetas = self.thetas
-        self.hotspotWidget.thetas = self.thetas
+        # self.hotspotWidget.thetas = self.thetas
         self.sinogramWidget.thetas = self.thetas
         return
     
@@ -571,11 +571,11 @@ class XfluoGui(QtGui.QMainWindow):
         # self.imageProcessWidget.actions.x_shifts = self.x_shifts
         # self.imageProcessWidget.actions.y_shifts = self.y_shifts
         # self.imageProcessWidget.actions.centers = self.centers
-        self.hotspotWidget.x_shifts = self.x_shifts
-        self.hotspotWidget.y_shifts = self.y_shifts
+        # self.hotspotWidget.x_shifts = self.x_shifts
+        # self.hotspotWidget.y_shifts = self.y_shifts
         # self.hotspotWidget.centers = self.centers
-        self.hotspotWidget.actions.x_shifts = self.x_shifts
-        self.hotspotWidget.actions.y_shifts = self.y_shifts
+        # self.hotspotWidget.actions.x_shifts = self.x_shifts
+        # self.hotspotWidget.actions.y_shifts = self.y_shifts
         # self.hotspotWidget.actions.centers = self.centers
         self.sinogramWidget.x_shifts = self.x_shifts
         self.sinogramWidget.y_shifts = self.y_shifts

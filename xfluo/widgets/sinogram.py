@@ -46,7 +46,6 @@
 import xfluo
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
-
 # from widgets.sinogram_view import SinogramView
 # from widgets.sinogram_controls_widget import SinogramControlsWidget
 import pyqtgraph

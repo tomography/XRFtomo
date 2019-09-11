@@ -143,6 +143,7 @@ class HotspotActions(QtWidgets.QWidget):
 		# self.recon.sld.setValue(self.centers[2])
 
 		print("align done")
+		self.centers = list(np.round(self.centers))
 		return self.x_shifts, self.y_shifts, self.centers
 		
 
@@ -165,6 +166,10 @@ class HotspotActions(QtWidgets.QWidget):
 			self.y_shifts[j] += yyshift
 
 		print("align done")
+		self.centers = list(np.round(self.centers))
+		return self.x_shifts, self.y_shifts, self.centers
+
+
 
 	def alignment_parameters(self, element, boxSize, hs_group, posMat, data):
 		self.posMat = posMat
@@ -219,7 +224,7 @@ class HotspotActions(QtWidgets.QWidget):
 		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
 		errfunc = lambda p, x, y: fitfunc(p, x) - y
 		p0 = [100, 100, 100]
-		self.centers, success = optimize.leastsq(errfunc, p0, args=(x, com))
+		self.centers, success = optimize.leastsq(errfunc, np.asarray(p0), args=(x, com))
 		self.centerOfMassDiff = fitfunc(p0, x) - com
 		print(self.centerOfMassDiff)
 
@@ -227,7 +232,7 @@ class HotspotActions(QtWidgets.QWidget):
 		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + self.centers[2]
 		errfunc = lambda p, x, y: fitfunc(p, x) - y
 		p0 = [100, 100]
-		p2, success = optimize.leastsq(errfunc, p0, args=(x, com))
+		p2, success = optimize.leastsq(errfunc, np.asarray(p0), args=(x, com))
 		self.centerOfMassDiff = fitfunc(p2, x) - com
 		print(self.centerOfMassDiff)
 
@@ -253,6 +258,7 @@ class HotspotActions(QtWidgets.QWidget):
 		"""Returns (height, x, y, width_x, width_y)
 		the gaussian parameters of a 2D distribution by calculating its
 		moments """
+		#TODO: sometimes data == 0 causing division by error.
 		total = data.sum()
 		X, Y = indices(data.shape)
 		x = (X * data).sum() / total
