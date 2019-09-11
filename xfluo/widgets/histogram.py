@@ -50,6 +50,7 @@ import pyqtgraph
 
 class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
     # shiftSig = pyqtSignal(str, name='sliderChangedSig')
+    mouseMoveSig = pyqtSignal(int,int, name= 'mouseMoveSig')
     keyPressSig = pyqtSignal(str, name= 'keyPressSig')
 
     def __init__(self, parent):
@@ -60,6 +61,8 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         self.ySize = 10
         self.x_pos = 5
         self.y_pos = -5
+        self.cross_pos_x = 5
+        self.cross_pos_y = -5
         self.keylist = []
         self.initUI()
 
@@ -80,31 +83,32 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         self.p1.setMouseEnabled(x=False, y=False)
 
     def mouseMoved(self, evt):
-        self.moving_x = self.p1.vb.mapSceneToView(evt).x()
-        self.moving_y = self.p1.vb.mapSceneToView(evt).y()
+        self.moving_x = int(round(self.p1.vb.mapSceneToView(evt).x()))
+        self.moving_y = int(round(self.p1.vb.mapSceneToView(evt).y()))
+        self.mouseMoveSig.emit(self.moving_x, self.moving_y)
 
     def mouseClick(self, evt):
-        self.x_pos = int(round(self.moving_x))
-        self.y_pos = int(round(self.moving_y))
+        self.x_pos = self.moving_x
+        self.y_pos = self.moving_y
         self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
 
     def mouseReleaseEvent(self, ev):
-        x_pos = int(round(self.moving_x))
-        y_pos = int(round(self.moving_y))
+        x_pos = self.moving_x
+        y_pos = self.moving_y
         frame_height = self.projView.width()
         frame_width = self.projView.height()
-        self.x_pos, self.y_pos = self.update_roi(x_pos, y_pos, self.xSize, self.ySize, frame_height, frame_width)
+        self.x_pos, self.y_pos, self.cross_pos_x, self.cross_pos_y = self.update_roi(x_pos, y_pos, self.xSize, self.ySize, frame_height, frame_width)
 
         if ev.button() == 1:
             self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
 
         if ev.button() == 2: 
-            self.p1.items[3].setValue(self.x_pos)
-            self.p1.items[4].setValue(self.y_pos)
+            self.p1.items[3].setValue(self.cross_pos_x)
+            self.p1.items[4].setValue(self.cross_pos_y)
 
     def update_roi(self, x_pos, y_pos, x_size, y_size, frame_height, frame_width):
-        print(x_pos, y_pos, x_pos-x_size/2, y_pos-y_size/2)
-
+        cross_pos_x = x_pos
+        cross_pos_y = y_pos
         max_y = frame_height
         max_x = frame_width
 
@@ -115,25 +119,31 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
 
         ## if way far left
         if roi_left <= 0 :
-            print("case 1")
             x_pos = x_size/2
-
         ## if way far right
         if roi_right>= max_x:
-            print("case 2")
             x_pos = max_x - x_size/2
-
         ## if way far above
         if roi_top >= 0 :
-            print("case 3")
             y_pos = -y_size/2
-
         ## if way far below
         if roi_bottom <= -max_y:
-            print("case 4")
             y_pos = -max_y + y_size/2
 
-        return x_pos, y_pos
+        ## if way far left
+        if cross_pos_x <= 0 :
+            cross_pos_x = 0
+        ## if way far right
+        if cross_pos_x >= max_x:
+            cross_pos_x = max_x
+        ## if way far above
+        if cross_pos_y >= 0 :
+            cross_pos_y = 0
+        ## if way far below
+        if cross_pos_y <= -max_y:
+            cross_pos_y = -max_y
+
+        return x_pos, y_pos, cross_pos_x, cross_pos_y
 
     def wheelEvent(self, ev):
         pass
@@ -152,7 +162,6 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
             del self.keylist[-1]
         except:
             pass
-
 
     def processMultipleKeys(self, keyspressed):
         if len(keyspressed) ==1:

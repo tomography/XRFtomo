@@ -61,18 +61,17 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
         lbl3 = QtWidgets.QLabel("y pos")
         self.lbl4 = QtWidgets.QLabel("")
         self.lbl5 = QtWidgets.QLabel("Angle")
-        btn1 = QtWidgets.QPushButton("position")
         
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(lbl1)
         hb0.addWidget(self.lbl2)
         hb0.addWidget(lbl3)
         hb0.addWidget(self.lbl4)
-        hb0.addWidget(btn1)
 
-        btn1.clicked.connect(self.updatePanel)
+        # btn1.clicked.connect(self.updatePanel)
 
         self.view = xfluo.HistogramWidget(self)
+        self.view.mouseMoveSig.connect(self.updatePanel)
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
@@ -97,10 +96,10 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
 
         self.setLayout(hb2)
 
-    def keyPressEvent(self, ev):
-        if ev.key() == QtCore.Qt.Key_N:
-            self.sld.setValue(self.sld.value() + 1)
+    # def keyPressEvent(self, ev):
+    #     if ev.key() == QtCore.Qt.Key_N:
+    #         self.sld.setValue(self.sld.value() + 1)
 
-    def updatePanel(self):
-        self.lbl2.setText(str(self.view.x_pos))
-        self.lbl4.setText(str(self.view.y_pos))
+    def updatePanel(self,x,y):
+        self.lbl2.setText(str(x))
+        self.lbl4.setText(str(y))
