@@ -159,7 +159,6 @@ class HotspotActions(QtWidgets.QWidget):
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
 				yyshift = int(round(boxSize2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
 				data[:, j, :, :] = np.roll(data[:, j, :, :], yyshift, axis=1)
-
 			if hs_y_pos[j] == 0:
 				yyshift = 0
 
@@ -221,7 +220,7 @@ class HotspotActions(QtWidgets.QWidget):
 		errfunc = lambda p, x, y: fitfunc(p, x) - y
 		p0 = [100, 100, 100]
 		self.centers, success = optimize.leastsq(errfunc, p0, args=(x, com))
-		self.centerOfMassDiff = fitfunc(x) - com
+		self.centerOfMassDiff = fitfunc(p0, x) - com
 		print(self.centerOfMassDiff)
 
 	def fitCenterOfMass2(self, com, x):
@@ -233,7 +232,6 @@ class HotspotActions(QtWidgets.QWidget):
 		print(self.centerOfMassDiff)
 
 	def alignCenterOfMass2(self, hotspotProj, data):
-
 		j = 0
 		for i in hotspotProj:
 			self.x_shifts[i] += int(self.centerOfMassDiff[j])

@@ -526,6 +526,8 @@ class FileTableWidget(QtWidgets.QWidget):
         self.message.setText('finished loading')
 
         self.reset_widgets()
+        data[np.isnan(data)] = 0.0001
+        data[data == np.inf] = 0.0001
 
         return data, elements, thetas, files
 

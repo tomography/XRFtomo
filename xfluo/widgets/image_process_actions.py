@@ -49,6 +49,7 @@ import numpy as np
 from pylab import *
 import xfluo
 import matplotlib.pyplot as plt
+from scipy import ndimage, optimize, signal
 
 
 class ImageProcessActions(QtWidgets.QWidget):
@@ -324,8 +325,8 @@ class ImageProcessActions(QtWidgets.QWidget):
 				if hs_x_pos[i] > data.shape[3] - x_size: # if ROI is past right edge of projection
 					hs_x_pos[i] = data.shape[3] - x_size
 				hs_array[i, :, :] = data[element, i,
-									hs_y_pos[i] - y_size:hs_y_pos[i] + y_size,
-									hs_x_pos[i] - x_size:hs_x_pos[i] + x_size]
+									hs_y_pos[i] - y_size//2:hs_y_pos[i] + y_size//2,
+									hs_x_pos[i] - x_size//2:hs_x_pos[i] + x_size//2]
 
 		hotSpotX = zeros(num_projections, dtype=np.int)
 		hotSpotY = zeros(num_projections, dtype=np.int)

@@ -158,7 +158,11 @@ class HotspotWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
     
     def updateElementSlot(self, element, projection):
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :], border='w')
+        if projection == -1:
+            return
+        self.data[np.isnan(self.data)] = 0.0001
+        self.data[self.data == np.inf] = 0.0001
+        self.imgAndHistoWidget.view.projView.setImage(np.round(self.data[element, projection, :, :]), border='w')
         self.ViewControl.combo1.setCurrentIndex(element)
         self.ViewControl.combo2.setCurrentIndex(projection)   
 
