@@ -75,10 +75,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
-        self.ViewControl.xUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
-        self.ViewControl.xDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
-        self.ViewControl.yUpBtn.clicked.connect(self.imgProcessBoxSizeChange)
-        self.ViewControl.yDownBtn.clicked.connect(self.imgProcessBoxSizeChange)
+        self.ViewControl.x_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
+        self.ViewControl.xSizeTxt.textChanged.connect(self.imgProcessBoxSizeChange)
+        self.ViewControl.y_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
+        self.ViewControl.ySizeTxt.textChanged.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.normalizeBtn.clicked.connect(self.normalize_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
@@ -138,6 +138,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.thetas = thetas
         self.posMat = np.zeros((5,int(data.shape[1]),2))
         self.imgAndHistoWidget.view.hotSpotNumb = 0
+        self.ViewControl.x_sld.setRange(1, self.data.shape[3])
+        self.ViewControl.y_sld.setRange(1, self.data.shape[2])
+
         self.ViewControl.combo1.clear()
         self.ViewControl.combo2.clear()
         for j in element_names:
@@ -161,7 +164,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
         projection = self.ViewControl.combo2.currentIndex()
-        print("TODO: during startup, 'projection' is undefined. ")
         self.updateElementSlot(element, projection)
         self.elementChangedSig.emit(element, projection)
 
@@ -186,6 +188,14 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def imgProcessBoxSizeChange(self):
         xSize = self.ViewControl.xSize
         ySize = self.ViewControl.ySize
+        if xSize > self.data.shape[3]:
+            xSize = self.data.shape[3]
+            self.ViewControl.xSize = xSize
+        if ySize > self.data.shape[2]:
+            ySize = self.data.shape[2]
+            self.ViewControl.ySize = ySize   
+
+                     
         self.imgAndHistoWidget.view.xSize = xSize
         self.imgAndHistoWidget.view.ySize = ySize
         self.imgAndHistoWidget.view.ROI.setSize([xSize, ySize])
@@ -420,7 +430,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # return self.data *= sf
         pass
 
-
+    # debugging and statistic gathering function, leave commented plz.
     # def histo_signal(self):
     #     data = self.data
     #     element_names = self.element_names

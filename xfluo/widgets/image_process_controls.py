@@ -44,7 +44,7 @@
 # #########################################################################
 
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 class ImageProcessControlsWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -62,59 +62,47 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
 
         self.combo1 = QtWidgets.QComboBox()
         self.combo1.setFixedWidth(button1size)
-
         self.combo2 = QtWidgets.QComboBox()
         self.combo2.setFixedWidth(button1size)
-
         self.combo3 = QtWidgets.QComboBox(self)
         self.combo3.setFixedWidth(button2size)
 
-        self.xUpBtn = QtWidgets.QPushButton("x: +")
-        self.xUpBtn.setFixedWidth(button4size)
-        self.xUpBtn.clicked.connect(self.xUp)
+        self.xSizeLbl = QtWidgets.QLabel("x Size")
+        self.xSizeLbl.setFixedWidth(button4size)
+        self.ySizeLbl = QtWidgets.QLabel("y Size")
+        self.ySizeLbl.setFixedWidth(button4size)
+        self.xSizeTxt = QtWidgets.QLineEdit(str(self.xSize))
+        self.xSizeTxt.setFixedWidth(button4size)
+        self.xSizeTxt.textChanged.connect(self.xTxtChange)
+        self.ySizeTxt = QtWidgets.QLineEdit(str(self.ySize))
+        self.ySizeTxt.setFixedWidth(button4size)
+        self.ySizeTxt.textChanged.connect(self.yTxtChange)
 
-        self.xDownBtn = QtWidgets.QPushButton("x: -")
-        self.xDownBtn.setFixedWidth(button4size)
-        self.xDownBtn.clicked.connect(self.xDown)
-
-        self.yUpBtn = QtWidgets.QPushButton("y: +")
-        self.yUpBtn.setFixedWidth(button4size)
-
-        self.yUpBtn.clicked.connect(self.yUp)
-        self.yDownBtn = QtWidgets.QPushButton("y: -")
-        self.yDownBtn.setFixedWidth(button4size)
-        self.yDownBtn.clicked.connect(self.yDown)
+        self.x_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.x_sld.setFixedWidth(button2size)
+        self.x_sld.setValue(self.xSize)
+        self.x_sld.setRange(2, 10)
+        self.x_sld.valueChanged.connect(self.xSldChange)
+        self.y_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.y_sld.setFixedWidth(button2size)
+        self.y_sld.setValue(self.xSize)
+        self.y_sld.setRange(2, 10)
+        self.y_sld.valueChanged.connect(self.ySldChange)
 
         self.normalizeBtn = QtWidgets.QPushButton("Normalize")
         self.normalizeBtn.setFixedWidth(button2size)
-
         self.cropBtn = QtWidgets.QPushButton("Crop")
         self.cropBtn.setFixedWidth(button2size)
-
         self.captureBackground = QtWidgets.QPushButton("copy Bg")
         self.captureBackground.setFixedWidth(button2size)
-
         self.setBackground = QtWidgets.QPushButton("Set Bg")
         self.setBackground.setFixedWidth(button2size)
-
         self.deleteProjection = QtWidgets.QPushButton("Delete Frame")
         self.deleteProjection.setFixedWidth(button2size)
-
         self.testButton = QtWidgets.QPushButton("test btn")
         self.testButton.setFixedWidth(button2size)
         self.testButton.setVisible(False)
 
-        self.xSizeLbl = QtWidgets.QLabel("x Size")
-        self.xSizeLbl.setFixedWidth(button4size)
-
-        self.ySizeLbl = QtWidgets.QLabel("y Size")
-        self.ySizeLbl.setFixedWidth(button4size)
-
-        self.xSizeTxt = QtWidgets.QLineEdit(str(self.xSize))
-        self.xSizeTxt.setFixedWidth(button4size)
-
-        self.ySizeTxt = QtWidgets.QLineEdit(str(self.ySize))
-        self.ySizeTxt.setFixedWidth(button4size)
 
         for i in range(5):
             self.combo3.addItem(str(i + 1))
@@ -131,13 +119,11 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
 
         hb1 = QtWidgets.QHBoxLayout()
         hb1.addWidget(self.xSizeLbl)
-        hb1.addWidget(self.xUpBtn)
-        hb1.addWidget(self.xDownBtn)
+        hb1.addWidget(self.x_sld)
         hb1.addWidget(self.xSizeTxt)
         hb2 = QtWidgets.QHBoxLayout()
         hb2.addWidget(self.ySizeLbl)
-        hb2.addWidget(self.yUpBtn)
-        hb2.addWidget(self.yDownBtn)
+        hb2.addWidget(self.y_sld)
         hb2.addWidget(self.ySizeTxt)
 
         hb3 = QtWidgets.QHBoxLayout()
@@ -171,7 +157,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
 
         vb4 = QtWidgets.QVBoxLayout()
         vb4.addLayout(hb10)
-        # vb4.addLayout(hb11)
+        # vb4xSldChange.addLayout(hb11)
         vb4.addLayout(hb12)
         vb4.addLayout(hb13)
 
@@ -186,32 +172,24 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
 
         self.setLayout(vb5)
 
-    def changeXSize(self):
-        self.xSize = int(self.xSizeTxt.text())
+    def xTxtChange(self):
+        try:
+            self.xSize = int(self.xSizeTxt.text())
+        except ValueError:
+            print('integer values only')
+        self.x_sld.setValue(self.xSize)
 
-    def changeYSize(self):
-        self.ySize = int(self.ySizeTxt.text())
+    def yTxtChange(self):
+        try:
+            self.ySize = int(self.ySizeTxt.text())
+        except ValueError:
+            print('integer values only')
+        self.y_sld.setValue(self.ySize)
 
-    def xUp(self):
-        self.changeXSize()
-        self.changeYSize()
-        self.xSize += 2
+    def xSldChange(self):
+        self.xSize = self.x_sld.value()
         self.xSizeTxt.setText(str(self.xSize))
 
-    def xDown(self):
-        self.changeXSize()
-        self.changeYSize()
-        self.xSize -= 2
-        self.xSizeTxt.setText(str(self.xSize))
-
-    def yUp(self):
-        self.changeXSize()
-        self.changeYSize()
-        self.ySize += 2
-        self.ySizeTxt.setText(str(self.ySize))
-
-    def yDown(self):
-        self.changeXSize()
-        self.changeYSize()
-        self.ySize -= 2
+    def ySldChange(self):
+        self.ySize = self.y_sld.value()
         self.ySizeTxt.setText(str(self.ySize))
