@@ -428,6 +428,13 @@ class XfluoGui(QtGui.QMainWindow):
         self.element_array = self.fileTableWidget.elementTableModel.arrayData
         #for fidx in range(len(file_array)):
 
+
+    def reset_widgets(self):
+        self.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
+        self.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
+        self.reconstructionWidget.recon = []
+        self.sinogramWidget.sld.setValue(0)
+
     def updateImages(self, from_open=False):
         self.data_history = []
         self.x_shifts_history = []
@@ -462,10 +469,10 @@ class XfluoGui(QtGui.QMainWindow):
         self.tab_widget.insertTab(3, self.sinogramWidget, "Alignment")
         self.tab_widget.insertTab(4, self.reconstructionWidget, "Reconstruction")
 
-
-
         # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_alignment(self.x_shifts, self.y_shifts)
+        self.reset_widgets()
+
 
     def update_recon(self, recon):
         self.recon = recon.copy()

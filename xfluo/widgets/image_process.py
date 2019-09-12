@@ -168,6 +168,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.elementChangedSig.emit(element, projection)
 
     def updateSliderSlot(self, index):
+        #TODO: thetas not necessarily defined here when selecting new dataset. figure out how to load thetas before calling this.
         angle = round(self.thetas[index])
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.lcd.display(angle)

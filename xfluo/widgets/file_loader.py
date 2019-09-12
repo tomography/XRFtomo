@@ -525,7 +525,6 @@ class FileTableWidget(QtWidgets.QWidget):
         self.data = self.normalizeData(data, quants, scalers)
         self.message.setText('finished loading')
 
-        self.reset_widgets()
         data[np.isnan(data)] = 0.0001
         data[data == np.inf] = 0.0001
 
