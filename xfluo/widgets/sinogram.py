@@ -185,10 +185,10 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data: ndarray
               4d tomographic data [element, projections, y,x]
         '''
-        # if self.data == None:
-        #     print('TODO: initialize data for sinogramwidget')
 
-        # else:
+        if element == -1: # escape if element == -1.
+            return
+
         sinodata = self.data[element, :, :, :]
 
         self.sinogramData = zeros([sinodata.shape[0] * 10, sinodata.shape[2]], dtype=float32)

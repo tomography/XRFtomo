@@ -345,6 +345,8 @@ class XfluoGui(QtGui.QMainWindow):
 
     def openExchange(self):
         fname = QtGui.QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
+        if fname[0] == '':
+            return
         data, self.elements, thetas = xfluo.read_exchange_file(fname)
 
         sort_angle_index = np.argsort(thetas)
@@ -378,7 +380,10 @@ class XfluoGui(QtGui.QMainWindow):
         self.prevTab = index
  
     def saveAlignemnt(self):
-        self.writer.save_alignemnt_information(self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        try:
+            self.writer.save_alignemnt_information(self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        except AttributeError:
+            print("Alignment data does not exist.")
         return
 
     def saveProjections(self):
@@ -428,12 +433,11 @@ class XfluoGui(QtGui.QMainWindow):
         self.element_array = self.fileTableWidget.elementTableModel.arrayData
         #for fidx in range(len(file_array)):
 
-
     def reset_widgets(self):
         self.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
         self.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
         self.reconstructionWidget.recon = []
-        self.sinogramWidget.sld.setValue(0)
+        self.sinogramWidget.sld.setValue(1)
 
     def updateImages(self, from_open=False):
         self.data_history = []
@@ -458,8 +462,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.data_history.append(self.data.copy())
         self.original_data = self.data.copy()
 
-        #update sinogram image
-
+        self.reset_widgets()
         self.imageProcessWidget.showImgProcess(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
         # self.hotspotWidget.showHotSpot(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
         self.sinogramWidget.showSinogram(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
@@ -476,8 +479,6 @@ class XfluoGui(QtGui.QMainWindow):
 
         # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_alignment(self.x_shifts, self.y_shifts)
-        self.reset_widgets()
-
 
     def update_recon(self, recon):
         self.recon = recon.copy()
@@ -528,38 +529,47 @@ class XfluoGui(QtGui.QMainWindow):
         return
 
     def undo(self):
-        if len(self.data_history) <=1:
-            print("maximum history stplt.imshow(self.data_history[1][0])ate reached, cannot undo further")
-        else:
-            del self.data_history[-1]
-            del self.x_shifts_history[-1]
-            del self.y_shifts_history[-1]
-            # del self.centers_history[-1]
-            self.data = self.data_history[-1]
-            self.x_shifts = self.x_shifts_history[-1]
-            self.y_shifts = self.y_shifts_history[-1]
-            # self.centers = self.centers_history[-1]
+        try:
+            if len(self.data_history) <=1:
+                print("maximum history stplt.imshow(self.data_history[1][0])ate reached, cannot undo further")
+            else:
+                del self.data_history[-1]
+                del self.x_shifts_history[-1]
+                del self.y_shifts_history[-1]
+                # del self.centers_history[-1]
+                self.data = self.data_history[-1]
+                self.x_shifts = self.x_shifts_history[-1]
+                self.y_shifts = self.y_shifts_history[-1]
+                # self.centers = self.centers_history[-1]
 
-            self.from_undo = True
-            self.update_data(np.copy(self.data))
-            # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
-            self.update_alignment(self.x_shifts, self.y_shifts)
+                self.from_undo = True
+                self.update_data(np.copy(self.data))
+                # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
+                self.update_alignment(self.x_shifts, self.y_shifts)
+
+        except AttributeError:
+            print("Load dataset first")
+            return
         self.from_undo = False
         print(len(self.data_history))
         return
 
     def restore(self):
-        num_projections = self.original_data.shape[1]
-        self.data = zeros(self.original_data.shape)
-        self.data[...] = self.original_data[...]
+        try:
+            num_projections = self.original_data.shape[1]
+            self.data = zeros(self.original_data.shape)
+            self.data[...] = self.original_data[...]
 
-        self.centers = [100,100,self.data.shape[3]//2]
-        self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
-        self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
+            self.centers = [100,100,self.data.shape[3]//2]
+            self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
+            self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
 
-        self.update_data(self.data)
-        # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
-        self.update_alignment(self.x_shifts, self.y_shifts)
+            self.update_data(self.data)
+            # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
+            self.update_alignment(self.x_shifts, self.y_shifts)
+        except AttributeError:
+            print("Load dataset first")
+            return
 
     def keyMapSettings(self):
         msg = QtGui.QMessageBox()
