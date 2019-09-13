@@ -264,10 +264,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.actions.shiftDataDown(self.data, self.thetas) 
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'Delete':
-            self.x_shifts = np.delete(self.x_shifts, index)
-            self.y_shifts = np.delete(self.y_shifts, index)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
             self.exclude_params()
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'Copy':
             self.copyBG_params()
         if command == 'Paste':
@@ -409,6 +407,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.fnames.pop(index)
         num_files = len(self.fnames)
         temp_thetas = np.delete(thetas, projection, 0)
+        self.y_shifts = np.delete(self.y_shifts, projection, 0)
+        self.x_shifts = np.delete(self.x_shifts, projection, 0)
 
         if index>0:
             index -= 1
@@ -416,6 +416,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         else:
             num_files -= 1
 
+
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         self.updateSldRange(index, temp_thetas)
         # projection, self.data, self.thetas = self.actions.exclude_projection(projection, data, thetas)
         self.actions.exclude_projection(projection, data, thetas)

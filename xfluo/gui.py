@@ -593,12 +593,6 @@ class XfluoGui(QtGui.QMainWindow):
         # self.imageProcessWidget.actions.x_shifts = self.x_shifts
         # self.imageProcessWidget.actions.y_shifts = self.y_shifts
         # self.imageProcessWidget.actions.centers = self.centers
-        # self.hotspotWidget.x_shifts = self.x_shifts
-        # self.hotspotWidget.y_shifts = self.y_shifts
-        # self.hotspotWidget.centers = self.centers
-        # self.hotspotWidget.actions.x_shifts = self.x_shifts
-        # self.hotspotWidget.actions.y_shifts = self.y_shifts
-        # self.hotspotWidget.actions.centers = self.centers
         self.sinogramWidget.x_shifts = self.x_shifts
         self.sinogramWidget.y_shifts = self.y_shifts
         # self.sinogramWidget.centers = self.centers
