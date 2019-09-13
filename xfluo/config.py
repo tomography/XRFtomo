@@ -80,7 +80,11 @@ SECTIONS['file-io'] = {
     'selected-elements': {
         'default': '[0,1]',
         'type': str,
-        'help': "list of selected elements indexes",
+        'help': "list of selected elements indexes"},
+    'quant-name': {
+        'default': 'SRcurrent',
+        'type': str,
+        'help': "normalize by this detector",
         'metavar': 'PATH'}
         }
 

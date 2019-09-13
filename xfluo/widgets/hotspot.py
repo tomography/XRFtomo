@@ -68,13 +68,35 @@ class HotspotWidget(QtWidgets.QWidget):
     def initUI(self):
         self.ViewControl =xfluo.HotspotControlsWidget()
         self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
+        self.actions = xfluo.HotspotActions()
+
         projViewBox = QtWidgets.QHBoxLayout()
         projViewBox.addWidget(self.ViewControl)
         projViewBox.addWidget(self.imgAndHistoWidget, 10)
         self.setLayout(projViewBox)
+        self.data = np.ndarray(shape=(1, 10, 10, 10), dtype=float)
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
+
+        self.ViewControl.boxUpBtn.clicked.connect(self.hotSpotBoxSizeChange)
+        self.ViewControl.boxDownBtn.clicked.connect(self.hotSpotBoxSizeChange)
+        self.ViewControl.btn1.clicked.connect(self.hotspot2line_params)
+        self.ViewControl.btn2.clicked.connect(self.hotspot2sine_params)
+        self.ViewControl.btn3.clicked.connect(self.setY_params)
+        self.ViewControl.btn4.clicked.connect(self.clrHotspot_params)
+        self.ViewControl.btn4.setEnabled(False)
+        self.ViewControl.btn3.setEnabled(False)
+        self.ViewControl.btn2.setEnabled(False)
+        self.ViewControl.btn1.setEnabled(False)
+
+        self.imgAndHistoWidget.view.keyPressSig.connect(self.keyProcess)
+        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+        self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
+
+
+
+
 
         palette = self.imgAndHistoWidget.lcd.palette()
         # foreground color
@@ -89,7 +111,6 @@ class HotspotWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.lcd.setPalette(palette)
 
     def showHotSpot(self, data, element_names, thetas, fnames, x_shifts, y_shifts, centers):
-        self.actions = xfluo.HotspotActions()
         self.x_shifts = x_shifts
         self.y_shifts = y_shifts
         self.centers = centers
@@ -100,6 +121,7 @@ class HotspotWidget(QtWidgets.QWidget):
         self.data = data
         self.thetas = thetas
         self.posMat = np.zeros((5,int(data.shape[1]),2))
+        self.imgAndHistoWidget.view.hotSpotNumb = 0
 
         self.ViewControl.combo1.clear()
         self.ViewControl.combo2.clear()
@@ -110,26 +132,9 @@ class HotspotWidget(QtWidgets.QWidget):
             self.ViewControl.combo2.addItem(str(k+1))
 
         # self.ViewControl.combo.currentIndexChanged.connect(self.saveHotSpotPos)
-        self.ViewControl.combo3.setVisible(False)
         self.elementChanged()
-        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
-
-        self.ViewControl.boxUpBtn.clicked.connect(self.hotSpotBoxSizeChange)
-        self.ViewControl.boxDownBtn.clicked.connect(self.hotSpotBoxSizeChange)
-        self.ViewControl.btn1.clicked.connect(self.hotspot2line_params)
-        self.ViewControl.btn2.clicked.connect(self.hotspot2sine_params)
-        self.ViewControl.btn3.clicked.connect(self.setY_params)
-        self.ViewControl.btn4.clicked.connect(self.clrHotspot_params)
-        self.ViewControl.btn4.setEnabled(False)
-        self.ViewControl.btn3.setEnabled(False)
-        self.ViewControl.btn2.setEnabled(False)
-        self.ViewControl.btn1.setEnabled(False)
-
-        # self.ViewControl.show()
-        self.imgAndHistoWidget.view.keyPressSig.connect(self.keyProcess)
-        self.imgAndHistoWidget.view.hotSpotNumb = 0
         self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
-        self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
+        self.ViewControl.combo3.setVisible(False)
         self.imgAndHistoWidget.file_name_title.setText(str(fnames[0]))
 
     def imageSliderChanged(self):
@@ -145,32 +150,21 @@ class HotspotWidget(QtWidgets.QWidget):
         self.updateElementSlot(element, projection)
         self.elementChangedSig.emit(element, projection)
 
-    def imageChanged(self):
-        index = self.imgAndHistoWidget.sld.value()
-        element = self.ViewControl.combo1.currentIndex()
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
-
     def updateSliderSlot(self, index):
         angle = round(self.thetas[index])
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.lcd.display(angle)
         self.imgAndHistoWidget.sld.setValue(index)
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :])
-        
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
+    
     def updateElementSlot(self, element, projection):
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :])
+        if projection == -1:
+            return
+        self.data[np.isnan(self.data)] = 0.0001
+        self.data[self.data == np.inf] = 0.0001
+        self.imgAndHistoWidget.view.projView.setImage(np.round(self.data[element, projection, :, :]), border='w')
         self.ViewControl.combo1.setCurrentIndex(element)
-        self.ViewControl.combo2.setCurrentIndex(projection)
-
-    def updateSldRange(self,  projection, data,  thetas):
-        self.thetas = thetas
-        self.data = data
-        element = self.ViewControl.combo1.currentIndex()
-        self.imgAndHistoWidget.sld.setRange(0, len(thetas) -1)
-        self.imgAndHistoWidget.lcd.display(thetas[projection])
-        self.imgAndHistoWidget.sld.setValue(projection)
-        self.imgAndHistoWidget.view.projView.setImage(data[element, projection])
-        self.posMat = np.zeros((5,int(data.shape[1]), 2))
+        self.ViewControl.combo2.setCurrentIndex(projection)   
 
     def updateFileDisplay(self, fnames, index):
         self.fnames = fnames
@@ -185,6 +179,21 @@ class HotspotWidget(QtWidgets.QWidget):
         self.y_pos = int(round(self.imgAndHistoWidget.view.y_pos))
         self.imgAndHistoWidget.view.ROI.setPos([self.x_pos-self.boxSize/2, self.y_pos-self.boxSize/2])
 
+    def imageChanged(self):
+        index = self.imgAndHistoWidget.sld.value()
+        element = self.ViewControl.combo1.currentIndex()
+        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
+    
+    def updateSldRange(self,  projection, data,  thetas):
+        self.thetas = thetas
+        self.data = data
+        element = self.ViewControl.combo1.currentIndex()
+        self.imgAndHistoWidget.sld.setRange(0, len(thetas) -1)
+        self.imgAndHistoWidget.lcd.display(thetas[projection])
+        self.imgAndHistoWidget.sld.setValue(projection)
+        self.imgAndHistoWidget.view.projView.setImage(data[element, projection], border='w')
+        self.posMat = np.zeros((5,int(data.shape[1]), 2))
+
     def keyProcess(self, command):
         x_pos, y_pos, boxSize, hs_group, data = self.get_params()
         hs_group = self.ViewControl.combo2.currentIndex()
@@ -192,7 +201,7 @@ class HotspotWidget(QtWidgets.QWidget):
         # self.posMat[hs_group, hs_number] = [x_pos, y_pos]
         
         if command == 'Next':
-            self.posMat[int(hs_group), int(hs_number)] = [x_pos, y_pos]
+            self.posMat[int(hs_group), int(hs_number)-1] = [x_pos, y_pos]
             if hs_number < self.posMat.shape[1]:
                 print("n")
                 print("Total projections", self.posMat.shape[1], "current position", hs_number+1, "group number", hs_group + 1)
@@ -208,11 +217,11 @@ class HotspotWidget(QtWidgets.QWidget):
             self.ViewControl.btn4.setEnabled(True)
 
         if command == 'Skip':
-            self.posMat[int(hs_group), int(hs_number)] = [0, 0]
+            self.posMat[int(hs_group), int(hs_number)-1] = [0, 0]
             if hs_number < self.posMat.shape[1]:
                 hs_number += 1
                 self.sliderChangedSig.emit(hs_number)
-                
+
     def hotSpotSetChanged(self):
         self.imgAndHistoWidget.view.hotSpotSetNumb = self.ViewControl.combo2.currentIndex()
         # self.actions.saveHotSpotPos()

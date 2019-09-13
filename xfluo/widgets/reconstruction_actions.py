@@ -43,7 +43,7 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal
 import numpy as np
 from pylab import *
@@ -81,7 +81,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 				algorithm='mlem', center=recCenter, num_iter=iters)
 		elif method == 1:
 			self.recon= tomopy.recon(recData, thetas, 
-				algorithm='gridrec', emission=True)
+				algorithm='gridrec')
 		elif method == 2:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
 				algorithm='art', num_iter=iters)
@@ -93,9 +93,30 @@ class ReconstructionActions(QtWidgets.QWidget):
 			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
 				algorithm='pml_quad', center=recCenter,
 				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
+		elif method == 5:
+			self.recon= tomopy.recon(recData, thetas, 
+				algorithm='fbp')
+		elif method == 6:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
+				algorithm='sirt', num_iter=iters)
+		elif method == 7:
+			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='tv', center=recCenter,
+				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
 
 		self.recon = tomopy.remove_nan(self.recon)
 		return self.recon
+	def reconstructAll(self, data, element_names, box_checked, center, method, beta, delta, iters, thetas):
+		print("This will take a while")
+		save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+		num_elements = data.shape[0]
+		for i in range(num_elements):
+			print("running reconstruction for:", element_names[i])
+			recon = self.reconstruct(data, i, box_checked, center, method, beta, delta, iters, thetas)
+			savedir = save_path+'/'+element_names[i]
+			xfluo.SaveOptions.save_reconstruction(self, recon, savedir)
+
+		return recon
 
 	def reconMultiply(self):
 		'''

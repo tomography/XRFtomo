@@ -143,6 +143,7 @@ class HotspotActions(QtWidgets.QWidget):
 		# self.recon.sld.setValue(self.centers[2])
 
 		print("align done")
+		self.centers = list(np.round(self.centers))
 		return self.x_shifts, self.y_shifts, self.centers
 		
 
@@ -159,13 +160,16 @@ class HotspotActions(QtWidgets.QWidget):
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
 				yyshift = int(round(boxSize2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
 				data[:, j, :, :] = np.roll(data[:, j, :, :], yyshift, axis=1)
-
 			if hs_y_pos[j] == 0:
 				yyshift = 0
 
 			self.y_shifts[j] += yyshift
 
 		print("align done")
+		self.centers = list(np.round(self.centers))
+		return self.x_shifts, self.y_shifts, self.centers
+
+
 
 	def alignment_parameters(self, element, boxSize, hs_group, posMat, data):
 		self.posMat = posMat
@@ -220,20 +224,19 @@ class HotspotActions(QtWidgets.QWidget):
 		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
 		errfunc = lambda p, x, y: fitfunc(p, x) - y
 		p0 = [100, 100, 100]
-		self.centers, success = optimize.leastsq(errfunc, p0, args=(x, com))
-		self.centerOfMassDiff = fitfunc(x) - com
+		self.centers, success = optimize.leastsq(errfunc, np.asarray(p0), args=(x, com))
+		self.centerOfMassDiff = fitfunc(p0, x) - com
 		print(self.centerOfMassDiff)
 
 	def fitCenterOfMass2(self, com, x):
 		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + self.centers[2]
 		errfunc = lambda p, x, y: fitfunc(p, x) - y
 		p0 = [100, 100]
-		p2, success = optimize.leastsq(errfunc, p0, args=(x, com))
+		p2, success = optimize.leastsq(errfunc, np.asarray(p0), args=(x, com))
 		self.centerOfMassDiff = fitfunc(p2, x) - com
 		print(self.centerOfMassDiff)
 
 	def alignCenterOfMass2(self, hotspotProj, data):
-
 		j = 0
 		for i in hotspotProj:
 			self.x_shifts[i] += int(self.centerOfMassDiff[j])
@@ -255,6 +258,7 @@ class HotspotActions(QtWidgets.QWidget):
 		"""Returns (height, x, y, width_x, width_y)
 		the gaussian parameters of a 2D distribution by calculating its
 		moments """
+		#TODO: sometimes data == 0 causing division by error.
 		total = data.sum()
 		X, Y = indices(data.shape)
 		x = (X * data).sum() / total

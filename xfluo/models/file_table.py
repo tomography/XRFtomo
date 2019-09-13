@@ -183,8 +183,11 @@ class FileTableModel(QtCore.QAbstractTableModel):
     def update_thetas(self, thetas):
         topLeft = self.index(0, self.COL_THETA)
         bottomRight = self.index(len(self.arrayData), self.COL_THETA)
-        for i in range(len(self.arrayData)):
-            self.arrayData[i].theta = thetas[i]
+        try:
+            for i in range(len(self.arrayData)):
+                self.arrayData[i].theta = thetas[i]
+        except:
+            print("something is off here")
         self.dataChanged.emit(topLeft, bottomRight)
         return 
         
