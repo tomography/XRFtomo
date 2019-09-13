@@ -200,8 +200,8 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinoView.projView.setImage(self.sinogramData, border='w')
         if len(self.thetas) > 0:
             self.sinoView.projView.setRect(QtCore.QRect(round(self.thetas[0]), 0, round(self.thetas[-1])- round(self.thetas[0]), self.sinogramData.shape[1]))
-        else:
-            print("Warning: Could not set Rect for sinogram. TODO: Look into why this happens")
+        # else:
+            # print("Warning: Could not set Rect for sinogram. TODO: Look into why this happens")
         self.sinoChangedSig.emit(self.sinogramData)
         return
 

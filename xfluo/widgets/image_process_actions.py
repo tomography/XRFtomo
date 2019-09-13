@@ -260,7 +260,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 			hotspotYPos[i] = int(round(hs_y_pos[i]))
 			hotspotXPos[i] = int(round(hs_x_pos[i]))
 		hotspotProj = np.where(hotspotXPos != 0)[0]
-		print(hotspotProj)
 
 		theta_tmp = theta[hotspotProj]
 		com = hotspotXPos[hotspotProj]
@@ -275,7 +274,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		for i in hotspotProj:
 			self.y_shifts[i] += int(hotspotYPos[hotspotProj[0]]) - int(hotspotYPos[i])
 			data[:, i, :, :] = np.roll(data[:, i, :, :], self.y_shifts[i], axis=1)
-			print(int(hotspotYPos[0]) - int(hotspotYPos[i]))
 
 		#update reconstruction slider value
 		# self.recon.sld.setValue(self.centers[2])
@@ -402,27 +400,47 @@ class ImageProcessActions(QtWidgets.QWidget):
 		the gaussian parameters of a 2D distribution by calculating its
 		moments """
 		#TODO: sometimes data == 0 causing division by error.
+		#this is due to selecting areas of low signal resulting in pixel value where the rows
+		#or columns sum to zero, thus division by zero.
 
 		total = data.sum()
-		X, Y = indices(data.shape)
-		x = (X * data).sum() / total
-		y = (Y * data).sum() / total
+		if total == 0:
+			x = 0
+			y = 0
+		else:
+			X, Y = indices(data.shape)
+			x = (X * data).sum() / total
+			y = (Y * data).sum() / total
+
 		col = data[:, int(y)]
-		width_x = sqrt(abs((arange(col.size) - y) ** 2 * col).sum() / col.sum())
+
+		if col.sum() == 0:
+			width_x = 0
+		else:
+			width_x = sqrt(abs((arange(col.size) - y) ** 2 * col).sum() / col.sum())
 		# TODO: rundime wasrning: invalid value encountered in double_scalars
-		print(col.size)
-		print(y)
-		print(col.sum())
 
 		row = data[int(x), :]
-		width_y = sqrt(abs((arange(row.size) - x) ** 2 * row).sum() / row.sum())
+		if row.sum() == 0:
+			width_y = 0
+		else:
+			width_y = sqrt(abs((arange(row.size) - x) ** 2 * row).sum() / row.sum())
+
 		height = data.max()
+
 		return height, x, y, width_x, width_y
 
 	def gaussian(self, height, center_x, center_y, width_x, width_y):
 		"""Returns a gaussian function with the given parameters"""
 		width_x = float(width_x)
 		width_y = float(width_y)
+		if width_x == 0:
+			return lambda x, y: 0
+		if width_y == 0:
+			return lambda x, y: 0
+
+		# ss = lambda x, y: height * exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
+
 		return lambda x, y: height * exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
 
 	def clrHotspot(self, posMat):

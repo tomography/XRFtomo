@@ -511,11 +511,16 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
         #self.parent.params.detector_tag = self.scaler_option.currentText()
 
+
         if len(elements) == 0:
             self.message.setText('no element selected.')
             return [], [] , [], []
         else:
             self.message.setText('loading files...')
+        if all(x==thetas[0] for x in thetas):           #check if all values in thetas are the same: no theta info.
+            self.message.setText('No angle information. Double check Theta PV')
+            return [], [] , [], []
+
 
 
         self.parent.clear_all()
