@@ -51,11 +51,11 @@ from pylab import *
 from xfluo.file_io.reader import *
 # from widgets.file_widget import  FileTableWidget
 # from widgets.image_process_widget import ImageProcessWidget
-# from widgets.hotspot_widget import HotspotWidget
 # from widgets.sinogram_widget import SinogramWidget
 # from widgets.reconstruction_widget import ReconstructionWidget
 import json
 import os
+import time
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
@@ -65,7 +65,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.params = params
         self.param_list = {}
         self.app = app
-        self.get_values_from_params()
+        # self.get_values_from_params()
         self.initUI()
 
     def initUI(self):
@@ -81,12 +81,6 @@ class XfluoGui(QtGui.QMainWindow):
         openExchangeAction.triggered.connect(self.openExchange)
         openExchangeAction.setShortcut('Ctrl+O')
 
-        #openFileAction = QtGui.QAction('Open File', self)
-        #openFileAction.triggered.connect(self.openfile)
-
-        #openFolderAction = QtGui.QAction('Open Folder', self)
-        #openFolderAction.triggered.connect(self.openFolder)
-
         #openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
         #openTiffFolderAction.triggered.connect(self.openTiffFolder)
 
@@ -99,7 +93,7 @@ class XfluoGui(QtGui.QMainWindow):
         saveSinogramAction = QtGui.QAction('Sinogram', self)
         saveSinogramAction.triggered.connect(self.saveSinogram)
 
-        saveSinogram2Action = QtGui.QAction('Sinogram2', self)
+        saveSinogram2Action = QtGui.QAction('Sinogram stack', self)
         saveSinogram2Action.triggered.connect(self.saveSinogram2)
 
         savephysicalPosition = QtGui.QAction('Angle and motor positions', self)
@@ -108,52 +102,20 @@ class XfluoGui(QtGui.QMainWindow):
         saveReconstructionAction = QtGui.QAction('Reconstruction', self)
         saveReconstructionAction.triggered.connect(self.saveReconstruction)
 
-        saveToHDFAction = QtGui.QAction('HDF file', self)
+        saveToHDFAction = QtGui.QAction('as HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
 
-        saveToNumpyAction = QtGui.QAction("Numpy file", self)
+        saveToNumpyAction = QtGui.QAction("as Numpy file", self)
         saveToNumpyAction.triggered.connect(self.saveToNumpy)
 
         saveAlignemtInfoAction = QtGui.QAction("Alignment", self)
         saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
-
-        #selectElementAction = QtGui.QAction('Select Element', self)
-        #selectElementAction.triggered.connect(self.selectElement)
-
-        #selectFilesAction = QtGui.QAction('Select Files', self)
-        #selectFilesAction.triggered.connect(self.selectFilesShow)
-
-        #saveThetaTxtAction = QtGui.QAction("Save Theta Postion as txt", self)
-        #saveThetaTxtAction.triggered.connect(self.saveThetaTxt)
-
-        #convertAction = QtGui.QAction('Save data in memory', self)
-        #convertAction.triggered.connect(self.convert)
-
-        runReconstructAction = QtGui.QAction("Reconstruction", self)
-        #runReconstructAction.triggered.connect(self.runReconstruct)
 
         runTransRecAction = QtGui.QAction("Transmission Recon", self)
         #runTransRecAction.triggered.connect(self.runTransReconstruct)
 
         # selectImageTagAction = QtGui.QAction("Select Image Tag", self)
         #selectImageTagAction.triggered.connect(self.selectImageTag)
-
-        # xCorAction = QtGui.QAction("Cross Correlation", self)
-        #xCorAction.triggered.connect(self.CrossCorrelation_test)
-
-        # phaseXCorAction = QtGui.QAction("Phase Correlation", self)
-        #phaseXCorAction.triggered.connect(self.CrossCorrelation_test)
-
-        # alignFromTextAction = QtGui.QAction("Alignment from Text", self)
-        #alignFromTextAction.triggered.connect(self.alignFromText)
-
-        # alignFromText2Action = QtGui.QAction("Alignment from Text2", self)
-        #alignFromText2Action.triggered.connect(self.alignFromText2)
-
-        # saveAlignToTextAction = QtGui.QAction("Save Alignment information to text", self)
-        #saveAlignToTextAction.triggered.connect(self.saveAlignToText)
-
-
 
         undoAction = QtGui.QAction('Undo (Ctrl+Z)', self)
         undoAction.triggered.connect(self.undo)
@@ -165,29 +127,11 @@ class XfluoGui(QtGui.QMainWindow):
         keyMapAction = QtGui.QAction('key map settings', self)
         keyMapAction.triggered.connect(self.keyMapSettings)
 
-        # readConfigAction = QtGui.QAction("Read configuration file", self)
-        #readConfigAction.triggered.connect(self.readConfigFile)
-
-        # runCenterOfMassAction = QtGui.QAction("run center of mass action", self)
-        #runCenterOfMassAction.triggered.connect(self.centerOfMassWindow)
-
-        # alignCenterOfMassAction = QtGui.QAction("Align by fitting center of mass position into sine curve", self)
-        #alignCenterOfMassAction.triggered.connect(self.alignCenterOfMass)
-
         # matcherAction = QtGui.QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
 
-        # configurationAction = QtGui.QAction("Configuration Window", self)
-        #configurationAction.triggered.connect(self.configurationWindow)
-
-        # exportDataAction = QtGui.QAction("export data", self)
-        #exportDataAction.triggered.connect(self.export_data)
-
         # saveHotSpotPosAction = QtGui.QAction("Save Hot Spot Pos", self)
         #saveHotSpotPosAction.triggered.connect(self.saveHotSpotPos)
-
-        # alignHotSpotPosAction = QtGui.QAction("Align Hot Spot pos", self)
-        #alignHotSpotPosAction.triggered.connect(self.alignHotSpotPos1)
 
         wienerAction = QtGui.QAction("Wiener", self)
         #wienerAction.triggered.connect(self.ipWiener)
@@ -205,21 +149,22 @@ class XfluoGui(QtGui.QMainWindow):
         #     theta_auto_completes = []
         self.fileTableWidget = xfluo.FileTableWidget(self)
         self.imageProcessWidget = xfluo.ImageProcessWidget()
-        # self.hotspotWidget = xfluo.HotspotWidget()
         self.sinogramWidget = xfluo.SinogramWidget()
         self.reconstructionWidget = xfluo.ReconstructionWidget()
         self.writer = xfluo.SaveOptions()
 
+
+        #refresh UI
+        # self.imageProcessWidget.refreshSig.connect(self.refreshUI)
+
+        #sinogram changed
         self.sinogramWidget.sinoChangedSig.connect(self.update_sino)
 
         #slider change
         self.imageProcessWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
-        # self.hotspotWidget.sliderChangedSig.connect(self.imageProcessWidget.updateSliderSlot)
 
         #element dropdown change
-        # self.imageProcessWidget.elementChangedSig.connect(self.hotspotWidget.updateElementSlot)
         self.imageProcessWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
-        # self.hotspotWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
         self.sinogramWidget.elementChangedSig.connect(self.reconstructionWidget.updateElementSlot)
         self.reconstructionWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
 
@@ -232,38 +177,33 @@ class XfluoGui(QtGui.QMainWindow):
 
         #data dimensions changed
         self.imageProcessWidget.ySizeChanged.connect(self.sinogramWidget.yChanged)
-        # self.actions = xfluo.ImageProcessActions(self)
-
-        #slider range change
-        # self.imageProcessWidget.sldRangeChanged.connect(self.hotspotWidget.updateSldRange)
-        # self.hotspotWidget.sldRangeChanged.connect(self.imageProcessWidget.updateSldRange)
-        #filenames changed
-        # self.imageProcessWidget.fnamesChanged.connect(self.hotspotWidget.updateFileDisplay)
 
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
-        # self.hotspotWidget.alignmentChangedSig.connect(self.update_alignment)
         self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)
+
+        #fnames changed 
+        self.imageProcessWidget.fnamesChanged.connect(self.update_filenames)
 
         #update_reconstructed_data
         self.reconstructionWidget.reconChangedSig.connect(self.update_recon)
 
 
 
-
         self.prevTab = 0
         self.TAB_FILE = 0
         self.TAB_IMAGE_PROC = 1
-        # self.TAB_HOTSPOT = 2
-        self.TAB_SINOGRAM = 3
-        self.TAB_RECONSTRUCTION = 4
+        self.TAB_SINOGRAM = 2
+        self.TAB_RECONSTRUCTION = 3
 
         self.tab_widget = QtWidgets.QTabWidget()
         self.tab_widget.addTab(self.fileTableWidget, 'Files')
         self.tab_widget.addTab(self.imageProcessWidget, "Pre Processing")
-        # self.tab_widget.addTab(self.hotspotWidget, "Hotspot")
         self.tab_widget.addTab(self.sinogramWidget, "Alignment")
         self.tab_widget.addTab(self.reconstructionWidget, "Reconstruction")
+        self.tab_widget.setTabEnabled(1,False)
+        self.tab_widget.setTabEnabled(2,False)
+        self.tab_widget.setTabEnabled(3,False)
 
         self.tab_widget.currentChanged.connect(self.onTabChanged)
         self.fileTableWidget.saveDataBtn.clicked.connect(self.updateImages)
@@ -278,36 +218,20 @@ class XfluoGui(QtGui.QMainWindow):
         menubar = self.menuBar()
         self.fileMenu = menubar.addMenu('&File')
         self.fileMenu.addAction(openExchangeAction)
-        # self.fileMenu.addAction(configurationAction) #to replace readconfiguration Action
-        # self.fileMenu.addAction(readConfigAction)
         ##self.fileMenu.addAction(openFileAction)
         #self.fileMenu.addAction(openFolderAction)
         #self.fileMenu.addAction(openTiffFolderAction)
         self.fileMenu.addAction(exitAction)
         self.fileMenu.addAction(closeAction)
 
-        # self.optionMenu = menubar.addMenu('Convert Option')
-        #self.optionMenu.addAction(selectFilesAction)
-        # self.optionMenu.addAction(selectImageTagAction)
-        #self.optionMenu.addAction(selectElementAction)
-        #self.optionMenu.addAction(convertAction)
-        #self.optionMenu.setDisabled(True)
-
         self.editMenu = menubar.addMenu("Edit")
         self.editMenu.addAction(undoAction)
-        # self.editMenu.addAction(saveAlignToTextAction)
-        # self.editMenu.addAction(runCenterOfMassAction)
-        # self.editMenu.addAction(alignCenterOfMassAction)
-        # self.editMenu.addAction(xCorAction)
-        # self.editMenu.addAction(phaseXCorAction)
         # self.editMenu.addAction(matcherAction)
-        # self.editMenu.addAction(alignFromTextAction)
-        # self.editMenu.addAction(alignFromText2Action)
         # self.editMenu.addAction(saveHotSpotPosAction)
         # self.editMenu.addAction(alignHotSpotPosAction)
         # self.editMenu.addAction(externalImageRegAction)
         self.editMenu.addAction(restoreAction)
-        #self.editMenu.setDisabled(True)
+        self.editMenu.setDisabled(True)
 
         self.afterConversionMenu = menubar.addMenu('Save')
         self.afterConversionMenu.addAction(saveProjectionAction)
@@ -322,10 +246,7 @@ class XfluoGui(QtGui.QMainWindow):
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(keyMapAction)
-
-        #self.afterConversionMenu.addAction(saveThetaTxtAction)
-        # self.afterConversionMenu.addAction(selectElementAction)
-        #self.afterConversionMenu.setDisabled(True)
+        self.afterConversionMenu.setDisabled(True)
 
         add = 0
         if sys.platform == "win32":
@@ -353,17 +274,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.thetas= thetas[sort_angle_index]
         self.data = data[:,sort_angle_index,:,:]
         self.fnames = ["projection {}".format(x) for x in self.thetas]
-        # for j in elements:
-        #     self.imageProcessWidget.ViewControl.combo1.addItem(j)
-        #     self.hotspotWidget.ViewControl.combo1.addItem(j)
-        #     self.sinogramWidget.ViewControl.combo1.addItem(j)
-        #     self.reconstructionWidget.ViewControl.combo1.addItem(j)
-
-        # self.imageProcessWidget.updateSldRange(0,thetas)
-        # self.hotspotWidget.updateSldRange(0,data,thetas)
-
         self.updateImages(True)
-
         return
 
     def onTabChanged(self, index):
@@ -371,8 +282,6 @@ class XfluoGui(QtGui.QMainWindow):
             self.loadImages()
         elif self.prevTab == self.TAB_IMAGE_PROC:
             pass
-        # elif self.prevTab == self.TAB_HOTSPOT:
-        #     pass
         elif self.prevTab == self.TAB_SINOGRAM:
             pass
         elif self.prevTab == self.TAB_RECONSTRUCTION:
@@ -443,11 +352,16 @@ class XfluoGui(QtGui.QMainWindow):
         self.data_history = []
         self.x_shifts_history = []
         self.y_shifts_history = []
+        self.theta_history = []
+        self.fname_history = []
         # self.centers_history = []
         self.from_undo = False
 
         if not from_open:
+            self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
             self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
+            self.app.restoreOverrideCursor()
+
             if len(self.data) == 0:
                 return
             if len(self.elements) == 0:
@@ -456,29 +370,64 @@ class XfluoGui(QtGui.QMainWindow):
                 return
             if len(self.fnames) == 0:
                 return
+
         self.centers = [100,100,self.data.shape[3]//2]
         self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
         self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
         self.data_history.append(self.data.copy())
+        self.fname_history.append(self.fnames.copy())
+        self.theta_history.append(self.thetas.copy())
         self.original_data = self.data.copy()
+        self.original_fnames = self.fnames.copy()
+        self.original_thetas = self.thetas.copy()
 
+        self.refreshUI()
         self.reset_widgets()
-        self.imageProcessWidget.showImgProcess(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        # self.hotspotWidget.showHotSpot(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        self.sinogramWidget.showSinogram(self.data, self.elements, self.thetas, self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        self.reconstructionWidget.showReconstruct(self.data, self.elements, self.fnames, self.thetas, self.x_shifts, self.y_shifts, self.centers)
+        self.init_widgets()
+        self.imageProcessWidget.showImgProcess()
+        self.sinogramWidget.showSinogram()
+        self.reconstructionWidget.showReconstruct()
 
+        self.tab_widget.setTabEnabled(1,True)
+        self.tab_widget.setTabEnabled(2,True)
+        self.tab_widget.setTabEnabled(3,True)
+        self.afterConversionMenu.setDisabled(False)
+        self.editMenu.setDisabled(False)
+        # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
+        self.update_alignment(self.x_shifts, self.y_shifts)
+
+    def refreshUI(self):
         self.tab_widget.removeTab(1)
         self.tab_widget.removeTab(2)
         self.tab_widget.removeTab(3)
-        self.tab_widget.removeTab(4)
         self.tab_widget.insertTab(1, self.imageProcessWidget, "Pre Processing")
-        # self.tab_widget.insertTab(2, self.hotspotWidget, "Hotspot")
-        self.tab_widget.insertTab(3, self.sinogramWidget, "Alignment")
-        self.tab_widget.insertTab(4, self.reconstructionWidget, "Reconstruction")
+        self.tab_widget.insertTab(2, self.sinogramWidget, "Alignment")
+        self.tab_widget.insertTab(3, self.reconstructionWidget, "Reconstruction")
 
-        # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
-        self.update_alignment(self.x_shifts, self.y_shifts)
+    def init_widgets(self):
+        self.imageProcessWidget.data = self.data
+        self.imageProcessWidget.elements = self.elements
+        self.imageProcessWidget.thetas = self.thetas
+        self.imageProcessWidget.fnames = self.fnames
+        self.imageProcessWidget.x_shifts = self.x_shifts
+        self.imageProcessWidget.y_shifts = self.y_shifts
+        self.imageProcessWidget.centers = self.centers
+
+        self.sinogramWidget.data = self.data 
+        self.sinogramWidget.elements = self.elements 
+        self.sinogramWidget.thetas = self.thetas 
+        self.sinogramWidget.fnames = self.fnames 
+        self.sinogramWidget.x_shifts = self.x_shifts 
+        self.sinogramWidget.y_shifts = self.y_shifts 
+        self.sinogramWidget.centers = self.centers 
+
+        self.reconstructionWidget.data = self.data 
+        self.reconstructionWidget.elements = self.elements 
+        self.reconstructionWidget.thetas = self.thetas 
+        self.reconstructionWidget.fnames = self.fnames
+        self.reconstructionWidget.x_shifts = self.x_shifts
+        self.reconstructionWidget.y_shifts = self.y_shifts
+        self.reconstructionWidget.centers = self.centers
 
     def update_recon(self, recon):
         self.recon = recon.copy()
@@ -492,8 +441,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.data = data 
         self.imageProcessWidget.data = self.data
         self.imageProcessWidget.imageChanged()
-        # self.hotspotWidget.data = self.data
-        # self.hotspotWidget.imageChanged()
         self.sinogramWidget.data = self.data
         self.sinogramWidget.imageChanged()
         self.reconstructionWidget.data = self.data
@@ -506,23 +453,68 @@ class XfluoGui(QtGui.QMainWindow):
             if len(self.data_history) > 10:
                 del self.data_history[0]
             print(len(self.data_history))
-
-        return self.data_history
+        return
 
     def update_theta(self, thetas):
         self.thetas = thetas
         self.imageProcessWidget.thetas = self.thetas
-        # self.hotspotWidget.thetas = self.thetas
         self.sinogramWidget.thetas = self.thetas
+
+        if self.from_undo:
+            return
+        else:
+            self.theta_history.append(self.thetas.copy())
+            if len(self.theta_history) > 10:
+                del self.theta_history[0]
         return
-    
+
+    def update_alignment(self, x_shifts, y_shifts):
+        self.x_shifts = x_shifts
+        self.y_shifts = y_shifts
+        # self.centers = centers 
+        self.imageProcessWidget.x_shifts = self.x_shifts
+        self.imageProcessWidget.y_shifts = self.y_shifts
+        self.sinogramWidget.x_shifts = self.x_shifts
+        self.sinogramWidget.y_shifts = self.y_shifts
+        self.sinogramWidget.actions.x_shifts = self.x_shifts
+        self.sinogramWidget.actions.y_shifts = self.y_shifts
+        # self.sinogramWidget.actions.centers = self.centers
+
+        if self.from_undo:
+            return
+        else:
+            self.x_shifts_history.append(x_shifts.copy())
+            self.y_shifts_history.append(y_shifts.copy())
+            # self.centers_history.append(self.centers.copy())
+            if len(self.x_shifts_history) > 10:
+                del self.x_shifts_history[0]
+                del self.y_shifts_history[0]
+                # del self.centers[0]
+        return
+        
+    def update_filenames(self, fnames):
+        self.fnames = fnames 
+        self.imageProcessWidget.fnames = fnames
+        if self.from_undo:
+            return
+        else:
+            self.fname_history.append(fnames.copy())
+            if len(self.fname_history) > 10:
+                del self.fname_history[0]
+        return
+
+    def update_slider_range(self, thetas):
+        index = self.imageProcessWidget.imgAndHistoWidget.sld.value()
+        self.imageProcessWidget.updateSldRange(index, thetas)
+        return
+
     def clear_all(self):
         self.data_history = []
         self.x_shifts_history = []
         self.y_shifts_history = []
+        self.fname_history = []
         self.update_alignment([],[])
-        self.update_theta([])
-        # # self.update_data([])
+
         # self.update_recon([])
         # self.update_sino([])
 
@@ -536,16 +528,22 @@ class XfluoGui(QtGui.QMainWindow):
                 del self.data_history[-1]
                 del self.x_shifts_history[-1]
                 del self.y_shifts_history[-1]
+                del self.theta_history[-1]
+                del self.fname_history[-1]
                 # del self.centers_history[-1]
                 self.data = self.data_history[-1]
                 self.x_shifts = self.x_shifts_history[-1]
                 self.y_shifts = self.y_shifts_history[-1]
+                self.thetas = self.theta_history[-1]
+                self.fnames = self.fname_history[-1]
                 # self.centers = self.centers_history[-1]
 
                 self.from_undo = True
                 self.update_data(np.copy(self.data))
-                # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
-                self.update_alignment(self.x_shifts, self.y_shifts)
+                self.update_theta(np.copy(self.thetas))
+                self.update_alignment(np.copy(self.x_shifts), np.copy(self.y_shifts))
+                self.update_range(self.thetas)
+                self.update_filenames(self.fnames)
 
         except AttributeError:
             print("Load dataset first")
@@ -583,45 +581,6 @@ class XfluoGui(QtGui.QMainWindow):
         msg.setWindowTitle("key map")
         msg.exec_()
 
-    def update_alignment(self, x_shifts, y_shifts):
-        self.x_shifts = x_shifts
-        self.y_shifts = y_shifts
-        # self.centers = centers 
-        self.imageProcessWidget.x_shifts = self.x_shifts
-        self.imageProcessWidget.y_shifts = self.y_shifts
-        # self.imageProcessWidget.centers = self.centers
-        # self.imageProcessWidget.actions.x_shifts = self.x_shifts
-        # self.imageProcessWidget.actions.y_shifts = self.y_shifts
-        # self.imageProcessWidget.actions.centers = self.centers
-        self.sinogramWidget.x_shifts = self.x_shifts
-        self.sinogramWidget.y_shifts = self.y_shifts
-        # self.sinogramWidget.centers = self.centers
-        self.sinogramWidget.actions.x_shifts = self.x_shifts
-        self.sinogramWidget.actions.y_shifts = self.y_shifts
-        # self.sinogramWidget.actions.centers = self.centers
-
-        if self.from_undo:
-            return
-        else:
-            self.x_shifts_history.append(self.x_shifts.copy())
-            self.y_shifts_history.append(self.y_shifts.copy())
-            # self.centers_history.append(self.centers.copy())
-            if len(self.x_shifts_history) > 10:
-                del self.x_shifts_history[0]
-                del self.y_shifts_history[0]
-                # del self.centers[0]
-        return
-
-    def get_values_from_params(self):
-        # self.param_list[0] = self.params.theta_pv
-        # self.param_list[1] = self.params.input_path
-        # self.param_list[2] = self.params.image_tag
-        # self.param_list[3] = self.params.data_tag
-        # self.param_list[4] = self.params.element_tag
-        # self.param_list[5] = self.params.sorted_angles
-        # self.param_list[6] = self.params.selected_elements
-        pass
-        
     def closeEvent(self, event):
         try:
             sections = config.TOMO_PARAMS + ('gui', 'file-io')

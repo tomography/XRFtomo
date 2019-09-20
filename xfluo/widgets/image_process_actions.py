@@ -32,7 +32,7 @@
 # THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENTn SHALL UChicago     #
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENTn SHALL UChicago    #
 # Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
 # INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
 # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
@@ -162,21 +162,24 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 		self.dataSig.emit(data)
 
-	def exclude_projection(self, projection, data, thetas):
+
+
+
+	def exclude_projection(self, index, data, thetas, fnames, x_shifts, y_shifts):
 		num_projections = len(thetas)
-		data = np.delete(data, projection, 1)
-		thetas = np.delete(thetas, projection, 0)
-		
-		if projection>0:
-			projection -= 1
+		data = np.delete(data, index, 1)
+		thetas = np.delete(thetas, index, 0)
+		y_shifts = np.delete(y_shifts, index, 0)
+		x_shifts = np.delete(x_shifts, index, 0)
+		fnames.pop(index)
+
+		if index>0:
+			index -= 1
 			num_projections -=1
 		else:
 			num_projections -= 1
 
-		self.dataSig.emit(data)
-		self.thetaSig.emit(thetas)
-		# return projection, data, thetas
-		return
+		return index, data, thetas, fnames, x_shifts, y_shifts
 
 	def saveHotspot(self):
 		# if self.hotSpotNumb < self.data.shape[0]:

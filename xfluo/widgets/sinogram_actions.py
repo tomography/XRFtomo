@@ -127,8 +127,7 @@ class SinogramActions(QtWidgets.QWidget):
             data, sinogramData = self.shift(sinogramData, data, lin_shift[i], i)
 
         return lin_shift, data, sinogramData
-
-
+        
     def crossCorrelate(self, element, data):
 
         num_projections = data.shape[1]

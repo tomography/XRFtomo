@@ -87,25 +87,20 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.centers = None
         self.recon = None
 
-    def showReconstruct(self, data, elements, fnames, thetas, x_shifts, y_shifts, centers):
+    def showReconstruct(self):
         '''
         load window for reconstruction window
         '''
         self.write = xfluo.SaveOptions()
-        self.x_shifts = x_shifts
-        self.y_shifts = y_shifts
-        self.centers = centers
         self.actions.x_shifts = self.x_shifts
         self.actions.y_shifts = self.y_shifts
         self.actions.centers = self.centers
-        self.fnames = fnames
-        self.data = data
         self.y_range = self.data.shape[2]
-        self.thetas = thetas
+
         self.ViewControl.combo1.clear()
         self.ViewControl.method.clear()
         methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
-        for j in elements:
+        for j in self.elements:
             self.ViewControl.combo1.addItem(j)
         for k in arange(len(methodname)):
             self.ViewControl.method.addItem(methodname[k])

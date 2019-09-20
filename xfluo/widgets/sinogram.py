@@ -122,22 +122,17 @@ class SinogramWidget(QtWidgets.QWidget):
         # set the palette
         self.lcd.setPalette(palette)
 
-    def showSinogram(self, data, element_names, thetas, fnames, x_shifts, y_shifts, centers):
+    def showSinogram(self):
         '''
         loads sinogram tabS
         '''
 
-        self.x_shifts = x_shifts
-        self.y_shifts = y_shifts
-        self.centers = centers
         self.actions.x_shifts = self.x_shifts
         self.actions.y_shifts = self.y_shifts
         self.actions.centers = self.centers
-        self.fnames = fnames
-        self.thetas = thetas
-        self.data = data
+
         self.ViewControl.combo1.clear()
-        for j in element_names:
+        for j in self.elements:
             self.ViewControl.combo1.addItem(j)
 
         self.actions = xfluo.SinogramActions()
@@ -180,7 +175,7 @@ class SinogramWidget(QtWidgets.QWidget):
         -----------
         self.thickness: number
               thickness of y of each projections
-        self.sino.combo.currentIndex(): number
+        self.sino.combo.currentIndexsinogram((): number
               indicates the index of the element
         self.data: ndarray
               4d tomographic data [element, projections, y,x]
@@ -200,8 +195,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinoView.projView.setImage(self.sinogramData, border='w')
         if len(self.thetas) > 0:
             self.sinoView.projView.setRect(QtCore.QRect(round(self.thetas[0]), 0, round(self.thetas[-1])- round(self.thetas[0]), self.sinogramData.shape[1]))
-        # else:
-            # print("Warning: Could not set Rect for sinogram. TODO: Look into why this happens")
         self.sinoChangedSig.emit(self.sinogramData)
         return
 
