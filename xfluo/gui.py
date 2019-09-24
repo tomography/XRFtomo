@@ -169,8 +169,8 @@ class XfluoGui(QtGui.QMainWindow):
         self.reconstructionWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
 
         # data update
-        self.imageProcessWidget.dataChangedSig.connect(self.update_data)
-        self.sinogramWidget.dataChangedSig.connect(self.update_data)
+        self.imageProcessWidget.dataChangedSig.connect(self.update_history)
+        self.sinogramWidget.dataChangedSig.connect(self.update_history)
 
         # theta update
         self.imageProcessWidget.thetaChangedSig.connect(self.update_theta)
@@ -342,11 +342,8 @@ class XfluoGui(QtGui.QMainWindow):
         self.element_array = self.fileTableWidget.elementTableModel.arrayData
         #for fidx in range(len(file_array)):
 
-    def reset_widgets(self):
-        self.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
-        self.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
-        self.reconstructionWidget.recon = []
-        self.sinogramWidget.sld.setValue(1)
+    # def reset_widgets(self):
+
 
     def updateImages(self, from_open=False):
         self.data_history = []
@@ -355,7 +352,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.theta_history = []
         self.fname_history = []
         # self.centers_history = []
-        self.from_undo = False
 
         if not from_open:
             self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
@@ -374,19 +370,16 @@ class XfluoGui(QtGui.QMainWindow):
         self.centers = [100,100,self.data.shape[3]//2]
         self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
         self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
-        self.data_history.append(self.data.copy())
-        self.fname_history.append(self.fnames.copy())
-        self.theta_history.append(self.thetas.copy())
         self.original_data = self.data.copy()
         self.original_fnames = self.fnames.copy()
         self.original_thetas = self.thetas.copy()
 
         self.refreshUI()
-        self.reset_widgets()
         self.init_widgets()
         self.imageProcessWidget.showImgProcess()
         self.sinogramWidget.showSinogram()
         self.reconstructionWidget.showReconstruct()
+        # self.reset_widgets()
 
         self.tab_widget.setTabEnabled(1,True)
         self.tab_widget.setTabEnabled(2,True)
@@ -394,6 +387,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.afterConversionMenu.setDisabled(False)
         self.editMenu.setDisabled(False)
         # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
+        self.update_history(self.data)
         self.update_alignment(self.x_shifts, self.y_shifts)
 
     def refreshUI(self):
@@ -429,6 +423,37 @@ class XfluoGui(QtGui.QMainWindow):
         self.reconstructionWidget.y_shifts = self.y_shifts
         self.reconstructionWidget.centers = self.centers
 
+        self.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
+        self.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
+        self.imageProcessWidget.imgAndHistoWidget.lcd.display(str(self.thetas[0]))
+        self.reconstructionWidget.recon = []
+        self.sinogramWidget.sld.setValue(1)
+
+    def update_history(self, data):
+        index = self.imageProcessWidget.imgAndHistoWidget.sld.value()
+        self.update_data(data)
+        self.update_theta(self.thetas)
+        self.update_filenames(self.fnames, index)
+        self.update_alignment(self.x_shifts, self.y_shifts)
+
+        print('history save event')
+        self.data_history.append(data.copy())
+        self.theta_history.append(self.thetas.copy())
+        self.x_shifts_history.append(self.x_shifts.copy())
+        self.y_shifts_history.append(self.y_shifts.copy())
+        # self.centers_history.append(self.centers.copy())
+        self.fname_history.append(self.fnames.copy())
+
+        print(len(self.data_history))
+        if len(self.data_history) > 10:
+            del self.data_history[0]
+            del self.theta_history[0]
+            del self.x_shifts_history[0]
+            del self.y_shifts_history[0]
+            # del self.centers[0]
+            del self.fname_history[0]
+        return
+
     def update_recon(self, recon):
         self.recon = recon.copy()
         return
@@ -444,28 +469,12 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget.data = self.data
         self.sinogramWidget.imageChanged()
         self.reconstructionWidget.data = self.data
-
-        if self.from_undo:
-            return
-        else:
-            print('undo save event')
-            self.data_history.append(data.copy())
-            if len(self.data_history) > 10:
-                del self.data_history[0]
-            print(len(self.data_history))
         return
 
     def update_theta(self, thetas):
         self.thetas = thetas
         self.imageProcessWidget.thetas = self.thetas
         self.sinogramWidget.thetas = self.thetas
-
-        if self.from_undo:
-            return
-        else:
-            self.theta_history.append(self.thetas.copy())
-            if len(self.theta_history) > 10:
-                del self.theta_history[0]
         return
 
     def update_alignment(self, x_shifts, y_shifts):
@@ -479,28 +488,12 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget.actions.x_shifts = self.x_shifts
         self.sinogramWidget.actions.y_shifts = self.y_shifts
         # self.sinogramWidget.actions.centers = self.centers
-
-        if self.from_undo:
-            return
-        else:
-            self.x_shifts_history.append(x_shifts.copy())
-            self.y_shifts_history.append(y_shifts.copy())
-            # self.centers_history.append(self.centers.copy())
-            if len(self.x_shifts_history) > 10:
-                del self.x_shifts_history[0]
-                del self.y_shifts_history[0]
-                # del self.centers[0]
         return
         
-    def update_filenames(self, fnames):
+    def update_filenames(self, fnames, index):
         self.fnames = fnames 
         self.imageProcessWidget.fnames = fnames
-        if self.from_undo:
-            return
-        else:
-            self.fname_history.append(fnames.copy())
-            if len(self.fname_history) > 10:
-                del self.fname_history[0]
+        self.imageProcessWidget.updateFileDisplay(fnames, index)
         return
 
     def update_slider_range(self, thetas):
@@ -538,33 +531,36 @@ class XfluoGui(QtGui.QMainWindow):
                 self.fnames = self.fname_history[-1]
                 # self.centers = self.centers_history[-1]
 
-                self.from_undo = True
-                self.update_data(np.copy(self.data))
-                self.update_theta(np.copy(self.thetas))
-                self.update_alignment(np.copy(self.x_shifts), np.copy(self.y_shifts))
-                self.update_range(self.thetas)
-                self.update_filenames(self.fnames)
+                self.update_alignment(self.x_shifts, self.y_shifts)
+                self.update_slider_range(self.thetas)
+                index = self.imageProcessWidget.imgAndHistoWidget.sld.value()
+                self.update_theta(self.thetas)
+                self.update_filenames(self.fnames, index)
+                self.update_data(self.data)
 
         except AttributeError:
             print("Load dataset first")
             return
-        self.from_undo = False
         print(len(self.data_history))
+
+
+
+
+
         return
 
     def restore(self):
         try:
             num_projections = self.original_data.shape[1]
-            self.data = zeros(self.original_data.shape)
-            self.data[...] = self.original_data[...]
-
-            self.centers = [100,100,self.data.shape[3]//2]
+            self.data = self.original_data
+            self.thetas = self.original_thetas
+            self.fnames = self.original_thetas
             self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
             self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
+            self.centers = [100,100,self.data.shape[3]//2]
+            self.update_history(self.data)
+            self.update_slider_range(self.thetas)
 
-            self.update_data(self.data)
-            # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
-            self.update_alignment(self.x_shifts, self.y_shifts)
         except AttributeError:
             print("Load dataset first")
             return

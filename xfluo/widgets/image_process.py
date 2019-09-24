@@ -102,7 +102,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.imgAndHistoWidget.view.keyPressSig.connect(self.keyProcess)
         self.actions.dataSig.connect(self.send_data)
-        self.actions.thetaSig.connect(self.send_thetas)
+        # self.actions.thetaSig.connect(self.send_thetas)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
         
         mainHBox = QtWidgets.QHBoxLayout()
@@ -151,7 +151,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def imageSliderChanged(self):
         index = self.imgAndHistoWidget.sld.value()
         self.updateFileDisplay(self.fnames, index)
-        self.filename_event
+        # self.filename_event
         self.updateSliderSlot(index)
         self.sliderChangedSig.emit(index)
 
@@ -272,7 +272,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'Delete':
             self.exclude_params()
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            # self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'Copy':
             self.copyBG_params()
         if command == 'Paste':
@@ -407,17 +407,14 @@ class ImageProcessWidget(QtWidgets.QWidget):
         y_shifts = self.y_shifts
 
         #new = function(old)
-        index, data, thetas, fnames, x_shifts, y_shifts = self.actions.exclude_projection(index, data, thetas, fnames, x_shifts, y_shifts)
+        index, self.data, self.thetas, self.fnames, self.x_shifts, self.y_shifts = self.actions.exclude_projection(index, data, thetas, fnames, x_shifts, y_shifts)
 
-        self.alignmentChangedSig.emit(x_shifts, y_shifts, self.centers)
-        self.updateSldRange(index, thetas)
-        self.thetaChangedSig.emit(thetas)
-        self.updateFileDisplay(fnames, index)
-        self.fnamesChanged.emit(fnames,index)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.updateSldRange(index, self.thetas)
         self.imageSliderChanged()
 
-        self.sldRangeChanged.emit(index, data, thetas)
-        self.dataChangedSig.emit(data)
+        # self.sldRangeChanged.emit(index, self.data, self.thetas)
+        self.dataChangedSig.emit(self.data)
 
     def data_scale_factor(self):
         #sf = get txtbox value
@@ -471,21 +468,21 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.dataChangedSig.emit(data)
 
-    def send_thetas(self, thetas):
-        '''
-        This sends a signal one level up indicating that the theta array has changed
-        '''
+    # def send_thetas(self, thetas):
+    #     '''
+    #     This sends a signal one level up indicating that the theta array has changed
+    #     '''
 
-        self.thetaChangedSig.emit(thetas)
+    #     self.thetaChangedSig.emit(thetas)
 
-    def send_fnames(self, fnames):
-        '''
-        This sends a signal one level up indicating that the fnames array has changed
-        '''
-        self.fnmaesChangedSig.emit(fnames)
+    # def send_fnames(self, fnames):
+    #     '''
+    #     This sends a signal one level up indicating that the fnames array has changed
+    #     '''
+    #     self.fnmaesChangedSig.emit(fnames)
 
-    def send_alignment(self, x_shifts, y_shifts):
-        '''
-        This sends a signal one level up indicating that the alignment information has changed. 
-        '''        
-        self.alignemntChangedSig.emit(x_shifts, y_shifts)
+    # def send_alignment(self, x_shifts, y_shifts):
+    #     '''
+    #     This sends a signal one level up indicating that the alignment information has changed. 
+    #     '''        
+    #     self.alignemntChangedSig.emit(x_shifts, y_shifts)

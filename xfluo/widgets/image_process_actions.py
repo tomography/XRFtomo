@@ -54,7 +54,7 @@ from scipy import ndimage, optimize, signal
 
 class ImageProcessActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
-	thetaSig = pyqtSignal(np.ndarray, name='thetaSig')
+	# thetaSig = pyqtSignal(np.ndarray, name='thetaSig')
 	
 	def __init__(self):
 		super(ImageProcessActions, self).__init__()
