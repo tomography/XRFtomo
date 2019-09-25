@@ -524,11 +524,11 @@ class XfluoGui(QtGui.QMainWindow):
                 del self.theta_history[-1]
                 del self.fname_history[-1]
                 # del self.centers_history[-1]
-                self.data = self.data_history[-1]
-                self.x_shifts = self.x_shifts_history[-1]
-                self.y_shifts = self.y_shifts_history[-1]
-                self.thetas = self.theta_history[-1]
-                self.fnames = self.fname_history[-1]
+                self.data = self.data_history[-1].copy()
+                self.x_shifts = self.x_shifts_history[-1].copy()
+                self.y_shifts = self.y_shifts_history[-1].copy()
+                self.thetas = self.theta_history[-1].copy()
+                self.fnames = self.fname_history[-1].copy()
                 # self.centers = self.centers_history[-1]
 
                 self.update_alignment(self.x_shifts, self.y_shifts)

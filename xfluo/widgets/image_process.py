@@ -203,7 +203,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
             ySize = self.data.shape[2]
             self.ViewControl.ySize = ySize   
 
-                     
         self.imgAndHistoWidget.view.xSize = xSize
         self.imgAndHistoWidget.view.ySize = ySize
         self.imgAndHistoWidget.view.ROI.setSize([xSize, ySize])
@@ -280,7 +279,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         if command == 'Next':
             self.posMat[int(hs_group), int(hs_number)-1] = [x_pos, y_pos]
             if hs_number < self.posMat.shape[1]:
-                print("n")
                 print("Total projections", self.posMat.shape[1], "current position", hs_number+1, "group number", hs_group + 1)
                 hs_number += 1
                 if hs_number < self.posMat.shape[1]:
@@ -405,7 +403,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         num_files = len(self.fnames)
         x_shifts = self.x_shifts
         y_shifts = self.y_shifts
-
         #new = function(old)
         index, self.data, self.thetas, self.fnames, self.x_shifts, self.y_shifts = self.actions.exclude_projection(index, data, thetas, fnames, x_shifts, y_shifts)
 
@@ -414,6 +411,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imageSliderChanged()
 
         # self.sldRangeChanged.emit(index, self.data, self.thetas)
+        self.thetaChangedSig.emit(self.thetas)
         self.dataChangedSig.emit(self.data)
 
     def data_scale_factor(self):
@@ -468,12 +466,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.dataChangedSig.emit(data)
 
-    # def send_thetas(self, thetas):
-    #     '''
-    #     This sends a signal one level up indicating that the theta array has changed
-    #     '''
+    def send_thetas(self, thetas):
+        '''
+        This sends a signal one level up indicating that the theta array has changed
+        '''
 
-    #     self.thetaChangedSig.emit(thetas)
+        self.thetaChangedSig.emit(thetas)
 
     # def send_fnames(self, fnames):
     #     '''
