@@ -188,8 +188,6 @@ class XfluoGui(QtGui.QMainWindow):
         #update_reconstructed_data
         self.reconstructionWidget.reconChangedSig.connect(self.update_recon)
 
-
-
         self.prevTab = 0
         self.TAB_FILE = 0
         self.TAB_IMAGE_PROC = 1
@@ -542,11 +540,6 @@ class XfluoGui(QtGui.QMainWindow):
             print("Load dataset first")
             return
         print(len(self.data_history))
-
-
-
-
-
         return
 
     def restore(self):

@@ -165,13 +165,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         index = self.imgAndHistoWidget.sld.value()
         self.imgAndHistoWidget.file_name_title.setText(self.fnames[index])
 
-    def save_event(self):
-        # self.data_history
-        # self.theta_history
-        # self.x_shift_historry
-        # self.y_shift_history
-        pass
-
     def updateSliderSlot(self, index):
         #TODO: thetas not necessarily defined here when selecting new dataset. figure out how to load thetas before calling this.
         if len(self.thetas) == 0:
@@ -365,7 +358,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         
     def cut_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.actions.cut(self.data, img, x_pos, y_pos, x_size, y_size)
+        self.actions.cut(self.data, x_pos, y_pos, x_size, y_size)
         self.ySizeChanged.emit(y_size)
         self.refreshSig.emit()
 
@@ -405,7 +398,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         y_shifts = self.y_shifts
         #new = function(old)
         index, self.data, self.thetas, self.fnames, self.x_shifts, self.y_shifts = self.actions.exclude_projection(index, data, thetas, fnames, x_shifts, y_shifts)
-
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         self.updateSldRange(index, self.thetas)
         self.imageSliderChanged()
@@ -414,11 +406,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.thetaChangedSig.emit(self.thetas)
         self.dataChangedSig.emit(self.data)
 
-    def data_scale_factor(self):
-        #sf = get txtbox value
-        
-        # return self.data *= sf
-        pass
 
     # debugging and statistic gathering function, leave commented plz.
     # def histo_signal(self):

@@ -107,10 +107,26 @@ class ImageProcessActions(QtWidgets.QWidget):
 			data[element, i, :, :] = temp	
 		self.dataSig.emit(data)
 
-	def cut(self, data, img, x_pos, y_pos, x_size, y_size):
+	def cut(self, data, x_pos, y_pos, x_size, y_size):
+		'''
+		crops dataset to ROI dimensions 
+
+		Variables
+		-----------
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
+		x_pos: ndarray
+			ROI x coordinate with respect to plot window
+		y_pos: int
+			ROI y coordinate with respect to plot window
+		x_size: int
+			ROI pixel dimension in x
+		y_size: int
+			ROI pixel dimension in y
+		'''
 		num_elements = data.shape[0]
 		num_projections = data.shape[1]
-		temp_data = zeros([num_elements,num_projections, img.shape[0], img.shape[1]])
+		temp_data = zeros([num_elements,num_projections, y_size, x_size])
 		
 		for i in range(num_projections):
 			for j in range(num_elements):
@@ -148,11 +164,41 @@ class ImageProcessActions(QtWidgets.QWidget):
 	# 	return h
 
 	def copy_background(self, img):
+		'''
+		crops dataset to ROI dimensions 
+
+		Variables
+		-----------
+		img: ndarray
+			2D array enclosed by ROI for currently selected element. 
+		'''
 		self.meanNoise = np.mean(img)
 		self.stdNoise = np.std(img)
 		return self.meanNoise, self.stdNoise
 
 	def paste_background(self, data, element, projection, x_pos, y_pos, x_size, y_size, img):
+		'''
+		crops dataset to ROI dimensions 
+
+		Variables
+		-----------
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
+		element: int
+			element index
+		projection: int
+			projection index 
+		x_pos: ndarray
+			ROI x coordinate with respect to plot window
+		y_pos: int
+			ROI y coordinate with respect to plot window
+		x_size: int
+			ROI pixel dimension in x
+		y_size: int
+			ROI pixel dimension in y
+		img: ndarray
+			2D array output from "copy_background" function.
+		'''
 		frame_boundary = img >=0
 		noise_generator = np.random.normal(self.meanNoise, self.stdNoise, (y_size, x_size))*frame_boundary
 
@@ -162,10 +208,25 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 		self.dataSig.emit(data)
 
-
-
-
 	def exclude_projection(self, index, data, thetas, fnames, x_shifts, y_shifts):
+		'''
+		crops dataset to ROI dimensions 
+
+		Variables
+		-----------
+		index: int
+			projection number from zero. 
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
+		thetas: ndarray
+			sorted projection angle list
+		fnames: list
+			list of strings containing filenames
+		x_shifts: ndarray
+			1D array containg pixel offset distance (in x), each value corresponging to one projection 
+		y_shifts: ndarray
+			1D array containg pixel offset distance (in y), each value corresponging to one projection 
+		'''
 		num_projections = len(thetas)
 		data = np.delete(data, index, 1)
 		thetas = np.delete(thetas, index, 0)
@@ -180,6 +241,9 @@ class ImageProcessActions(QtWidgets.QWidget):
 			num_projections -= 1
 
 		return index, data, thetas, fnames, x_shifts, y_shifts
+
+
+
 
 	def saveHotspot(self):
 		# if self.hotSpotNumb < self.data.shape[0]:
@@ -207,8 +271,23 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 	def hotspot2line(self, element, x_size, y_size, hs_group, posMat, data):
 		'''
-		save the position of hotspots
-		and align hotspots by fixing hotspots in one position
+		aligns projections to a line based on hotspot information
+
+		Variables
+		-----------
+		element: int
+			element index
+		x_size: int
+			ROI pixel dimension in x
+		y_size: int
+			ROI pixel dimension in y
+		hs_group: int
+			hotspot group number 
+		posMat: ndarray
+			position matrix. 2
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
+
 		'''
 		self.posMat = posMat
 		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
