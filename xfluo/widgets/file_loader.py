@@ -181,6 +181,7 @@ class FileTableWidget(QtWidgets.QWidget):
         vBox1.addLayout(hBox5)
         # vBox1.addLayout(hBox6)
         vBox1.addLayout(hBox7)
+        # vBox1.setFixedWidth(275)
 
         layout0 = QtWidgets.QHBoxLayout()
         layout0.addWidget(dirLabel)
@@ -202,6 +203,7 @@ class FileTableWidget(QtWidgets.QWidget):
         mainLayout.addLayout(layout0)
         mainLayout.addLayout(layout1)
         mainLayout.addLayout(layout2)
+
         self.setLayout(mainLayout)
 
         try:

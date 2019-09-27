@@ -106,7 +106,7 @@ class SinogramWidget(QtWidgets.QWidget):
         sinoBox = QtWidgets.QHBoxLayout()
         sinoBox.addWidget(self.ViewControl)
         sinoBox.addLayout(vb1)
-        sinoBox.addWidget(self.hist)
+        sinoBox.addWidget(self.hist,10)
 
         self.setLayout(sinoBox)
 

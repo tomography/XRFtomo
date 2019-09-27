@@ -55,12 +55,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     sliderChangedSig = pyqtSignal(int, name='sliderChangedSig')
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
-    # shiftSig = pyqtSignal(str, name='sliderChangedSig')
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
     thetaChangedSig = pyqtSignal(np.ndarray, name='thetaChangedSig')
     fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
     alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
-    
     ySizeChanged = pyqtSignal(int, name='ySizeChanged')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
     refreshSig = pyqtSignal(name='refreshSig')
