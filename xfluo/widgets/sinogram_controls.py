@@ -92,18 +92,18 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
         hb1 = QtWidgets.QHBoxLayout()
         hb1.addWidget(self.btn1)
-        hb1.addWidget(self.btn2)
+        hb1.addWidget(self.btn3)
 
         hb2 = QtWidgets.QHBoxLayout()
-        hb2.addWidget(self.btn3)
+        hb2.addWidget(self.btn2)
         hb2.addWidget(self.btn4)
 
         hb3 = QtWidgets.QHBoxLayout()
-        hb3.addWidget(self.btn5)
         hb3.addWidget(self.btn6)
+        hb3.addWidget(self.btn7)
 
         hb4 = QtWidgets.QHBoxLayout()
-        hb4.addWidget(self.btn7)
+        hb4.addWidget(self.btn5)
         hb4.addWidget(self.btn8)
 
         hb5 = QtWidgets.QHBoxLayout()
@@ -114,16 +114,12 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb1.addLayout(hb1)
         vb1.addLayout(hb2)
         vb1.addLayout(hb3)
-
-        vb2 = QtWidgets.QVBoxLayout()
-        vb2.addLayout(hb4)
-        vb2.addLayout(hb5)
+        vb1.addLayout(hb4)
+        vb1.addLayout(hb5)
 
         vb3 = QtWidgets.QVBoxLayout()
         vb3.addWidget(self.combo1)
         vb3.addWidget(self.combo2)
         vb3.addLayout(vb1)
-        vb3.addLayout(vb2)
-
         self.setFixedWidth(275)
         self.setLayout(vb3)

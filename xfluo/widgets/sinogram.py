@@ -202,7 +202,7 @@ class SinogramWidget(QtWidgets.QWidget):
         element, row, data, thetas = self.get_params()
         data = self.data
         thetas = self.thetas
-        self.data, self.x_shifts = self.actions.runCenterOfMass(element, row, data, thetas)
+        self.data, self.x_shifts = self.actions.runCenterOfMass(element, data, thetas)
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return

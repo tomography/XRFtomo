@@ -112,6 +112,9 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         max_y = frame_height
         max_x = frame_width
 
+        if max_x == None or max_y == None:
+             return 0, 0, 0, 0
+
         roi_left =x_pos-x_size/2
         roi_right = x_pos+x_size/2
         roi_top = y_pos+y_size/2
