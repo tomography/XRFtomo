@@ -404,6 +404,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.imageProcessWidget.x_shifts = self.x_shifts
         self.imageProcessWidget.y_shifts = self.y_shifts
         self.imageProcessWidget.centers = self.centers
+        self.imageProcessWidget.ViewControl.combo1.setCurrentIndex(0)
 
         self.sinogramWidget.data = self.data 
         self.sinogramWidget.elements = self.elements 
@@ -412,6 +413,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget.x_shifts = self.x_shifts 
         self.sinogramWidget.y_shifts = self.y_shifts 
         self.sinogramWidget.centers = self.centers 
+        self.sinogramWidget.ViewControl.combo1.setCurrentIndex(0)
 
         self.reconstructionWidget.data = self.data 
         self.reconstructionWidget.elements = self.elements 
@@ -420,6 +422,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.reconstructionWidget.x_shifts = self.x_shifts
         self.reconstructionWidget.y_shifts = self.y_shifts
         self.reconstructionWidget.centers = self.centers
+        self.reconstructionWidget.ViewControl.combo1.setCurrentIndex(0)
 
         self.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
         self.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
