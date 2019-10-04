@@ -155,7 +155,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
-        projection = self.ViewControl.combo2.currentIndex()
+        projection = self.imgAndHistoWidget.sld.value()
         self.updateElementSlot(element, projection)
         self.elementChangedSig.emit(element, projection)
 

@@ -372,7 +372,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.original_fnames = self.fnames.copy()
         self.original_thetas = self.thetas.copy()
 
-        self.refreshUI()
         self.init_widgets()
         self.imageProcessWidget.showImgProcess()
         self.sinogramWidget.showSinogram()
@@ -387,6 +386,8 @@ class XfluoGui(QtGui.QMainWindow):
         # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_history(self.data)
         self.update_alignment(self.x_shifts, self.y_shifts)
+        self.refreshUI()
+
 
     def refreshUI(self):
         self.tab_widget.removeTab(1)
@@ -405,6 +406,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.imageProcessWidget.y_shifts = self.y_shifts
         self.imageProcessWidget.centers = self.centers
         self.imageProcessWidget.ViewControl.combo1.setCurrentIndex(0)
+        self.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
 
         self.sinogramWidget.data = self.data 
         self.sinogramWidget.elements = self.elements 
@@ -414,6 +416,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.sinogramWidget.y_shifts = self.y_shifts 
         self.sinogramWidget.centers = self.centers 
         self.sinogramWidget.ViewControl.combo1.setCurrentIndex(0)
+        self.sinogramWidget.sld.setValue(0)
 
         self.reconstructionWidget.data = self.data 
         self.reconstructionWidget.elements = self.elements 
