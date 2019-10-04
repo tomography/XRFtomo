@@ -89,6 +89,15 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.ViewControl.testButton.clicked.connect(self.save_analysis)
         # self.ViewControl.histogramButton.clicked.connect(self.histo_signal)
 
+
+        # x_pos, y_pos, x_size, y_size, frame_height, frame_width
+
+        # self.ViewControl.x_sld.valueChanged.connect(self.xSldChange)
+        # self.ViewControl.y_sld.valueChanged.connect(self.xSldChange)
+
+
+
+
         self.ViewControl.btn1.clicked.connect(self.hotspot2line_params)
         self.ViewControl.btn2.clicked.connect(self.hotspot2sine_params)
         self.ViewControl.btn3.clicked.connect(self.setY_params)

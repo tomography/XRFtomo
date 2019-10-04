@@ -530,8 +530,8 @@ class FileTableWidget(QtWidgets.QWidget):
         else:
             self.message.setText('loading files...')
         if all(x==thetas[0] for x in thetas):           #check if all values in thetas are the same: no theta info.
-            self.message.setText('No angle information. Double check Theta PV or current directory')
-            return [], [] , [], []
+            self.message.setText('WARNING: No unique angle information. Double check Theta PV or current directory')
+            # return [], [] , [], []
 
         self.parent.clear_all()
         data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)

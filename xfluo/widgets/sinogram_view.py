@@ -69,8 +69,12 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         self.show()
 
     def mouseMoved(self, evt):
-        self.moving_x = self.projView.mapFromDevice(evt).x()
-        self.moving_y = self.projView.mapFromDevice(evt).y()
+        try:
+            self.moving_x = self.projView.mapFromDevice(evt).x()
+            self.moving_y = self.projView.mapFromDevice(evt).y()
+        except:
+            "TODO: error when incorrect PV loaded or when only single angle information is available. "
+            print("WARNING: single column for sinogram. Load more projections with unique angles. ")
 
     def mouseClick(self, evt):
         self.x_pos = int(round(self.moving_x))
