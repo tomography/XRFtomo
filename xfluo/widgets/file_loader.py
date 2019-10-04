@@ -49,6 +49,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 import xfluo
 import h5py
 import numpy as np
+import time
 # from file_io.reader import read_projection
 from xfluo.file_io.reader import *
 
@@ -180,6 +181,7 @@ class FileTableWidget(QtWidgets.QWidget):
         vBox1.addLayout(hBox5)
         # vBox1.addLayout(hBox6)
         vBox1.addLayout(hBox7)
+        # vBox1.setFixedWidth(275)
 
         layout0 = QtWidgets.QHBoxLayout()
         layout0.addWidget(dirLabel)
@@ -201,6 +203,7 @@ class FileTableWidget(QtWidgets.QWidget):
         mainLayout.addLayout(layout0)
         mainLayout.addLayout(layout1)
         mainLayout.addLayout(layout2)
+
         self.setLayout(mainLayout)
 
         try:
@@ -210,16 +213,26 @@ class FileTableWidget(QtWidgets.QWidget):
         self.onThetaUpdate()
 
     def onDirBrowse(self):
+        currentDir = self.dirLineEdit.text()
         try:
             folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
             self.dirLineEdit.setText(folderName)
             self.onLoadDirectory()
         except:
-            print("select directory")
+            self.dirLineEdit.setText(currentDir)
+            try:
+                self.onLoadDirectory()
+            except:
+                print('invalid directory')
+            return
 
     def onLoadDirectory(self):
         self.version = 0
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
+        fpath = self.fileTableModel.getFirstCheckedFilePath()
+        if fpath == None:
+            self.message.setText('Invalid directory')
+            return
         self.fileTableModel.setAllChecked(True)
         try:
             self.imageTag.clear()
@@ -335,12 +348,12 @@ class FileTableWidget(QtWidgets.QWidget):
                     if indx == -1:
                         return
                 try:
-
+                    #filtering  drop-down menu to inlcude only relevant entries. 
                     temp_tags1 = list(filter(lambda k: 'XRF' in k, self.dataTags[indx]))
+                    temp_tags1 = list(filter(lambda k: not 'quant' in k, temp_tags1))
                     temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
                     self.dataTags[indx] = temp_tags1 + temp_tags2
                     self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
-
                     self.dataTag.clear()
                     self.elementTag.clear()
                     for i in range(len(self.dataTags[indx])):
@@ -511,17 +524,14 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
         #self.parent.params.detector_tag = self.scaler_option.currentText()
 
-
         if len(elements) == 0:
             self.message.setText('no element selected.')
             return [], [] , [], []
         else:
             self.message.setText('loading files...')
         if all(x==thetas[0] for x in thetas):           #check if all values in thetas are the same: no theta info.
-            self.message.setText('No angle information. Double check Theta PV')
-            return [], [] , [], []
-
-
+            self.message.setText('WARNING: No unique angle information. Double check Theta PV or current directory')
+            # return [], [] , [], []
 
         self.parent.clear_all()
         data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)

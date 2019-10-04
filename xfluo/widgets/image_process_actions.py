@@ -32,7 +32,7 @@
 # THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENTn SHALL UChicago     #
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENTn SHALL UChicago    #
 # Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
 # INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
 # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
@@ -54,7 +54,7 @@ from scipy import ndimage, optimize, signal
 
 class ImageProcessActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
-	thetaSig = pyqtSignal(np.ndarray, name='thetaSig')
+	# thetaSig = pyqtSignal(np.ndarray, name='thetaSig')
 	
 	def __init__(self):
 		super(ImageProcessActions, self).__init__()
@@ -107,10 +107,26 @@ class ImageProcessActions(QtWidgets.QWidget):
 			data[element, i, :, :] = temp	
 		self.dataSig.emit(data)
 
-	def cut(self, data, img, x_pos, y_pos, x_size, y_size):
+	def cut(self, data, x_pos, y_pos, x_size, y_size):
+		'''
+		crops dataset to ROI dimensions 
+
+		Variables
+		-----------
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
+		x_pos: ndarray
+			ROI x coordinate with respect to plot window
+		y_pos: int
+			ROI y coordinate with respect to plot window
+		x_size: int
+			ROI pixel dimension in x
+		y_size: int
+			ROI pixel dimension in y
+		'''
 		num_elements = data.shape[0]
 		num_projections = data.shape[1]
-		temp_data = zeros([num_elements,num_projections, img.shape[0], img.shape[1]])
+		temp_data = zeros([num_elements,num_projections, y_size, x_size])
 		
 		for i in range(num_projections):
 			for j in range(num_elements):
@@ -148,11 +164,41 @@ class ImageProcessActions(QtWidgets.QWidget):
 	# 	return h
 
 	def copy_background(self, img):
+		'''
+		crops dataset to ROI dimensions 
+
+		Variables
+		-----------
+		img: ndarray
+			2D array enclosed by ROI for currently selected element. 
+		'''
 		self.meanNoise = np.mean(img)
 		self.stdNoise = np.std(img)
 		return self.meanNoise, self.stdNoise
 
 	def paste_background(self, data, element, projection, x_pos, y_pos, x_size, y_size, img):
+		'''
+		crops dataset to ROI dimensions 
+
+		Variables
+		-----------
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
+		element: int
+			element index
+		projection: int
+			projection index 
+		x_pos: ndarray
+			ROI x coordinate with respect to plot window
+		y_pos: int
+			ROI y coordinate with respect to plot window
+		x_size: int
+			ROI pixel dimension in x
+		y_size: int
+			ROI pixel dimension in y
+		img: ndarray
+			2D array output from "copy_background" function.
+		'''
 		frame_boundary = img >=0
 		noise_generator = np.random.normal(self.meanNoise, self.stdNoise, (y_size, x_size))*frame_boundary
 
@@ -162,53 +208,62 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 		self.dataSig.emit(data)
 
-	def exclude_projection(self, projection, data, thetas):
+	def exclude_projection(self, index, data, thetas, fnames, x_shifts, y_shifts):
+		'''
+		crops dataset to ROI dimensions 
+
+		Variables
+		-----------
+		index: int
+			projection number from zero. 
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
+		thetas: ndarray
+			sorted projection angle list
+		fnames: list
+			list of strings containing filenames
+		x_shifts: ndarray
+			1D array containg pixel offset distance (in x), each value corresponging to one projection 
+		y_shifts: ndarray
+			1D array containg pixel offset distance (in y), each value corresponging to one projection 
+		'''
 		num_projections = len(thetas)
-		data = np.delete(data, projection, 1)
-		thetas = np.delete(thetas, projection, 0)
-		
-		if projection>0:
-			projection -= 1
+		data = np.delete(data, index, 1)
+		thetas = np.delete(thetas, index, 0)
+		y_shifts = np.delete(y_shifts, index, 0)
+		x_shifts = np.delete(x_shifts, index, 0)
+		fnames.pop(index)
+
+		if index>0:
+			index -= 1
 			num_projections -=1
 		else:
 			num_projections -= 1
 
-		self.dataSig.emit(data)
-		self.thetaSig.emit(thetas)
-		# return projection, data, thetas
-		return
-
-	def saveHotspot(self):
-		# if self.hotSpotNumb < self.data.shape[0]:
-		# self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = self.projView.iniY
-		# self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = self.projView.iniX
-		# self.hotSpotNumb += 1
-		# if self.hotSpotNumb < self.data.shape[0]:
-		# self.projView.setImage(self.data[self.hotSpotNumb, :, :])
-		pass
-
-	def skipHotspot(self):
-
-		# self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 0] = 0
-		# self.posMat[self.hotSpotSetNumb, self.hotSpotNumb, 1] = 0
-		# if self.hotSpotNumb < self.data.shape[0] - 1:
-		#     self.hotSpotNumb += 1
-		#     self.projView.setImage(self.data[self.hotSpotNumb, :, :])
-		pass
-
-
-
-
-
-
+		return index, data, thetas, fnames, x_shifts, y_shifts
 
 	def hotspot2line(self, element, x_size, y_size, hs_group, posMat, data):
 		'''
-		save the position of hotspots
-		and align hotspots by fixing hotspots in one position
+		aligns projections to a line based on hotspot information
+
+		Variables
+		-----------
+		element: int
+			element index
+		x_size: int
+			ROI pixel dimension in x
+		y_size: int
+			ROI pixel dimension in y
+		hs_group: int
+			hotspot group number 
+		posMat: ndarray
+			position matrix. 
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
 		'''
+		#TODO: onsider having posMat as part of the history state and have it update one level up.
 		self.posMat = posMat
-		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
+		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, posMat, data)
 #****************
 		num_projections = data.shape[1]
 		for j in arange(num_projections):
@@ -231,16 +286,33 @@ class ImageProcessActions(QtWidgets.QWidget):
 		print("align done")
 		return self.x_shifts, self.y_shifts, self.centers
 
-	def hotspot2sine(self, element, x_size, y_size, hs_group, posMat, data, theta):
+	def hotspot2sine(self, element, x_size, y_size, hs_group, posMat, data, thetas):
 		'''
-		save the position of hotspots
-		and align by both x and y directions (self.alignHotSpotPos3_4)
+		aligns projections to a sine curve based on hotspot information
+
+		Variables
+		-----------
+		element: int
+			element index
+		x_size: int
+			ROI pixel dimension in x
+		y_size: int
+			ROI pixel dimension in y
+		hs_group: int
+			hotspot group number 
+		posMat: ndarray
+			position matrix. 2
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
+		thetas: ndarray
+			sorted projection angle list
 		'''
+
 		self.posMat = posMat
 		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
 #****************
 		num_projections = data.shape[1]
-		theta  = np.asarray(theta)
+		thetas  = np.asarray(thetas)
 		for j in arange(num_projections):
 
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
@@ -261,7 +333,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 			hotspotXPos[i] = int(round(hs_x_pos[i]))
 		hotspotProj = np.where(hotspotXPos != 0)[0]
 
-		theta_tmp = theta[hotspotProj]
+		theta_tmp = thetas[hotspotProj]
 		com = hotspotXPos[hotspotProj]
 
 		if hs_group == 0:
@@ -285,11 +357,24 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 	def setY(self, element, x_size, y_size, hs_group, posMat, data):
 		'''
-		loads variables for aligning hotspots in y direction only
+		aligns projections vertically
+		Variables
+		-----------
+		element: int
+			element index
+		x_size: int
+			ROI pixel dimension in x
+		y_size: int
+			ROI pixel dimension in y
+		hs_group: int
+			hotspot group number 
+		posMat: ndarray
+			position matrix. 2
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
 		'''
 		self.posMat = posMat
 		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
-#****************
 		num_projections = data.shape[1]
 		for j in arange(num_projections):
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
@@ -306,6 +391,23 @@ class ImageProcessActions(QtWidgets.QWidget):
 		return self.x_shifts, self.y_shifts, self.centers
 
 	def alignment_parameters(self, element, x_size, y_size, hs_group, posMat, data):
+		'''
+		gathers parameters for alignment functions
+		Variables
+		-----------
+		element: int
+			element index
+		x_size: int
+			ROI pixel dimension in x
+		y_size: int
+			ROI pixel dimension in y
+		hs_group: int
+			hotspot group number 
+		posMat: ndarray
+			position matrix. 2
+		data: ndarray
+			4D xrf dataset ndarray [elements, theta, y,x]
+		'''
 		self.posMat = posMat
 		num_projections = data.shape[1]
 		hs_x_pos = zeros(num_projections, dtype=np.int)
@@ -355,11 +457,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 
 
-
-
-
-
-
 	def fitCenterOfMass(self, com, x):
 		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
 		errfunc = lambda p, x, y: fitfunc(p, x) - y
@@ -377,7 +474,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		print(self.centerOfMassDiff)
 
 	def alignCenterOfMass2(self, hotspotProj, data):
-
 		j = 0
 		for i in hotspotProj:
 			self.x_shifts[i] += int(self.centerOfMassDiff[j])
@@ -388,21 +484,21 @@ class ImageProcessActions(QtWidgets.QWidget):
 		#set some label to be show that the alignment has completed. perhaps print this in a logbox
 		# self.lbl.setText("Alignment has been completed")
 	def fitgaussian(self, data):
-		"""Returns (height, x, y, width_x, width_y)
-		the gaussian parameters of a 2D distribution found by a fit"""
+		"""
+		Returns (height, x, y, width_x, width_y)
+		the gaussian parameters of a 2D distribution found by a fit
+		"""
 		params = self.moments(data)
 		errorfunction = lambda p: ravel(self.gaussian(*p)(*indices(data.shape)) - data)
 		p, success = optimize.leastsq(errorfunction, params)
 		return p
 
 	def moments(self, data):
-		"""Returns (height, x, y, width_x, width_y)
+		"""
+		Returns (height, x, y, width_x, width_y)
 		the gaussian parameters of a 2D distribution by calculating its
-		moments """
-		#TODO: sometimes data == 0 causing division by error.
-		#this is due to selecting areas of low signal resulting in pixel value where the rows
-		#or columns sum to zero, thus division by zero.
-
+		moments 
+		"""
 		total = data.sum()
 		if total == 0:
 			x = 0
@@ -431,7 +527,9 @@ class ImageProcessActions(QtWidgets.QWidget):
 		return height, x, y, width_x, width_y
 
 	def gaussian(self, height, center_x, center_y, width_x, width_y):
-		"""Returns a gaussian function with the given parameters"""
+		"""
+		Returns a gaussian function with the given parameters
+		"""
 		width_x = float(width_x)
 		width_y = float(width_y)
 		if width_x == 0:
@@ -444,5 +542,9 @@ class ImageProcessActions(QtWidgets.QWidget):
 		return lambda x, y: height * exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
 
 	def clrHotspot(self, posMat):
+		'''
+		resets
+		hotspot position matrix 
+		'''
 		posMat[...] = zeros_like(posMat)
 		return posMat

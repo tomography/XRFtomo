@@ -67,11 +67,17 @@ class SinogramActions(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
-    def runCenterOfMass(self, element, row, data, thetas):
+    def runCenterOfMass(self, element, data, thetas):
         '''
-        second version of runCenterOfMass
-        self.com: center of mass vector
-        element: the element chosen for center of mass
+        Center of mass alignment
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        thetas: ndarray
+            sorted projection angle list
         '''
         num_projections = data.shape[1]
         com = zeros(num_projections)
@@ -109,6 +115,18 @@ class SinogramActions(QtWidgets.QWidget):
         return data, self.x_shifts
 
     def shift(self, sinogramData, data, shift_number, col_number):
+        '''
+        shifts sinogram column of pixels up or down.
+        Variables
+        -----------
+        sinogramData: ndarray
+            3D array containing sinogram images for each row of data
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        shift_number: int
+            amount of pixel shifting done per column 
+        col_number: int
+        '''
         num_projections = data.shape[1]
         regShift = zeros(sinogramData.shape[0], dtype=np.int)
         sinogramData[col_number * 10:col_number * 10 + 10, :] = np.roll(sinogramData[col_number * 10:col_number * 10 + 10, :], shift_number, axis=1)
@@ -119,6 +137,19 @@ class SinogramActions(QtWidgets.QWidget):
 
 
     def slope_adjust(self, sinogramData, data, element, delta):
+        '''
+        Sinograms are oftwen skewed when using xcor alignment method. slope_adjust offsets the sinogram's slope by 'delta' pixels
+        Variables
+        -----------
+        sinogramData: ndarray
+            3D array containing sinogram images for each row of data
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        element: int
+            element index
+        delta: int
+            number of pixels to shift by at right-hand side of sinogram.
+        '''
         num_projections = data.shape[1]
         step = round(delta/num_projections)
         lin_shift = [int(x) for x in np.linspace(0, delta, num_projections)]
@@ -127,10 +158,17 @@ class SinogramActions(QtWidgets.QWidget):
             data, sinogramData = self.shift(sinogramData, data, lin_shift[i], i)
 
         return lin_shift, data, sinogramData
-
-
+        
     def crossCorrelate(self, element, data):
-
+        '''
+        cross correlate image registration
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
         num_projections = data.shape[1]
 
         for i in arange(num_projections - 1):
@@ -158,6 +196,13 @@ class SinogramActions(QtWidgets.QWidget):
         return data, self.x_shifts, self.y_shifts
 
     def crossCorrelate2(self, data):
+        '''
+        cross correlate image registration aplies to all loaded elements.
+        Variables
+        -----------
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
         num_projections = data.shape[1]
         for i in arange(num_projections - 1):
             flat = np.sum(data, axis=0)
@@ -185,7 +230,15 @@ class SinogramActions(QtWidgets.QWidget):
         return data, self.x_shifts, self.y_shifts
 
     def phaseCorrelate(self, element, data):
-
+        '''
+        Phase correlate image registration
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
         num_projections = data.shape[1]
         for i in arange(num_projections - 1):
             # onlyfilenameIndex=self.fileNames[i+1].rfind("/")
@@ -211,6 +264,17 @@ class SinogramActions(QtWidgets.QWidget):
         return data, self.x_shifts, self.y_shifts
 
     def align_y_top(self, element, data):
+        '''
+        This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
+        top of the ROI boundary. It does this for all projections, effectively adjusting for vertical drift or stage wobble. 
+
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
         self.data = data
         num_projections = data.shape[1]
         tmp_data = data[element,:,:,:]
@@ -227,6 +291,17 @@ class SinogramActions(QtWidgets.QWidget):
         return self.y_shifts, self.data 
 
     def align_y_bottom(self, element, data):
+        '''
+        This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
+        bottom of the ROI boundary. It does this for all projections, effectively adjusting for vertical drift or stage wobble. 
+
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
         self.data = data
         num_projections = data.shape[1]
         tmp_data = data[element,:,:,:]
@@ -242,6 +317,16 @@ class SinogramActions(QtWidgets.QWidget):
         return self.y_shifts, self.data
 
     def get_boundaries(self, data, coeff):
+        '''
+        Identifies the saple's envelope and creates a rectangular boundary over each projection, then return a dictionary containing the
+        left, right, top, and bottom boundary positions. 
+        Variables
+        -----------
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        coeff: int
+            element index
+        '''
         bounds = {}
         bounds[0] = []  # x_left
         bounds[1] = []  # x_right
@@ -287,6 +372,19 @@ class SinogramActions(QtWidgets.QWidget):
         return bounds
 
     def iterative_align(self, element, data, thetas, iters=5):
+        '''
+        iterative alignment method from TomoPy
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        thetas: ndarray
+            sorted projection angle list
+        iters: int
+            number of iterations
+        '''
         num_projections = data.shape[1]
         prj = data[element]
         # prj = np.sum(data, axis=0)
@@ -305,9 +403,6 @@ class SinogramActions(QtWidgets.QWidget):
         
         return self.x_shifts, self.y_shifts, data
 
-    def matchTermplate(self):
-        pass
-
     def alignFromText2(self, data):
         '''
         align by reading text file that saved prior image registration
@@ -316,9 +411,13 @@ class SinogramActions(QtWidgets.QWidget):
         name of the file(string before first comma),
         yshift(string after first comma before second comma),
         xshift(string after second comma)
+        Variables
+        -----------
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+
         '''
         try:
-
             fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
             ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
 
