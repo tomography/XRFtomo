@@ -52,7 +52,7 @@ import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
 import scipy.fftpack as spf
 import string
-import cv2
+#import cv2
 from PIL import Image, ImageChops, ImageOps
 import tomopy
 
