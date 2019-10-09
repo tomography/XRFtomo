@@ -119,6 +119,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
+        self.meanNoise = 0
+        self.stdNoise = 0
 
         palette = self.imgAndHistoWidget.lcd.palette()
         # foreground color
@@ -273,7 +275,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.exclude_params()
             # self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'Copy':
-            self.copyBG_params()
+            self.copyBG_params(img)
         if command == 'Paste':
             self.pasteBG_params()
         if command == 'Next':
@@ -354,10 +356,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         self.actions.background_value(img)
 
-    def patch_params(self): 
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.actions.patch(self.data, img, element, projection, x_pos, y_pos, x_size, y_size)
-
     def normalize_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
@@ -369,14 +367,19 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ySizeChanged.emit(y_size)
         self.refreshSig.emit()
 
-    def copyBG_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.actions.copy_background(img)
+    def copyBG_params(self,*img):
+        if type(img[0]) == bool:
+            element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+
+        self.meanNoise, self.stdNoise = self.actions.copy_background(img)
+        return
 
     def pasteBG_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        meanNoise = self.meanNoise
+        stdNoise= self.stdNoise
         data = self.data
-        self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img)
+        self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img, meanNoise, stdNoise)
 
     def analysis_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()

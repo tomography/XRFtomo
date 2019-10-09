@@ -342,7 +342,6 @@ class XfluoGui(QtGui.QMainWindow):
 
     # def reset_widgets(self):
 
-
     def updateImages(self, from_open=False):
         self.data_history = []
         self.x_shifts_history = []

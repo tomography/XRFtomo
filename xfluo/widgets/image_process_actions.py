@@ -176,7 +176,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.stdNoise = np.std(img)
 		return self.meanNoise, self.stdNoise
 
-	def paste_background(self, data, element, projection, x_pos, y_pos, x_size, y_size, img):
+	def paste_background(self, data, element, projection, x_pos, y_pos, x_size, y_size, img, meanNoise, stdNoise):
 		'''
 		crops dataset to ROI dimensions 
 
@@ -200,7 +200,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 			2D array output from "copy_background" function.
 		'''
 		frame_boundary = img >=0
-		noise_generator = np.random.normal(self.meanNoise, self.stdNoise, (y_size, x_size))*frame_boundary
+		noise_generator = np.random.normal(meanNoise, stdNoise, (y_size, x_size))*frame_boundary
 
 		data[element,projection,
 			int(round(abs(y_pos)) - y_size/2):int(round(abs(y_pos)) + y_size/2),

@@ -67,6 +67,9 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         self.p1.items[0].scene().sigMouseClicked.connect(self.mouseClick)
         self.p1.setMouseEnabled(x=False, y=False)
         self.show()
+        self.moving_x = 0
+        self.moving_y = 0
+
 
     def mouseMoved(self, evt):
         try:

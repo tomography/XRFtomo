@@ -121,13 +121,13 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         roi_bottom = y_pos-y_size/2
 
         ## if way far left
-        if roi_left <= 0 :
+        if roi_left <= 0:
             x_pos = x_size/2
         ## if way far right
-        if roi_right>= max_x:
+        if roi_right >= max_x:
             x_pos = max_x - x_size/2
         ## if way far above
-        if roi_top >= 0 :
+        if roi_top >= 0:
             y_pos = -y_size/2
         ## if way far below
         if roi_bottom <= -max_y:
@@ -148,7 +148,8 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
 
         return x_pos, y_pos, cross_pos_x, cross_pos_y
 
-    def wheelEvent(self, ev):
+    def wheelEvent(self, ev): 
+        #empty function, but leave it as it overrides some other unwanted functionality. 
         pass
 
     def keyPressEvent(self, ev):
@@ -189,14 +190,20 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         if len(keyspressed) == 2:
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Left:
                 self.keyPressSig.emit('shiftLeft')
+                return
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Right:
                 self.keyPressSig.emit('shiftRight')
+                return
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Up:
                 self.keyPressSig.emit('shiftUp')
+                return
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Down:
                 self.keyPressSig.emit('shiftDown')
+                return
             if keyspressed[0] == QtCore.Qt.Key_Control and keyspressed[1] == QtCore.Qt.Key_C:
                 self.keyPressSig.emit('Copy')
+                return
             if keyspressed[0] == QtCore.Qt.Key_Control and keyspressed[1] == QtCore.Qt.Key_V:
                 self.keyPressSig.emit('Paste')
+                return
 
