@@ -96,14 +96,16 @@ class SaveOptions(object):
 				temp = Image.fromarray(temp_img.astype(np.float32))
 				temp.save(path+"/"+element_names[j]+"_"+fnames[i]+".tiff")
 
-	def save_reconstruction(self, recon):
+	def save_reconstruction(self, recon, savedir=None):
+
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			if savedir == None:
+				savedir = QtGui.QFileDialog.getSaveFileName()[0]
 
 			if savedir == "":
 				raise IndexError
 			recon = tomopy.circ_mask(recon, axis=0)
-			dxchange.writer.write_tiff_stack(recon, fname=savedir)
+			dxchange.writer.write_tiff(recon, fname=savedir)
 		except IndexError:
 			print("type the header name")
 		return
@@ -123,6 +125,27 @@ class SaveOptions(object):
 			temp_img.save(savedir + "/" + "sinogram.tiff")
 		except IndexError:
 			print("type the header name")
+		return
+
+	def save_sinogram2(self, data, element_names):
+		'''
+		saves sinogram or array of sinograms for each row
+		'''
+		savedir = QtGui.QFileDialog.getSaveFileName()[0]
+		if savedir == "":
+			return
+		else:
+			os.makedirs(savedir)
+
+		num_elements = data.shape[0]
+		num_projections = data.shape[1]
+		sinogramData = np.sum(data, axis=2)
+		sinogramData[isinf(sinogramData)] = 0.001
+
+		for i in range(num_elements):
+			element = element_names[i]
+			temp_img = Image.fromarray(sinogramData[i].astype(np.float32))
+			temp_img.save(savedir + "/"+element+"_sinogram.tiff")
 		return
 
 	def save_dxfile(self, fnames, data, element_names):
@@ -168,3 +191,19 @@ class SaveOptions(object):
 	# 	save motor positions along with corresponding angle position
 	# 	'''
 		pass
+
+	def save_numpy_array(self, data, thetas, elements):
+		try:
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+
+			if savedir == "":
+				raise IndexError
+
+			np.savetxt(savedir+"_elements",elements, delimiter = ",", fmt="%s")
+			np.save(savedir+"_thetas",thetas)
+			np.save(savedir,data)
+
+		except IndexError:
+			print("type the header name")
+		return
+

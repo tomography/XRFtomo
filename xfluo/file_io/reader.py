@@ -56,6 +56,7 @@ from __future__ import (absolute_import, division, print_function,
 import dxchange
 import numpy as np 
 import xfluo
+import h5py
 
 __author__ = "Francesco De Carlo, Fabricio S. Marin"
 __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
@@ -65,8 +66,12 @@ __all__ = ['find_elements',
            'read_theta',
            'read_projection',
            'read_channel_names',
-           'read_mic_xrf']
-
+           'read_mic_xrf',
+           'load_thetas',
+           'load_thetas_legacy',
+           'load_thetas_9idb',
+           'load_thetas_2ide',
+           'read_exchange_file']
 
 def find_index(a_list, element):
     try:
@@ -159,6 +164,8 @@ def read_projection(fname, element, hdf_tag, roi_tag, channel_tag):
     return projections[find_index(elements, element)]
 
 
+
+
 def read_theta(path_files, theta_index, hdf_tag):
     """
     Reads hdf file and returns theta
@@ -189,7 +196,56 @@ def read_theta(path_files, theta_index, hdf_tag):
     return theta
 
 
-def read_mic_xrf(path_files, element_index, hdf_tag, roi_tag, channel_tag):
+def load_thetas(path_files, data_tag, version, *thetaPV):
+    
+    if version == 0:
+        return load_thetas_legacy(path_files, thetaPV[0])
+
+    if version == 1:
+        return load_thetas_9idb(path_files, data_tag)
+
+    if version == 2:
+        return load_thetas_2ide(path_files, data_tag)
+
+
+def load_thetas_legacy( path_files, thetaPV):
+    thetaBytes = thetaPV.encode('ascii')
+    thetas = []
+    for i in range(len(path_files)):
+        try:
+            hFile = h5py.File(path_files[i])
+            extra_pvs = hFile['/MAPS/extra_pvs']
+            idx = np.where(extra_pvs[0] == thetaBytes)
+            if len(idx[0]) > 0:
+                thetas.append(float(extra_pvs[1][idx[0][0]]))
+        except:
+            pass
+    return thetas
+
+def load_thetas_9idb(path_files, data_tag):
+    thetas = []
+    for i in range(len(path_files)):
+        try:
+            hFile = h5py.File(path_files[i])
+            thetas.append(float(hFile[data_tag]['theta'].value[0]))
+        except:
+            pass
+    return thetas
+
+def load_thetas_2ide(path_files, data_tag):
+    thetas = []
+    for i in range(len(path_files)):
+        try:
+            hFile = h5py.File(path_files[i])
+            thetas.append(float(hFile[data_tag]['theta'].value[0]))
+        except:
+            pass
+    return thetas
+
+def load_thetas_13(path_files, data_tag):
+    pass
+
+def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_name):
     """
     Converts hdf files to numpy arrays for plotting and manipulation
 
@@ -213,29 +269,91 @@ def read_mic_xrf(path_files, element_index, hdf_tag, roi_tag, channel_tag):
         4D array [elements, projection, y, x]
     """
 
-    elements = read_channel_names(path_files[0], hdf_tag, channel_tag)
+    element_names = read_channel_names(path_files[0], hdf_tag, channel_tag)
     max_y, max_x = 0, 0
-    for i in range(len(path_files)):
-        proj = read_projection(path_files[i], elements[0], hdf_tag, roi_tag, channel_tag)
+    num_files = len(path_files)
+    num_elements = len(elements)
+    #get max dimensons
+    for i in range(num_files):
+        proj = read_projection(path_files[i], element_names[0], hdf_tag, roi_tag, channel_tag)
         if proj.shape[0] > max_y:
             max_y = proj.shape[0]
         if proj.shape[1] > max_x:
             max_x = proj.shape[1]
 
-    data = np.zeros([len(element_index),len(path_files), max_y, max_x])
-
-    for i in range(len(element_index)):
-        indx = element_index[i]
-
-        for j in range(len(path_files)):
-            proj = read_projection(path_files[j], elements[indx], hdf_tag, roi_tag, channel_tag)
+    data = np.zeros([num_elements,num_files, max_y, max_x])
+    scalers = np.zeros([num_files,max_y,max_x])
+    quants= np.zeros([num_elements,num_files])
+    #get data
+    for i in range(num_elements):
+        for j in range(num_files):
+            proj = read_projection(path_files[j], elements[i], hdf_tag, roi_tag, channel_tag)
             img_y = proj.shape[0]
             img_x = proj.shape[1]
-            dx = np.floor((max_x-img_x)/2).astype(int)
-            dy = np.floor((max_y-img_y)/2).astype(int)
+            dx = (max_x-img_x)//2
+            dy = (max_y-img_y)//2
             data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
+    #get scalers
+    if scaler_name == 'None':
+        scalers = np.ones([num_files, max_y, max_x])
+        quants = np.ones([num_elements, num_files])
+        data[np.isnan(data)] = 0.0001
+        data[data == np.inf] = 0.0001
+        return data, quants, scalers
+
+    for j in range(num_files):
+        scaler = read_scaler(path_files[j], hdf_tag, scaler_name)
+        scaler_x = scaler.shape[1]
+        scaler_y = scaler.shape[0]
+        dx = (max_x-scaler_x)//2
+        dy = (max_y-scaler_y)//2
+        scalers[j,dy:scaler_y+dy, dx:scaler_x+dx] = scaler
+    #get quants
+    for i in range(num_elements):
+        for j in range(num_files):
+            quant_name = scaler_name
+            quant = read_quant(path_files[j], elements[i], hdf_tag, quant_name, channel_tag)
+            quants[i,j] = quant
+
     data[np.isnan(data)] = 0.0001
     data[data == np.inf] = 0.0001
-   
-    return data
+    scalers[np.isnan(scalers)] = 0.0001
+    scalers[scalers == np.inf] = 0.0001
+    quants[np.isnan(quants)] = 0.0001
+    quants[quants == np.inf] = 0.0001
 
+    return data, quants, scalers
+
+def read_scaler(fname, hdf_tag, scaler_name):
+    try:
+        scaler_names = read_channel_names(fname, hdf_tag, 'scaler_names')
+        all_scaler = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, 'scalers'))
+    except:
+        scaler_names = read_channel_names(fname, 'MAPS', 'scaler_names')
+        all_scaler = dxchange.read_hdf5(fname, "{}/{}".format('MAPS', 'scalers'))
+        
+    return all_scaler[find_index(scaler_names, scaler_name)]
+
+def read_quant(fname, element, hdf_tag, quant_name, channel_tag):
+    elements = read_channel_names(fname, hdf_tag, channel_tag)
+    elem_idx = find_index(elements,element)
+
+    try:
+        quant_names = read_channel_names(fname, hdf_tag, 'quant_names')
+        all_quants = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, 'quant'))
+    except:
+        quant_names = ['SRcurrent','us_ic','ds_ic']
+        all_quants = dxchange.read_hdf5(fname, "{}/{}".format('MAPS', 'XRF_roi_quant'))
+
+    quant_idx = find_index(quant_names,quant_name)
+    return all_quants[quant_idx][0][elem_idx]
+
+def read_exchange_file(fname):
+    data, elements, thetas = [],[],[]
+    hFile = h5py.File(fname[0])
+    tmp_elements = hFile['exchange']['elements'].value
+    elements = [x.decode('utf-8') for x in tmp_elements]
+    thetas = hFile['exchange']['theta'].value
+    data = hFile['exchange']['data'].value
+
+    return data, elements, thetas

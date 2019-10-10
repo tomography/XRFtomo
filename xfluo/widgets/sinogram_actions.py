@@ -52,6 +52,12 @@ import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
 import scipy.fftpack as spf
 import string
+import cv2
+from PIL import Image, ImageChops, ImageOps
+import tomopy
+
+
+
 
 class SinogramActions(QtWidgets.QWidget):
     dataSig = pyqtSignal(np.ndarray, name='dataSig')
@@ -61,11 +67,17 @@ class SinogramActions(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
-    def runCenterOfMass(self, element, row, data, thetas):
+    def runCenterOfMass(self, element, data, thetas):
         '''
-        second version of runCenterOfMass
-        self.com: center of mass vector
-        element: the element chosen for center of mass
+        Center of mass alignment
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        thetas: ndarray
+            sorted projection angle list
         '''
         num_projections = data.shape[1]
         com = zeros(num_projections)
@@ -76,7 +88,11 @@ class SinogramActions(QtWidgets.QWidget):
             numb2 = sum(temp)
             for j in arange(data.shape[3]):
                 temp2[j] = temp[j] * j
+            if numb2 <= 0:
+                numb2 = 1
             numb = float(sum(temp2)) / numb2
+            if numb == NaN:
+                numb = 0.000
             com[i] = numb
 
         x=thetas
@@ -98,54 +114,61 @@ class SinogramActions(QtWidgets.QWidget):
         # return data, self.x_shifts, self.centers
         return data, self.x_shifts
 
-    # def runCenterOfMass2(self, element, row, data, thetas):
-    #     '''
-    #     second version of runCenterOfMass
-    #     self.com: center of mass vector
-    #     element: the element chosen for center of mass
-    #     '''
-    #     num_projections = data.shape[1]
-    #     com = zeros(num_projections)
-    #     temp = zeros(data.shape[3])
-    #     temp2 = zeros(data.shape[3])
-    #     try: 
-    #         for i in arange(num_projections):
-    #             temp = sum(data[element, i, row - 10//2: row + 10 // 2, :] - data[element, i, :10, :10].mean(), axis=0)
-    #             numb2 = sum(temp)
-    #             for j in arange(data.shape[3]):
-    #                 temp2[j] = temp[j] * j
-    #             numb = float(sum(temp2)) / numb2
-    #             com[i] = numb
-    #     except e:
-    #         print(e)
-
-    #     x=thetas
-    #     fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + self.centers[2]
-    #     errfunc = lambda p, x, y: fitfunc(p, x) - y
-    #     p0 = [100, 100]
-    #     p2, success = optimize.leastsq(errfunc, p0[:], args=(x, com))
-    #     centerOfMassDiff = fitfunc(p2, x) - com        
-
-    #     j = 0
-    #     num_projections = data.shape[1]
-    #     for i in arange(num_projections):
-    #         self.x_shifts[i] += int(centerOfMassDiff[j])
-    #         data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(self.x_shifts[i])), axis=2)
-    #         j += 1
-    #     self.alignmentDone()
-    #     return data, self.x_shifts, p2
-
     def shift(self, sinogramData, data, shift_number, col_number):
+        '''
+        shifts sinogram column of pixels up or down.
+        Variables
+        -----------
+        sinogramData: ndarray
+            3D array containing sinogram images for each row of data
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        shift_number: int
+            amount of pixel shifting done per column 
+        col_number: int
+        '''
         num_projections = data.shape[1]
         regShift = zeros(sinogramData.shape[0], dtype=np.int)
         sinogramData[col_number * 10:col_number * 10 + 10, :] = np.roll(sinogramData[col_number * 10:col_number * 10 + 10, :], shift_number, axis=1)
         regShift[col_number] += shift_number
         for i in arange(num_projections):
             data[:,i,:,:] = np.roll(data[:,i,:,:], regShift[i], axis=2)
-        return data, sinogramData
+        return data, sinogramData  
 
+
+    def slope_adjust(self, sinogramData, data, element, delta):
+        '''
+        Sinograms are oftwen skewed when using xcor alignment method. slope_adjust offsets the sinogram's slope by 'delta' pixels
+        Variables
+        -----------
+        sinogramData: ndarray
+            3D array containing sinogram images for each row of data
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        element: int
+            element index
+        delta: int
+            number of pixels to shift by at right-hand side of sinogram.
+        '''
+        num_projections = data.shape[1]
+        step = round(delta/num_projections)
+        lin_shift = [int(x) for x in np.linspace(0, delta, num_projections)]
+
+        for i in range(num_projections):
+            data, sinogramData = self.shift(sinogramData, data, lin_shift[i], i)
+
+        return lin_shift, data, sinogramData
+        
     def crossCorrelate(self, element, data):
-
+        '''
+        cross correlate image registration
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
         num_projections = data.shape[1]
 
         for i in arange(num_projections - 1):
@@ -157,6 +180,42 @@ class SinogramActions(QtWidgets.QWidget):
             shape = a.shape
             c = abs(spf.ifft2(fa * fb.conjugate()))
             t0, t1 = np.unravel_index(np.argmax(c), a.shape)
+            
+            if t0 > shape[0] // 2:
+                t0 -= shape[0]
+            if t1 > shape[1] // 2:
+                t1 -= shape[1]
+
+
+            data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
+            data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
+            self.x_shifts[i + 1] += t1
+            self.y_shifts[i + 1] += -t0
+
+        self.alignmentDone()
+        return data, self.x_shifts, self.y_shifts
+
+    def crossCorrelate2(self, data):
+        '''
+        cross correlate image registration aplies to all loaded elements.
+        Variables
+        -----------
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
+        num_projections = data.shape[1]
+        for i in arange(num_projections - 1):
+            flat = np.sum(data, axis=0)
+            a = flat[i]
+            b = flat[i + 1]
+            fa = spf.fft2(a)
+            fb = spf.fft2(b)
+            shape = a.shape
+
+            c = abs(spf.ifft2(fa * fb.conjugate()))
+
+            t0, t1 = np.unravel_index(np.argmax(c), a.shape)
+
             if t0 > shape[0] // 2:
                 t0 -= shape[0]
             if t1 > shape[1] // 2:
@@ -165,13 +224,21 @@ class SinogramActions(QtWidgets.QWidget):
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
             self.x_shifts[i + 1] += t1
-            self.y_shifts[i + 1] += t0
+            self.y_shifts[i + 1] += -t0
 
         self.alignmentDone()
         return data, self.x_shifts, self.y_shifts
 
     def phaseCorrelate(self, element, data):
-
+        '''
+        Phase correlate image registration
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
         num_projections = data.shape[1]
         for i in arange(num_projections - 1):
             # onlyfilenameIndex=self.fileNames[i+1].rfind("/")
@@ -192,51 +259,149 @@ class SinogramActions(QtWidgets.QWidget):
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
             self.x_shifts[i + 1] += t1
-            self.y_shifts[i + 1] += t0
+            self.y_shifts[i + 1] += -t0
         self.alignmentDone()
         return data, self.x_shifts, self.y_shifts
 
-    def matchTermplate(self):
-        pass
+    def align_y_top(self, element, data):
+        '''
+        This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
+        top of the ROI boundary. It does this for all projections, effectively adjusting for vertical drift or stage wobble. 
 
-    # def alignFromText(self, data):
-    #     '''
-    #     align by reading text file that saved prior image registration
-    #     alignment info is saved in following format: name of the file, xshift, yshift
-    #     by locating where the comma(,) is we can extract information:
-    #     name of the file(string before first comma),
-    #     yshift(string after first comma before second comma),
-    #     xshift(string after second comma)
-    #     '''
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
+        self.data = data
+        num_projections = data.shape[1]
+        tmp_data = data[element,:,:,:]
+        bounds = self.get_boundaries(tmp_data,5)
+        y_bot = np.asarray(bounds[3])
+        translate = y_bot[0]-y_bot
+        # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
+        self.y_shifts -=translate
 
-    #     try:
-    #         fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
-    #         ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
+        for i in range(num_projections):
+            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(translate[i])), axis=1)
 
-    #         fname = open(fileName[0], 'r')
-    #         read = fname.readlines()
-    #         datacopy = zeros(data.shape)
-    #         datacopy[...] = data[...]
-    #         data[np.isnan(data)] = 1
-    #         num_projections = data.shape[1]
-    #         for i in arange(num_projections):
-    #             onlyfilenameIndex = fname[i].rfind("/")
-    #             for j in arange(len(read)):
-    #                 if string.find(read[j], fname[i][onlyfilenameIndex + 1:]) != -1:
-    #                     secondcol = read[j].rfind(",")  ## find second ,
-    #                     firstcol = read[j][:secondcol].rfind(",")
-    #                     self.y_shifts[i] += int(float(read[j][secondcol + 1:-1]))
-    #                     self.x_shifts[i] += int(float(read[j][firstcol + 1:secondcol]))
-    #                     data[:, i, :, :] = np.roll(data[:, i, :, :], self.x_shifts[i], axis=2)
-    #                     data[:, i, :, :] = np.roll(data[:, i, :, :], self.y_shifts[i], axis=1)
-    #                 if string.find(read[j], "rotation axis") != -1:
-    #                     commapos = read[j].rfind(",")
-    #                     self.centers[2] = float(read[j][commapos + 1:-1])
-    #         f.close()
-    #         self.alignmentDone()
-    #         return data, self.x_shifts, self.y_shifts, self.centers
-    #     except IOError:
-    #         print("choose file please")
+        self.alignmentDone()
+        return self.y_shifts, self.data 
+
+    def align_y_bottom(self, element, data):
+        '''
+        This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
+        bottom of the ROI boundary. It does this for all projections, effectively adjusting for vertical drift or stage wobble. 
+
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
+        self.data = data
+        num_projections = data.shape[1]
+        tmp_data = data[element,:,:,:]
+        bounds = self.get_boundaries(tmp_data,70)
+        y_top = np.asarray(bounds[2])
+        translate = y_top[0]-y_top
+        # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
+        self.y_shifts -=translate
+        for i in range(num_projections):
+            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(translate[i])), axis=1)
+
+        self.alignmentDone()
+        return self.y_shifts, self.data
+
+    def get_boundaries(self, data, coeff):
+        '''
+        Identifies the saple's envelope and creates a rectangular boundary over each projection, then return a dictionary containing the
+        left, right, top, and bottom boundary positions. 
+        Variables
+        -----------
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        coeff: int
+            element index
+        '''
+        bounds = {}
+        bounds[0] = []  # x_left
+        bounds[1] = []  # x_right
+        bounds[2] = []  # y_top
+        bounds[3] = []  # y_bottom
+
+        num_proj = len(data)
+        for i in range(num_proj):
+            col_sum = np.sum(data[i], axis=0) / data[i].shape[1]
+            row_sum = np.sum(data[i], axis=1) / data[i].shape[0]
+            noise_col = np.sort(col_sum[col_sum > 0])[:1]
+            noise_row = np.sort(row_sum[row_sum > 0])[:1]
+
+            if noise_col <= noise_row:
+                noise = noise_col
+            else:
+                noise = noise_row
+
+            upper_thresh_col = np.sort(col_sum)[::-1][:1]
+            diffcol = upper_thresh_col - noise
+            y_thresh = diffcol * coeff / 100 + noise
+
+            upper_thresh_row = np.sort(row_sum)[::-1][:1]
+            diffrow = upper_thresh_row - noise
+            x_thresh = diffrow * coeff / 100 + noise
+
+            for j in range(len(col_sum)):
+                if col_sum[j] >= y_thresh:
+                    bounds[0].append(j)
+                    break
+            for j in range(len(col_sum)):
+                if col_sum[len(col_sum) - j - 1] >= y_thresh:
+                    bounds[1].append(len(col_sum) - j - 1)
+                    break
+            for j in range(len(row_sum)):
+                if row_sum[len(row_sum) - j - 1] >= x_thresh:
+                    bounds[2].append(len(row_sum) - j - 1)
+                    break
+            for j in range(len(row_sum)):
+                if row_sum[j] >= x_thresh:
+                    bounds[3].append(j)
+                    break
+        return bounds
+
+    def iterative_align(self, element, data, thetas, iters=5):
+        '''
+        iterative alignment method from TomoPy
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        thetas: ndarray
+            sorted projection angle list
+        iters: int
+            number of iterations
+        '''
+        num_projections = data.shape[1]
+        prj = data[element]
+        # prj = np.sum(data, axis=0)
+        prj = tomopy.remove_nan(prj, val=0.0)
+        prj[np.where(prj == np.inf)] = 0.0
+        self.thetas = thetas
+        prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=(0,0),
+                            blur=True, rin=0.8, rout=0.95, center=None, algorithm='mlem', 
+                            upsample_factor=100, save=False, debug=True)
+        self.x_shifts = np.round(sx).astype(int)
+        self.y_shifts = np.round(sy).astype(int)
+
+        for i in range(num_projections):
+            data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(self.y_shifts[i])), axis=1)
+            data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(self.x_shifts[i])), axis=2)
+        
+        return self.x_shifts, self.y_shifts, data
 
     def alignFromText2(self, data):
         '''
@@ -246,6 +411,11 @@ class SinogramActions(QtWidgets.QWidget):
         name of the file(string before first comma),
         yshift(string after first comma before second comma),
         xshift(string after second comma)
+        Variables
+        -----------
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+
         '''
         try:
             fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
@@ -264,17 +434,19 @@ class SinogramActions(QtWidgets.QWidget):
                 self.y_shifts[i] += int(float(read[j][secondcol + 1:-1]))
                 self.x_shifts[i] += int(float(read[j][firstcol + 1:secondcol]))
                 data[:, i, :, :] = np.roll(data[:, i, :, :], self.x_shifts[i], axis=2)
-                data[:, i, :, :] = np.roll(data[:, i, :, :], self.y_shifts[i], axis=1)
+                data[:, i, :, :] = np.roll(data[:, i, :, :], -self.y_shifts[i], axis=1)
 
             file.close()
             self.alignmentDone()
             # return data, self.x_shifts, self.y_shifts, self.centers
             return data, self.x_shifts, self.y_shifts
+        except IndexError:
+            print("index missmatch between align file and current dataset ")
         except IOError:
             print("choose file please")
-
-    # def alignfromHotspotxt(self):
-    #     pass
+        except TypeError: 
+            print("choose file please")
+        return
 
     def alignmentDone(self):
         '''send message that alignment has been done'''

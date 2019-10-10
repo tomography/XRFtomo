@@ -59,26 +59,30 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         self.initUI()
 
     def initUI(self):
-        self.show()
         self.p1 = self.addPlot()
         self.projView = pyqtgraph.ImageItem()
         self.projView.rotate(0)
         self.p1.addItem(self.projView)
-        self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
-        self.p1.scene().sigMouseClicked.connect(self.mouseClick)
+        self.p1.items[0].scene().sigMouseMoved.connect(self.mouseMoved)
+        self.p1.items[0].scene().sigMouseClicked.connect(self.mouseClick)
         self.p1.setMouseEnabled(x=False, y=False)
+        self.show()
 
     def mouseMoved(self, evt):
-        self.moving_x = self.p1.vb.mapSceneToView(evt).x()
-        self.moving_y = self.p1.vb.mapSceneToView(evt).y()
+        try:
+            self.moving_x = self.projView.mapFromDevice(evt).x()
+            self.moving_y = self.projView.mapFromDevice(evt).y()
+        except:
+            "TODO: error when incorrect PV loaded or when only single angle information is available. "
+            print("WARNING: single column for sinogram. Load more projections with unique angles. ")
 
     def mouseClick(self, evt):
         self.x_pos = int(round(self.moving_x))
         self.y_pos = int(round(self.moving_y))
 
     def mouseReleaseEvent(self, ev):
-        self.x_pos = int(round(self.moving_x))
-        self.y_pos = int(round(self.moving_y))
+        self.x_pos = int(self.moving_x)
+        self.y_pos = int(self.moving_y)
 
     def wheelEvent(self, ev):
         '''
@@ -90,22 +94,26 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         self.firstrelease = True
         astr = ev.key()
         self.keylist.append(astr)
+        return
 
     def keyReleaseEvent(self, ev):
         if self.firstrelease == True:
             self.processMultipleKeys(self.keylist)
 
         self.firstrelease = False
-        del self.keylist[-1]
+        try:
+            del self.keylist[-1]
+        except:
+            pass
 
     def processMultipleKeys(self, keyspressed):
         if len(keyspressed) ==1:
 
             if keyspressed[0] == QtCore.Qt.Key_Up:
-                col_number = int(self.x_pos / 10)
+                col_number = int(self.x_pos/10)
                 self.keyPressSig.emit(1, col_number)
 
             if keyspressed[0] == QtCore.Qt.Key_Down:
-                col_number = int(self.x_pos / 10)
+                col_number = int(self.x_pos/10)
                 self.keyPressSig.emit(-1, col_number)
  
