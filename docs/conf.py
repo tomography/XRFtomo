@@ -296,4 +296,4 @@ texinfo_documents = [
 #ztexinfo_no_detailmenu = False
 
 # http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_mock_imports
-autodoc_mock_imports = "numpy h5py tomopy tifffile dxchange matplotlib PyQt5 pyqtgraph glob pylab sys scipy".split()
+autodoc_mock_imports = "cv2 numpy h5py tomopy tifffile dxchange matplotlib PyQt5 pyqtgraph glob pylab sys scipy".split()
