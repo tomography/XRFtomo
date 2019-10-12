@@ -48,6 +48,13 @@ import sys
 import xfluo
 import xfluo.config as config
 from pylab import *
+from scipy import signal
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from skimage import measure
+
 from xfluo.file_io.reader import *
 # from widgets.file_widget import  FileTableWidget
 # from widgets.image_process_widget import ImageProcessWidget
@@ -230,6 +237,14 @@ class XfluoGui(QtGui.QMainWindow):
         # self.editMenu.addAction(externalImageRegAction)
         self.editMenu.addAction(restoreAction)
         self.editMenu.setDisabled(True)
+
+        analysis = QtGui.QMenu('Analysis', self)
+        corrElemAction = QtGui.QAction('Correlate Elements', self)
+        analysis.addAction(corrElemAction)
+        corrElemAction.triggered.connect(self.corrElem)
+
+        self.toolsMenu = menubar.addMenu("Tool")
+        self.toolsMenu.addMenu(analysis)
 
         self.afterConversionMenu = menubar.addMenu('Save')
         self.afterConversionMenu.addAction(saveProjectionAction)
@@ -562,6 +577,126 @@ class XfluoGui(QtGui.QMainWindow):
         except AttributeError:
             print("Load dataset first")
             return
+
+    # def corrElem2(self):
+    #     self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        
+    #     data = self.data
+    #     corrMat = np.zeros((data.shape[0],data.shape[0]))
+    #     for i in range(data.shape[0]):
+    #         for j in range(data.shape[0]):
+    #             elemA = data[i]
+    #             elemB = data[j]
+    #             corr = np.mean(signal.correlate(elemA, elemB, method='direct', mode='same') / (data.shape[1]*data.shape[2]*data.shape[3]))
+    #             corrMat[i,j] = corr
+
+    #     sns.set(style="white")
+
+    #     # Generate a mask for the upper triangle
+    #     mask = np.zeros_like(corrMat, dtype=np.bool)
+    #     mask[np.triu_indices_from(mask,1)] = True
+
+    #     # Set up the matplotlib figure
+    #     f, ax = plt.subplots(figsize=(11, 9))
+
+    #     # Generate a custom diverging colormap
+    #     cmap = sns.diverging_palette(220, 10, as_cmap=True)
+
+    #     # Draw the heatmap with the mask and correct aspect ratio
+    #     d = pd.DataFrame(data=corrMat, columns=self.elements, index=self.elements)
+    #     sns.heatmap(d, mask=mask, cmap=cmap, vmax=corrMat.max(), center=0,
+    #                 square=True, linewidths=.5, cbar_kws={"shrink": .5})
+    #     f.show()
+    #     self.app.restoreOverrideCursor()
+    #     return corrMat
+
+
+    def corrElem(self):
+        self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        
+        data = self.data
+        #normalize data
+        nom_data = self.normData(data)
+        errMat = np.zeros((data.shape[0],data.shape[0]))
+        simMat = np.zeros((data.shape[0],data.shape[0]))
+        for i in range(data.shape[0]):      #elemA
+            for j in range(data.shape[0]):  #elemB
+                elemA = data[i]
+                elemB = data[j]
+                # corr = np.mean(signal.correlate(elemA, elemB, method='direct', mode='same') / (data.shape[1]*data.shape[2]*data.shape[3]))
+                err, sim = self.compare(elemA, elemB)
+                errMat[i,j]= err
+                simMat[i,j] = sim
+
+
+        sns.set(style="white")
+
+        # Generate a mask for the upper triangle
+        mask = np.zeros_like(simMat, dtype=np.bool)
+        mask[np.triu_indices_from(mask,1)] = True
+
+        # Set up the matplotlib figure
+        f, ax = plt.subplots(figsize=(11, 9))
+
+        # Generate a custom diverging colormap
+        cmap = sns.diverging_palette(220, 10, as_cmap=True)
+
+        # Draw the heatmap with the mask and correct aspect ratio
+        d = pd.DataFrame(data=errMat, columns=self.elements, index=self.elements)
+        sns.heatmap(d, mask=mask, cmap=cmap, vmax=errMat.max(), center=0,
+                    square=True, linewidths=.5, cbar_kws={"shrink": .5})
+        f.show()
+        self.app.restoreOverrideCursor()
+        return errMat, simMat
+
+    def normData(self,data):
+        norm = np.zeros_like(data)
+        for i in range(data.shape[0]):
+            data_mean = np.mean(data[i])
+            data_std = np.std(data[i])
+            data_med = np.median(data[i])
+            data_max = np.max(data[i])
+            new_max = data_mean+10*data_std
+            current_elem = data[i]
+            current_elem[data[i] >= new_max] = new_max
+            data[i] = current_elem
+
+        return data 
+
+
+
+
+    def compare(self, imageA, imageB):
+        # the 'Mean Squared Error' between the two images is the
+        # sum of the squared difference between the two images;
+
+        d = len(imageA)
+        d2 = len(imageB)
+        errMat = np.zeros(imageA.shape[0])
+        simMat = np.zeros(imageA.shape[0])
+
+        if d > 2:
+            for i in range(imageA.shape[0]):
+                err = np.sum((imageA[i].astype("float") - imageB[i].astype("float")) ** 2)
+                err /= float(imageA[i].shape[0] * imageA[i].shape[1])
+                sim = measure.compare_ssim(imageA[i], imageB[i])
+                errMat[i] = err
+                simMat[i] = sim
+                errVal = np.sum(errMat)/len(errMat)
+                simVal = np.sum(simMat)/len(simMat)
+        else:
+            err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
+            err /= float(imageA.shape[0] * imageA.shape[1])
+            sim  = measure.compare_ssim(imageA, imageB)
+            errVal = err
+            simVal = sim
+
+
+
+
+        # return the MSE, the lower the error, the more "similar"
+        return errVal, simVal
+
 
     def keyMapSettings(self):
         msg = QtGui.QMessageBox()
