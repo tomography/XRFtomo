@@ -48,7 +48,7 @@ import sys
 import xfluo
 import xfluo.config as config
 from pylab import *
-from scipy import signal
+from scipy import signal, stats
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -616,23 +616,24 @@ class XfluoGui(QtGui.QMainWindow):
         
         data = self.data
         #normalize data
-        nom_data = self.normData(data)
-        errMat = np.zeros((data.shape[0],data.shape[0]))
-        simMat = np.zeros((data.shape[0],data.shape[0]))
+        # nom_data = self.normData(data)
+        # errMat = np.zeros((data.shape[0],data.shape[0]))
+        # simMat = np.zeros((data.shape[0],data.shape[0]))
+        rMat = np.zeros((data.shape[0],data.shape[0]))
         for i in range(data.shape[0]):      #elemA
             for j in range(data.shape[0]):  #elemB
                 elemA = data[i]
                 elemB = data[j]
                 # corr = np.mean(signal.correlate(elemA, elemB, method='direct', mode='same') / (data.shape[1]*data.shape[2]*data.shape[3]))
-                err, sim = self.compare(elemA, elemB)
-                errMat[i,j]= err
-                simMat[i,j] = sim
-
+                rval = self.compare(elemA, elemB)
+                # errMat[i,j]= err
+                # simMat[i,j]= sim
+                rMat[i,j]= rval
 
         sns.set(style="white")
 
         # Generate a mask for the upper triangle
-        mask = np.zeros_like(simMat, dtype=np.bool)
+        mask = np.zeros_like(rMat, dtype=np.bool)
         mask[np.triu_indices_from(mask,1)] = True
 
         # Set up the matplotlib figure
@@ -642,60 +643,68 @@ class XfluoGui(QtGui.QMainWindow):
         cmap = sns.diverging_palette(220, 10, as_cmap=True)
 
         # Draw the heatmap with the mask and correct aspect ratio
-        d = pd.DataFrame(data=errMat, columns=self.elements, index=self.elements)
-        sns.heatmap(d, mask=mask, cmap=cmap, vmax=errMat.max(), center=0,
+        d = pd.DataFrame(data=rMat, columns=self.elements, index=self.elements)
+        sns.heatmap(d, mask=mask, annot=True, cmap=cmap, vmax=rMat.max(), center=0,
                     square=True, linewidths=.5, cbar_kws={"shrink": .5})
         f.show()
+
         self.app.restoreOverrideCursor()
-        return errMat, simMat
+        return rMat
 
-    def normData(self,data):
-        norm = np.zeros_like(data)
-        for i in range(data.shape[0]):
-            data_mean = np.mean(data[i])
-            data_std = np.std(data[i])
-            data_med = np.median(data[i])
-            data_max = np.max(data[i])
-            new_max = data_mean+10*data_std
-            current_elem = data[i]
-            current_elem[data[i] >= new_max] = new_max
-            data[i] = current_elem
+    # def normData(self,data):
+    #     norm = np.zeros_like(data)
+    #     for i in range(data.shape[0]):
+    #         data_mean = np.mean(data[i])
+    #         data_std = np.std(data[i])
+    #         data_med = np.median(data[i])
+    #         data_max = np.max(data[i])
+    #         new_max = data_mean+10*data_std
+    #         current_elem = data[i]
+    #         current_elem[data[i] >= new_max] = new_max
+    #         data[i] = current_elem
 
-        return data 
-
-
-
+    #     return data 
 
     def compare(self, imageA, imageB):
         # the 'Mean Squared Error' between the two images is the
         # sum of the squared difference between the two images;
 
         d = len(imageA)
-        d2 = len(imageB)
-        errMat = np.zeros(imageA.shape[0])
-        simMat = np.zeros(imageA.shape[0])
+        # d2 = len(imageB)
+        # errMat = np.zeros(imageA.shape[0])
+        # simMat = np.zeros(imageA.shape[0])
+        rMat = np.zeros(imageA.shape[0])
+
 
         if d > 2:
             for i in range(imageA.shape[0]):
-                err = np.sum((imageA[i].astype("float") - imageB[i].astype("float")) ** 2)
-                err /= float(imageA[i].shape[0] * imageA[i].shape[1])
-                sim = measure.compare_ssim(imageA[i], imageB[i])
-                errMat[i] = err
-                simMat[i] = sim
-                errVal = np.sum(errMat)/len(errMat)
-                simVal = np.sum(simMat)/len(simMat)
+                # err = np.sum((imageA[i].astype("float") - imageB[i].astype("float")) ** 2)
+                # err /= float(imageA[i].shape[0] * imageA[i].shape[1])
+                # sim = measure.compare_ssim(imageA[i], imageB[i])
+                r, p = stats.pearsonr(imageA[i].flatten(), imageB[i].flatten())
+
+                # errMat[i] = err
+                # simMat[i] = sim
+                rMat[i] = r
+                # errVal = np.sum(errMat)/len(errMat)
+                # simVal = np.sum(simMat)/len(simMat)
+            rVal = np.sum(rMat)/len(rMat)
         else:
-            err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
-            err /= float(imageA.shape[0] * imageA.shape[1])
-            sim  = measure.compare_ssim(imageA, imageB)
-            errVal = err
-            simVal = sim
+            # err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
+            # err /= float(imageA.shape[0] * imageA.shape[1])
+            # sim  = measure.compare_ssim(imageA, imageB)
+            # errVal = err
+            # simVal = sim
+            r, p = stats.pearsonr(imageA.flatten(), imageB.flatten())
+
+            rVal = r
+
 
 
 
 
         # return the MSE, the lower the error, the more "similar"
-        return errVal, simVal
+        return rVal
 
 
     def keyMapSettings(self):
