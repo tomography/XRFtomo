@@ -497,7 +497,10 @@ class FileTableWidget(QtWidgets.QWidget):
         
     def onSaveDataInMemory(self):
         files = [i.filename for i in self.fileTableModel.arrayData]
-        path_files = [self.fileTableModel.directory + '/' + s for s in files]
+        #check that file filed 'use' is set to True before saving to data
+
+
+
         thetas = [i.theta for i in self.fileTableModel.arrayData]
         elements = [i.element_name for i in self.elementTableModel.arrayData]
         files_bool = [i.use for i in self.fileTableModel.arrayData]
@@ -512,6 +515,7 @@ class FileTableWidget(QtWidgets.QWidget):
         l = np.arange(len(elements))
 
         files = [files[j] for j in k if files_bool[j]==True]
+        path_files = [self.fileTableModel.directory + '/' + s for s in files]
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
 
