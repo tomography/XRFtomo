@@ -71,6 +71,14 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def initUI(self):
         self.ViewControl = xfluo.ImageProcessControlsWidget()
         self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
+        # self.imgAndHistoWidget.setSizePolicy(QtWidgets.QSizePolicy.setHeightForWidth(True))
+
+        # sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        # sizePolicy.setHorizontalStretch(0)
+        # sizePolicy.setVerticalStretch(0)
+        # sizePolicy.setHeightForWidth(self.imgAndHistoWidget.sizePolicy().hasHeightForWidth())
+        # self.imgAndHistoWidget.setSizePolicy(sizePolicy)
+
         self.actions = xfluo.ImageProcessActions()
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
@@ -133,6 +141,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         palette.setColor(palette.Dark, QtGui.QColor(0, 0, 0))
         # set the palette
         self.imgAndHistoWidget.lcd.setPalette(palette)
+        self.imgAndHistoWidget.view.setAspectLocked(True)
+        self.imgAndHistoWidget.view.projView.setScaledMode()
 
 
     def showImgProcess(self):
@@ -216,7 +226,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         index = self.imgAndHistoWidget.sld.value()
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
-    
+
     def updateSldRange(self, index, thetas):
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.sld.setRange(0, len(thetas) -1)

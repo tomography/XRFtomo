@@ -388,6 +388,8 @@ class XfluoGui(QtGui.QMainWindow):
 
         self.init_widgets()
         self.imageProcessWidget.showImgProcess()
+        self.imageProcessWidget.imgAndHistoWidget.view.setAspectLocked(True)
+
         self.sinogramWidget.showSinogram()
         self.reconstructionWidget.showReconstruct()
         # self.reset_widgets()
@@ -401,7 +403,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.update_history(self.data)
         self.update_alignment(self.x_shifts, self.y_shifts)
         self.refreshUI()
-
 
     def refreshUI(self):
         self.tab_widget.removeTab(1)
