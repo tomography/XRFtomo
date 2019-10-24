@@ -89,8 +89,8 @@ class SaveOptions(object):
 			path = savedir + "/" + element_names[j]
 			try:
 				os.makedirs(path)
-			except e:
-				print(e)
+			except:
+				return
 			for i in arange(data.shape[1]):		#angle index
 				temp_img = data[j, i, :, :]
 				temp = Image.fromarray(temp_img.astype(np.float32))

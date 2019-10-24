@@ -243,8 +243,9 @@ class XfluoGui(QtGui.QMainWindow):
         analysis.addAction(corrElemAction)
         corrElemAction.triggered.connect(self.corrElem)
 
-        self.toolsMenu = menubar.addMenu("Tool")
+        self.toolsMenu = menubar.addMenu("Tools")
         self.toolsMenu.addMenu(analysis)
+        self.toolsMenu.setDisabled(True)
 
         self.afterConversionMenu = menubar.addMenu('Save')
         self.afterConversionMenu.addAction(saveProjectionAction)
@@ -399,6 +400,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.tab_widget.setTabEnabled(3,True)
         self.afterConversionMenu.setDisabled(False)
         self.editMenu.setDisabled(False)
+        self.toolsMenu.setDisabled(False)
         # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_history(self.data)
         self.update_alignment(self.x_shifts, self.y_shifts)
