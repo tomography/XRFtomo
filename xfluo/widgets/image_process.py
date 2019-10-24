@@ -76,8 +76,11 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         # sizePolicy.setHorizontalStretch(0)
         # sizePolicy.setVerticalStretch(0)
-        # sizePolicy.setHeightForWidth(self.imgAndHistoWidget.sizePolicy().hasHeightForWidth())
+        # sizePolicy.setHeightForWidth(True)
+        # sizePolicy.setWidthForHeight(True)
         # self.imgAndHistoWidget.setSizePolicy(sizePolicy)
+
+        # self.imgAndHistoWidget.resize(1000, 700)
 
         self.actions = xfluo.ImageProcessActions()
 
@@ -89,6 +92,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.ySizeTxt.textChanged.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.normalizeBtn.clicked.connect(self.normalize_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
+        self.ViewControl.aspectChkbx.clicked.connect(self.lockAspect)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
         # self.ViewControl.gaussian55Btn.clicked.connect(self.actions.gauss55)
         self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
@@ -141,9 +145,20 @@ class ImageProcessWidget(QtWidgets.QWidget):
         palette.setColor(palette.Dark, QtGui.QColor(0, 0, 0))
         # set the palette
         self.imgAndHistoWidget.lcd.setPalette(palette)
-        self.imgAndHistoWidget.view.setAspectLocked(True)
         self.imgAndHistoWidget.view.projView.setScaledMode()
 
+    def lockAspect(self):
+        if self.ViewControl.aspectChkbx.isChecked():
+            self.imgAndHistoWidget.view.setRange(lockAspect=True)
+            # self.imgAndHistoWidget.view.setAspectLocked(True)
+        else:
+            # self.imgAndHistoWidget.view.setAspectLocked(False)
+            self.imgAndHistoWidget.view.setRange(lockAspect=False)
+
+            #destroy and redraw
+            #or disable locked aspect and set size policy to expanding
+            # self.imgAndHistoWidget.view.redraw(True)
+        return
 
     def showImgProcess(self):
         self.actions.x_shifts = self.x_shifts

@@ -80,7 +80,13 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         self.cross_h = self.p1.addLine(y=-10)
         self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
         self.p1.scene().sigMouseClicked.connect(self.mouseClick)
+        self.p1.scene().sceneRectChanged.connect(self.windowResize)
         self.p1.setMouseEnabled(x=False, y=False)
+
+
+    def windowResize(self, evt):
+        print(evt.width(),evt.height())
+
 
     def mouseMoved(self, evt):
         self.moving_x = int(round(self.p1.vb.mapSceneToView(evt).x()))

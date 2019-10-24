@@ -77,6 +77,8 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.ySizeTxt.setFixedWidth(button4size)
         self.ySizeTxt.textChanged.connect(self.yTxtChange)
 
+        self.aspectChkbx = QtWidgets.QCheckBox("Aspect ratio locked")
+
         self.x_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.x_sld.setFixedWidth(button2size)
         self.x_sld.setValue(self.xSize)
@@ -125,6 +127,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb2.addWidget(self.y_sld)
         hb2.addWidget(self.ySizeTxt)
 
+
         hb3 = QtWidgets.QHBoxLayout()
         hb3.addWidget(self.lbl3)
         hb3.addWidget(self.combo3)
@@ -148,6 +151,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addLayout(hb1)
         vb1.addLayout(hb2)
+        vb1.addWidget(self.aspectChkbx)
 
         vb2 = QtWidgets.QVBoxLayout()
         vb2.addLayout(hb3)
