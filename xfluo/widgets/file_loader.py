@@ -222,7 +222,11 @@ class FileTableWidget(QtWidgets.QWidget):
         try:
             folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
             self.dirLineEdit.setText(folderName)
-            self.onLoadDirectory()
+            try:
+               self.onLoadDirectory()
+            except:
+                print('File signature not found: something is wrong with files')
+
         except:
             self.dirLineEdit.setText(currentDir)
             try:
@@ -392,6 +396,10 @@ class FileTableWidget(QtWidgets.QWidget):
 
             if self.dataTag.currentText() == 'scalers':
                 self.element_tag = 'scaler_names'
+     
+            if self.dataTag.currentText() == 'images':
+                self.element_tag = 'images_names'            
+
             else: 
                 self.element_tag = 'channel_names'
             # element_tag = self.elementTag.currentText()
@@ -423,6 +431,7 @@ class FileTableWidget(QtWidgets.QWidget):
             if self.version == 1:   #9idbdata
                 quant_names = list(self.img[img_tag]['quant_names'])
                 quant_names = [quant_names[i].decode() for i in range(len(quant_names))]
+                self.quant_options.addItem('None')
                 for i in range(len(quant_names)):
                     self.quant_options.addItem(quant_names[i])
                 # default_idx = quant_names.index("DS_IC")
