@@ -97,13 +97,16 @@ class FileTableWidget(QtWidgets.QWidget):
 
         self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL', '9idbTAU:SM:ST:ActPos']
         thetaCompleter = QtWidgets.QCompleter(self.thetaOptions)
-        thetaLabel = QtWidgets.QLabel('Theta PV:')
-        thetaLabel.setFixedWidth(90)
+        self.thetaLabel = QtWidgets.QLabel('Theta PV:')
+        self.thetaLabel.setFixedWidth(90)
+        self.thetaLabel.setVisible(False)
         self.thetaLineEdit = QtWidgets.QLineEdit(self.auto_theta_pv)
         self.thetaLineEdit.setCompleter(thetaCompleter)
         # self.thetaLineEdit.textChanged.connect(self.onThetaPVChange)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
         self.thetaLineEdit.setFixedWidth(122.5)
+        self.thetaLineEdit.setVisible(False)
+
 
         imageTag_label = QtWidgets.QLabel('Image tag:')
         imageTag_label.setFixedWidth(90)
@@ -146,7 +149,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.message.setText('')
 
         hBox1 = QtWidgets.QHBoxLayout()
-        hBox1.addWidget(thetaLabel)
+        hBox1.addWidget(self.thetaLabel)
         hBox1.addWidget(self.thetaLineEdit)
         hBox1.setAlignment(QtCore.Qt.AlignLeft)
 
@@ -398,9 +401,9 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.element_tag = 'scaler_names'
      
             if self.dataTag.currentText() == 'images':
-                self.element_tag = 'images_names'            
+                self.element_tag = 'images_names'
 
-            else: 
+            if self.dataTag.currentText() != 'images' and self.dataTag.currentText() != 'scalers':
                 self.element_tag = 'channel_names'
             # element_tag = self.elementTag.currentText()
 

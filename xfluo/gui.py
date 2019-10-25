@@ -134,6 +134,14 @@ class XfluoGui(QtGui.QMainWindow):
         keyMapAction = QtGui.QAction('key map settings', self)
         keyMapAction.triggered.connect(self.keyMapSettings)
 
+        debugToolsAction = QtGui.QAction('enable debug tools', self)
+        debugToolsAction.triggered.connect(self.debugMode)
+
+        exitDebugToolsAction = QtGui.QAction('disable debug tools', self)
+        exitDebugToolsAction.triggered.connect(self.exitDebugMode)
+
+        
+
         # matcherAction = QtGui.QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
 
@@ -260,6 +268,8 @@ class XfluoGui(QtGui.QMainWindow):
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(keyMapAction)
+        self.helpMenu.addAction(debugToolsAction)
+        self.helpMenu.addAction(exitDebugToolsAction)
         self.afterConversionMenu.setDisabled(True)
 
         add = 0
@@ -268,6 +278,17 @@ class XfluoGui(QtGui.QMainWindow):
         self.setGeometry(add, add, 1100 + add, 500 + add)
         self.setWindowTitle('xfluo')
         self.show()
+
+    def debugMode(self):
+        self.fileTableWidget.thetaLabel.setVisible(True)
+        self.fileTableWidget.thetaLineEdit.setVisible(True)
+        return
+ 
+    def exitDebugMode(self):
+        self.fileTableWidget.thetaLabel.setVisible(False)
+        self.fileTableWidget.thetaLineEdit.setVisible(False)
+        return      
+
 
     def openFolder(self):
         try:
@@ -711,16 +732,27 @@ class XfluoGui(QtGui.QMainWindow):
 
 
     def keyMapSettings(self):
-        msg = QtGui.QMessageBox()
-        msg.setIcon(QtGui.QMessageBox.Information)
-        msg.setText("Undo: \t\t Ctr+Z \n\nshift projection up: \t up  \n\n"
-                    "shift projection down: \t down  \n\nshift projection left: \t left \n\n"
-                    "shift projection right: \t right  \n\nshift stack up: \t Shift + up \n\n"
+        self.msg = QtWidgets.QWidget()
+        self.msg.resize(600,400)
+        self.msg.setWindowTitle('key map')
+        text = QtWidgets.QLabel("Undo: \t\t Ctr+Z \t\t previous image: \t A \n\n" 
+                    "shift image up: \t up \t\t next image: \t D \n\n" 
+                    "shift image down: \t down  \t\t skip (hotspot): \t S \n\n"
+                    "shift image left: \t left \t\t next (hotspot): \t N \n\n"
+                    "shift image right: \t right  \n\nshift stack up: \t Shift + up \n\n"
                     "shift stack down: \t Shift + down \n\nshift stack left: \t Shift + left \n\n"
-                    "shift stack right: \t Shift + right \n\nexclude projection: \t Delete \n\n"
-                    "copy background: \t Ctrl + C \n\n paste background \t Ctrl + V" )
-        msg.setWindowTitle("key map")
-        msg.exec_()
+                    "shift stack right: \t Shift + right \n\nexclude image: \t Delete \n\n"
+                    "copy background: \t Ctrl + C \n\npaste background:  Ctrl + V" 
+
+
+                    )
+
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(text)
+
+        self.msg.setLayout(vbox)
+        self.msg.show()
+
 
     def closeEvent(self, event):
         try:
