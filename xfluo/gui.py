@@ -739,13 +739,18 @@ class XfluoGui(QtGui.QMainWindow):
                     "shift image up: \t up \t\t next image: \t D \n\n" 
                     "shift image down: \t down  \t\t skip (hotspot): \t S \n\n"
                     "shift image left: \t left \t\t next (hotspot): \t N \n\n"
-                    "shift image right: \t right  \n\nshift stack up: \t Shift + up \n\n"
-                    "shift stack down: \t Shift + down \n\nshift stack left: \t Shift + left \n\n"
-                    "shift stack right: \t Shift + right \n\nexclude image: \t Delete \n\n"
+                    "shift image right: \t right  \n\n"
+                    "shift stack up: \t Shift + up \n\n"
+                    "shift stack down: \t Shift + down \n\n"
+                    "shift stack left: \t Shift + left \n\n"
+                    "shift stack right: \t Shift + right \n\n"
+                    "exclude image: \t Delete \n\n"
                     "copy background: \t Ctrl + C \n\npaste background:  Ctrl + V" 
 
 
                     )
+
+
 
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(text)

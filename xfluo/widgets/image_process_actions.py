@@ -72,11 +72,11 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.dataSig.emit(data)
 
 	def shiftProjectionLeft(self, data, index):
-		data[:,index] = np.roll(data[:,index],-1)
+		data[:,index] = np.roll(data[:,index],-1,axis=2)
 		self.dataSig.emit(data)
 
 	def shiftProjectionRight(self, data, index):
-		data[:,index] = np.roll(data[:,index],1)
+		data[:,index] = np.roll(data[:,index],1, axis=2)
 		self.dataSig.emit(data)
 
 	def shiftDataUp(self, data, thetas):
@@ -90,11 +90,15 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.dataSig.emit(data)
 
 	def shiftDataLeft(self, data):
-		data = np.roll(data,-1)
+		for i in range(data.shape[1]):
+			data[:,i] = np.roll(data[:,i],-1, axis=2)
 		self.dataSig.emit(data)
 
 	def shiftDataRight(self, data):
-		data = np.roll(data,1)
+		num_images = data.shape[1]
+		for i in range(num_images):
+			data[:,i] = np.roll(data[:,i],1, axis=2)
+
 		self.dataSig.emit(data)
 
 	def normalize(self, data, element):

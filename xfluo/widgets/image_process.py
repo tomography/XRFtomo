@@ -286,7 +286,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shiftRight':
             self.x_shifts +=1
-            self.actions.shiftDataRight(self.data) 
+            self.actions.shiftDataRight(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shiftUp':
             self.y_shifts +=1
