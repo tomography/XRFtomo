@@ -79,13 +79,13 @@ class ImageProcessActions(QtWidgets.QWidget):
 		data[:,index] = np.roll(data[:,index],1, axis=2)
 		self.dataSig.emit(data)
 
-	def shiftDataUp(self, data, thetas):
-		for i in range(len(thetas)):
+	def shiftDataUp(self, data):
+		for i in range(data.shape[1]):
 			data[:,i] = np.roll(data[:,i],-1,axis=1)
 		self.dataSig.emit(data)
 
-	def shiftDataDown(self, data, thetas):
-		for i in range(len(thetas)):
+	def shiftDataDown(self, data):
+		for i in range(data.shape[1]):
 			data[:,i] = np.roll(data[:,i],1,axis=1)
 		self.dataSig.emit(data)
 
@@ -95,8 +95,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.dataSig.emit(data)
 
 	def shiftDataRight(self, data):
-		num_images = data.shape[1]
-		for i in range(num_images):
+		for i in range(data.shape[1]):
 			data[:,i] = np.roll(data[:,i],1, axis=2)
 
 		self.dataSig.emit(data)
