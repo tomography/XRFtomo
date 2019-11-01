@@ -104,7 +104,6 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.testButton.setFixedWidth(button2size)
         self.testButton.setVisible(False)
 
-
         for i in range(5):
             self.combo3.addItem(str(i + 1))
         self.btn1 = QtWidgets.QPushButton("fit to a line")
@@ -126,7 +125,6 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb2.addWidget(self.ySizeLbl)
         hb2.addWidget(self.y_sld)
         hb2.addWidget(self.ySizeTxt)
-
 
         hb3 = QtWidgets.QHBoxLayout()
         hb3.addWidget(self.lbl3)

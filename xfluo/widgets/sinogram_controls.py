@@ -54,6 +54,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
+         #__________Main control window for Alignment Tab__________   
         button1size = 250
         button2size = 122.5
         button3size = 73.3
@@ -123,3 +124,186 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb3.addLayout(vb1)
         self.setFixedWidth(275)
         self.setLayout(vb3)
+    
+        #__________Popup window for iterative alignment__________   
+
+        self.parameters = QtWidgets.QWidget()
+        self.parameters.resize(275,400)
+        self.parameters.setWindowTitle('Alignment Parameters')
+
+        iter_label = QtWidgets.QLabel("iterations")
+        iter_label.setFixedWidth(button2size)
+        self.iter_textbox = QtWidgets.QLineEdit("5")
+        self.iter_textbox.setFixedWidth(button2size)
+        self.iter_textbox.setStyleSheet('* {background-color: red}')
+        self.iter_textbox.returnPressed.connect(self.validate_parameters)
+
+        padding_label = QtWidgets.QLabel("padding")
+        padding_label.setFixedWidth(button2size)
+        self.padding_textbox = QtWidgets.QLineEdit("0,0")
+        self.padding_textbox.setFixedWidth(button2size)
+        self.padding_textbox.returnPressed.connect(self.validate_parameters)
+
+        self.blur_checkbox = QtWidgets.QCheckBox("blur")
+        self.blur_checkbox.setChecked(True)
+        self.blur_checkbox.setFixedWidth(button2size)
+
+        inner_radius_label = QtWidgets.QLabel("inner Radius")
+        inner_radius_label.setFixedWidth(button2size)
+        self.inner_radius_textbox = QtWidgets.QLineEdit("0.8")
+        self.inner_radius_textbox.setFixedWidth(button2size)
+        self.inner_radius_textbox.returnPressed.connect(self.validate_parameters)
+
+
+        outer_radius_label = QtWidgets.QLabel("outer Radius")
+        outer_radius_label.setFixedWidth(button2size)
+        self.outer_radius_textbox = QtWidgets.QLineEdit("0.9")
+        self.outer_radius_textbox.setFixedWidth(button2size)
+        self.outer_radius_textbox.returnPressed.connect(self.validate_parameters)
+
+        ceneter_label = QtWidgets.QLabel("center")
+        ceneter_label.setFixedWidth(button2size)
+        self.ceneter_textbox = QtWidgets.QLineEdit("")
+        self.ceneter_textbox.setFixedWidth(button2size)
+        self.ceneter_textbox.returnPressed.connect(self.validate_parameters)
+
+        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
+        self.algorithm = QtWidgets.QComboBox()
+        self.algorithm.setFixedWidth(button2size)
+
+        for j in methodname:
+            self.algorithm.addItem(j)
+
+        upsample_factor_label = QtWidgets.QLabel("upsample factor")
+        self.upsample_factor_textbox = QtWidgets.QLineEdit("100")
+        self.upsample_factor_textbox.setFixedWidth(button2size)
+        self.upsample_factor_textbox.returnPressed.connect(self.validate_parameters)
+
+        self.save_checkbox =QtWidgets.QCheckBox("save iterations")
+        self.save_checkbox.setChecked(False)
+        self.save_checkbox.setFixedWidth(button2size)
+
+        self.debug_checkbox =QtWidgets.QCheckBox("debug checkbox")
+        self.debug_checkbox.setChecked(True)
+        self.debug_checkbox.setFixedWidth(button2size)
+
+        self.run_iter_align = QtWidgets.QPushButton("run iterative alignment")
+        self.run_iter_align.setFixedWidth(button1size)
+
+        # self.run_iter_align.clicked.connect(self.iter_align_params)
+
+        hb00 = QtWidgets.QHBoxLayout()
+        hb00.addWidget(iter_label)
+        hb00.addWidget(self.iter_textbox)
+
+        hb01 = QtWidgets.QHBoxLayout()
+        hb01.addWidget(padding_label)
+        hb01.addWidget(self.padding_textbox)
+
+        hb02 = QtWidgets.QHBoxLayout()
+        hb02.addWidget(inner_radius_label)
+        hb02.addWidget(self.inner_radius_textbox)
+
+        hb03 = QtWidgets.QHBoxLayout()
+        hb03.addWidget(outer_radius_label)
+        hb03.addWidget(self.outer_radius_textbox)
+
+        hb04 = QtWidgets.QHBoxLayout()
+        hb04.addWidget(upsample_factor_label)
+        hb04.addWidget(self.upsample_factor_textbox)
+
+        hb05 = QtWidgets.QHBoxLayout()
+        hb05.addWidget(ceneter_label)
+        hb05.addWidget(self.ceneter_textbox)
+
+        hb06 = QtWidgets.QHBoxLayout()
+        hb06.addWidget(ceneter_label)
+
+        vb00 = QtWidgets.QVBoxLayout()
+        vb00.addLayout(hb00)
+        vb00.addLayout(hb01)
+        vb00.addWidget(self.blur_checkbox)
+        vb00.addLayout(hb02)
+        vb00.addLayout(hb03)
+        vb00.addLayout(hb04)
+        vb00.addLayout(hb05)
+        vb00.addWidget(self.save_checkbox)
+        vb00.addWidget(self.debug_checkbox)
+        vb00.addWidget(self.algorithm)
+        vb00.addWidget(self.run_iter_align)
+
+        #parameter setting logic 
+
+        if not self.blur_checkbox.isChecked():
+            self.inner_radius_textbox.setEnabled(False)
+            self.outer_radius_textbox.setEnabled(False)
+            self.inner_radius_textbox = None
+            self.outer_radius_textbox = None
+
+        if self.blur_checkbox.isChecked():
+            self.inner_radius_textbox.setEnabled(True)
+            self.outer_radius_textbox.setEnabled(True)
+            #pull up save dialogue
+            #save sinograms to folder
+
+        #split padding textbod entry into two integers
+        #if len of split array is one, consider the second as zeros. 
+        #if len is greater than 2, enable warning icon next to textboxx
+        #if empty, consider padding = 0,0
+
+        #check that rin < rout: 
+        #if false, throw warning 
+        # if any > 1, throw warning, 
+        #if nany < 0, throw warning
+
+        if self.ceneter_textbox == "":
+            self.ceneter_textbox = None
+
+        self.parameters.setLayout(vb00)
+        # self.parameters.show()
+
+
+    def validate_parameters(self, *iters, *pading , *inner, *outer, *center, *upsample_factor, from_alignment =False):
+        
+        if not from_alignment:
+            try: #check iters value
+                iters = float(self.iter_textbox.text())
+                if iters%1 == 0:
+                    iters = int(iters)
+                    self.iter_textbox.setText(str(iters))
+                elif:
+                    self.iter_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    self.iter_textbox.setStyleSheet('* {background-color: }')
+            except ValueError: 
+                self.iter_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+            
+            try: #check padding value
+                padding = self.padding_textbox.text().split()
+                if len(padding) <2:
+                    padding = self.padding_textbox.text().split(",")
+                    if len(padding) <=1:
+                        self.padding_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                        valid = False
+                elif not(padding[0]%1==0 and padding[1]%1==0):
+                    self.padding_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    self.iter_textbox.setStyleSheet('* {background-color: }')
+
+
+
+
+        if iters <=0: 
+            self.iter_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+        if padding[0] < 0: 
+            self.padding_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+        
+        if padding[1] < 0: 
+            self.padding_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+
+
+

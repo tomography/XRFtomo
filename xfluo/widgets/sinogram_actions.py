@@ -371,7 +371,7 @@ class SinogramActions(QtWidgets.QWidget):
                     break
         return bounds
 
-    def iterative_align(self, element, data, thetas, iters=5):
+    def iterative_align(self, element, data, thetas, pad, blur_bool, rin, rout, center, algorithm, upsample_factor, save_bool, debug_bool, iters=5):
         '''
         iterative alignment method from TomoPy
         Variables
@@ -391,6 +391,11 @@ class SinogramActions(QtWidgets.QWidget):
         prj = tomopy.remove_nan(prj, val=0.0)
         prj[np.where(prj == np.inf)] = 0.0
         self.thetas = thetas
+
+
+        # self.get_iter_paraeters()
+
+
         prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=(0,0),
                             blur=True, rin=0.8, rout=0.95, center=None, algorithm='mlem', 
                             upsample_factor=100, save=False, debug=True)

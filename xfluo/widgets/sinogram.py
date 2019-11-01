@@ -86,10 +86,12 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
         self.ViewControl.btn4.clicked.connect(self.crossCorrelate2_params)
         self.ViewControl.btn5.clicked.connect(self.align_y_top_params)
-        self.ViewControl.btn6.clicked.connect(self.iter_align_params)
+        self.ViewControl.btn6.clicked.connect(self.ViewControl.parameters.show)
+        self.ViewControl.run_iter_align.clicked.connect(self.iter_align_params)
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
         self.ViewControl.btn8.clicked.connect(self.align_y_bottom_params)
         self.ViewControl.btn9.clicked.connect(self.adjust_sino_params)
+
         self.sld.valueChanged.connect(self.imageSliderChanged)
         self.sinoView.keyPressSig.connect(self.shiftEvent_params)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
@@ -284,12 +286,41 @@ class SinogramWidget(QtWidgets.QWidget):
     def iter_align_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        thetas = self.thetas
-        # sx =  self.actions.iterative_align(element, data, thetas, 2)
+        thetas = self.thetas        
+        iters = int(self.ViewControl.iter_textbox.text())
+        padding = self.ViewControl.padding_textbox.text()
+
+        if self.blur_checkbox.isChecked():
+            inner = float(self.ViewControl.inner_radius_textbox.text())
+            outer = float(self.ViewControl.outer_radius_textbox.text())
+
+        if self.ViewControl.center_textbox.text() == "":
+            center = None
+
+        algorithm = self.ViewControl.algorithm.currentText()
+        upsammple_factor = int(self.ViewControl.upsample_factor_textbox.text())
+        save_checkbox = self.ViewControl.save_checkbox.isChecked()
+        debug_mode = self.ViewControl.debug_checkbox.isChecked()
+
+
+        self.ViewControl.validate_params(iters, padding , inner, outer, center, upsample_factor, True)
+
+
+        x,y = self.ViewControl.padding_textbox.text().split(",")
+
+        # iters, x, y, inner, outer, center, algorithm, upsample_factor, save_checkbox, debug_checkbox
+
         self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, 3)
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
+
+        #save parameters 
+        #run iterative alignment
+        ##maybe put this entire function within 'iter_align_params'
+
+        pass
+
 
     def alignFromText2_params(self):
         data = self.data
