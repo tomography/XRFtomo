@@ -286,31 +286,38 @@ class SinogramWidget(QtWidgets.QWidget):
     def iter_align_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        thetas = self.thetas        
-        iters = int(self.ViewControl.iter_textbox.text())
-        padding = self.ViewControl.padding_textbox.text()
-
-        if self.blur_checkbox.isChecked():
-            inner = float(self.ViewControl.inner_radius_textbox.text())
-            outer = float(self.ViewControl.outer_radius_textbox.text())
-
+        thetas = self.thetas
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+            
         if self.ViewControl.center_textbox.text() == "":
             center = None
-
+        else:
+            center = int(self.ViewControl.center_textbox.text())
+            if center >0 and center < data.shape[3]:
+                pass
+            else:
+                self.ViewControl.center_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                return
+        iters = int(self.ViewControl.iter_textbox.text())
+        blur_bool = self.ViewControl.blur_checkbox.isChecked()
+        save_bool = self.ViewControl.save_checkbox.isChecked()
+        debug_bool = self.ViewControl.debug_checkbox.isChecked()
+        padX = int(self.ViewControl.paddingX_textbox.text())
+        padY = int(self.ViewControl.paddingY_textbox.text())
+        pad = (padX,padY)
         algorithm = self.ViewControl.algorithm.currentText()
-        upsammple_factor = int(self.ViewControl.upsample_factor_textbox.text())
-        save_checkbox = self.ViewControl.save_checkbox.isChecked()
-        debug_mode = self.ViewControl.debug_checkbox.isChecked()
+        upsample_factor = int(self.ViewControl.upsample_factor_textbox.text())
+        
+        if self.ViewControl.blur_checkbox.isChecked():
+            rin = float(self.ViewControl.inner_radius_textbox.text())
+            rout = float(self.ViewControl.outer_radius_textbox.text())
+        else:
+            rin = None
+            rout = None
 
-
-        self.ViewControl.validate_params(iters, padding , inner, outer, center, upsample_factor, True)
-
-
-        x,y = self.ViewControl.padding_textbox.text().split(",")
-
-        # iters, x, y, inner, outer, center, algorithm, upsample_factor, save_checkbox, debug_checkbox
-
-        self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, 3)
+        self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, pad, blur_bool, rin, rout, center, algorithm, upsample_factor, save_bool, debug_bool, iters)
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return

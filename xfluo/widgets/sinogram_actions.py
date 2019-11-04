@@ -396,9 +396,9 @@ class SinogramActions(QtWidgets.QWidget):
         # self.get_iter_paraeters()
 
 
-        prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=(0,0),
-                            blur=True, rin=0.8, rout=0.95, center=None, algorithm='mlem', 
-                            upsample_factor=100, save=False, debug=True)
+        prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=pad,
+                            blur=blur_bool, rin=rin, rout=rout, center=center, algorithm=algorithm, 
+                            upsample_factor=upsample_factor, save=save_bool, debug=debug_bool)
         self.x_shifts = np.round(sx).astype(int)
         self.y_shifts = np.round(sy).astype(int)
 

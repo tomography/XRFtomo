@@ -101,7 +101,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.ViewControl.testButton.clicked.connect(self.save_analysis)
         # self.ViewControl.histogramButton.clicked.connect(self.histo_signal)
 
-
         # x_pos, y_pos, x_size, y_size, frame_height, frame_width
 
         # self.ViewControl.x_sld.valueChanged.connect(self.xSldChange)
@@ -235,6 +234,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.view.ROI.setSize([xSize, ySize])
         x_pos = int(round(self.imgAndHistoWidget.view.x_pos))
         y_pos = int(round(self.imgAndHistoWidget.view.y_pos))
+        frame_height = self.data.shape[2]
+        frame_width = self.data.shape[3]
+        x_pos, y_pos, cross_pos_x, cross_pos_y  = self.imgAndHistoWidget.view.update_roi(x_pos, y_pos, xSize, ySize, frame_height, frame_width)
+
         self.imgAndHistoWidget.view.ROI.setPos([x_pos-xSize/2, y_pos-ySize/2])
 
     def imageChanged(self):

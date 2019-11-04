@@ -135,17 +135,20 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         iter_label.setFixedWidth(button2size)
         self.iter_textbox = QtWidgets.QLineEdit("5")
         self.iter_textbox.setFixedWidth(button2size)
-        self.iter_textbox.setStyleSheet('* {background-color: red}')
         self.iter_textbox.returnPressed.connect(self.validate_parameters)
 
         padding_label = QtWidgets.QLabel("padding")
         padding_label.setFixedWidth(button2size)
-        self.padding_textbox = QtWidgets.QLineEdit("0,0")
-        self.padding_textbox.setFixedWidth(button2size)
-        self.padding_textbox.returnPressed.connect(self.validate_parameters)
+        self.paddingX_textbox = QtWidgets.QLineEdit("0")
+        self.paddingX_textbox.setFixedWidth(button4size)
+        self.paddingX_textbox.returnPressed.connect(self.validate_parameters)
+        self.paddingY_textbox = QtWidgets.QLineEdit("0")
+        self.paddingY_textbox.setFixedWidth(button4size)
+        self.paddingY_textbox.returnPressed.connect(self.validate_parameters)
 
         self.blur_checkbox = QtWidgets.QCheckBox("blur")
         self.blur_checkbox.setChecked(True)
+        self.blur_checkbox.stateChanged.connect(self.blur_enable)
         self.blur_checkbox.setFixedWidth(button2size)
 
         inner_radius_label = QtWidgets.QLabel("inner Radius")
@@ -154,20 +157,19 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.inner_radius_textbox.setFixedWidth(button2size)
         self.inner_radius_textbox.returnPressed.connect(self.validate_parameters)
 
-
         outer_radius_label = QtWidgets.QLabel("outer Radius")
         outer_radius_label.setFixedWidth(button2size)
         self.outer_radius_textbox = QtWidgets.QLineEdit("0.9")
         self.outer_radius_textbox.setFixedWidth(button2size)
         self.outer_radius_textbox.returnPressed.connect(self.validate_parameters)
 
-        ceneter_label = QtWidgets.QLabel("center")
-        ceneter_label.setFixedWidth(button2size)
-        self.ceneter_textbox = QtWidgets.QLineEdit("")
-        self.ceneter_textbox.setFixedWidth(button2size)
-        self.ceneter_textbox.returnPressed.connect(self.validate_parameters)
+        center_label = QtWidgets.QLabel("center")
+        center_label.setFixedWidth(button2size)
+        self.center_textbox = QtWidgets.QLineEdit("")
+        self.center_textbox.setFixedWidth(button2size)
+        self.center_textbox.returnPressed.connect(self.validate_parameters)
 
-        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
+        methodname = ["mlem", "art", "pml_hybrid", "pml_quad", "sirt", "tv"]
         self.algorithm = QtWidgets.QComboBox()
         self.algorithm.setFixedWidth(button2size)
 
@@ -198,7 +200,9 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
         hb01 = QtWidgets.QHBoxLayout()
         hb01.addWidget(padding_label)
-        hb01.addWidget(self.padding_textbox)
+        hb01.addWidget(self.paddingX_textbox)
+        hb01.addWidget(self.paddingY_textbox)
+
 
         hb02 = QtWidgets.QHBoxLayout()
         hb02.addWidget(inner_radius_label)
@@ -213,11 +217,8 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         hb04.addWidget(self.upsample_factor_textbox)
 
         hb05 = QtWidgets.QHBoxLayout()
-        hb05.addWidget(ceneter_label)
-        hb05.addWidget(self.ceneter_textbox)
-
-        hb06 = QtWidgets.QHBoxLayout()
-        hb06.addWidget(ceneter_label)
+        hb05.addWidget(center_label)
+        hb05.addWidget(self.center_textbox)
 
         vb00 = QtWidgets.QVBoxLayout()
         vb00.addLayout(hb00)
@@ -256,54 +257,129 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         # if any > 1, throw warning, 
         #if nany < 0, throw warning
 
-        if self.ceneter_textbox == "":
-            self.ceneter_textbox = None
+        if self.center_textbox == "":
+            self.center_textbox = None
 
         self.parameters.setLayout(vb00)
         # self.parameters.show()
 
 
-    def validate_parameters(self, *iters, *pading , *inner, *outer, *center, *upsample_factor, from_alignment =False):
-        
-        if not from_alignment:
-            try: #check iters value
-                iters = float(self.iter_textbox.text())
-                if iters%1 == 0:
-                    iters = int(iters)
-                    self.iter_textbox.setText(str(iters))
-                elif:
-                    self.iter_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
-                    valid = False
-                else:
-                    self.iter_textbox.setStyleSheet('* {background-color: }')
-            except ValueError: 
+    def validate_parameters(self):
+        valid = True
+        try: #check iters value
+            iters = float(self.iter_textbox.text())
+            if iters%1 == 0 and iters > 0:
+                iters = int(iters)
+                self.iter_textbox.setText(str(iters))
+                self.iter_textbox.setStyleSheet('* {background-color: }')
+
+            elif iters%1 != 0:
                 self.iter_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
-            
-            try: #check padding value
-                padding = self.padding_textbox.text().split()
-                if len(padding) <2:
-                    padding = self.padding_textbox.text().split(",")
-                    if len(padding) <=1:
-                        self.padding_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
-                        valid = False
-                elif not(padding[0]%1==0 and padding[1]%1==0):
-                    self.padding_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
-                    valid = False
-                else:
-                    self.iter_textbox.setStyleSheet('* {background-color: }')
-
-
-
-
-        if iters <=0: 
+                valid = False
+            else:
+                self.iter_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+        except ValueError:
+            valid = False
             self.iter_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
-
-        if padding[0] < 0: 
-            self.padding_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
         
-        if padding[1] < 0: 
-            self.padding_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+        try: #check padding value
+            padX = int(self.paddingX_textbox.text())
+            padY = int(self.paddingY_textbox.text())
+            if padX >=0 and padX% 1 == 0:
+                self.paddingX_textbox.setStyleSheet('* {background-color: }')
+            else:
+                self.paddingX_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+            if padY >=0 and padY% 1 == 0:
+                self.paddingY_textbox.setStyleSheet('* {background-color: }')
+            else:
+                self.paddingY_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+        except ValueError:
+            valid = False
+            self.paddingX_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+            self.paddingY_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
 
+        try: #check inner value
+            inner = float(self.inner_radius_textbox.text())
+            outer = float(self.outer_radius_textbox.text())
+            blur_enabled = self.blur_checkbox.isChecked()
+            if inner > 0 and inner <=1 and inner < outer and blur_enabled:
+                self.inner_radius_textbox.setText(str(inner))
+                self.inner_radius_textbox.setStyleSheet('* {background-color: }')
+
+            elif not blur_enabled:
+                self.inner_radius_textbox.setStyleSheet('* {background-color: }')
+
+            else:
+                self.inner_radius_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+
+        except ValueError:
+            valid = False
+            self.inner_radius_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+        
+        try: #check outer value
+            outer = float(self.outer_radius_textbox.text())
+            inner = float(self.inner_radius_textbox.text())
+            blur_enabled = self.blur_checkbox.isChecked()
+
+            if outer > 0 and outer <=1 and outer > inner and blur_enabled:
+                self.outer_radius_textbox.setText(str(outer))
+                self.outer_radius_textbox.setStyleSheet('* {background-color: }')
+
+            elif not blur_enabled:
+                self.outer_radius_textbox.setStyleSheet('* {background-color: }')
+
+            else:
+                self.outer_radius_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+
+        except ValueError: 
+            valid = False
+            self.outer_radius_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+        
+        try: #check center value
+            center = self.center_textbox.text()
+            if center == "":
+                self.center_textbox.setStyleSheet('* {background-color: }')
+            else:
+                center = float(center)
+                if center%1 == 0 and center > 0:
+                    center = int(center)
+                    self.center_textbox.setText(str(center))
+                    self.center_textbox.setStyleSheet('* {background-color: }')
+                else:
+                    self.center_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+        except ValueError:
+            valid = False
+            self.center_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+        try: #check upsample value
+            upsample_factor = float(self.upsample_factor_textbox.text())
+            if upsample_factor%1 == 0 and upsample_factor > 0 and upsample_factor <=100:
+                upsample_factor = int(upsample_factor)
+                self.upsample_factor_textbox.setText(str(upsample_factor))
+                self.upsample_factor_textbox.setStyleSheet('* {background-color: }')
+            else:
+                self.upsample_factor_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+        except ValueError:
+            valid = False
+            self.upsample_factor_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+        return valid
+
+    def blur_enable(self):
+        checked = self.blur_checkbox.isChecked()
+        if checked:
+            self.inner_radius_textbox.setEnabled(True)
+            self.outer_radius_textbox.setEnabled(True)
+        else:
+            self.inner_radius_textbox.setEnabled(False)
+            self.outer_radius_textbox.setEnabled(False)
 
 
 

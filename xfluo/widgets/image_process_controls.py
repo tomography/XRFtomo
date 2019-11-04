@@ -47,6 +47,7 @@
 from PyQt5 import QtWidgets, QtCore
 
 class ImageProcessControlsWidget(QtWidgets.QWidget):
+
     def __init__(self):
         super(ImageProcessControlsWidget, self).__init__()
         self.initUI()
