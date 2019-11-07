@@ -57,6 +57,9 @@ import dxchange
 import numpy as np 
 import xfluo
 import h5py
+from skimage import io
+import csv
+import os
 
 __author__ = "Francesco De Carlo, Fabricio S. Marin"
 __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
@@ -71,7 +74,9 @@ __all__ = ['find_elements',
            'load_thetas_legacy',
            'load_thetas_9idb',
            'load_thetas_2ide',
-           'read_exchange_file']
+           'read_exchange_file',
+           'read_tiffs',
+           'load_thetas_file']
 
 def find_index(a_list, element):
     try:
@@ -242,6 +247,44 @@ def load_thetas_2ide(path_files, data_tag):
             pass
     return thetas
 
+def load_thetas_file(path_file):
+
+    name, ext = os.path.splitext(path_file)
+    fnames = []
+    thetas = []
+    if ext == ".txt":
+        text_file = open(path_file, "r")
+        #TODO: check if fnames are present and save them to list, if not, just get thetas
+        lines = text_file.readlines()
+        text_file.close()
+        try:
+            cols = len(lines[0].split(","))
+        except IndexError:
+            print("invalid file formatting")
+            return [], []
+        if cols == 2:
+            thetas = [float(lines[1:][i].split(",")[1]) for i in range(len(lines)-1)]
+            fnames = [lines[1:][i].split(",")[0] for i in range(len(lines)-1)]
+            return fnames, thetas
+
+        elif cols ==1:
+            thetas = [float(lines[1:][i].split("\n")[0]) for i in range(len(lines)-1)]
+            return [], thetas
+
+    elif ext == ".csv" or ext == ".CSV":
+        with open('example.csv') as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=',')
+            #TODO: check if fnames are present and save them to list, if not, just get thetas
+            thetas = readCSV[0]
+            fnames = readCSV[1]
+            return fnames, thetas
+
+    else:
+        return 
+
+
+
+
 def load_thetas_13(path_files, data_tag):
     pass
 
@@ -292,7 +335,12 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_nam
             img_x = proj.shape[1]
             dx = (max_x-img_x)//2
             dy = (max_y-img_y)//2
-            data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
+            try:
+                data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
+            except ValueError:
+                print("WARNING: Could not load file {}. Check file integrity. ".format(path_files[j]))
+                data[i, j] = np.zeros([max_y,max_x])
+
     #get scalers
     if scaler_name == 'None':
         scalers = np.ones([num_files, max_y, max_x])
@@ -347,6 +395,29 @@ def read_quant(fname, element, hdf_tag, quant_name, channel_tag):
 
     quant_idx = find_index(quant_names,quant_name)
     return all_quants[quant_idx][0][elem_idx]
+
+def read_tiffs(fnames):
+
+    #TODO:check if fnames is a series of tiffs or a single tiff stack
+    max_x, max_y = 0,0
+    num_files = len(fnames)
+    for i in fnames: 
+        im = io.imread(i)
+        if im.shape[0] > max_y:
+            max_y = im.shape[0]
+        if im.shape[1] > max_x:
+            max_x = im.shape[1]
+    data = np.zeros([1,num_files, max_y, max_x])
+
+    for i in range(len(fnames)):
+        im = io.imread(fnames[i])
+        img_y = im.shape[0]
+        img_x = im.shape[1]
+        dx = (max_x-img_x)//2
+        dy = (max_y-img_y)//2
+        data[0,i, dy:img_y+dy, dx:img_x+dx] = im
+
+    return data
 
 def read_exchange_file(fname):
     data, elements, thetas = [],[],[]

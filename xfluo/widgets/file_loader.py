@@ -242,19 +242,32 @@ class FileTableWidget(QtWidgets.QWidget):
         self.version = 0
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         fpath = self.fileTableModel.getFirstCheckedFilePath()
+        ext = self.extLineEdit.text()
         if fpath == None:
             self.message.setText('Invalid directory')
             return
         self.fileTableModel.setAllChecked(True)
-        try:
-            self.imageTag.clear()
-            self.getImgTags()
-            self.getDataTag()
-            self.getElementList()
-            self.getQuantOptions()
-            self.onThetaUpdate()
-        except KeyError:
+
+        if ext == '*.h5' or ext == '.h5':
+            try:
+                self.imageTag.clear()
+                self.getImgTags()
+                self.getDataTag()
+                self.getElementList()
+                self.getQuantOptions()
+                self.onThetaUpdate()
+            except KeyError:
+                pass
+
+        if ext == '*.tiff' or ext == ".tiff": #
+            # TODO: when loading from filemenu, check only files which were selected
+            self.elementTableModel.arrayData = []
+            self.imageTag.setEnabled(False)
+            self.dataTag.setEnabled(False)
+            self.quant_options.setEnabled(False)
+            self.message.setText("Load angle information using txt or csv file")
             pass
+
 
     def getImgTags(self):
         fpath = self.fileTableModel.getFirstCheckedFilePath()

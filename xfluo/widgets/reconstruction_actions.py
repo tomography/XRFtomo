@@ -137,4 +137,4 @@ class ReconstructionActions(QtWidgets.QWidget):
 		'''
 		self.recon = recon
 		self.recon[np.where(self.recon <= threshold_value)] = 0  # np.min(self.rec)
-		return self.rec
+		return self.recon

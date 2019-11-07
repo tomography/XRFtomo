@@ -116,10 +116,15 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
     def call_threshold(self):
         '''
-        set threshhold for reconstruction
+        set threshold for reconstruction
         '''
-        threshValue = float(self.ViewControl.threshLe.text())
-        self.recon = self.actions.threshhold(self.recon, threshValue)
+        try:
+            threshValue = float(self.ViewControl.threshLe.text())
+        except ValueError:
+            self.ViewControl.threshLe.setText("0")
+            threshValue = 0
+        self.recon = self.actions.threshold(self.recon, threshValue)
+        self.update_recon_image()
 
     def cboxClicked(self):
         if self.ViewControl.cbox.isChecked():

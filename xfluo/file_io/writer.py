@@ -80,6 +80,21 @@ class SaveOptions(object):
 		except IOError:
 			print("choose file please")
 
+	def save_thetas(self, fnames, thetas):
+		num_files = len(fnames)
+		try:
+			alignFileName = QtGui.QFileDialog.getSaveFileName()[0]
+			if str(alignFileName).rfind(".txt") == -1:
+				alignFileName = str(alignFileName) + ".txt"
+			print(str(alignFileName))
+			file = open(alignFileName, "w")
+			file.writelines("file names, " + "thetas" + "\n")
+			for i in arange(num_files):
+				file.writelines(fnames[i] + ", " + str(thetas[i]) + "\n")
+			file.close()
+		except IOError:
+			print("filename error or something")
+
 	def save_projections(self, fnames, data, element_names):
 		'''
 		save projections as tiffs

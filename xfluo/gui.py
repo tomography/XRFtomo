@@ -86,7 +86,12 @@ class XfluoGui(QtGui.QMainWindow):
 
         openExchangeAction = QtGui.QAction('open exchange file', self)
         openExchangeAction.triggered.connect(self.openExchange)
-        openExchangeAction.setShortcut('Ctrl+O')
+
+        openTiffAction = QtGui.QAction('open tiff files', self)
+        openTiffAction.triggered.connect(self.openTiffs)
+
+        openThetaAction = QtGui.QAction('open thetas file', self)
+        openThetaAction.triggered.connect(self.openThetas)
 
         #openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
         #openTiffFolderAction.triggered.connect(self.openTiffFolder)
@@ -111,6 +116,9 @@ class XfluoGui(QtGui.QMainWindow):
 
         saveToHDFAction = QtGui.QAction('as HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
+
+        saveThetasAction = QtGui.QAction('thetas to .txt', self)
+        saveThetasAction.triggered.connect(self.saveThetas)
 
         saveToNumpyAction = QtGui.QAction("as Numpy file", self)
         saveToNumpyAction.triggered.connect(self.saveToNumpy)
@@ -139,8 +147,6 @@ class XfluoGui(QtGui.QMainWindow):
 
         exitDebugToolsAction = QtGui.QAction('disable debug tools', self)
         exitDebugToolsAction.triggered.connect(self.exitDebugMode)
-
-        
 
         # matcherAction = QtGui.QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
@@ -231,6 +237,8 @@ class XfluoGui(QtGui.QMainWindow):
         menubar = self.menuBar()
         self.fileMenu = menubar.addMenu('&File')
         self.fileMenu.addAction(openExchangeAction)
+        self.fileMenu.addAction(openTiffAction)
+        self.fileMenu.addAction(openThetaAction)
         ##self.fileMenu.addAction(openFileAction)
         #self.fileMenu.addAction(openFolderAction)
         #self.fileMenu.addAction(openTiffFolderAction)
@@ -263,6 +271,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(saveSinogram2Action)
         self.afterConversionMenu.addAction(savephysicalPosition)
+        self.afterConversionMenu.addAction(saveThetasAction)
         self.afterConversionMenu.addAction(saveToHDFAction)
         self.afterConversionMenu.addAction(saveToNumpyAction)
 
@@ -289,7 +298,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.fileTableWidget.thetaLineEdit.setVisible(False)
         return      
 
-
     def openFolder(self):
         try:
             folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
@@ -309,6 +317,65 @@ class XfluoGui(QtGui.QMainWindow):
         self.thetas= thetas[sort_angle_index]
         self.data = data[:,sort_angle_index,:,:]
         self.fnames = ["projection {}".format(x) for x in self.thetas]
+        self.updateImages(True)
+        return
+
+    def openTiffs(self):
+        files = QtGui.QFileDialog.getOpenFileNames(self, "Open Tiffs", QtCore.QDir.currentPath())
+        if files[0] == '' or files[0] == []:
+            return
+
+        dir_ending_index = files[0][0].split(".")[0][::-1].find("/")+1
+        path = files[0][0].split(".")[0][:-dir_ending_index]
+        ext = "*."+files[0][0].split(".")[2]
+        self.fileTableWidget.dirLineEdit.setText(path)
+        self.fileTableWidget.extLineEdit.setText(ext)
+        self.fileTableWidget.onLoadDirectory()
+        self.data = xfluo.read_tiffs(files[0])
+        self.fnames = [files[0][i].split("/")[-1] for i in range(len(files[0]))]
+        return
+
+    def openThetas(self):
+        file = QtGui.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath())
+        if file[0] == '':
+            return
+
+        fnames, thetas = xfluo.load_thetas_file(file[0])
+
+        if len(thetas)<self.data.shape[1] or len(thetas)>self.data.shape[1]:
+            self.fileTableWidget.message.setText("nummber of angles different than number of loaded images. ")
+            return
+
+        if thetas == []:
+            print("No angle information loaded")
+            return
+
+        if fnames == []:
+            print("No filenames in .txt. Assuming Tiff order corresponds to loaded theta order")
+            sorted_index = np.argsort(thetas)
+            thetas = np.asarray(thetas)[sorted_index]
+            self.fnames = np.asarray(self.fnames)[sorted_index]
+            self.data = self.data[:,sorted_index]
+
+        if set(fnames) == set(self.fnames): #if list of fnames from theta.txt have containst same fnames as from the tiffs..
+            sorted_index = [self.fnames.index(i) for i in fnames]
+            self.fnames = fnames
+            self.data = self.data[:,sorted_index]
+
+        if set(fnames) != set(self.fnames) and fnames != []: #fnames from tiffs and thetas.txt do not match
+            print("fnames from tiffs and thetas.txt do not match. Assuming fnames from tiffs correspond to the same order as the loaded angles.")
+            sorted_index = np.argsort(thetas)
+            thetas = np.asarray(thetas)[sorted_index]
+            self.fnames = np.asarray(self.fnames)[sorted_index]
+            self.data = self.data[:,sorted_index]
+            
+        self.thetas = [float(list(thetas)[i]) for i in range(len(thetas))]
+        self.fnames = [str(list(self.fnames)[i]) for i in range(len(self.fnames))]
+        for i in range(len(self.thetas)):
+            self.fileTableWidget.fileTableModel.arrayData[i].theta = self.thetas[i]
+            self.fileTableWidget.fileTableModel.arrayData[i].filename = self.fnames[i]
+        self.elements = ["Element_1"]
+        self.thetas = np.asarray(self.thetas)
         self.updateImages(True)
         return
 
@@ -363,6 +430,19 @@ class XfluoGui(QtGui.QMainWindow):
             self.writer.save_dxhdf(self.fnames, self.data, self.elements)
         except AttributeError:
             print("projection data do not exist")
+        return 
+
+    def saveThetas(self):
+        try:
+            files = [i.filename for i in self.fileTableWidget.fileTableModel.arrayData]
+            k = np.arange(len(files))
+            thetas = [i.theta for i in self.fileTableWidget.fileTableModel.arrayData]
+            files_bool = [i.use for i in self.fileTableWidget.fileTableModel.arrayData]
+            self.fnames = [files[j] for j in k if files_bool[j]==True]
+            self.thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
+            self.writer.save_thetas(self.fnames, self.thetas)
+        except AttributeError:
+            print("filename or angle information does not exist")
         return 
 
     def saveToNumpy(self):
