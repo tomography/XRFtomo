@@ -176,7 +176,7 @@ class XfluoGui(QtGui.QMainWindow):
 
 
         #refresh UI
-        # self.imageProcessWidget.refreshSig.connect(self.refreshUI)
+        self.imageProcessWidget.refreshSig.connect(self.refreshUI)
 
         #sinogram changed
         self.sinogramWidget.sinoChangedSig.connect(self.update_sino)
@@ -198,7 +198,7 @@ class XfluoGui(QtGui.QMainWindow):
 
         #data dimensions changed
         self.imageProcessWidget.ySizeChanged.connect(self.sinogramWidget.yChanged)
-
+        self.imageProcessWidget.ySizeChanged.connect(self.reconstructionWidget.ySizeChanged)
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
         self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)

@@ -137,6 +137,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.updateElementSlot(element)
         self.elementChangedSig.emit(element)
 
+
+
     def updateElementSlot(self, element):
         self.ViewControl.combo1.setCurrentIndex(element)
 
@@ -200,9 +202,22 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.reconChangedSig.emit(self.recon)
         return
 
+    def ySizeChanged(self,ySize):
+        self.ViewControl.start_indx.setText('0')
+        self.ViewControl.end_indx.setText(str(ySize))
+        self.imgAndHistoWidget.sld.setValue(0)
+        self.imgAndHistoWidget.sld.setMaximum(ySize)
+        #check for xSize too.
+        center = self.data.shape[3]//2
+        self.ViewControl.centerTextBox.setText(str(center))
+        pass
+
     def update_y_range(self):
         start_indx = int(self.ViewControl.start_indx.text())
         end_indx = int(self.ViewControl.end_indx.text())
+        if end_indx >self.data.shape[2]:
+            end_indx = self.data.shape[2]
+            self.ViewControl.end_indx.setText(str(end_indx))
         if start_indx >=end_indx:
             print("invalid")
             return
