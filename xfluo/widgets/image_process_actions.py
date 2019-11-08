@@ -133,9 +133,11 @@ class ImageProcessActions(QtWidgets.QWidget):
 		
 		for i in range(num_projections):
 			for j in range(num_elements):
-				temp_data[j,i,:,:] = data[j, i,
-					int(round(abs(y_pos)) - y_size/2):int(round(abs(y_pos)) + y_size/2),
-					int(round(x_pos) - x_size/2):int(round(x_pos) + x_size/2)]
+				y0 = int(round(abs(y_pos)) - y_size/2)
+				y1 = int(round(abs(y_pos)) + y_size/2)
+				x0 = int(round(x_pos) - x_size/2)
+				x1 = int(round(x_pos) + x_size/2)
+				temp_data[j,i,:,:] = data[j, i, y0:y1, x0:x1]
 		print("done")
 
 		data = temp_data

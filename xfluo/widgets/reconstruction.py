@@ -137,8 +137,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.updateElementSlot(element)
         self.elementChangedSig.emit(element)
 
-
-
     def updateElementSlot(self, element):
         self.ViewControl.combo1.setCurrentIndex(element)
 

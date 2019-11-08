@@ -158,7 +158,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)
         vb.addWidget(self.method)
-        vb.addLayout(reconBox)
         vb.addLayout(centerBox)
         vb.addLayout(threshBox)
         vb.addLayout(endBox)
@@ -170,4 +169,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addLayout(itersBox)
         vb.addLayout(betaBox)
         vb.addLayout(deltaBox)
+        vb.addLayout(reconBox)
+        
         self.setLayout(vb)

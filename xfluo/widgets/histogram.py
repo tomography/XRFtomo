@@ -152,6 +152,11 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         if cross_pos_y <= -max_y:
             cross_pos_y = -max_y
 
+        self.x_pos = x_pos
+        self.y_pos = y_pos
+        self.cross_pos_x = cross_pos_x
+        self.cross_pos_y = cross_pos_y
+        
         return x_pos, y_pos, cross_pos_x, cross_pos_y
 
     def wheelEvent(self, ev): 
