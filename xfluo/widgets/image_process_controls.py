@@ -95,15 +95,16 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.normalizeBtn.setFixedWidth(button2size)
         self.cropBtn = QtWidgets.QPushButton("Crop")
         self.cropBtn.setFixedWidth(button2size)
-        self.captureBackground = QtWidgets.QPushButton("copy Bg")
+        self.captureBackground = QtWidgets.QPushButton("Copy Bg")
         self.captureBackground.setFixedWidth(button2size)
         self.setBackground = QtWidgets.QPushButton("Set Bg")
         self.setBackground.setFixedWidth(button2size)
-        self.deleteProjection = QtWidgets.QPushButton("Delete Frame")
+        self.deleteProjection = QtWidgets.QPushButton("remove img")
         self.deleteProjection.setFixedWidth(button2size)
-        self.testButton = QtWidgets.QPushButton("test btn")
-        self.testButton.setFixedWidth(button2size)
-        self.testButton.setVisible(False)
+        self.hist_equalize = QtWidgets.QPushButton("Equalize")
+        self.hist_equalize.setFixedWidth(button2size)
+        self.rm_hotspot = QtWidgets.QPushButton("Remove hotpsot")
+        self.rm_hotspot.setFixedWidth(button2size)
 
         for i in range(5):
             self.combo3.addItem(str(i + 1))
@@ -139,13 +140,16 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
 
         hb10 = QtWidgets.QHBoxLayout()
         hb10.addWidget(self.normalizeBtn)
-        hb10.addWidget(self.cropBtn)
+        hb10.addWidget(self.hist_equalize)
         hb12 = QtWidgets.QHBoxLayout()
         hb12.addWidget(self.captureBackground)
         hb12.addWidget(self.setBackground)
         hb13 = QtWidgets.QHBoxLayout()
         hb13.addWidget(self.deleteProjection)
-        hb13.addWidget(self.testButton)
+        hb13.addWidget(self.cropBtn)
+        hb14 = QtWidgets.QHBoxLayout()
+        hb14.addWidget(self.rm_hotspot)
+
 
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addLayout(hb1)
@@ -162,6 +166,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         # vb4xSldChange.addLayout(hb11)
         vb4.addLayout(hb12)
         vb4.addLayout(hb13)
+        vb4.addLayout(hb14)
 
         vb5 = QtWidgets.QVBoxLayout()
         vb5.addWidget(self.combo1)

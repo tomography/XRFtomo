@@ -98,7 +98,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
         self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
-        # self.ViewControl.testButton.clicked.connect(self.save_analysis)
+        self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
+        self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histo_signal)
 
         # x_pos, y_pos, x_size, y_size, frame_height, frame_width
@@ -389,6 +390,11 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.data
         self.actions.normalize(data, element)
         
+    def equalize_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        data = self.actions.equalize(data, element)
+
     def cut_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         self.actions.cut(self.data, x_pos, y_pos, x_size, y_size)
@@ -443,6 +449,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.sldRangeChanged.emit(index, self.data, self.thetas)
         self.thetaChangedSig.emit(self.thetas)
         self.dataChangedSig.emit(self.data)
+
+    def rm_hotspot_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        self.actions.remove_hotspots(data, element, projection)
+
 
 
     # debugging and statistic gathering function, leave commented plz.

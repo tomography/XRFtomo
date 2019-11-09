@@ -50,12 +50,12 @@ from pylab import *
 import xfluo
 import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
-
+from skimage import exposure
 
 class ImageProcessActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
 	# thetaSig = pyqtSignal(np.ndarray, name='thetaSig')
-	
+
 	def __init__(self):
 		super(ImageProcessActions, self).__init__()
 		self.hotSpotNumb = 0
@@ -107,12 +107,37 @@ class ImageProcessActions(QtWidgets.QWidget):
 			tempMax = temp.max()
 			tempMin = temp.min()
 			temp = (temp - tempMin) / tempMax * 10000
-			data[element, i, :, :] = temp	
+			data[element, i, :, :] = temp
 		self.dataSig.emit(data)
+		return data
+
+	def remove_hotspots(self, data, element, projection):
+		img = data[element, projection]
+		max_val = np.max(img)
+		img[img > 0.5*max_val] = 0.5*max_val
+		data[element,projection] = img
+		self.dataSig.emit(data)
+
+	def equalize(self, data, element):
+		# Equalization
+		global_mean = np.mean(data[element,:,:,:])
+		for i in range(data.shape[1]):
+			local_mean = np.mean(data[element,i,:,:])
+			coeff = global_mean/local_mean
+			data[element,i] = data[element,i]*coeff
+
+			img = data[element,i]
+			# data[element,i] = exposure.equalize_hist(img)
+			img *= 1/img.max()
+			data[element,i] = exposure.equalize_adapthist(img)
+
+
+		self.dataSig.emit(data)
+		return data
 
 	def cut(self, data, x_pos, y_pos, x_size, y_size):
 		'''
-		crops dataset to ROI dimensions 
+		crops dataset to ROI dimensions
 
 		Variables
 		-----------
@@ -129,14 +154,14 @@ class ImageProcessActions(QtWidgets.QWidget):
 		'''
 		num_elements = data.shape[0]
 		num_projections = data.shape[1]
-		temp_data = zeros([num_elements,num_projections, y_size, x_size])
-		
+		temp_data = zeros([num_elements,num_projections, y_size//2*2, x_size//2*2])
+
 		for i in range(num_projections):
 			for j in range(num_elements):
-				y0 = int(round(abs(y_pos)) - y_size/2)
-				y1 = int(round(abs(y_pos)) + y_size/2)
-				x0 = int(round(x_pos) - x_size/2)
-				x1 = int(round(x_pos) + x_size/2)
+				y0 = int(round(abs(y_pos)) - y_size//2)
+				y1 = int(round(abs(y_pos)) + y_size//2)
+				x0 = int(round(x_pos) - x_size//2)
+				x1 = int(round(x_pos) + x_size//2)
 				temp_data[j,i,:,:] = data[j, i, y0:y1, x0:x1]
 		print("done")
 
@@ -170,12 +195,12 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 	def copy_background(self, img):
 		'''
-		crops dataset to ROI dimensions 
+		crops dataset to ROI dimensions
 
 		Variables
 		-----------
 		img: ndarray
-			2D array enclosed by ROI for currently selected element. 
+			2D array enclosed by ROI for currently selected element.
 		'''
 		self.meanNoise = np.mean(img)
 		self.stdNoise = np.std(img)
@@ -183,7 +208,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 	def paste_background(self, data, element, projection, x_pos, y_pos, x_size, y_size, img, meanNoise, stdNoise):
 		'''
-		crops dataset to ROI dimensions 
+		crops dataset to ROI dimensions
 
 		Variables
 		-----------
@@ -192,7 +217,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		element: int
 			element index
 		projection: int
-			projection index 
+			projection index
 		x_pos: ndarray
 			ROI x coordinate with respect to plot window
 		y_pos: int
@@ -215,12 +240,12 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 	def exclude_projection(self, index, data, thetas, fnames, x_shifts, y_shifts):
 		'''
-		crops dataset to ROI dimensions 
+		crops dataset to ROI dimensions
 
 		Variables
 		-----------
 		index: int
-			projection number from zero. 
+			projection number from zero.
 		data: ndarray
 			4D xrf dataset ndarray [elements, theta, y,x]
 		thetas: ndarray
@@ -228,9 +253,9 @@ class ImageProcessActions(QtWidgets.QWidget):
 		fnames: list
 			list of strings containing filenames
 		x_shifts: ndarray
-			1D array containg pixel offset distance (in x), each value corresponging to one projection 
+			1D array containg pixel offset distance (in x), each value corresponging to one projection
 		y_shifts: ndarray
-			1D array containg pixel offset distance (in y), each value corresponging to one projection 
+			1D array containg pixel offset distance (in y), each value corresponging to one projection
 		'''
 		num_projections = len(thetas)
 		data = np.delete(data, index, 1)
@@ -260,9 +285,9 @@ class ImageProcessActions(QtWidgets.QWidget):
 		y_size: int
 			ROI pixel dimension in y
 		hs_group: int
-			hotspot group number 
+			hotspot group number
 		posMat: ndarray
-			position matrix. 
+			position matrix.
 		data: ndarray
 			4D xrf dataset ndarray [elements, theta, y,x]
 		'''
@@ -304,7 +329,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		y_size: int
 			ROI pixel dimension in y
 		hs_group: int
-			hotspot group number 
+			hotspot group number
 		posMat: ndarray
 			position matrix. 2
 		data: ndarray
@@ -358,7 +383,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		print("align done")
 		self.centers = list(np.round(self.centers))
 		return self.x_shifts, self.y_shifts, self.centers
-		
+
 
 	def setY(self, element, x_size, y_size, hs_group, posMat, data):
 		'''
@@ -372,7 +397,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		y_size: int
 			ROI pixel dimension in y
 		hs_group: int
-			hotspot group number 
+			hotspot group number
 		posMat: ndarray
 			position matrix. 2
 		data: ndarray
@@ -407,7 +432,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		y_size: int
 			ROI pixel dimension in y
 		hs_group: int
-			hotspot group number 
+			hotspot group number
 		posMat: ndarray
 			position matrix. 2
 		data: ndarray
@@ -417,31 +442,33 @@ class ImageProcessActions(QtWidgets.QWidget):
 		num_projections = data.shape[1]
 		hs_x_pos = zeros(num_projections, dtype=np.int)
 		hs_y_pos = zeros(num_projections, dtype=np.int)
-		hs_array = zeros([num_projections, y_size, x_size], dtype=np.int)
+		hs_array = zeros([num_projections, y_size//2*2, x_size//2*2], dtype=np.int)
 
 		for i in arange(num_projections):
 			hs_x_pos[i] = int(round(self.posMat[hs_group, i, 0]))
 			hs_y_pos[i] = int(abs(round(self.posMat[hs_group, i, 1])))
 
 			if hs_x_pos[i] != 0 and hs_y_pos[i] != 0:
-				if hs_y_pos[i] < y_size:	# if ROI is past top edge of projection
+				if hs_y_pos[i] < - y_size//2:	# if ROI is past top edge of projection
 					hs_y_pos[i] = y_size
-				if hs_y_pos[i] > data.shape[2] - y_size: # if ROI is past top bottom of projection
-					hs_y_pos[i] = data.shape[2] - y_size
-				if hs_x_pos[i] < x_size:	# if ROI is past left edge of projection
-					hs_x_pos[i] = x_size
-				if hs_x_pos[i] > data.shape[3] - x_size: # if ROI is past right edge of projection
-					hs_x_pos[i] = data.shape[3] - x_size
-				hs_array[i, :, :] = data[element, i,
-									hs_y_pos[i] - y_size//2:hs_y_pos[i] + y_size//2,
-									hs_x_pos[i] - x_size//2:hs_x_pos[i] + x_size//2]
+				if hs_y_pos[i] > (data.shape[2] - y_size//2): # if ROI is past top bottom of projection
+					hs_y_pos[i] = data.shape[2] - y_size//2
+				if hs_x_pos[i] < x_size//2:	# if ROI is past left edge of projection
+					hs_x_pos[i] = x_size//2
+				if hs_x_pos[i] > (data.shape[3] - x_size//2): # if ROI is past right edge of projection
+					hs_x_pos[i] = data.shape[3] - x_size//2
+				y0 = hs_y_pos[i] - y_size//2
+				y1 = hs_y_pos[i] + y_size//2
+				x0 = hs_x_pos[i] - x_size//2
+				x1 = hs_x_pos[i] + x_size//2
+				hs_array[i, :, :] = data[element, i, y0:y1, x0:x1]
 
 		hotSpotX = zeros(num_projections, dtype=np.int)
 		hotSpotY = zeros(num_projections, dtype=np.int)
 		new_hs_array = zeros(hs_array.shape, dtype=np.int)
 		new_hs_array[...] = hs_array[...]
 		firstPosOfHotSpot = 0
-		
+
 		add = 1
 		for i in arange(num_projections):
 			if hs_x_pos[i] == 0 and hs_y_pos[i] == 0:
@@ -502,7 +529,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		"""
 		Returns (height, x, y, width_x, width_y)
 		the gaussian parameters of a 2D distribution by calculating its
-		moments 
+		moments
 		"""
 		total = data.sum()
 		if total == 0:
@@ -549,7 +576,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 	def clrHotspot(self, posMat):
 		'''
 		resets
-		hotspot position matrix 
+		hotspot position matrix
 		'''
 		posMat[...] = zeros_like(posMat)
 		return posMat

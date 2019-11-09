@@ -321,7 +321,7 @@ class XfluoGui(QtGui.QMainWindow):
         return
 
     def openTiffs(self):
-        files = QtGui.QFileDialog.getOpenFileNames(self, "Open Tiffs", QtCore.QDir.currentPath())
+        files = QtGui.QFileDialog.getOpenFileNames(self, "Open Tiffs", QtCore.QDir.currentPath(), "TIFF (*.tiff *.tif)" )
         if files[0] == '' or files[0] == []:
             return
 
@@ -336,7 +336,7 @@ class XfluoGui(QtGui.QMainWindow):
         return
 
     def openThetas(self):
-        file = QtGui.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath())
+        file = QtGui.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "text (*.txt)" )
         if file[0] == '':
             return
 
