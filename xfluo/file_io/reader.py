@@ -129,7 +129,11 @@ def read_channel_names(fname, hdf_tag, channel_tag):
         List of channel names
     
     """
-    b_channel_names = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, channel_tag))
+    try:
+        b_channel_names = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, channel_tag))
+    except:
+        print("File signature not found for {}, check file integrity".format(fname))
+        return []
     channel_names = []
     for i, e in enumerate(b_channel_names):
         channel_names.append(e.decode('utf-8'))
@@ -162,7 +166,8 @@ def read_projection(fname, element, hdf_tag, roi_tag, channel_tag):
     """
 
     elements = read_channel_names(fname, hdf_tag, channel_tag)
-
+    if elements == []:
+        return
     print(fname)
     projections = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, roi_tag))
 
@@ -218,7 +223,7 @@ def load_thetas_legacy( path_files, thetaPV):
     thetas = []
     for i in range(len(path_files)):
         try:
-            hFile = h5py.File(path_files[i])
+            hFile = h5py.File(path_files[i], 'r')
             extra_pvs = hFile['/MAPS/extra_pvs']
             idx = np.where(extra_pvs[0] == thetaBytes)
             if len(idx[0]) > 0:
@@ -231,7 +236,7 @@ def load_thetas_9idb(path_files, data_tag):
     thetas = []
     for i in range(len(path_files)):
         try:
-            hFile = h5py.File(path_files[i])
+            hFile = h5py.File(path_files[i], "r")
             thetas.append(float(hFile[data_tag]['theta'].value[0]))
         except:
             pass
@@ -319,10 +324,13 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_nam
     #get max dimensons
     for i in range(num_files):
         proj = read_projection(path_files[i], element_names[0], hdf_tag, roi_tag, channel_tag)
-        if proj.shape[0] > max_y:
-            max_y = proj.shape[0]
-        if proj.shape[1] > max_x:
-            max_x = proj.shape[1]
+        if proj is None:
+            pass
+        else:
+            if proj.shape[0] > max_y:
+                max_y = proj.shape[0]
+            if proj.shape[1] > max_x:
+                max_x = proj.shape[1]
 
     data = np.zeros([num_elements,num_files, max_y, max_x])
     scalers = np.zeros([num_files,max_y,max_x])
@@ -331,15 +339,18 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_nam
     for i in range(num_elements):
         for j in range(num_files):
             proj = read_projection(path_files[j], elements[i], hdf_tag, roi_tag, channel_tag)
-            img_y = proj.shape[0]
-            img_x = proj.shape[1]
-            dx = (max_x-img_x)//2
-            dy = (max_y-img_y)//2
-            try:
-                data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
-            except ValueError:
-                print("WARNING: Could not load file {}. Check file integrity. ".format(path_files[j]))
-                data[i, j] = np.zeros([max_y,max_x])
+            if proj is None:
+                pass
+            if proj is not None:
+                img_y = proj.shape[0]
+                img_x = proj.shape[1]
+                dx = (max_x-img_x)//2
+                dy = (max_y-img_y)//2
+                try:
+                    data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
+                except ValueError:
+                    print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
+                    data[i, j] = np.zeros([max_y,max_x])
 
     #get scalers
     if scaler_name == 'None':

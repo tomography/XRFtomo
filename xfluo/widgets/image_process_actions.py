@@ -51,6 +51,19 @@ import xfluo
 import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
 from skimage import exposure
+import tomopy
+
+#testing
+from skimage.exposure import equalize_hist
+from skimage.morphology import remove_small_objects, disk
+from skimage import exposure
+from skimage.filters import rank
+import skimage
+from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
+from scipy import ndimage as ndi
+from scipy import fftpack
+from scipy.stats import tmean
+
 
 class ImageProcessActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
@@ -63,59 +76,42 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.y_shifts = None
 		self.centers = None
 
-	def shiftProjectionUp(self, data, index):
-		data[:,index] = np.roll(data[:, index], -1, axis=1)
+	def shiftProjectionY(self, data, index, displacement):
+		data[:,index] = np.roll(data[:, index], displacement, axis=1)
 		self.dataSig.emit(data)
 
-	def shiftProjectionDown(self, data, index):
-		data[:,index] = np.roll(data[:,index],1,axis=1)
+	def shiftProjectionX(self, data, index, displacement):
+		data[:,index] = np.roll(data[:,index],displacement,axis=2)
 		self.dataSig.emit(data)
 
-	def shiftProjectionLeft(self, data, index):
-		data[:,index] = np.roll(data[:,index],-1,axis=2)
-		self.dataSig.emit(data)
-
-	def shiftProjectionRight(self, data, index):
-		data[:,index] = np.roll(data[:,index],1, axis=2)
-		self.dataSig.emit(data)
-
-	def shiftDataUp(self, data):
+	def shiftDataY(self, data, displacement):
 		for i in range(data.shape[1]):
-			data[:,i] = np.roll(data[:,i],-1,axis=1)
+			data[:,i] = np.roll(data[:,i],displacement,axis=1)
 		self.dataSig.emit(data)
 
-	def shiftDataDown(self, data):
+	def shiftDataX(self, data, displacement):
 		for i in range(data.shape[1]):
-			data[:,i] = np.roll(data[:,i],1,axis=1)
+			data[:,i] = np.roll(data[:,i],displacement, axis=2)
 		self.dataSig.emit(data)
 
-	def shiftDataLeft(self, data):
-		for i in range(data.shape[1]):
-			data[:,i] = np.roll(data[:,i],-1, axis=2)
-		self.dataSig.emit(data)
+	# def normalize(self, data, element):
+	# 	normData = data[element, :, :, :]
+	# 	for i in range((normData.shape[0])):
+	# 		temp = normData[i, :, :]
+	# 		tempMax = temp.max()
+	# 		tempMin = temp.min()
+	# 		temp = (temp - tempMin) / tempMax * 10000
+	# 		data[element, i, :, :] = temp
+	# 	self.dataSig.emit(data)
+	# 	return data
 
-	def shiftDataRight(self, data):
-		for i in range(data.shape[1]):
-			data[:,i] = np.roll(data[:,i],1, axis=2)
-
-		self.dataSig.emit(data)
-
-	def normalize(self, data, element):
-		normData = data[element, :, :, :]
-		for i in range((normData.shape[0])):
-			temp = normData[i, :, :]
-			tempMax = temp.max()
-			tempMin = temp.min()
-			temp = (temp - tempMin) / tempMax * 10000
-			data[element, i, :, :] = temp
-		self.dataSig.emit(data)
-		return data
-
-	def remove_hotspots(self, data, element, projection):
-		img = data[element, projection]
-		max_val = np.max(img)
-		img[img > 0.5*max_val] = 0.5*max_val
-		data[element,projection] = img
+	def remove_hotspots(self, data, element):
+		imgs = data[element]
+		max_val = np.max(imgs)
+		for i in range(imgs.shape[0]):
+			img = imgs[i]
+			img[img > 0.5*max_val] = 0.5*max_val
+			data[element,i] = img
 		self.dataSig.emit(data)
 
 	def equalize(self, data, element):
@@ -125,7 +121,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 			local_mean = np.mean(data[element,i,:,:])
 			coeff = global_mean/local_mean
 			data[element,i] = data[element,i]*coeff
-
 			img = data[element,i]
 			# data[element,i] = exposure.equalize_hist(img)
 			img *= 1/img.max()
@@ -134,6 +129,21 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 		self.dataSig.emit(data)
 		return data
+
+	def move_rot_axis(self, thetas, center, rAxis_pos, theta_pos):
+		#set 0th angle to 
+		num_theas = thetas.shape[0]
+		pos_from_center = [rAxis_pos - center]
+		angle_offset = -180-theta_pos
+		thetas = thetas + angle_offset
+		rads = np.radians(thetas)
+		# angle_increments = rads[1:]-rads[:-1]
+		offsets = pos_from_center[0]*np.cos(rads)
+		# adjustment = pos_from_center[0]*-1 - offsets[0]
+		# offsets += adjustment
+
+		return offsets
+		
 
 	def cut(self, data, x_pos, y_pos, x_size, y_size):
 		'''
@@ -414,11 +424,11 @@ class ImageProcessActions(QtWidgets.QWidget):
 			if hs_y_pos[j] == 0:
 				yyshift = 0
 
-			self.y_shifts[j] += yyshift
+			self.y_shifts[j] -= yyshift
 
 		print("align done")
 		self.centers = list(np.round(self.centers))
-		return self.x_shifts, self.y_shifts, self.centers
+		return self.y_shifts, self.centers
 
 	def alignment_parameters(self, element, x_size, y_size, hs_group, posMat, data):
 		'''
@@ -487,7 +497,10 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 		return hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data
 
+	def find_center(self, tomo, thetas, slice_index, init_center, tol, mask_bool, ratio):
 
+		center = tomopy.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
+		return center[0]
 
 	def fitCenterOfMass(self, com, x):
 		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
@@ -580,3 +593,111 @@ class ImageProcessActions(QtWidgets.QWidget):
 		'''
 		posMat[...] = zeros_like(posMat)
 		return posMat
+
+
+	def create_mask(self, data, mask_thresh = None, scale = .8):
+		# Remove nan values
+		mask_nan = np.isfinite(data)
+		data[~np.isfinite(data)] = 0
+		#     data /= data.max()
+		# Median filter with disk structuring element to preserve cell edges.
+		data = ndi.median_filter(data, size=int(data.size**.5*.05), mode = 'nearest')
+		#     data = rank.median(data, disk(int(size**.5*.05)))
+		# Threshold
+		if mask_thresh == None:
+			mask_thresh = np.nanmean(data)*scale/np.nanmax(data)
+		mask = np.isfinite(data)
+		mask[data/np.nanmax(data) < mask_thresh] = False
+		# Remove small spots
+		mask = remove_small_objects(mask, data.size//100)
+		# Remove small holes
+		mask = ndi.binary_fill_holes(mask)
+		return mask*mask_nan
+
+	def equalize_hist_ev(self, image, nbins=2**16, mask=None, shift_funct = np.median):
+		# For global_shift use np.median if hot spots are present and np.mean otherwise
+		if mask is not None:
+			mask = np.array(mask, dtype=bool)
+			cdf, bin_centers = self.cumulative_distribution(image[mask], nbins)
+			if bin_centers.shape[0] > cdf.shape[0]:
+				bin_centers = bin_centers[:-1]
+			m = shift_funct(image[mask])
+		else:#eq_hsv
+			cdf, bin_centers = self.cumulative_distribution(image, nbins)
+			m = shift_funct(image)
+			if bin_centers.shape[0] > cdf.shape[0]:
+				bin_centers = bin_centers[:-1]
+		out = np.interp(image.flat, bin_centers, cdf)
+		out_m = np.interp(m, bin_centers, cdf)
+		return out.reshape(image.shape), out_m
+
+	def cumulative_distribution(self, image, nbins=2**16):
+		hist, bin_centers = histogram(image, nbins)
+		img_cdf = hist.cumsum()
+		img_cdf = img_cdf / float(img_cdf[-1])
+		return img_cdf, bin_centers
+
+	def rot_center3(self, thetasum, ave_mode = None, limit = None, return_all = False):
+		# thetasum: 1d or 2d array of summed projections. (z,x)
+		if thetasum.ndim == 1:
+			thetasum = thetasum[None,:]
+		T = fftpack.fft(thetasum, axis = 1)
+		# Collect real and imaginary coefficients.
+		real, imag = T[:,1].real, T[:,1].imag
+		rows = thetasum.shape[0]
+		cols = thetasum.shape[1]
+		# In a sinogram the feature may be more positive or less positive than the background (i.e. fluorescence vs
+		# absorption contrast). This can mess with the T_phase value so we multiply by the sign of the even function
+		# to account for this.
+		T_phase = np.arctan2(imag*np.sign(real),real*np.sign(real))
+		if ave_mode == 'Mean':
+			# Use the mean of the centers from each row as center shift.
+			# Good for objects filling the field of view (i.e. local/roi tomography)
+			return np.mean(T_phase)/(np.pi*2)*cols
+
+		elif ave_mode == 'Median':
+			# Use median value as center shift.
+			return np.median(T_phase)/(np.pi*2)*cols
+
+		elif ave_mode == 'Local':
+			# Use local mean from window about the median vlimitalue as center shift.
+			# Good for objects fully contained within the field of view.
+			# Default window is 2*rows//10
+			med = np.median(T_phase)
+			if limit == None:
+				return tmean(T_phase, limits = (med-10, med+10))/(np.pi*2)*cols
+			else:
+				return tmean(T_phase, limits = (med-limit, med+limit))/(np.pi*2)*cols
+		else:
+			# Use value from center row as center shift.
+			# Fastest option.
+			if return_all:
+				return T_phase/(np.pi*2)*cols
+			return T_phase[rows//2]/(np.pi*2)*cols
+
+	# HISTOGRAM EQUALIZATION ADAPTED FROM skimage.exposure.equalize_hist
+	def histogram(self, image, nbins=2**16, source_range='image', normalize=False):
+		sh = image.shape
+		if len(sh) == 3 and sh[-1] < 4:
+			print("This might be a color image. The histogram will be "
+				"computed on the flattened image. You can instead "
+				"apply this function to each color channel.")
+
+		image = image.flatten()
+		# For integer types, histogramming with bincount is more efficient.
+		if np.issubdtype(image.dtype, np.integer):
+			hist, bin_centers = _bincount_histogram(image, source_range)
+		else:
+			pass
+		if source_range == 'image':
+				hist_range = None
+		elif source_range == 'dtype':
+			hist_range = skimage.dtype_limits(image, clip_negative=False)
+		else:
+			ValueError('Wrong value for the `source_range` argument')
+		hist, bin_edges = np.histogram(image, bins=nbins, range=hist_range)
+		bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2.
+
+		if normalize:
+			hist = hist / np.sum(hist)
+		return hist, bin_centers

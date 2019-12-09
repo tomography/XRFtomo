@@ -127,9 +127,9 @@ class SinogramControlsWidget(QtWidgets.QWidget):
     
         #__________Popup window for iterative alignment__________   
 
-        self.parameters = QtWidgets.QWidget()
-        self.parameters.resize(275,400)
-        self.parameters.setWindowTitle('Alignment Parameters')
+        self.iter_parameters = QtWidgets.QWidget()
+        self.iter_parameters.resize(275,400)
+        self.iter_parameters.setWindowTitle('Alignment Parameters')
 
         iter_label = QtWidgets.QLabel("iterations")
         iter_label.setFixedWidth(button2size)
@@ -260,8 +260,10 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         if self.center_textbox == "":
             self.center_textbox = None
 
-        self.parameters.setLayout(vb00)
-        # self.parameters.show()
+        self.iter_parameters.setLayout(vb00)
+
+
+       #_______________________________________________________   
 
 
     def validate_parameters(self):

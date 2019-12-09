@@ -158,6 +158,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.lbl.setText("Reconstruction is currently running")
         element = self.ViewControl.combo1.currentIndex()
         box_checked = self.ViewControl.cbox.isChecked()
+        #TODO: figure out what center input does with respect to reconstructions. Doesnt seem to change output.
         center = np.array(float(self.ViewControl.centerTextBox.text()), dtype=float32)
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
@@ -200,7 +201,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.reconChangedSig.emit(self.recon)
         return
 
-    def ySizeChanged(self,ySize):
+    def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
         self.ViewControl.end_indx.setText(str(ySize))
         self.imgAndHistoWidget.sld.setValue(0)
@@ -216,16 +217,17 @@ class ReconstructionWidget(QtWidgets.QWidget):
         if end_indx >self.data.shape[2]:
             end_indx = self.data.shape[2]
             self.ViewControl.end_indx.setText(str(end_indx))
+        if end_indx <= 0:
+            end_indx = self.data.shape[2]
+            self.ViewControl.end_indx.setText(str(end_indx))
         if start_indx >=end_indx:
-            print("invalid")
-            return
-        if start_indx < 0 or end_indx < 0:
-            print("invalid")
-            return
-        else:
-            self.imgAndHistoWidget.sld.setRange(0, end_indx-start_indx - 1)
-            self.imgAndHistoWidget.sld.setValue(0)
-            self.imgAndHistoWidget.lcd.display(0)
+            self.ViewControl.start_indx.setText(str(end_indx-1))
+        if start_indx < 0:
+            self.ViewControl.start_indx.setText(str(0))
+    
+        self.imgAndHistoWidget.sld.setRange(0, end_indx-start_indx - 1)
+        self.imgAndHistoWidget.sld.setValue(0)
+        self.imgAndHistoWidget.lcd.display(0)
 
     def update_recon_image(self):
         index = self.imgAndHistoWidget.sld.value()

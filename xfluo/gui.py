@@ -108,16 +108,13 @@ class XfluoGui(QtGui.QMainWindow):
         saveSinogram2Action = QtGui.QAction('Sinogram stack', self)
         saveSinogram2Action.triggered.connect(self.saveSinogram2)
 
-        savephysicalPosition = QtGui.QAction('Angle and motor positions', self)
-        # savephysicalPosition,triggered.connect(self.save_motor_position)
-
         saveReconstructionAction = QtGui.QAction('Reconstruction', self)
         saveReconstructionAction.triggered.connect(self.saveReconstruction)
 
         saveToHDFAction = QtGui.QAction('as HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
 
-        saveThetasAction = QtGui.QAction('thetas to .txt', self)
+        saveThetasAction = QtGui.QAction('Angle information to .txt', self)
         saveThetasAction.triggered.connect(self.saveThetas)
 
         saveToNumpyAction = QtGui.QAction("as Numpy file", self)
@@ -270,7 +267,6 @@ class XfluoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveAlignemtInfoAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(saveSinogram2Action)
-        self.afterConversionMenu.addAction(savephysicalPosition)
         self.afterConversionMenu.addAction(saveThetasAction)
         self.afterConversionMenu.addAction(saveToHDFAction)
         self.afterConversionMenu.addAction(saveToNumpyAction)
@@ -669,9 +665,9 @@ class XfluoGui(QtGui.QMainWindow):
     def restore(self):
         try:
             num_projections = self.original_data.shape[1]
-            self.data = self.original_data
-            self.thetas = self.original_thetas
-            self.fnames = self.original_thetas
+            self.data = self.original_data.copy()
+            self.thetas = self.original_thetas.copy()
+            self.fnames = self.original_fnames.copy()
             self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
             self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
             self.centers = [100,100,self.data.shape[3]//2]

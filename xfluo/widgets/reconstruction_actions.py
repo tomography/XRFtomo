@@ -124,11 +124,11 @@ class ReconstructionActions(QtWidgets.QWidget):
 		'''
 		self.recon = self.recon * 10
 		return self.recon
-	def reconDivide(self):
+	def reconDivide(self, recon):
 		'''
 		divide reconstuction by 10
 		'''
-		self.recon = self.recon / 10
+		self.recon = recon / 10
 		return self.recon
 
 	def threshold(self, recon, threshold_value):

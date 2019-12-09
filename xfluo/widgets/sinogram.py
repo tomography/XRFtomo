@@ -86,7 +86,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
         self.ViewControl.btn4.clicked.connect(self.crossCorrelate2_params)
         self.ViewControl.btn5.clicked.connect(self.align_y_top_params)
-        self.ViewControl.btn6.clicked.connect(self.ViewControl.parameters.show)
+        self.ViewControl.btn6.clicked.connect(self.ViewControl.iter_parameters.show)
         self.ViewControl.run_iter_align.clicked.connect(self.iter_align_params)
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
         self.ViewControl.btn8.clicked.connect(self.align_y_bottom_params)

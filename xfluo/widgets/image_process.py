@@ -51,6 +51,8 @@ import pyqtgraph
 import xfluo.widgets.image_process_actions as actions
 import numpy as np
 
+
+
 class ImageProcessWidget(QtWidgets.QWidget):
 
     sliderChangedSig = pyqtSignal(int, name='sliderChangedSig')
@@ -90,7 +92,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.xSizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.y_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.ySizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
-        self.ViewControl.normalizeBtn.clicked.connect(self.normalize_params)
+        # self.ViewControl.normalizeBtn.clicked.connect(self.normalize_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         self.ViewControl.aspectChkbx.clicked.connect(self.lockAspect)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
@@ -98,18 +100,21 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
         self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
-        self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
+        # self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
-        # self.ViewControl.histogramButton.clicked.connect(self.histo_signal)
+        self.ViewControl.Equalize.clicked.connect(self.histo_params)
+        self.ViewControl.center.clicked.connect(self.ViewControl.center_parameters.show)
+        self.ViewControl.center.clicked.connect(self.updateCenterFindParameters)
+        self.ViewControl.find_center_1.clicked.connect(self.center_tomopy_params)
+        self.ViewControl.find_center_2.clicked.connect(self.center_Everett_params)
+        self.ViewControl.move2center.clicked.connect(self.move2center_params)
+        self.ViewControl.rot_axis.clicked.connect(self.rot_axis_params)
+        # self.ViewControl.histogramButton.clicked.connect(self.histogram)
 
         # x_pos, y_pos, x_size, y_size, frame_height, frame_width
 
         # self.ViewControl.x_sld.valueChanged.connect(self.xSldChange)
         # self.ViewControl.y_sld.valueChanged.connect(self.xSldChange)
-
-
-
-
         self.ViewControl.btn1.clicked.connect(self.hotspot2line_params)
         self.ViewControl.btn2.clicked.connect(self.hotspot2sine_params)
         self.ViewControl.btn3.clicked.connect(self.setY_params)
@@ -123,7 +128,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.actions.dataSig.connect(self.send_data)
         # self.actions.thetaSig.connect(self.send_thetas)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
-        
+
         mainHBox = QtWidgets.QHBoxLayout()
         mainHBox.addWidget(self.ViewControl)
         mainHBox.addWidget(self.imgAndHistoWidget, 10)
@@ -220,6 +225,14 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.fnames = fnames
         self.imgAndHistoWidget.file_name_title.setText(str(self.fnames[index]))
 
+    def updateCenterFindParameters(self):
+        if self.ViewControl.init_textbox.text() == "-1":
+            self.ViewControl.init_textbox.setText(str(self.data.shape[3]//2))
+        if self.ViewControl.slice_textbox.text() == "-1":
+            self.ViewControl.slice_textbox.setText(str(self.data.shape[2]//2))
+        if self.ViewControl.limit_textbox.text() == "-1":
+            self.ViewControl.limit_textbox.setText("1")
+
     def imgProcessBoxSizeChange(self):
         xSize = self.ViewControl.xSize
         ySize = self.ViewControl.ySize
@@ -228,7 +241,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.ViewControl.xSize = xSize
         if ySize > self.data.shape[2]:
             ySize = self.data.shape[2]
-            self.ViewControl.ySize = ySize   
+            self.ViewControl.ySize = ySize
 
         self.imgAndHistoWidget.view.xSize = xSize
         self.imgAndHistoWidget.view.ySize = ySize
@@ -270,35 +283,35 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.imageSliderChanged()
         if command == 'left':
             self.x_shifts[index] -=1
-            self.actions.shiftProjectionLeft(self.data, index) 
+            self.actions.shiftProjectionX(self.data, index, -1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'right':
             self.x_shifts[index] +=1
-            self.actions.shiftProjectionRight(self.data, index) 
+            self.actions.shiftProjectionX(self.data, index, 1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'up':
             self.y_shifts[index] +=1
-            self.actions.shiftProjectionUp(self.data, index) 
+            self.actions.shiftProjectionY(self.data, index, -1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'down':
             self.y_shifts[index] -=1
-            self.actions.shiftProjectionDown(self.data, index) 
+            self.actions.shiftProjectionY(self.data, index, 1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shiftLeft':
             self.x_shifts -=1
-            self.actions.shiftDataLeft(self.data) 
+            self.actions.shiftDataX(self.data, -1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shiftRight':
             self.x_shifts +=1
-            self.actions.shiftDataRight(data)
+            self.actions.shiftDataX(self.data, 1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shiftUp':
             self.y_shifts +=1
-            self.actions.shiftDataUp(self.data) 
+            self.actions.shiftDataY(self.data, -1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'shiftDown':
             self.y_shifts -=1
-            self.actions.shiftDataDown(self.data) 
+            self.actions.shiftDataY(self.data, 1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         if command == 'Delete':
             self.exclude_params()
@@ -358,7 +371,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         hs_group = self.ViewControl.combo3.currentIndex()
         hs_number = self.imgAndHistoWidget.sld.value()
         posMat = self.posMat
-        self.x_shifts, self.y_shifts, self.centers = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
+        self.y_shifts, self.centers = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         self.ViewControl.btn4.setEnabled(True)
 
@@ -376,7 +389,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         y_pos = self.imgAndHistoWidget.view.y_pos
         x_size = self.ViewControl.xSize
         y_size = self.ViewControl.ySize
-        img = self.data[element, projection, 
+        img = self.data[element, projection,
             int(round(abs(y_pos)) - y_size/2): int(round(abs(y_pos)) + y_size/2),
             int(round(x_pos) - x_size/2): int(round(x_pos) + x_size/2)]
         return element, projection, x_pos, y_pos, x_size, y_size, img
@@ -389,7 +402,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         self.actions.normalize(data, element)
-        
+
     def equalize_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
@@ -424,7 +437,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.data
         img = data[element, projection, :,:]
         self.actions.bounding_analysis(img)
-    
+
     def save_analysis(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
@@ -453,7 +466,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def rm_hotspot_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
-        self.actions.remove_hotspots(data, element, projection)
+        self.actions.remove_hotspots(data, element)
 
 
 
@@ -518,6 +531,122 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     # def send_alignment(self, x_shifts, y_shifts):
     #     '''
-    #     This sends a signal one level up indicating that the alignment information has changed. 
-    #     '''        
+    #     This sends a signal one level up indicating that the alignment information has changed.
+    #     '''
     #     self.alignemntChangedSig.emit(x_shifts, y_shifts)
+
+    def rot_axis_params(self):
+        data = self.data
+        num_projections = data.shape[1]
+        thetas = self.thetas
+        rAxis_pos = self.imgAndHistoWidget.view.cross_pos_x
+        center = data.shape[3]//2
+        theta_pos = self.imgAndHistoWidget.lcd.value()
+        shift_arr = self.actions.move_rot_axis(thetas, center, rAxis_pos, theta_pos)
+        shift_arr = np.round(shift_arr)
+        self.x_shifts  = self.x_shifts + shift_arr
+
+        for i in range(num_projections):
+            self.actions.shiftProjectionX(self.data, i, int(shift_arr[i]))
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        return
+
+    def move2center_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        rot_center = int(np.round(float(self.ViewControl.center_1.text().split()[1])))
+        shift = self.data.shape[3]//2 - rot_center
+        self.x_shifts += shift
+
+        if shift<0:
+            self.actions.shiftDataX(self.data, shift)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            
+        if shift>0:
+            self.actions.shiftDataX(data, shift)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+
+    def histo_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        for i in range(data.shape[1]):
+            mask = self.actions.create_mask(data[element,i])
+            data[element, i], m = self.actions.equalize_hist_ev(data[element,i], 2**16, mask)
+        self.send_data(data)
+
+    def center_tomopy_params(self):        
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+
+        data = self.data
+        thetas = self.thetas
+        tomo = data[element]
+        slice_index = int(self.ViewControl.slice_textbox.text())
+        init_center = int(self.ViewControl.init_textbox.text())
+        tol = float(self.ViewControl.tol_textbox.text())
+        mask_bool = self.ViewControl.mask_checkbox.isChecked()
+        ratio = float(self.ViewControl.ratio_textbox.text())
+
+
+        center = self.actions.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
+        self.ViewControl.center_1.setText("center: {}".format(center))
+        self.ViewControl.center_2.setText("center: {}".format(center))
+
+    def center_Everett_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        thetasum = np.sum(self.data[element], axis=1)
+        
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+
+        limit = self.ViewControl.limit_textbox.text()
+        center_offset = self.actions.rot_center3(thetasum, ave_mode = 'Median', limit = None, return_all = False)
+        center = self.data.shape[3]//2 - center_offset
+        center_int = np.round(center_offset)
+        self.ViewControl.center_1.setText("center: {}".format(center))
+        self.ViewControl.center_2.setText("center: {}".format(center))
+
+
+    def equalize_colocalization(self, elements, mask = None, nbins = 2**16, eq_hsv = False,
+                                global_shift = True, shift_funct = np.median):
+        '''
+        elements: each element dataset to use for colocalization (up to 3).
+        mask: bool or binary masks used to select roi.
+        nbins: number of bins used for histogram equalization.
+        eq_hsv: equalize the lumination of the colocalization.
+        global_shift: global shift each element to match
+                (i.e. have the mean of element 1 match the mean of element 2 after colocalization)
+        shift_funct: function used for global_shift.
+        '''
+        rgb = np.zeros((elements[0].shape[0], elements[0].shape[1], 3))
+        for i, element in enumerate(elements):
+            # Remove inf and nan.
+            element[~np.isfinite(element)] = 0
+            # Add to RGB image and normalize components.
+            rgb[:,:,i] = element/element.max()
+            # Equalize the R, G, and B components individually.
+            rgb[:,:,i], m = self.equalize_hist_ev(rgb[:,:,i], mask = mask, nbins = nbins,
+                                             shift_funct = np.median)
+            # Set shift value to zero.
+            if global_shift:
+                rgb[:,:,i] -= m
+
+        # shift all values to > 0.
+        if global_shift:
+            rgb[:,:,0:len(elements)] -= rgb[:,:,0:len(elements)].min()
+        if eq_hsv:
+            # Convert RGB to HSV and equalize the value. Convert back to RGB.
+            hsv = rgb_to_hsv(rgb)
+            # Equalize value component of the hsv image
+            #hsv[:,:,2] = equalize_hist(hsv[:,:,2], mask = mask, nbins = nbins)
+            # OR use CLASqualize value component of the hsv image
+            hsv[:,:,2] = exposure.equalize_adapthist(hsv[:,:,2], nbins = nbins, clip_limit = .001)
+            rgb = hsv_to_rgb(hsv)
+        return rgb
+
+    # # Rotation Center Finding
+

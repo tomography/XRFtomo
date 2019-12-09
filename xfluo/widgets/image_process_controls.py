@@ -57,6 +57,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.ySize = 10
         button1size = 250       #long button (1 column)
         button2size = 122.5     #mid button (2 column)
+        button33size = 78.3
         button3size = 73.3      #small button (almost third)
         button4size = 58.75     #textbox size (less than a third)
 
@@ -91,20 +92,27 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.y_sld.setRange(2, 10)
         self.y_sld.valueChanged.connect(self.ySldChange)
 
-        self.normalizeBtn = QtWidgets.QPushButton("Normalize")
-        self.normalizeBtn.setFixedWidth(button2size)
+        # self.normalizeBtn = QtWidgets.QPushButton("Normalize")
+        # self.normalizeBtn.setFixedWidth(button33size)
         self.cropBtn = QtWidgets.QPushButton("Crop")
-        self.cropBtn.setFixedWidth(button2size)
+        self.cropBtn.setFixedWidth(button33size)
         self.captureBackground = QtWidgets.QPushButton("Copy Bg")
-        self.captureBackground.setFixedWidth(button2size)
+        self.captureBackground.setFixedWidth(button33size)
         self.setBackground = QtWidgets.QPushButton("Set Bg")
-        self.setBackground.setFixedWidth(button2size)
+        self.setBackground.setFixedWidth(button33size)
         self.deleteProjection = QtWidgets.QPushButton("remove img")
         self.deleteProjection.setFixedWidth(button2size)
-        self.hist_equalize = QtWidgets.QPushButton("Equalize")
-        self.hist_equalize.setFixedWidth(button2size)
-        self.rm_hotspot = QtWidgets.QPushButton("Remove hotpsot")
+        # self.hist_equalize = QtWidgets.QPushButton("Equalize")
+        # self.hist_equalize.setFixedWidth(button33size)
+        self.rm_hotspot = QtWidgets.QPushButton("Remove hs")
         self.rm_hotspot.setFixedWidth(button2size)
+        self.Equalize = QtWidgets.QPushButton("Equalize")
+        self.Equalize.setFixedWidth(button33size)
+        self.center = QtWidgets.QPushButton("Find center")
+        self.center.setFixedWidth(button33size)
+        self.rot_axis = QtWidgets.QPushButton("Set rot. axis")
+        self.rot_axis.setFixedWidth(button33size)
+
 
         for i in range(5):
             self.combo3.addItem(str(i + 1))
@@ -139,17 +147,21 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb5.addWidget(self.btn4)
 
         hb10 = QtWidgets.QHBoxLayout()
-        hb10.addWidget(self.normalizeBtn)
-        hb10.addWidget(self.hist_equalize)
+        # hb10.addWidget(self.normalizeBtn)
+        # hb10.addWidget(self.hist_equalize)
+        hb10.addWidget(self.Equalize)
+        hb10.addWidget(self.center)
+        hb10.addWidget(self.rot_axis)
+
+
         hb12 = QtWidgets.QHBoxLayout()
+        hb12.addWidget(self.cropBtn)
         hb12.addWidget(self.captureBackground)
         hb12.addWidget(self.setBackground)
+
         hb13 = QtWidgets.QHBoxLayout()
         hb13.addWidget(self.deleteProjection)
-        hb13.addWidget(self.cropBtn)
-        hb14 = QtWidgets.QHBoxLayout()
-        hb14.addWidget(self.rm_hotspot)
-
+        hb13.addWidget(self.rm_hotspot)
 
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addLayout(hb1)
@@ -166,7 +178,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         # vb4xSldChange.addLayout(hb11)
         vb4.addLayout(hb12)
         vb4.addLayout(hb13)
-        vb4.addLayout(hb14)
+        # vb4.addLayout(hb14)
 
         vb5 = QtWidgets.QVBoxLayout()
         vb5.addWidget(self.combo1)
@@ -175,9 +187,279 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb5.addLayout(vb4)
         vb5.addLayout(vb2)
 
-        # vb5.addWidget(self.histogramButton)
-
         self.setLayout(vb5)
+
+
+        #__________Popup window for center-find button__________   
+
+        self.center_parameters = QtWidgets.QWidget()
+        self.center_parameters.resize(275,300)
+        self.center_parameters.setWindowTitle('center-finiding options')
+
+        method = ["tomopy center-find", "Everett's center-find"]
+        self.options = QtWidgets.QComboBox()
+        self.options.setFixedWidth(button1size)
+
+        self.move2center = QtWidgets.QPushButton("Move to center")
+        self.move2center.setFixedWidth(button1size)
+
+        for j in method:
+            self.options.addItem(j)
+
+        self.stack1 = QtWidgets.QWidget()
+        self.stack2 = QtWidgets.QWidget()
+
+        self.stack1UI()
+        self.stack2UI()
+
+        self.Stack = QtWidgets.QStackedWidget (self)
+        self.Stack.addWidget(self.stack1)
+        self.Stack.addWidget(self.stack2)
+
+        vbox = QtWidgets.QVBoxLayout(self)
+        vbox.addWidget(self.options)
+        vbox.addWidget(self.Stack)
+        vbox.addWidget(self.move2center)
+
+        self.center_parameters.setLayout(vbox)
+        self.options.currentIndexChanged.connect(self.display)
+
+    def stack1UI(self):
+        button1size = 250       #long button (1 column)
+        button2size = 122.5     #mid button (2 column)
+        button33size = 78.3
+        button3size = 73.3      #small button (almost third)
+        button4size = 58.75     #textbox size (less than a third)
+
+        #options for tomopy center-finding algorithm
+        slice_label = QtWidgets.QLabel("slice index")
+        slice_label.setFixedWidth(button2size)
+        self.slice_textbox = QtWidgets.QLineEdit("-1")
+        self.slice_textbox.setFixedWidth(button2size)
+        self.slice_textbox.returnPressed.connect(self.validate_parameters)
+
+        init_label = QtWidgets.QLabel("init. guess for center")
+        init_label.setFixedWidth(button2size)
+        self.init_textbox = QtWidgets.QLineEdit(str("-1"))
+        self.init_textbox.setFixedWidth(button2size)
+        self.init_textbox.returnPressed.connect(self.validate_parameters)
+
+        tol_label = QtWidgets.QLabel("sub-pix accuracy")
+        tol_label.setFixedWidth(button2size)
+        self.tol_textbox = QtWidgets.QLineEdit("0.5")
+        self.tol_textbox.setFixedWidth(button2size)
+        self.tol_textbox.returnPressed.connect(self.validate_parameters)
+
+        self.mask_checkbox =QtWidgets.QCheckBox("mask")
+        self.mask_checkbox.setChecked(False)
+        self.mask_checkbox.setFixedWidth(button2size)
+        self.mask_checkbox.stateChanged.connect(self.mask_enable)
+
+        ratio_label = QtWidgets.QLabel("circular mask : recon. edge")
+        ratio_label.setFixedWidth(button2size)
+        self.ratio_textbox = QtWidgets.QLineEdit("1")
+        self.ratio_textbox.setFixedWidth(button2size)
+        self.ratio_textbox.returnPressed.connect(self.validate_parameters)
+
+        self.find_center_1 = QtWidgets.QPushButton("Find rotation axis")
+        self.find_center_1.setFixedWidth(button2size)
+        self.center_1 = QtWidgets.QLabel("center: 0")
+        self.center_1.setFixedWidth(button2size)
+
+        hb01 = QtWidgets.QHBoxLayout()
+        hb01.addWidget(slice_label)
+        hb01.addWidget(self.slice_textbox)
+
+        hb02 = QtWidgets.QHBoxLayout()
+        hb02.addWidget(init_label)
+        hb02.addWidget(self.init_textbox)
+
+        hb03 = QtWidgets.QHBoxLayout()
+        hb03.addWidget(tol_label)
+        hb03.addWidget(self.tol_textbox)
+
+        hb04 = QtWidgets.QHBoxLayout()
+        hb04.addWidget(self.mask_checkbox)
+        hb04.setAlignment(QtCore.Qt.AlignLeft)
+
+        hb05 = QtWidgets.QHBoxLayout()
+        hb05.addWidget(ratio_label)
+        hb05.addWidget(self.ratio_textbox)
+
+        hb06 = QtWidgets.QHBoxLayout()
+        hb06.addWidget(self.find_center_1)
+        hb06.addWidget(self.center_1)
+
+        vb00 = QtWidgets.QVBoxLayout()
+        vb00.addLayout(hb01)
+        vb00.addLayout(hb02)
+        vb00.addLayout(hb03)
+        vb00.addLayout(hb04)
+        vb00.addLayout(hb05)
+        vb00.addLayout(hb06)
+
+        self.stack1.setLayout(vb00)
+
+    def stack2UI(self):
+        button1size = 250       #long button (1 column)
+        button2size = 122.5     #mid button (2 column)
+        button33size = 78.3
+        button3size = 73.3      #small button (almost third)
+        button4size = 58.75     #textbox size (less than a third)
+
+        modes = ["Mean","Median", "Local"]
+        self.ave_mode = QtWidgets.QComboBox()
+        self.ave_mode.setFixedWidth(button1size)
+
+        for j in modes:
+            self.ave_mode.addItem(j)
+
+        limit_label = QtWidgets.QLabel("limit")
+        limit_label.setFixedWidth(button2size)
+        self.limit_textbox = QtWidgets.QLineEdit("-1")
+        self.limit_textbox.setFixedWidth(button2size)
+        self.limit_textbox.returnPressed.connect(self.validate_parameters)
+
+        self.find_center_2 = QtWidgets.QPushButton("Find rotation axis.")
+        self.find_center_2.setFixedWidth(button2size)
+        self.center_2 = QtWidgets.QLabel("center: 0")
+        self.center_2.setFixedWidth(button2size)
+
+        hb11 = QtWidgets.QHBoxLayout()
+        hb11.addWidget(limit_label)
+        hb11.addWidget(self.limit_textbox)
+
+        hb12 = QtWidgets.QHBoxLayout()
+        hb12.addWidget(self.find_center_2)
+        hb12.addWidget(self.center_2)
+
+        vb10 = QtWidgets.QVBoxLayout()
+        vb10.addLayout(hb11)
+        vb10.addLayout(hb12)
+
+        self.stack2.setLayout(vb10)
+
+    def display(self,i):
+        self.Stack.setCurrentIndex(i)
+
+
+    def validate_parameters(self, init_center = None):
+        valid = True
+        if init_center == None:
+            pass
+        else:
+            self.init_textbox.setText(str(init_center))
+            return
+
+        layout_stack = self.options.currentIndex()
+        if layout_stack == 0: 
+
+            try: #check slice index value
+                slice_index = self.slice_textbox.text()
+                if slice_index == "":
+                    self.slice_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    slice_index = int(self.slice_textbox.text())
+                    if slice_index%1 == 0 and slice_index >= 0:
+                        slice_index = int(slice_index)
+                        self.slice_textbox.setText(str(slice_index))
+                        self.slice_textbox.setStyleSheet('* {background-color: }')
+                    elif slice_index%1 != 0:
+                        self.slice_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                        valid = False
+                    else:
+                        self.slice_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                        valid = False
+            except ValueError:
+                valid = False
+                self.slice_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+            
+            try: #check initial guess
+                init_center = self.init_textbox.text()
+                if init_center == "":
+                    self.init_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    init_center = int(self.init_textbox.text())
+                    if init_center%1 == 0 and init_center >= 0:
+                        init_center = int(init_center)
+                        self.init_textbox.setText(str(init_center))
+                        self.init_textbox.setStyleSheet('* {background-color: }')
+                    elif init_center%1 != 0:
+                        self.init_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                        valid = False
+                    else:
+                        self.init_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                        valid = False
+            except ValueError:
+                valid = False
+                self.init_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+            try: #check tolerance
+                tol = self.tol_textbox.text()
+                if tol == "":
+                    self.tol_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    tol = float(self.tol_textbox.text())
+                    if tol > 0:
+                        tol = float(tol)
+                        self.tol_textbox.setText(str(tol))
+                        self.tol_textbox.setStyleSheet('* {background-color: }')
+                    else:
+                        self.tol_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                        valid = False
+            except ValueError:
+                valid = False
+                self.tol_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+            try: #check ratio
+                mask_enabled = self.mask_checkbox.isChecked()
+                ratio = self.ratio_textbox.text()
+                if ratio == "" and mask_enabled:
+                    self.ratio_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    ratio = float(self.ratio_textbox.text())
+                    if ratio > 0 and ratio <=1 and mask_enabled:
+                        self.ratio_textbox.setText(str(ratio))
+                        self.ratio_textbox.setStyleSheet('* {background-color: }')
+                    elif not mask_enabled:
+                        self.ratio_textbox.setStyleSheet('* {background-color: }')
+                    else:
+                        self.ratio_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                        valid = False
+            except ValueError:
+                valid = False
+                self.ratio_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+        if layout_stack == 1:
+
+            try: #check iters value
+                limit = self.limit_textbox.text()
+                if limit == "":
+                    self.limit_textbox.setStyleSheet('* {background-color: }')
+                else:
+                    limit = float(self.limit_textbox.text())
+                    if limit > 0:
+                        self.limit_textbox.setText(str(limit))
+                        self.limit_textbox.setStyleSheet('* {background-color: }')
+                    else:
+                        self.limit_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                        valid = False
+            except ValueError:
+                valid = False
+                self.limit_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+        return valid
+
+    def mask_enable(self):
+        checked = self.mask_checkbox.isChecked()
+        if checked:
+            self.ratio_textbox.setEnabled(True)
+        else:
+            self.ratio_textbox.setEnabled(False)
 
     def xTxtChange(self):
         try:
@@ -200,3 +482,5 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
     def ySldChange(self):
         self.ySize = self.y_sld.value()
         self.ySizeTxt.setText(str(self.ySize))
+
+

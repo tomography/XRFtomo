@@ -224,6 +224,8 @@ class FileTableWidget(QtWidgets.QWidget):
         currentDir = self.dirLineEdit.text()
         try:
             folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+            if folderName == "":
+                return
             self.dirLineEdit.setText(folderName)
             try:
                self.onLoadDirectory()
@@ -576,7 +578,8 @@ class FileTableWidget(QtWidgets.QWidget):
 
         self.parent.clear_all()
         data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
-        
+        if data is None or quants is None or scalers is None:
+            return [], [], [], []
         # if self.quant_options.currentText() != 'None':
         self.data = self.normalizeData(data, quants, scalers)
         self.message.setText('finished loading')

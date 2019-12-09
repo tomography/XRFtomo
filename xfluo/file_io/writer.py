@@ -67,101 +67,133 @@ class SaveOptions(object):
 		fnames 
 		'''
 		num_files = len(x_shift)
+		x_shift = list(x_shift)
+		y_shift = list(y_shift)
 		try:
-			alignFileName = QtGui.QFileDialog.getSaveFileName()[0]
-			if str(alignFileName).rfind(".txt") == -1:
-				alignFileName = str(alignFileName) + ".txt"
-			print(str(alignFileName))
-			file = open(alignFileName, "w")
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
+
+			if str(savedir).rfind(".txt") == -1:
+				savedir = str(savedir) + ".txt"
+			print(str(savedir))
+			file = open(savedir, "w")
 			file.writelines("rotation axis, " + str(centers[2]) + "\n")
 			for i in arange(num_files):
-				file.writelines(fnames[i] + ", " + str(x_shift[i]) + ", " + str(y_shift[i]) + "\n")
+				# file.writelines(fnames[i] + ", " + str(x_shift[i]) + ", " + str(y_shift[i]) + "\n")
+				file.writelines("{}, {}, {} \n".format(fnames[i], str(x_shift[i]), str(y_shift[i])))
 			file.close()
+			return
+
 		except IOError:
 			print("choose file please")
+		except:
+			print("Something went horribly wrong.")
 
 	def save_thetas(self, fnames, thetas):
 		num_files = len(fnames)
 		try:
-			alignFileName = QtGui.QFileDialog.getSaveFileName()[0]
-			if str(alignFileName).rfind(".txt") == -1:
-				alignFileName = str(alignFileName) + ".txt"
-			print(str(alignFileName))
-			file = open(alignFileName, "w")
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
+
+			if str(savedir).rfind(".txt") == -1:
+				savedir = str(savedir) + ".txt"
+			print(str(savedir))
+			file = open(savedir, "w")
 			file.writelines("file names, " + "thetas" + "\n")
 			for i in arange(num_files):
 				file.writelines(fnames[i] + ", " + str(thetas[i]) + "\n")
 			file.close()
+			return
 		except IOError:
-			print("filename error or something")
+			print("type the header name")
+		except:
+			print("Something went horribly wrong.")
 
 	def save_projections(self, fnames, data, element_names):
 		'''
 		save projections as tiffs
 		'''
-		savedir = QtGui.QFileDialog.getSaveFileName()[0]
-		for j in arange(data.shape[0]):			#elemen t index
-			path = savedir + "/" + element_names[j]
-			try:
+		try:
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
+
+			for j in arange(data.shape[0]):			#elemen t index
+				path = savedir + "/" + element_names[j]
 				os.makedirs(path)
-			except:
-				return
+
 			for i in arange(data.shape[1]):		#angle index
 				temp_img = data[j, i, :, :]
 				temp = Image.fromarray(temp_img.astype(np.float32))
 				temp.save(path+"/"+element_names[j]+"_"+fnames[i]+".tiff")
+			return
+		except IOError:
+			print("type the header name")
+		except: 
+			print("Something went horribly wrong.")
 
 	def save_reconstruction(self, recon, savedir=None):
-
 		try:
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
 			if savedir == None:
 				savedir = QtGui.QFileDialog.getSaveFileName()[0]
 
-			if savedir == "":
-				raise IndexError
 			recon = tomopy.circ_mask(recon, axis=0)
 			dxchange.writer.write_tiff(recon, fname=savedir)
-		except IndexError:
+			return
+		except IOError:
 			print("type the header name")
-		return
+		except: 
+			print("Something went horribly wrong.")
 
 	def save_sinogram(self, sinodata):
 		'''
 		saves sinogram or array of sinograms for each row
 		'''
-		savedir = QtGui.QFileDialog.getSaveFileName()[0]
-
 		try:
-			os.makedirs(savedir)
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
 			if savedir == "":
-				raise IndexError
+				raise IOError
 
+			os.makedirs(savedir)
 			temp_img = Image.fromarray(sinodata.astype(np.float32))
 			temp_img.save(savedir + "/" + "sinogram.tiff")
-		except IndexError:
+			return
+			
+		except IOError:
 			print("type the header name")
-		return
+		except: 
+			print("Something went horribly wrong.")
 
 	def save_sinogram2(self, data, element_names):
 		'''
 		saves sinogram or array of sinograms for each row
 		'''
-		savedir = QtGui.QFileDialog.getSaveFileName()[0]
-		if savedir == "":
-			return
-		else:
+		try:
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
+
 			os.makedirs(savedir)
+			num_elements = data.shape[0]
+			num_projections = data.shape[1]
+			sinogramData = np.sum(data, axis=2)
+			sinogramData[isinf(sinogramData)] = 0.001
 
-		num_elements = data.shape[0]
-		num_projections = data.shape[1]
-		sinogramData = np.sum(data, axis=2)
-		sinogramData[isinf(sinogramData)] = 0.001
+			for i in range(num_elements):
+				element = element_names[i]
+				temp_img = Image.fromarray(sinogramData[i].astype(np.float32))
+				temp_img.save(savedir + "/"+element+"_sinogram.tiff")
+			return
 
-		for i in range(num_elements):
-			element = element_names[i]
-			temp_img = Image.fromarray(sinogramData[i].astype(np.float32))
-			temp_img.save(savedir + "/"+element+"_sinogram.tiff")
-		return
+		except IOError:
+				print("ERROR saving sinogram stack")
+		except: 
+			print("Something went horribly wrong.")
 
 	def save_dxfile(self, fnames, data, element_names):
 		'''
@@ -208,17 +240,20 @@ class SaveOptions(object):
 		pass
 
 	def save_numpy_array(self, data, thetas, elements):
+
 		try:
 			savedir = QtGui.QFileDialog.getSaveFileName()[0]
-
 			if savedir == "":
-				raise IndexError
+				raise IOError
 
 			np.savetxt(savedir+"_elements",elements, delimiter = ",", fmt="%s")
 			np.save(savedir+"_thetas",thetas)
 			np.save(savedir,data)
+			return
 
-		except IndexError:
+		except IOError:
 			print("type the header name")
-		return
+		except: 
+			print("Something went horribly wrong.")
+
 
