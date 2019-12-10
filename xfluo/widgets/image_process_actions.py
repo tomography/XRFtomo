@@ -64,7 +64,6 @@ from scipy import ndimage as ndi
 from scipy import fftpack
 from scipy.stats import tmean
 
-
 class ImageProcessActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
 	# thetaSig = pyqtSignal(np.ndarray, name='thetaSig')

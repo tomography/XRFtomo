@@ -547,7 +547,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.x_shifts  = self.x_shifts + shift_arr
 
         for i in range(num_projections):
-            self.actions.shiftProjectionX(self.data, i, int(shift_arr[i]))
+            data[:,i] = np.roll(data[:,i],int(shift_arr[i]),axis=2)
+        self.send_data(data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
 
@@ -588,7 +589,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         tol = float(self.ViewControl.tol_textbox.text())
         mask_bool = self.ViewControl.mask_checkbox.isChecked()
         ratio = float(self.ViewControl.ratio_textbox.text())
-
 
         center = self.actions.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
         self.ViewControl.center_1.setText("center: {}".format(center))
