@@ -222,13 +222,14 @@ class FileTableWidget(QtWidgets.QWidget):
     def onDirBrowse(self):
         currentDir = self.dirLineEdit.text()
         try:
-            # folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", currentDir)
-            folderName = QtGui.QFileDialog(self, "Open Folder", currentDir)
-            folderName.setLabelText(QtGui.QFileDialog.DialogLabel.FileName, "Leave this blank:")
-            folderName.setFileMode(QtGui.QFileDialog.Directory)
-            folderName.exec()
 
-            # QtCore.QDir.currentPath()
+            folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", currentDir)
+
+            # folderName = QtGui.QFileDialog(self, "Open Folder", currentDir)
+            # folderName.setLabelText(QtGui.QFileDialog.DialogLabel.FileName, "Leave this blank:")
+            # folderName.setFileMode(QtGui.QFileDialog.Directory)
+            # folderName.exec()
+            
             if folderName == "":
                 return
             self.dirLineEdit.setText(folderName)
