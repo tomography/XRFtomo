@@ -136,7 +136,6 @@ class SaveOptions(object):
 
 	def save_reconstruction(self, recon, savedir=None):
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
 			if savedir == "":
 				raise IOError
 			if savedir == None:
