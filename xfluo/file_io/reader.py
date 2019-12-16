@@ -237,7 +237,7 @@ def load_thetas_9idb(path_files, data_tag):
     for i in range(len(path_files)):
         try:
             hFile = h5py.File(path_files[i], "r")
-            thetas.append(float(hFile[data_tag]['theta'].value[0]))
+            thetas.append(float(hFile[data_tag]['theta'][0]))
         except:
             pass
     return thetas
@@ -247,7 +247,7 @@ def load_thetas_2ide(path_files, data_tag):
     for i in range(len(path_files)):
         try:
             hFile = h5py.File(path_files[i])
-            thetas.append(float(hFile[data_tag]['theta'].value[0]))
+            thetas.append(float(hFile[data_tag]['theta'][0]))
         except:
             pass
     return thetas

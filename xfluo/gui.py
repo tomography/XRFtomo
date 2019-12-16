@@ -232,6 +232,7 @@ class XfluoGui(QtGui.QMainWindow):
 
         ## Top menu bar [file   Convert Option    Alignment   After saving in memory]
         menubar = self.menuBar()
+        menubar.setNativeMenuBar(True)
         self.fileMenu = menubar.addMenu('&File')
         self.fileMenu.addAction(openExchangeAction)
         self.fileMenu.addAction(openTiffAction)
