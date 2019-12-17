@@ -27,6 +27,7 @@ requirements:
     - python
     - numpy    
     - dxchange
+    - scikit-image
 
 test:
   # Python imports
