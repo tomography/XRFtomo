@@ -35,7 +35,6 @@ requirements:
   - pandas
   - seaborn
   - pyqtgraph
-
 test:
   # Python imports
   imports:
