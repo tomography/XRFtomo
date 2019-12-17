@@ -26,6 +26,7 @@ Installation
 ============
 
 Install with: 
+
     $ conda install -c fabriciosm xfluo 
 
 OR install from source along with all dependencies:
