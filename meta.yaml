@@ -2,6 +2,10 @@ package:
   name: xfluo
   version: 0.1.1
 
+extra:
+  channels:
+    - conda-forge
+
 source:
   git_url: https://github.com/FabricioSMarin/xfluo.git
   git_tag: testing
@@ -13,10 +17,6 @@ build:
 
 python:
     version: 3.7
-
-extra:
-  channels:
-    - conda-forge
 
 requirements:
   build:
