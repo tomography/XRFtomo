@@ -3,8 +3,6 @@ Documentation
 
 * Readthedocs: https://xfluo.readthedocs.io/en/latest/index.html
 
-
-
 Features
 ========
 
@@ -18,12 +16,17 @@ Install Anaconda and create a python 3.7 conda environment:
 
     $ conda create -n py37 python=3.7
     $ source activate py37
+    
+add conda channels:
+
+    $ conda config --add channels conda-forge
+    $ conda config --add channels fabriciosm
 
 Installation
 ============
 
 Install with: 
-    $  conda install -c fabriciosm xfluo 
+    $ conda install -c fabriciosm xfluo 
 
 OR install from source along with all dependencies:
 
@@ -38,7 +41,6 @@ OR install from source along with all dependencies:
     $ python xfluo init
 
 in the prepared virtualenv or as root for system-wide installation.
-
 
 Usage
 =====
