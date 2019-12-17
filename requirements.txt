@@ -4,5 +4,6 @@ dxchange
 pyqt5
 matplotlib
 pyqtgraph
+skimage
 
 
