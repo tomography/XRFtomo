@@ -28,7 +28,8 @@ requirements:
     - numpy    
     - dxchange
     - scikit-image
-
+    - pyqt 
+    - tomopy
 test:
   # Python imports
   imports:
