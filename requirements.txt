@@ -1,8 +1,8 @@
+scikit-image 
 numpy
 dxfile
 dxchange
-pyqt5
+pyqt
 matplotlib
 pyqtgraph
-
 

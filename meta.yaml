@@ -1,15 +1,20 @@
 package:
   name: xfluo
-  version: '0.1.1'
+  version: 0.1.1
+
+extra:
+  channels:
+    - conda-forge
 
 source:
-  git_url: https://github.com/tomography/xfluo.git
+  git_url: https://github.com/FabricioSMarin/xfluo.git
+  git_tag: testing
   
 build:
   number: 0
 
 python:
-    version: 3.6
+    version: 3.7
 
 requirements:
   build:
@@ -17,9 +22,18 @@ requirements:
     - setuptools
  
   run:
-    - python
-    - numpy    
-    
+  - tomopy
+  - pyqt
+  - git
+  - h5py
+  - numpy
+  - python=3.7
+  - scikit-image
+  - scipy
+  - dxchange
+  - pandas
+  - seaborn
+  - pyqtgraph
 test:
   # Python imports
   imports:

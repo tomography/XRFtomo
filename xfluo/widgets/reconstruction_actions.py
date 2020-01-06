@@ -113,7 +113,9 @@ class ReconstructionActions(QtWidgets.QWidget):
 		for i in range(num_elements):
 			print("running reconstruction for:", element_names[i])
 			recon = self.reconstruct(data, i, box_checked, center, method, beta, delta, iters, thetas)
-			savedir = save_path+'/'+element_names[i]
+			savepath = save_path+'/'+element_names[i]
+			savedir = savepath+'/'+element_names[i]
+			os.makedirs(savepath)
 			xfluo.SaveOptions.save_reconstruction(self, recon, savedir)
 
 		return recon

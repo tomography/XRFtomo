@@ -116,18 +116,17 @@ class SaveOptions(object):
 		save projections as tiffs
 		'''
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			savedir = QtGui.QFileDialog.getExistingDirectory()
 			if savedir == "":
 				raise IOError
 
 			for j in arange(data.shape[0]):			#elemen t index
 				path = savedir + "/" + element_names[j]
 				os.makedirs(path)
-
-			for i in arange(data.shape[1]):		#angle index
-				temp_img = data[j, i, :, :]
-				temp = Image.fromarray(temp_img.astype(np.float32))
-				temp.save(path+"/"+element_names[j]+"_"+fnames[i]+".tiff")
+				for i in arange(data.shape[1]):		#angle index
+					temp_img = data[j, i, :, :]
+					temp = Image.fromarray(temp_img.astype(np.float32))
+					temp.save(path+"/"+element_names[j]+"_"+fnames[i]+".tiff")
 			return
 		except IOError:
 			print("type the header name")
@@ -140,9 +139,8 @@ class SaveOptions(object):
 				raise IOError
 			if savedir == None:
 				savedir = QtGui.QFileDialog.getSaveFileName()[0]
-
 			recon = tomopy.circ_mask(recon, axis=0)
-			dxchange.writer.write_tiff(recon, fname=savedir)
+			dxchange.writer.write_tiff_stack(recon, fname=savedir)
 			return
 		except IOError:
 			print("type the header name")

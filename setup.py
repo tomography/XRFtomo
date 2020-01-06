@@ -11,6 +11,7 @@ setup(
     description = 'Pre-processing tools for x-ray fluorescence.',
     license='BSD-3',
     platforms='Any',
+    scripts=['bin/xfluo'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
