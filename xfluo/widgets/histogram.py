@@ -85,7 +85,7 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
 
 
     def windowResize(self, evt):
-        print(evt.width(),evt.height())
+        pass
 
 
     def mouseMoved(self, evt):

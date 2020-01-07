@@ -381,19 +381,18 @@ class XfluoGui(QtGui.QMainWindow):
             thetas = np.asarray(thetas)[sorted_index]
             self.fnames = np.asarray(self.fnames)[sorted_index]
 
-        #filenames from textfile and file from filetable may be similar but not idential. compare only the numberic values 
-        print(fnames)
-        print(self.fnames)
         #compare list size first:
         if len(fnames) != len(self.fnames):
             print("number of projections differ from number of loaded angles")
             return
+
+        #filenames from textfile and file from filetable may be similar but not idential. compare only the numberic values
         fname_set1 = self.peel_string(fnames)
         fname_set2 = self.peel_string(self.fnames)
 
-        if set(fnames) == set(self.fnames): #if list of fnames from theta.txt have containst same fnames as from the tiffs..
-            sorted_index = [self.fnames.index(i) for i in fnames]
-            self.fnames = fnames
+        if set(fname_set1) == set(fname_set2): #if list of fnames from theta.txt have containst same fnames as from the tiffs..
+            sorted_index = [fname_set2.index(i) for i in fname_set1]
+            self.fnames = np.asarray(self.fnames)[sorted_index]
 
         if set(fname_set1) != set(fname_set2) and fnames != []: #fnames from tiffs and thetas.txt do not match
             print("fnames from tiffs and thetas.txt do not match. Assuming fnames from table correspond to the same order as the loaded angles.")
@@ -407,13 +406,15 @@ class XfluoGui(QtGui.QMainWindow):
             self.fileTableWidget.fileTableModel.arrayData[i].theta = self.thetas[i]
             self.fileTableWidget.fileTableModel.arrayData[i].filename = self.fnames[i]
 
-        # self.elements = ["Element_1"]
+        #check elementtable if there any elements, if not then manually set a single element
+        if len(self.fileTableWidget.elementTableModel.arrayData) == 0:
+            self.elements = ["Element_1"]
+
         self.thetas = np.asarray(self.thetas)
 
         if data_loaded:
             self.data = self.data[:, sorted_index]
             self.updateImages(True)
-
         return
 
     def peel_string(self, string_list):
@@ -429,7 +430,6 @@ class XfluoGui(QtGui.QMainWindow):
                 string_list = [string_list[x][:-1] for x in range(len(string_list))]
             else:
                 peel_front = False
-
         return string_list
 
 
@@ -619,15 +619,14 @@ class XfluoGui(QtGui.QMainWindow):
         self.update_filenames(self.fnames, index)
         self.update_alignment(self.x_shifts, self.y_shifts)
 
-        print('history save event')
         self.data_history.append(data.copy())
         self.theta_history.append(self.thetas.copy())
         self.x_shifts_history.append(self.x_shifts.copy())
         self.y_shifts_history.append(self.y_shifts.copy())
         # self.centers_history.append(self.centers.copy())
         self.fname_history.append(self.fnames.copy())
+        print('history save event: ', len(self.data_history))
 
-        print(len(self.data_history))
         if len(self.data_history) > 10:
             del self.data_history[0]
             del self.theta_history[0]
