@@ -79,6 +79,8 @@ class SinogramWidget(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
+        self.data = None
+        self.sinogramData = None
 
         self.ViewControl.btn1.clicked.connect(self.centerOfMass_params)
         # self.ViewControl.btn1.clicked.connect(self.centerOfMass2_params)

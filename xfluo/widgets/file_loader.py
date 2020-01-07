@@ -49,7 +49,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 import xfluo
 import h5py
 import numpy as np
-import time
+import os
 # from file_io.reader import read_projection
 from xfluo.file_io.reader import *
 
@@ -92,8 +92,8 @@ class FileTableWidget(QtWidgets.QWidget):
         self.extLineEdit = QtWidgets.QLineEdit('*.h5')
         self.extLineEdit.setMaximumSize(50, 30)
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
-        self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
-        self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
+        # self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
+        # self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
 
         self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL', '9idbTAU:SM:ST:ActPos']
         thetaCompleter = QtWidgets.QCompleter(self.thetaOptions)
@@ -191,7 +191,7 @@ class FileTableWidget(QtWidgets.QWidget):
         layout0.addWidget(dirLabel)
         layout0.addWidget(self.dirLineEdit)
         layout0.addWidget(self.extLineEdit)
-        layout0.addWidget(self.dirBrowseBtn)
+        # layout0.addWidget(self.dirBrowseBtn)
 
         layout1 = QtWidgets.QHBoxLayout()
         layout1.addLayout(vBox1)
@@ -219,38 +219,60 @@ class FileTableWidget(QtWidgets.QWidget):
 
         # self.dataTag.currentIndexChanged.connect(self.getElementList)
 
-    def onDirBrowse(self):
-        currentDir = self.dirLineEdit.text()
-        try:
+    # def onDirBrowse(self):
+    #     currentDir = self.dirLineEdit.text()
+    #     try:
+    #
+    #         folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", currentDir)
+    #
+    #         # folderName = QtGui.QFileDialog(self, "Open Folder", currentDir)
+    #         # folderName.setLabelText(QtGui.QFileDialog.DialogLabel.FileName, "Leave this blank:")
+    #         # folderName.setFileMode(QtGui.QFileDialog.Directory)
+    #         # folderName.exec()
+    #
+    #         if folderName == "":
+    #             return
+    #         self.dirLineEdit.setText(folderName)
+    #         try:
+    #            self.onLoadDirectory()
+    #         except:
+    #             print('File signature not found: something is wrong with files')
+    #
+    #     except:
+    #         self.dirLineEdit.setText(currentDir)
+    #         try:
+    #             self.onLoadDirectory()
+    #         except:
+    #             print('invalid directory')
+    #         return
 
-            folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", currentDir)
-
-            # folderName = QtGui.QFileDialog(self, "Open Folder", currentDir)
-            # folderName.setLabelText(QtGui.QFileDialog.DialogLabel.FileName, "Leave this blank:")
-            # folderName.setFileMode(QtGui.QFileDialog.Directory)
-            # folderName.exec()
-            
-            if folderName == "":
-                return
-            self.dirLineEdit.setText(folderName)
-            try:
-               self.onLoadDirectory()
-            except:
-                print('File signature not found: something is wrong with files')
-
-        except:
-            self.dirLineEdit.setText(currentDir)
-            try:
-                self.onLoadDirectory()
-            except:
-                print('invalid directory')
-            return
-
-    def onLoadDirectory(self):
+    def onLoadDirectory(self, files = None):
         self.version = 0
+
+        #specify file extension by 'majority rule' for a given directory 
+        if files == None: 
+            filenames = os.listdir(self.dirLineEdit.text())
+            extension_list = ["."+ x.split(".")[-1] for x in filenames]
+            unique_ext = list(set(extension_list))
+            counter = 0
+            for i in unique_ext:
+                tmp_counter = 0
+                for j in extension_list:
+                    tmp_counter += i == j
+                if tmp_counter > counter:
+                    dominant_ext = i
+                    counter = tmp_counter 
+                    self.extLineEdit.setText("*"+dominant_ext)
+                    ext = dominant_ext
+        else:
+            ext = "*."+ files[0].split(".")[-1]
+            self.extLineEdit.setText(ext)
+
+
+        #TODO: get filetablemodel to accept only the selected files and not all files in the directory. 
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         fpath = self.fileTableModel.getFirstCheckedFilePath()
-        ext = self.extLineEdit.text()
+
         if fpath == None:
             self.message.setText('Invalid directory')
             return

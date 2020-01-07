@@ -84,6 +84,9 @@ class XfluoGui(QtGui.QMainWindow):
         closeAction.triggered.connect(sys.exit)
         closeAction.setShortcut('Ctrl+X')
 
+        openH5Action = QtGui.QAction('open h5 file', self)
+        openH5Action.triggered.connect(self.openH5)
+
         openExchangeAction = QtGui.QAction('open exchange file', self)
         openExchangeAction.triggered.connect(self.openExchange)
 
@@ -237,6 +240,7 @@ class XfluoGui(QtGui.QMainWindow):
         menubar = self.menuBar()
         menubar.setNativeMenuBar(True)
         self.fileMenu = menubar.addMenu('&File')
+        self.fileMenu.addAction(openH5Action)
         self.fileMenu.addAction(openExchangeAction)
         self.fileMenu.addAction(openTiffAction)
         self.fileMenu.addAction(openThetaAction)
@@ -309,6 +313,24 @@ class XfluoGui(QtGui.QMainWindow):
             print("no folder has been selected")
         return folderName
 
+    def openH5(self):
+        currentDir = self.fileTableWidget.dirLineEdit.text()
+        files = QtGui.QFileDialog.getOpenFileNames(self, "Open h5", QtCore.QDir.currentPath(), "h5 (*.h5)" )
+        if files[0] == '' or files[0] == []:
+            return
+
+        dir_ending_index = files[0][0].split(".")[0][::-1].find("/")+1
+        path = files[0][0].split(".")[0][:-dir_ending_index]
+        ext = "*."+files[0][0].split(".")[-1]
+        self.fileTableWidget.dirLineEdit.setText(path)
+        self.fileTableWidget.extLineEdit.setText(ext)
+        self.fileTableWidget.onLoadDirectory()
+        self.clear_all()
+        #disable preprocessing, alignment, reconstructions, save, tools and edit, 
+        #Clear self.data, history and reset everytihng prior to loading. 
+
+        pass
+
     def openExchange(self):
         fname = QtGui.QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
         if fname[0] == '':
@@ -333,6 +355,11 @@ class XfluoGui(QtGui.QMainWindow):
         self.fileTableWidget.dirLineEdit.setText(path)
         self.fileTableWidget.extLineEdit.setText(ext)
         self.fileTableWidget.onLoadDirectory()
+        self.clear_all()
+
+        #disable preprocessing, alignment, reconstructions, save, tools and edit, 
+        #Clear self.data, history and reset everytihng prior to loading. 
+
         self.data = xfluo.read_tiffs(files[0])
         self.fnames = [files[0][i].split("/")[-1] for i in range(len(files[0]))]
         return
@@ -343,8 +370,13 @@ class XfluoGui(QtGui.QMainWindow):
             return
 
         try:
-            num_projections = self.data.shape[1]
+            tmp = self.data
+            if tmp.all() == None:
+                raise AttributeError
             data_loaded = True
+            num_projections = self.data.shape[1]
+        except ValueError:
+            pass
         except AttributeError:
             # checking that number of projections is the same as the number of angles being loaded from text file,
             # but in the case that thetas are loaded before loading projections, then self.data will not be defined.
@@ -353,20 +385,18 @@ class XfluoGui(QtGui.QMainWindow):
             data_loaded = False
             try:
                 #case 1 is true, check for number of fnames and create a list of these fnames as self.fnames
-                num_projections = shape(self.fileTableWidget.fileTableModel.arrayData)[0]
-                self.fnames = []
-                for i in range(num_projections):
-                    self.fnames.append(self.fileTableWidget.fileTableModel.arrayData[i].filename)
+                num_projections = len(self.fileTableWidget.fileTableModel.arrayData)
+                self.fnames = [self.fileTableWidget.fileTableModel.arrayData[x].filename for x in range(num_projections)]
 
             except AttributeError:
                 # case 1 is false:
                 # show message asking user to load data first or select valid directory.
                 self.fileTableWidget.message.setText("select valid directory or load data first. ")
                 return
-
-        fnames, thetas = xfluo.load_thetas_file(file[0])
-
-
+        try:
+            fnames, thetas = xfluo.load_thetas_file(file[0])
+        except:
+            return
         if not len(thetas)==num_projections:
             self.fileTableWidget.message.setText("nummber of angles different than number of loaded images. ")
             return
@@ -690,7 +720,38 @@ class XfluoGui(QtGui.QMainWindow):
         self.fname_history = []
         self.update_alignment([],[])
 
-        # self.update_recon([])
+        self.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
+        self.imageProcessWidget.imgAndHistoWidget.sld.setRange(0,0)
+        self.imageProcessWidget.imgAndHistoWidget.lcd.display(0)
+        self.sinogramWidget.sld.setRange(0,0)
+        self.sinogramWidget.sld.setRange(0,0)
+        self.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
+        self.reconstructionWidget.imgAndHistoWidget.sld.setRange(0,0)
+        
+        # self.imageProcessWidget.ViewControl.x_sld.setValue(1)
+        # self.imageProcessWidget.ViewControl.x_sld.setRange(1,10)
+        # self.imageProcessWidget.ViewControl.y_sld.setValue(1)
+        # self.imageProcessWidget.ViewControl.y_sld.setRange(1,10)
+
+        self.imageProcessWidget.imgAndHistoWidget.view.projView.clear()
+        self.sinogramWidget.sinoView.projView.clear()
+        self.reconstructionWidget.imgAndHistoWidget.view.projView.clear()
+
+        self.data = None
+        self.recon = None
+        self.imageProcessWidget.data = None
+        self.sinogramWidget.data = None
+        self.sinogramWidget.sinogramData = None
+        self.reconstructionWidget.data = None
+        self.reconstructionWidget.recon = None
+
+        #move focus to first tab
+        
+        self.refreshUI()
+
+        #clear element drowpdown
+        #clear slice index under reconstruction (maye harmless to leave alone)        
+
         # self.update_sino([])
 
         return

@@ -136,6 +136,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
+        self.data = None
         self.meanNoise = 0
         self.stdNoise = 0
 

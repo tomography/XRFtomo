@@ -86,6 +86,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.y_shifts = None
         self.centers = None
         self.recon = None
+        self.data = None
 
     def showReconstruct(self):
         '''

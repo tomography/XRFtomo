@@ -78,7 +78,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 		if method == 0:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
-				algorithm='mlem', center=recCenter, num_iter=iters, accelerated=True, device='gpu')
+				algorithm='mlem', center=recCenter, num_iter=iters, accelerated=True, device='cpu')
 		elif method == 1:
 			self.recon= tomopy.recon(recData, thetas, 
 				algorithm='gridrec')
