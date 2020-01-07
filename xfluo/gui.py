@@ -123,6 +123,9 @@ class XfluoGui(QtGui.QMainWindow):
         saveAlignemtInfoAction = QtGui.QAction("Alignment", self)
         saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
 
+        saveCorrAnalysisAction = QtGui.QAction("Corelation Analysis", self)
+        saveCorrAnalysisAction.triggered.connect(self.saveCorrAlsys)
+
         runTransRecAction = QtGui.QAction("Transmission Recon", self)
         #runTransRecAction.triggered.connect(self.runTransReconstruct)
 
@@ -271,6 +274,8 @@ class XfluoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveThetasAction)
         self.afterConversionMenu.addAction(saveToHDFAction)
         self.afterConversionMenu.addAction(saveToNumpyAction)
+        self.afterConversionMenu.addAction(saveCorrAnalysisAction)
+
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(keyMapAction)
@@ -337,9 +342,32 @@ class XfluoGui(QtGui.QMainWindow):
         if file[0] == '':
             return
 
+        try:
+            num_projections = self.data.shape[1]
+            data_loaded = True
+        except AttributeError:
+            # checking that number of projections is the same as the number of angles being loaded from text file,
+            # but in the case that thetas are loaded before loading projections, then self.data will not be defined.
+            # 1) check if fnames are loaded in filetable: if yes, compare against those.
+            # 2) if not, insert message to select a directory with valid h5 files or load tiffs first.
+            data_loaded = False
+            try:
+                #case 1 is true, check for number of fnames and create a list of these fnames as self.fnames
+                num_projections = shape(self.fileTableWidget.fileTableModel.arrayData)[0]
+                self.fnames = []
+                for i in range(num_projections):
+                    self.fnames.append(self.fileTableWidget.fileTableModel.arrayData[i].filename)
+
+            except AttributeError:
+                # case 1 is false:
+                # show message asking user to load data first or select valid directory.
+                self.fileTableWidget.message.setText("select valid directory or load data first. ")
+                return
+
         fnames, thetas = xfluo.load_thetas_file(file[0])
 
-        if len(thetas)<self.data.shape[1] or len(thetas)>self.data.shape[1]:
+
+        if not len(thetas)==num_projections:
             self.fileTableWidget.message.setText("nummber of angles different than number of loaded images. ")
             return
 
@@ -352,29 +380,58 @@ class XfluoGui(QtGui.QMainWindow):
             sorted_index = np.argsort(thetas)
             thetas = np.asarray(thetas)[sorted_index]
             self.fnames = np.asarray(self.fnames)[sorted_index]
-            self.data = self.data[:,sorted_index]
+
+        #filenames from textfile and file from filetable may be similar but not idential. compare only the numberic values 
+        print(fnames)
+        print(self.fnames)
+        #compare list size first:
+        if len(fnames) != len(self.fnames):
+            print("number of projections differ from number of loaded angles")
+            return
+        fname_set1 = self.peel_string(fnames)
+        fname_set2 = self.peel_string(self.fnames)
 
         if set(fnames) == set(self.fnames): #if list of fnames from theta.txt have containst same fnames as from the tiffs..
             sorted_index = [self.fnames.index(i) for i in fnames]
             self.fnames = fnames
-            self.data = self.data[:,sorted_index]
 
-        if set(fnames) != set(self.fnames) and fnames != []: #fnames from tiffs and thetas.txt do not match
-            print("fnames from tiffs and thetas.txt do not match. Assuming fnames from tiffs correspond to the same order as the loaded angles.")
+        if set(fname_set1) != set(fname_set2) and fnames != []: #fnames from tiffs and thetas.txt do not match
+            print("fnames from tiffs and thetas.txt do not match. Assuming fnames from table correspond to the same order as the loaded angles.")
             sorted_index = np.argsort(thetas)
             thetas = np.asarray(thetas)[sorted_index]
             self.fnames = np.asarray(self.fnames)[sorted_index]
-            self.data = self.data[:,sorted_index]
-            
+
         self.thetas = [float(list(thetas)[i]) for i in range(len(thetas))]
         self.fnames = [str(list(self.fnames)[i]) for i in range(len(self.fnames))]
         for i in range(len(self.thetas)):
             self.fileTableWidget.fileTableModel.arrayData[i].theta = self.thetas[i]
             self.fileTableWidget.fileTableModel.arrayData[i].filename = self.fnames[i]
-        self.elements = ["Element_1"]
+
+        # self.elements = ["Element_1"]
         self.thetas = np.asarray(self.thetas)
-        self.updateImages(True)
+
+        if data_loaded:
+            self.data = self.data[:, sorted_index]
+            self.updateImages(True)
+
         return
+
+    def peel_string(self, string_list):
+        peel_back = True
+        peel_front = True
+        while peel_back:
+            if len(set([string_list[x][0] for x in range(len(string_list))])) == 1:
+                string_list = [string_list[x][1:] for x in range(len(string_list))]
+            else:
+                peel_back = False
+        while peel_front:
+            if len(set([string_list[x][-1] for x in range(len(string_list))])) == 1:
+                string_list = [string_list[x][:-1] for x in range(len(string_list))]
+            else:
+                peel_front = False
+
+        return string_list
+
 
     def onTabChanged(self, index):
         if self.prevTab == self.TAB_FILE:
@@ -386,7 +443,14 @@ class XfluoGui(QtGui.QMainWindow):
         elif self.prevTab == self.TAB_RECONSTRUCTION:
             pass
         self.prevTab = index
- 
+
+    def saveCorrAlsys(self):
+        try:
+            self.writer.save_correlation_analysis(self.elements, self.rMat)
+        except AttributeError:
+            print("Run correlation analysis first")
+        return
+
     def saveAlignemnt(self):
         try:
             self.writer.save_alignemnt_information(self.fnames, self.x_shifts, self.y_shifts, self.centers)
@@ -720,7 +784,7 @@ class XfluoGui(QtGui.QMainWindow):
         # nom_data = self.normData(data)
         # errMat = np.zeros((data.shape[0],data.shape[0]))
         # simMat = np.zeros((data.shape[0],data.shape[0]))
-        rMat = np.zeros((data.shape[0],data.shape[0]))
+        self.rMat = np.zeros((data.shape[0],data.shape[0]))
         for i in range(data.shape[0]):      #elemA
             for j in range(data.shape[0]):  #elemB
                 elemA = data[i]
@@ -729,12 +793,12 @@ class XfluoGui(QtGui.QMainWindow):
                 rval = self.compare(elemA, elemB)
                 # errMat[i,j]= err
                 # simMat[i,j]= sim
-                rMat[i,j]= rval
+                self.rMat[i,j]= rval
 
         sns.set(style="white")
 
         # Generate a mask for the upper triangle
-        mask = np.zeros_like(rMat, dtype=np.bool)
+        mask = np.zeros_like(self.rMat, dtype=np.bool)
         mask[np.triu_indices_from(mask,1)] = True
 
         # Set up the matplotlib figure
@@ -744,13 +808,13 @@ class XfluoGui(QtGui.QMainWindow):
         cmap = sns.diverging_palette(220, 10, as_cmap=True)
 
         # Draw the heatmap with the mask and correct aspect ratio
-        d = pd.DataFrame(data=rMat, columns=self.elements, index=self.elements)
-        sns.heatmap(d, mask=mask, annot=True, cmap=cmap, vmax=rMat.max(), center=0,
+        d = pd.DataFrame(data=self.rMat, columns=self.elements, index=self.elements)
+        sns.heatmap(d, mask=mask, annot=True, cmap=cmap, vmax=self.rMat.max(), center=0,
                     square=True, linewidths=.5, cbar_kws={"shrink": .5})
         f.show()
 
         self.app.restoreOverrideCursor()
-        return rMat
+        return self.rMat
 
     # def normData(self,data):
     #     norm = np.zeros_like(data)

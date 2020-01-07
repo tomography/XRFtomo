@@ -254,3 +254,24 @@ class SaveOptions(object):
 			print("Something went horribly wrong.")
 
 
+	def save_correlation_analysis(self, elements, rMat):
+		num_elements = len(elements)
+		try:
+			# savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			savedir = '/home/MARINF/Downloads/unzip/rMat.txt'
+			if savedir == "":
+				raise IOError
+
+			if str(savedir).rfind(".txt") == -1:
+				savedir = str(savedir) + ".txt"
+			print(str(savedir))
+			file = open(savedir, "w")
+			file.writelines("elements, " + (', '.join(elements))+ "\n")
+			for i in arange(num_elements):
+				file.writelines(str(elements[i]) + ", " + str(list(rMat[i]))[1:-1] + "\n")
+			file.close()
+			return
+		except IOError:
+			print("type the header name")
+		except:
+			print("Something went horribly wrong.")
