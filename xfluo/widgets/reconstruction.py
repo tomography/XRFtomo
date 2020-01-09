@@ -71,8 +71,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.btn2.clicked.connect(self.reconstruct_all_params)
         self.ViewControl.mulBtn.clicked.connect(self.call_reconMultiply)
         self.ViewControl.divBtn.clicked.connect(self.call_reconDivide)
-        self.ViewControl.cbox.clicked.connect(self.cboxClicked)
-        self.ViewControl.threshBtn.clicked.connect(self.call_threshold)
         self.ViewControl.end_indx.editingFinished.connect(self.update_y_range)
         self.ViewControl.start_indx.editingFinished.connect(self.update_y_range)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.update_recon_image)
@@ -107,31 +105,13 @@ class ReconstructionWidget(QtWidgets.QWidget):
             self.ViewControl.method.addItem(methodname[k])
 
         self.elementChanged()
-        self.ViewControl.centerTextBox.setText(str(self.centers[2]))
+        # self.ViewControl.centerTextBox.setText(str(self.centers[2]))
         self.ViewControl.mulBtn.setEnabled(False)
         self.ViewControl.divBtn.setEnabled(False)
         self.ViewControl.end_indx.setText((str(self.data.shape[2])))
 
         self.imgAndHistoWidget.sld.setRange(0, self.y_range - 1)
         self.imgAndHistoWidget.lcd.display(0)
-
-    def call_threshold(self):
-        '''
-        set threshold for reconstruction
-        '''
-        try:
-            threshValue = float(self.ViewControl.threshLe.text())
-        except ValueError:
-            self.ViewControl.threshLe.setText("0")
-            threshValue = 0
-        self.recon = self.actions.threshold(self.recon, threshValue)
-        self.update_recon_image()
-
-    def cboxClicked(self):
-        if self.ViewControl.cbox.isChecked():
-            self.ViewControl.centerTextBox.setEnabled(True)
-        else:
-            self.ViewControl.centerTextBox.setEnabled(False)
 
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -158,9 +138,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
     def reconstruct_params(self):
         self.ViewControl.lbl.setText("Reconstruction is currently running")
         element = self.ViewControl.combo1.currentIndex()
-        box_checked = self.ViewControl.cbox.isChecked()
+        # box_checked = self.ViewControl.cbox.isChecked()
         #TODO: figure out what center input does with respect to reconstructions. Doesnt seem to change output.
-        center = np.array(float(self.ViewControl.centerTextBox.text()), dtype=float32)
+        center = np.array(float(self.data.shape[3]), dtype=float32)
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
         delta = float(self.ViewControl.delta.text())
@@ -170,7 +150,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         end_indx = int(self.ViewControl.end_indx.text())
         data = self.data[:,:,start_indx:end_indx,:]
 
-        self.recon = self.actions.reconstruct(data, element, box_checked, center, method, beta, delta, iters, thetas)
+        self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas)
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
@@ -183,8 +163,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         #figure out how to get a list of all selected elements
         num_elements = self.ViewControl.combo1.count()
         element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
-        box_checked = self.ViewControl.cbox.isChecked()
-        center = np.array(float(self.ViewControl.centerTextBox.text()), dtype=float32)
+        # box_checked = self.ViewControl.cbox.isChecked()
+        center = np.array(float(self.data.shape[3]), dtype=float32)
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
         delta = float(self.ViewControl.delta.text())
@@ -194,7 +174,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         end_indx = int(self.ViewControl.end_indx.text())
         data = self.data[:,:,start_indx:end_indx,:]
 
-        self.recon = self.actions.reconstructAll(data, element_names, box_checked, center, method, beta, delta, iters, thetas)
+        self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas)
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
@@ -208,8 +188,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.sld.setValue(0)
         self.imgAndHistoWidget.sld.setMaximum(ySize)
         #check for xSize too.
-        center = self.data.shape[3]//2
-        self.ViewControl.centerTextBox.setText(str(center))
         pass
 
     def update_y_range(self):

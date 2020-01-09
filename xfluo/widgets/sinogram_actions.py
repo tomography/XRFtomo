@@ -136,7 +136,7 @@ class SinogramActions(QtWidgets.QWidget):
         return data, sinogramData  
 
 
-    def slope_adjust(self, sinogramData, data, element, delta):
+    def slope_adjust(self, sinogramData, data, shift, delta):
         '''
         Sinograms are oftwen skewed when using xcor alignment method. slope_adjust offsets the sinogram's slope by 'delta' pixels
         Variables
@@ -145,17 +145,20 @@ class SinogramActions(QtWidgets.QWidget):
             3D array containing sinogram images for each row of data
         data: ndarray
             4D xrf dataset ndarray [elements, theta, y,x]
-        element: int
-            element index
+        shift: int
+            number of pixel to shift sinogram up or down by.
         delta: int
             number of pixels to shift by at right-hand side of sinogram.
         '''
+
         num_projections = data.shape[1]
         step = round(delta/num_projections)
         lin_shift = [int(x) for x in np.linspace(0, delta, num_projections)]
+        lin_shift = [x + shift for x in lin_shift]
 
         for i in range(num_projections):
             data, sinogramData = self.shift(sinogramData, data, lin_shift[i], i)
+            data[:,i] = np.roll(data[:,i],shift,axis=1)
 
         return lin_shift, data, sinogramData
         
@@ -263,7 +266,34 @@ class SinogramActions(QtWidgets.QWidget):
         self.alignmentDone()
         return data, self.x_shifts, self.y_shifts
 
-    def align_y_top(self, element, data):
+    # def align_y_top(self, element, data):
+    #     '''
+    #     This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
+    #     top of the ROI boundary. It does this for all projections, effectively adjusting for vertical drift or stage wobble. 
+
+    #     Variables
+    #     -----------
+    #     element: int
+    #         element index
+    #     data: ndarray
+    #         4D xrf dataset ndarray [elements, theta, y,x]
+    #     '''
+    #     self.data = data
+    #     num_projections = data.shape[1]
+    #     tmp_data = data[element,:,:,:]
+    #     bounds = self.get_boundaries(tmp_data,5)
+    #     y_bot = np.asarray(bounds[3])
+    #     translate = y_bot[0]-y_bot
+    #     # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
+    #     self.y_shifts -=translate
+
+    #     for i in range(num_projections):
+    #         self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(translate[i])), axis=1)
+
+    #     self.alignmentDone()
+    #     return self.y_shifts, self.data 
+
+    def align2edge(self, element, data, loc, threshold):
         '''
         This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
         top of the ROI boundary. It does this for all projections, effectively adjusting for vertical drift or stage wobble. 
@@ -274,13 +304,16 @@ class SinogramActions(QtWidgets.QWidget):
             element index
         data: ndarray
             4D xrf dataset ndarray [elements, theta, y,x]
+        loc: bool
+            0 = bottom, 1 = top
         '''
         self.data = data
         num_projections = data.shape[1]
         tmp_data = data[element,:,:,:]
-        bounds = self.get_boundaries(tmp_data,5)
-        y_bot = np.asarray(bounds[3])
-        translate = y_bot[0]-y_bot
+        bounds = self.get_boundaries(tmp_data,threshold)
+        edge = np.asarray(bounds[2+loc])
+        translate = -edge
+
         # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
         self.y_shifts -=translate
 
@@ -289,32 +322,6 @@ class SinogramActions(QtWidgets.QWidget):
 
         self.alignmentDone()
         return self.y_shifts, self.data 
-
-    def align_y_bottom(self, element, data):
-        '''
-        This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
-        bottom of the ROI boundary. It does this for all projections, effectively adjusting for vertical drift or stage wobble. 
-
-        Variables
-        -----------
-        element: int
-            element index
-        data: ndarray
-            4D xrf dataset ndarray [elements, theta, y,x]
-        '''
-        self.data = data
-        num_projections = data.shape[1]
-        tmp_data = data[element,:,:,:]
-        bounds = self.get_boundaries(tmp_data,70)
-        y_top = np.asarray(bounds[2])
-        translate = y_top[0]-y_top
-        # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
-        self.y_shifts -=translate
-        for i in range(num_projections):
-            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(translate[i])), axis=1)
-
-        self.alignmentDone()
-        return self.y_shifts, self.data
 
     def get_boundaries(self, data, coeff):
         '''

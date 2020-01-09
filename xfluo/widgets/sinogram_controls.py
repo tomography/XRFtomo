@@ -54,12 +54,12 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-         #__________Main control window for Alignment Tab__________   
+         #__________Main control window for Alignment Tab__________
         button1size = 250
         button2size = 122.5
+        button33size = 78.3
         button3size = 73.3
         button4size = 58.75
-        self.slopeVal = 0
 
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setFixedWidth(button1size)
@@ -72,32 +72,25 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.btn2.setFixedWidth(button2size)
         self.btn3 = QtWidgets.QPushButton('phase corr.')
         self.btn3.setFixedWidth(button2size)
-        self.btn4 = QtWidgets.QPushButton('x corr. 2')
-        self.btn4.setFixedWidth(button2size)
-        self.btn5 = QtWidgets.QPushButton('align top')
+        self.btn5 = QtWidgets.QPushButton('move2edge')
         self.btn5.setFixedWidth(button2size)
         self.btn6 = QtWidgets.QPushButton('iter align')
         self.btn6.setFixedWidth(button2size)
         self.btn7 = QtWidgets.QPushButton('align from txt')
         self.btn7.setFixedWidth(button2size)
-        self.btn8 = QtWidgets.QPushButton('align bottom')
-        self.btn8.setFixedWidth(button2size)
         self.btn9 = QtWidgets.QPushButton('adjust_sino')
         self.btn9.setFixedWidth(button2size)
 
-        self.slopeText = QtWidgets.QLineEdit(str(self.slopeVal))
-        self.slopeText.setFixedWidth(button2size)
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setFixedWidth(button2size)
         self.combo2.setVisible(False)
 
         hb1 = QtWidgets.QHBoxLayout()
         hb1.addWidget(self.btn1)
-        hb1.addWidget(self.btn3)
 
         hb2 = QtWidgets.QHBoxLayout()
         hb2.addWidget(self.btn2)
-        hb2.addWidget(self.btn4)
+        hb2.addWidget(self.btn3)
 
         hb3 = QtWidgets.QHBoxLayout()
         hb3.addWidget(self.btn6)
@@ -105,18 +98,13 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
         hb4 = QtWidgets.QHBoxLayout()
         hb4.addWidget(self.btn5)
-        hb4.addWidget(self.btn8)
-
-        hb5 = QtWidgets.QHBoxLayout()
-        hb5.addWidget(self.btn9)
-        hb5.addWidget(self.slopeText)
+        hb4.addWidget(self.btn9)
 
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addLayout(hb1)
         vb1.addLayout(hb2)
         vb1.addLayout(hb3)
         vb1.addLayout(hb4)
-        vb1.addLayout(hb5)
 
         vb3 = QtWidgets.QVBoxLayout()
         vb3.addWidget(self.combo1)
@@ -124,8 +112,8 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb3.addLayout(vb1)
         self.setFixedWidth(275)
         self.setLayout(vb3)
-    
-        #__________Popup window for iterative alignment__________   
+
+        #__________Popup window for iterative alignment__________
 
         self.iter_parameters = QtWidgets.QWidget()
         self.iter_parameters.resize(275,400)
@@ -233,7 +221,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb00.addWidget(self.algorithm)
         vb00.addWidget(self.run_iter_align)
 
-        #parameter setting logic 
+        #parameter setting logic
 
         if not self.blur_checkbox.isChecked():
             self.inner_radius_textbox.setEnabled(False)
@@ -248,13 +236,13 @@ class SinogramControlsWidget(QtWidgets.QWidget):
             #save sinograms to folder
 
         #split padding textbod entry into two integers
-        #if len of split array is one, consider the second as zeros. 
+        #if len of split array is one, consider the second as zeros.
         #if len is greater than 2, enable warning icon next to textboxx
         #if empty, consider padding = 0,0
 
-        #check that rin < rout: 
-        #if false, throw warning 
-        # if any > 1, throw warning, 
+        #check that rin < rout:
+        #if false, throw warning
+        # if any > 1, throw warning,
         #if nany < 0, throw warning
 
         if self.center_textbox == "":
@@ -263,8 +251,85 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.iter_parameters.setLayout(vb00)
 
 
-       #_______________________________________________________   
 
+        #__________Popup window for sinogram adjustmnet button__________
+
+
+        self.sino_manip = QtWidgets.QWidget()
+        self.sino_manip.resize(275,300)
+        self.sino_manip.setWindowTitle('sinogram adjustment parameters')
+
+        shift_label = QtWidgets.QLabel("shift up")
+        slope_adjust_label = QtWidgets.QLabel("apply slope ")
+
+        self.shift_textbox = QtWidgets.QLineEdit("0")
+        self.slope_adjust_textbox = QtWidgets.QLineEdit("0")
+        self.run_sino_adjust = QtWidgets.QPushButton("Run sinogram adjustments")
+
+        hb11 = QtWidgets.QHBoxLayout()
+        hb11.addWidget(shift_label)
+        hb11.addWidget(self.shift_textbox)
+
+        hb12 = QtWidgets.QHBoxLayout()
+        hb12.addWidget(slope_adjust_label)
+        hb12.addWidget(self.slope_adjust_textbox)
+
+        vb10 = QtWidgets.QVBoxLayout()
+        vb10.addLayout(hb11)
+        vb10.addLayout(hb12)
+        vb10.addWidget(self.run_sino_adjust)
+
+        self.sino_manip.setLayout(vb10)
+
+
+        #__________Popup window for move2edge button__________
+
+
+        self.move2edge = QtWidgets.QWidget()
+        self.move2edge.resize(275,300)
+        self.move2edge.setWindowTitle('shift object to top/bottom edge')
+
+
+        self.top_checkbox = QtWidgets.QCheckBox("move to top edge")
+        self.top_checkbox.setChecked(True)
+
+        self.bottom_checkbox = QtWidgets.QCheckBox("move to bottom edge")
+        self.bottom_checkbox.setChecked(False)
+
+        button_group = QtWidgets.QButtonGroup(self)
+        button_group.addButton(self.top_checkbox)
+        button_group.addButton(self.bottom_checkbox)
+        button_group.setExclusive(True)
+
+        threshold_label = QtWidgets.QLabel("threshold (1-100):")
+        threshold_label.setFixedWidth(button2size)
+
+        self.threshold_textbox = QtWidgets.QLineEdit("10")
+        self.threshold_textbox.setFixedWidth(button2size)
+
+        self.run_move2edge = QtWidgets.QPushButton("Run move2edge")
+        self.run_move2edge.setFixedWidth(button1size)
+
+        hb21 = QtWidgets.QHBoxLayout()
+        hb21.addWidget(threshold_label)
+        hb21.addWidget(self.threshold_textbox)
+
+        vb20 = QtWidgets.QVBoxLayout()
+        vb20.addWidget(self.top_checkbox)
+        vb20.addWidget(self.bottom_checkbox)
+        vb20.addLayout(hb21)
+        vb20.addWidget(self.run_move2edge)
+
+        self.move2edge.setLayout(vb20)
+
+    def blur_enable(self):
+        checked = self.blur_checkbox.isChecked()
+        if checked:
+            self.inner_radius_textbox.setEnabled(True)
+            self.outer_radius_textbox.setEnabled(True)
+        else:
+            self.inner_radius_textbox.setEnabled(False)
+            self.outer_radius_textbox.setEnabled(False)
 
     def validate_parameters(self):
         valid = True
@@ -372,16 +437,68 @@ class SinogramControlsWidget(QtWidgets.QWidget):
             valid = False
             self.upsample_factor_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
 
+
+
+        try: #check sinogram shift value
+            shift = float(self.shift_textbox.text())
+            if shift%1 == 0:
+                shift = int(shift)
+                self.shift_textbox.setText(str(shift))
+                self.shift_textbox.setStyleSheet('* {background-color: }')
+
+            elif shift%1 != 0:
+                self.shift_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+            else:
+                self.shift_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+        except ValueError:
+            valid = False
+            self.shift_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+        
+        try: #check sinogram shift value
+            slope = float(self.slope_adjust_textbox.text())
+            if slope%1 == 0:
+                slope = int(slope)
+                self.slope_adjust_textbox.setText(str(slope))
+                self.slope_adjust_textbox.setStyleSheet('* {background-color: }')
+
+            elif slope%1 != 0:
+                self.slope_adjust_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+            else:
+                self.slope_adjust_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+        except ValueError:
+            valid = False
+            self.slope_adjust_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+
+        try: #check move2edge threshold value
+            threshold = float(self.threshold_textbox.text())
+            if threshold%1 == 0 and threshold>=1 and threshold<=100:
+                threshold = int(threshold)
+                self.threshold_textbox.setText(str(threshold))
+                self.threshold_textbox.setStyleSheet('* {background-color: }')
+
+            elif threshold%1 != 0:
+                self.threshold_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+            else:
+                self.threshold_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+        except ValueError:
+            valid = False
+            self.threshold_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
         return valid
 
-    def blur_enable(self):
-        checked = self.blur_checkbox.isChecked()
-        if checked:
-            self.inner_radius_textbox.setEnabled(True)
-            self.outer_radius_textbox.setEnabled(True)
-        else:
-            self.inner_radius_textbox.setEnabled(False)
-            self.outer_radius_textbox.setEnabled(False)
+
+
+
+
+
+
 
 
 

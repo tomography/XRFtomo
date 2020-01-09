@@ -86,13 +86,16 @@ class SinogramWidget(QtWidgets.QWidget):
         # self.ViewControl.btn1.clicked.connect(self.centerOfMass2_params)
         self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
-        self.ViewControl.btn4.clicked.connect(self.crossCorrelate2_params)
-        self.ViewControl.btn5.clicked.connect(self.align_y_top_params)
         self.ViewControl.btn6.clicked.connect(self.ViewControl.iter_parameters.show)
         self.ViewControl.run_iter_align.clicked.connect(self.iter_align_params)
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
-        self.ViewControl.btn8.clicked.connect(self.align_y_bottom_params)
-        self.ViewControl.btn9.clicked.connect(self.adjust_sino_params)
+        self.ViewControl.btn5.clicked.connect(self.ViewControl.move2edge.show)
+        self.ViewControl.run_move2edge.clicked.connect(self.move2edge_params)
+
+
+        self.ViewControl.btn9.clicked.connect(self.ViewControl.sino_manip.show)
+        self.ViewControl.run_sino_adjust.clicked.connect(self.adjust_sino_params)
+
 
         self.sld.valueChanged.connect(self.imageSliderChanged)
         self.sinoView.keyPressSig.connect(self.shiftEvent_params)
@@ -188,13 +191,18 @@ class SinogramWidget(QtWidgets.QWidget):
         if element == -1: # escape if element == -1.
             return
 
-        sinodata = self.data[element, :, :, :]
-
+        try: #TODO: fails when loading new dataset, be sure to clear absolutely everything or raise exception
+            sinodata = self.data[element, :, :, :]
+        except TypeError:
+            return
         self.sinogramData = zeros([sinodata.shape[0] * 10, sinodata.shape[2]], dtype=float32)
         num_projections = self.data.shape[1]
-        for i in arange(num_projections):
-            self.sinogramData[i * 10:(i + 1) * 10, :] = sinodata[i, self.sld.value()-1, :]
 
+        try: #TODO: fails when cropping
+            for i in arange(num_projections):
+                self.sinogramData[i * 10:(i + 1) * 10, :] = sinodata[i, self.sld.value()-1, :]
+        except IndexError:
+            return
         self.sinogramData[isinf(self.sinogramData)] = 0.001
         self.sinoView.projView.setImage(self.sinogramData, border='w')
         if len(self.thetas) > 0:
@@ -237,13 +245,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
 
-    def crossCorrelate2_params(self):
-        data = self.data
-        self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate2(data)
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-        return
-
     def phaseCorrelate_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
@@ -252,30 +253,39 @@ class SinogramWidget(QtWidgets.QWidget):
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
 
-    def align_y_top_params(self):
+    def move2edge_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        # thetas= self.thetas
-        self.y_shifts, self.data = self.actions.align_y_top(element, data) 
+
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+
+        if self.ViewControl.bottom_checkbox.isChecked():
+            loc=0
+        else: 
+            loc=1
+
+        threshold = int(self.ViewControl.threshold_textbox.text())
+
+        self.y_shifts, self.data = self.actions.align2edge(element, data, loc, threshold) 
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
         return
 
-    def align_y_bottom_params(self):
-        data = self.data
-        element = self.ViewControl.combo1.currentIndex()
-        # thetas= self.thetas
-        self.y_shifts, self.data = self.actions.align_y_bottom(element, data) 
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-        return
         
     def adjust_sino_params(self):
         sinogramData = self.sinogramData
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        delta = int(self.ViewControl.slopeText.text())
-        x_shifts, self. data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, element, delta)
+
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+        shift = int(self.ViewControl.shift_textbox.text())
+        slope = int(self.ViewControl.slope_adjust_textbox.text())
+            
+        x_shifts, self. data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, shift, slope)
         self.x_shifts += x_shifts
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)

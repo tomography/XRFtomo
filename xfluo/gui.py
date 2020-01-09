@@ -319,8 +319,9 @@ class XfluoGui(QtGui.QMainWindow):
         if files[0] == '' or files[0] == []:
             return
 
-        dir_ending_index = files[0][0].split(".")[0][::-1].find("/")+1
-        path = files[0][0].split(".")[0][:-dir_ending_index]
+        # dir_ending_index = files[0][0].split(".")[0][::-1].find("/")+1
+        dir_ending_index = files[0][0].rfind("/")
+        path = files[0][0][:dir_ending_index]
         ext = "*."+files[0][0].split(".")[-1]
         self.fileTableWidget.dirLineEdit.setText(path)
         self.fileTableWidget.extLineEdit.setText(ext)
@@ -329,7 +330,12 @@ class XfluoGui(QtGui.QMainWindow):
         #disable preprocessing, alignment, reconstructions, save, tools and edit, 
         #Clear self.data, history and reset everytihng prior to loading. 
 
-        pass
+        self.tab_widget.setTabEnabled(1,False)
+        self.tab_widget.setTabEnabled(2,False)
+        self.tab_widget.setTabEnabled(3,False)
+        self.afterConversionMenu.setDisabled(True)
+        self.editMenu.setDisabled(True)
+        self.toolsMenu.setDisabled(True)
 
     def openExchange(self):
         fname = QtGui.QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
@@ -351,17 +357,24 @@ class XfluoGui(QtGui.QMainWindow):
 
         dir_ending_index = files[0][0].split(".")[0][::-1].find("/")+1
         path = files[0][0].split(".")[0][:-dir_ending_index]
-        ext = "*."+files[0][0].split(".")[2]
+        ext = "*."+files[0][0].split(".")[-1]
         self.fileTableWidget.dirLineEdit.setText(path)
         self.fileTableWidget.extLineEdit.setText(ext)
+        # self.clear_all()
         self.fileTableWidget.onLoadDirectory()
-        self.clear_all()
 
         #disable preprocessing, alignment, reconstructions, save, tools and edit, 
         #Clear self.data, history and reset everytihng prior to loading. 
 
         self.data = xfluo.read_tiffs(files[0])
         self.fnames = [files[0][i].split("/")[-1] for i in range(len(files[0]))]
+        self.tab_widget.setTabEnabled(1, False)
+        self.tab_widget.setTabEnabled(2, False)
+        self.tab_widget.setTabEnabled(3, False)
+        self.afterConversionMenu.setDisabled(True)
+        self.editMenu.setDisabled(True)
+        self.toolsMenu.setDisabled(True)
+        # update images seems to have dissappeare.
         return
 
     def openThetas(self):
@@ -445,6 +458,14 @@ class XfluoGui(QtGui.QMainWindow):
         if data_loaded:
             self.data = self.data[:, sorted_index]
             self.updateImages(True)
+            self.tab_widget.setTabEnabled(1, True)
+            self.tab_widget.setTabEnabled(2, True)
+            self.tab_widget.setTabEnabled(3, True)
+            self.afterConversionMenu.setDisabled(False)
+            self.editMenu.setDisabled(False)
+            self.toolsMenu.setDisabled(False)
+            self.fileTableWidget.message.setText("Angle information loaded.")
+
         return
 
     def peel_string(self, string_list):

@@ -126,7 +126,7 @@ class SaveOptions(object):
 				for i in arange(data.shape[1]):		#angle index
 					temp_img = data[j, i, :, :]
 					temp = Image.fromarray(temp_img.astype(np.float32))
-					temp.save(path+"/"+element_names[j]+"_"+fnames[i]+".tiff")
+					temp.save(path+"/"+element_names[j]+"_"+fnames[i]+".tif")
 			return
 		except IOError:
 			print("type the header name")
@@ -158,7 +158,7 @@ class SaveOptions(object):
 
 			os.makedirs(savedir)
 			temp_img = Image.fromarray(sinodata.astype(np.float32))
-			temp_img.save(savedir + "/" + "sinogram.tiff")
+			temp_img.save(savedir + "/" + "sinogram.tif")
 			return
 			
 		except IOError:
@@ -184,7 +184,7 @@ class SaveOptions(object):
 			for i in range(num_elements):
 				element = element_names[i]
 				temp_img = Image.fromarray(sinogramData[i].astype(np.float32))
-				temp_img.save(savedir + "/"+element+"_sinogram.tiff")
+				temp_img.save(savedir + "/"+element+"_sinogram.tif")
 			return
 
 		except IOError:

@@ -60,7 +60,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
     thetaChangedSig = pyqtSignal(np.ndarray, name='thetaChangedSig')
     fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
-    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
+    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, name="alignmentChangedSig")
     ySizeChanged = pyqtSignal(int, name='ySizeChanged')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
     refreshSig = pyqtSignal(name='refreshSig')
@@ -206,7 +206,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imgAndHistoWidget.file_name_title.setText(self.fnames[index])
 
     def updateSliderSlot(self, index):
-        #TODO: thetas not necessarily defined here when selecting new dataset. figure out how to load thetas before calling this.
         if len(self.thetas) == 0:
             return
         angle = round(self.thetas[index])
@@ -285,38 +284,38 @@ class ImageProcessWidget(QtWidgets.QWidget):
         if command == 'left':
             self.x_shifts[index] -=1
             self.actions.shiftProjectionX(self.data, index, -1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'right':
             self.x_shifts[index] +=1
             self.actions.shiftProjectionX(self.data, index, 1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'up':
             self.y_shifts[index] +=1
             self.actions.shiftProjectionY(self.data, index, -1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'down':
             self.y_shifts[index] -=1
             self.actions.shiftProjectionY(self.data, index, 1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'shiftLeft':
             self.x_shifts -=1
             self.actions.shiftDataX(self.data, -1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'shiftRight':
             self.x_shifts +=1
             self.actions.shiftDataX(self.data, 1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'shiftUp':
             self.y_shifts +=1
             self.actions.shiftDataY(self.data, -1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'shiftDown':
             self.y_shifts -=1
             self.actions.shiftDataY(self.data, 1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'Delete':
             self.exclude_params()
-            # self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            # self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'Copy':
             self.copyBG_params(img)
         if command == 'Paste':
@@ -352,7 +351,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         hs_number = self.imgAndHistoWidget.sld.value()
         posMat = self.posMat
         self.x_shifts, self.y_shifts, self.centers = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         self.ViewControl.btn4.setEnabled(True)
 
     def hotspot2sine_params(self):
@@ -363,7 +362,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         posMat = self.posMat
         thetas = self.thetas
         self.x_shifts, self.y_shifts, self.centers = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data, thetas)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         self.ViewControl.btn4.setEnabled(True)
 
     def setY_params(self):
@@ -373,7 +372,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         hs_number = self.imgAndHistoWidget.sld.value()
         posMat = self.posMat
         self.y_shifts, self.centers = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         self.ViewControl.btn4.setEnabled(True)
 
     def clrHotspot_params(self):
@@ -456,7 +455,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         y_shifts = self.y_shifts
         #new = function(old)
         index, self.data, self.thetas, self.fnames, self.x_shifts, self.y_shifts = self.actions.exclude_projection(index, data, thetas, fnames, x_shifts, y_shifts)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         self.updateSldRange(index, self.thetas)
         self.imageSliderChanged()
 
@@ -545,12 +544,11 @@ class ImageProcessWidget(QtWidgets.QWidget):
         theta_pos = self.imgAndHistoWidget.lcd.value()
         shift_arr = self.actions.move_rot_axis(thetas, center, rAxis_pos, theta_pos)
         shift_arr = np.round(shift_arr)
-        self.x_shifts  = self.x_shifts + shift_arr
 
         for i in range(num_projections):
             data[:,i] = np.roll(data[:,i],int(shift_arr[i]),axis=2)
         self.send_data(data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts + shift_arr, self.y_shifts)
         return
 
     def move2center_params(self):
@@ -562,11 +560,11 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         if shift<0:
             self.actions.shiftDataX(self.data, shift)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             
         if shift>0:
             self.actions.shiftDataX(data, shift)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
 
     def histo_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()

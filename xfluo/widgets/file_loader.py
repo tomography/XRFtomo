@@ -219,38 +219,11 @@ class FileTableWidget(QtWidgets.QWidget):
 
         # self.dataTag.currentIndexChanged.connect(self.getElementList)
 
-    # def onDirBrowse(self):
-    #     currentDir = self.dirLineEdit.text()
-    #     try:
-    #
-    #         folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", currentDir)
-    #
-    #         # folderName = QtGui.QFileDialog(self, "Open Folder", currentDir)
-    #         # folderName.setLabelText(QtGui.QFileDialog.DialogLabel.FileName, "Leave this blank:")
-    #         # folderName.setFileMode(QtGui.QFileDialog.Directory)
-    #         # folderName.exec()
-    #
-    #         if folderName == "":
-    #             return
-    #         self.dirLineEdit.setText(folderName)
-    #         try:
-    #            self.onLoadDirectory()
-    #         except:
-    #             print('File signature not found: something is wrong with files')
-    #
-    #     except:
-    #         self.dirLineEdit.setText(currentDir)
-    #         try:
-    #             self.onLoadDirectory()
-    #         except:
-    #             print('invalid directory')
-    #         return
-
     def onLoadDirectory(self, files = None):
         self.version = 0
 
         #specify file extension by 'majority rule' for a given directory 
-        if files == None: 
+        if files == None:
             filenames = os.listdir(self.dirLineEdit.text())
             extension_list = ["."+ x.split(".")[-1] for x in filenames]
             unique_ext = list(set(extension_list))
@@ -289,7 +262,7 @@ class FileTableWidget(QtWidgets.QWidget):
             except KeyError:
                 pass
 
-        if ext == '*.tiff' or ext == ".tiff": #
+        if ext == '*.tiff' or ext == ".tiff" or ext == ".tif" or ext == "*.tif":
             # TODO: when loading from filemenu, check only files which were selected
             self.elementTableModel.arrayData = []
             self.imageTag.setEnabled(False)
@@ -297,6 +270,12 @@ class FileTableWidget(QtWidgets.QWidget):
             self.quant_options.setEnabled(False)
             self.message.setText("Load angle information using txt or csv file")
             pass
+
+
+
+
+
+
 
 
     def getImgTags(self):

@@ -61,7 +61,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 	def __init__(self):
 		super(ReconstructionActions, self).__init__()
 
-	def reconstruct(self, data, element, box_checked, center, method, beta, delta, iters, thetas):
+	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas):
 		'''
 		load data for reconstruction and load variables for reconstruction
 		make it sure that data doesn't have infinity or nan as one of
@@ -72,8 +72,6 @@ class ReconstructionActions(QtWidgets.QWidget):
 		recData[np.isnan(recData)] = True
 		recCenter = np.array(center, dtype=float32)
 
-		if box_checked:
-			recCenter = None
 		print("working fine")
 
 		if method == 0:
@@ -106,13 +104,13 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 		self.recon = tomopy.remove_nan(self.recon)
 		return self.recon
-	def reconstructAll(self, data, element_names, box_checked, center, method, beta, delta, iters, thetas):
+	def reconstructAll(self, data, element_names, center, method, beta, delta, iters, thetas):
 		print("This will take a while")
 		save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
 		num_elements = data.shape[0]
 		for i in range(num_elements):
 			print("running reconstruction for:", element_names[i])
-			recon = self.reconstruct(data, i, box_checked, center, method, beta, delta, iters, thetas)
+			recon = self.reconstruct(data, i, center, method, beta, delta, iters, thetas)
 			savepath = save_path+'/'+element_names[i]
 			savedir = savepath+'/'+element_names[i]
 			os.makedirs(savepath)
@@ -131,12 +129,4 @@ class ReconstructionActions(QtWidgets.QWidget):
 		divide reconstuction by 10
 		'''
 		self.recon = recon / 10
-		return self.recon
-
-	def threshold(self, recon, threshold_value):
-		'''
-		set threshhold for reconstruction
-		'''
-		self.recon = recon
-		self.recon[np.where(self.recon <= threshold_value)] = 0  # np.min(self.rec)
 		return self.recon
