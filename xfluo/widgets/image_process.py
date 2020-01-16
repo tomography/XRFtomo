@@ -61,7 +61,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     thetaChangedSig = pyqtSignal(np.ndarray, name='thetaChangedSig')
     fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
     alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, name="alignmentChangedSig")
-    ySizeChanged = pyqtSignal(int, name='ySizeChanged')
+    ySizeChangedSig = pyqtSignal(int, name='ySizeChangedSig')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
     refreshSig = pyqtSignal(name='refreshSig')
 
@@ -92,7 +92,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.xSizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.y_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.ySizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
-        # self.ViewControl.normalizeBtn.clicked.connect(self.normalize_params)
+        self.ViewControl.reshapeBtn.clicked.connect(self.ViewControl.reshape_options.show)
+        self.ViewControl.run_reshape.clicked.connect(self.reshape_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         self.ViewControl.aspectChkbx.clicked.connect(self.lockAspect)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
@@ -125,7 +126,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.btn1.setEnabled(False)
 
         self.imgAndHistoWidget.view.keyPressSig.connect(self.keyProcess)
-        self.actions.dataSig.connect(self.send_data)
+        # self.actions.dataSig.connect(self.send_data)
         # self.actions.thetaSig.connect(self.send_thetas)
         self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
 
@@ -259,6 +260,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
 
+    def ySizeChanged(self, ySize):
+        self.ViewControl.y_sld.setRange(2, ySize)
+
     def updateSldRange(self, index, thetas):
         element = self.ViewControl.combo1.currentIndex()
         self.imgAndHistoWidget.sld.setRange(0, len(thetas) -1)
@@ -283,43 +287,50 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.imageSliderChanged()
         if command == 'left':
             self.x_shifts[index] -=1
-            self.actions.shiftProjectionX(self.data, index, -1)
+            data = self.actions.shiftProjectionX(self.data, index, -1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
         if command == 'right':
             self.x_shifts[index] +=1
-            self.actions.shiftProjectionX(self.data, index, 1)
+            data = self.actions.shiftProjectionX(self.data, index, 1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
         if command == 'up':
             self.y_shifts[index] +=1
-            self.actions.shiftProjectionY(self.data, index, -1)
+            data = self.actions.shiftProjectionY(self.data, index, -1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
         if command == 'down':
             self.y_shifts[index] -=1
-            self.actions.shiftProjectionY(self.data, index, 1)
+            data = self.actions.shiftProjectionY(self.data, index, 1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
         if command == 'shiftLeft':
             self.x_shifts -=1
-            self.actions.shiftDataX(self.data, -1)
+            data = self.actions.shiftDataX(self.data, -1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
         if command == 'shiftRight':
             self.x_shifts +=1
-            self.actions.shiftDataX(self.data, 1)
+            data = self.actions.shiftDataX(self.data, 1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
         if command == 'shiftUp':
             self.y_shifts +=1
-            self.actions.shiftDataY(self.data, -1)
+            data = self.actions.shiftDataY(self.data, -1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
         if command == 'shiftDown':
             self.y_shifts -=1
-            self.actions.shiftDataY(self.data, 1)
+            data = self.actions.shiftDataY(self.data, 1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
         if command == 'Delete':
             self.exclude_params()
-            # self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'Copy':
             self.copyBG_params(img)
         if command == 'Paste':
-            self.pasteBG_params()
+            data = self.pasteBG_params()
         if command == 'Next':
             self.posMat[int(hs_group), int(hs_number)-1] = [x_pos, y_pos]
             if hs_number < self.posMat.shape[1]:
@@ -350,8 +361,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
         hs_group = self.ViewControl.combo3.currentIndex()
         hs_number = self.imgAndHistoWidget.sld.value()
         posMat = self.posMat
-        self.x_shifts, self.y_shifts, self.centers = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        data, x_shifts, y_shifts = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+        self.dataChangedSig.emit(data)
         self.ViewControl.btn4.setEnabled(True)
 
     def hotspot2sine_params(self):
@@ -361,8 +373,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
         hs_number = self.imgAndHistoWidget.sld.value()
         posMat = self.posMat
         thetas = self.thetas
-        self.x_shifts, self.y_shifts, self.centers = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data, thetas)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        data, x_shifts, y_shifts = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data, thetas)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts +y_shifts)
+        self.dataChangedSig.emit(data)
         self.ViewControl.btn4.setEnabled(True)
 
     def setY_params(self):
@@ -371,8 +384,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
         hs_group = self.ViewControl.combo3.currentIndex()
         hs_number = self.imgAndHistoWidget.sld.value()
         posMat = self.posMat
-        self.y_shifts, self.centers = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        data, y_shifts = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts + y_shifts)
+        self.dataChangedSig.emit(data)
         self.ViewControl.btn4.setEnabled(True)
 
     def clrHotspot_params(self):
@@ -402,22 +416,24 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         self.actions.normalize(data, element)
+        self.dataChangedSig.emit(data)
 
     def equalize_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         data = self.actions.equalize(data, element)
+        self.dataChangedSig.emit(data)
 
     def cut_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.actions.cut(self.data, x_pos, y_pos, x_size, y_size)
-        self.ySizeChanged.emit(y_size)
+        data = self.actions.cut(self.data, x_pos, y_pos, x_size, y_size)
+        self.ySizeChangedSig.emit(y_size)
+        self.dataChangedSig.emit(data)
         self.refreshSig.emit()
 
     def copyBG_params(self,*img):
         if type(img[0]) == bool:
             element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-
         self.meanNoise, self.stdNoise = self.actions.copy_background(img)
         return
 
@@ -426,7 +442,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         meanNoise = self.meanNoise
         stdNoise= self.stdNoise
         data = self.data
-        self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img, meanNoise, stdNoise)
+        data = self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img, meanNoise, stdNoise)
+        self.dataChangedSig.emit(data)
 
     def analysis_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -437,6 +454,26 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.data
         img = data[element, projection, :,:]
         self.actions.bounding_analysis(img)
+
+    def reshape_params(self):
+
+        valid = self.ViewControl.validate_reshape_parameters()
+        if not valid:
+            return
+        y_multiplier = int(self.ViewControl.yUpsample_text.text())
+        x_multiplier = int(self.ViewControl.xUpsample_text.text())
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        datasize_x = self.data.shape[3]
+        datasize_y = self.data.shape[2]
+        data = self.actions.reshape_data(self.data, x_multiplier, y_multiplier)
+        new_ySize = int(datasize_y*y_multiplier)
+        self.ySizeChangedSig.emit(new_ySize)
+        # self.xSizeChangedSig.emit(new_xSize)
+        self.dataChangedSig.emit(data)
+        self.refreshSig.emit()
+
+        pass
+
 
     def save_analysis(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -454,19 +491,19 @@ class ImageProcessWidget(QtWidgets.QWidget):
         x_shifts = self.x_shifts
         y_shifts = self.y_shifts
         #new = function(old)
-        index, self.data, self.thetas, self.fnames, self.x_shifts, self.y_shifts = self.actions.exclude_projection(index, data, thetas, fnames, x_shifts, y_shifts)
+        index, data, self.thetas, self.fnames, self.x_shifts, self.y_shifts = self.actions.exclude_projection(index, data, thetas, fnames, x_shifts, y_shifts)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         self.updateSldRange(index, self.thetas)
         self.imageSliderChanged()
-
         # self.sldRangeChanged.emit(index, self.data, self.thetas)
         self.thetaChangedSig.emit(self.thetas)
-        self.dataChangedSig.emit(self.data)
+        self.dataChangedSig.emit(data)
 
     def rm_hotspot_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
-        self.actions.remove_hotspots(data, element)
+        data = self.actions.remove_hotspots(data, element)
+        self.dataChangedSig.emit(data)
 
 
 
@@ -509,19 +546,19 @@ class ImageProcessWidget(QtWidgets.QWidget):
     #     return
     #
 
-    def send_data(self, data):
+    # def send_data(self, data):
         '''
         This sends a signal one level up indicating that the data array has changed
         '''
 
-        self.dataChangedSig.emit(data)
+        # self.dataChangedSig.emit(data)
 
-    def send_thetas(self, thetas):
-        '''
-        This sends a signal one level up indicating that the theta array has changed
-        '''
+    # def send_thetas(self, thetas):
+    #     '''
+    #     This sends a signal one level up indicating that the theta array has changed
+    #     '''
 
-        self.thetaChangedSig.emit(thetas)
+    #     self.thetaChangedSig.emit(thetas)
 
     # def send_fnames(self, fnames):
     #     '''
@@ -547,24 +584,25 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         for i in range(num_projections):
             data[:,i] = np.roll(data[:,i],int(shift_arr[i]),axis=2)
-        self.send_data(data)
         self.alignmentChangedSig.emit(self.x_shifts + shift_arr, self.y_shifts)
+        self.dataChangedSig.emit(data)
         return
 
     def move2center_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         rot_center = int(np.round(float(self.ViewControl.center_1.text().split()[1])))
-        shift = self.data.shape[3]//2 - rot_center
-        self.x_shifts += shift
+        x_shifts = self.data.shape[3]//2 - rot_center
 
-        if shift<0:
-            self.actions.shiftDataX(self.data, shift)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
-            
-        if shift>0:
-            self.actions.shiftDataX(data, shift)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        if x_shifts<0:
+            data = self.actions.shiftDataX(self.data, x_shifts)
+            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
+
+        if x_shifts>0:
+            data = self.actions.shiftDataX(data, x_shifts)
+            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
 
     def histo_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -572,7 +610,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         for i in range(data.shape[1]):
             mask = self.actions.create_mask(data[element,i])
             data[element, i], m = self.actions.equalize_hist_ev(data[element,i], 2**16, mask)
-        self.send_data(data)
+        self.dataChangedSig.emit(data)
 
     def center_tomopy_params(self):        
         valid = self.ViewControl.validate_parameters()

@@ -200,11 +200,14 @@ class XfluoGui(QtGui.QMainWindow):
         self.imageProcessWidget.thetaChangedSig.connect(self.update_theta)
 
         #data dimensions changed
-        self.imageProcessWidget.ySizeChanged.connect(self.sinogramWidget.yChanged)
-        self.imageProcessWidget.ySizeChanged.connect(self.reconstructionWidget.ySizeChanged)
+        self.imageProcessWidget.ySizeChangedSig.connect(self.imageProcessWidget.ySizeChanged)
+        self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
+        self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
+
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
         self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)
+        self.sinogramWidget.restoreSig.connect(self.restore)
 
         #fnames changed 
         self.imageProcessWidget.fnamesChanged.connect(self.update_filenames)
@@ -539,7 +542,7 @@ class XfluoGui(QtGui.QMainWindow):
 
     def saveToHDF(self):
         try:
-            self.writer.save_dxhdf(self.fnames, self.data, self.elements)
+            self.writer.save_dxhdf(self.data, self.elements, self.thetas)
         except AttributeError:
             print("projection data do not exist")
         return 
@@ -716,6 +719,8 @@ class XfluoGui(QtGui.QMainWindow):
         # self.centers = centers 
         self.imageProcessWidget.x_shifts = self.x_shifts
         self.imageProcessWidget.y_shifts = self.y_shifts
+        self.imageProcessWidget.actions.x_shifts = self.x_shifts
+        self.imageProcessWidget.actions.y_shifts = self.y_shifts
         self.sinogramWidget.x_shifts = self.x_shifts
         self.sinogramWidget.y_shifts = self.y_shifts
         self.sinogramWidget.actions.x_shifts = self.x_shifts
@@ -819,6 +824,11 @@ class XfluoGui(QtGui.QMainWindow):
             self.centers = [100,100,self.data.shape[3]//2]
             self.update_history(self.data)
             self.update_slider_range(self.thetas)
+
+            self.imageProcessWidget.ViewControl.ySizeTxt.setText(str(10))
+            self.imageProcessWidget.ViewControl.xSizeTxt.setText(str(10))
+            self.imageProcessWidget.ViewControl.y_sld.setRange(2,self.data.shape[2])
+            self.imageProcessWidget.ViewControl.x_sld.setRange(2,self.data.shape[3])
 
         except AttributeError:
             print("Load dataset first")

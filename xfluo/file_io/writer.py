@@ -58,7 +58,7 @@ from pylab import *
 import tomopy
 import os
 from PIL import Image
-#import dxfile.dxtomo as dx
+import dxfile.dxtomo as dx
 
 class SaveOptions(object):
 	def save_alignemnt_information(self,fnames, x_shift, y_shift, centers):
@@ -192,7 +192,7 @@ class SaveOptions(object):
 		except: 
 			print("Something went horribly wrong.")
 
-	def save_dxfile(self, fnames, data, element_names):
+	def save_dxhdf(self, data, element_names, thetas):
 		'''
 		saves all selected information to a new data exchange hdf5 file following the 
 		dxfile definition at http://dxfile.readthedocs.io/
@@ -200,26 +200,38 @@ class SaveOptions(object):
 		uncomment import dxfile.dxtomo as dx
 
 		'''
-	    # experimenter_affiliation="Argonne National Laboratory" 
-	    # instrument_name="2-ID-E XRF"  
-	    # sample_name = "test data set"
+		try:
+			fname = QtGui.QFileDialog.getSaveFileName()[0]
+			if fname == "":
+				raise IOError
 
-	    # # Open DataExchange file
-	    # f = dx.File(fname, mode='w')
-	     
-	    # # Write the Data Exchange HDF5 file.
-	    # f.add_entry(dx.Entry.experimenter(affiliation={'value': experimenter_affiliation}))
-	    # f.add_entry(dx.Entry.instrument(name={'value': instrument_name}))
-	    # f.add_entry(dx.Entry.sample(name={'value': sample_name}))
+			experimenter_affiliation="Argonne National Laboratory" 
+			instrument_name="2-ID-E XRF"  
+			sample_name = "test data set"
 
-	    # f.add_entry(dx.Entry.data(data={'value': proj, 'units':'ug/cm^2'}))
-	    # f.add_entry(dx.Entry.data(theta={'value': theta, 'units':'degrees'}))
+			# Open DataExchange file
+			f = dx.File(fname, mode='w')
+			 
+			# Write the Data Exchange HDF5 file.
+			f.add_entry(dx.Entry.experimenter(affiliation={'value': experimenter_affiliation}))
+			f.add_entry(dx.Entry.instrument(name={'value': instrument_name}))
+			f.add_entry(dx.Entry.sample(name={'value': sample_name}))
 
-	    # elem = [x.encode('utf-8') for x in elem]
-	    # f.add_entry(dx.Entry.data(elements={'value': elem, 'units':'ug/cm^2'}))
+			f.add_entry(dx.Entry.data(data={'value': data, 'units':'ug/cm^2'}))
+			f.add_entry(dx.Entry.data(theta={'value': thetas, 'units':'degrees'}))
 
-	    # f.close()
+			# file_names = [x.encode('utf-8') for x in file_names]
+			# f.add_entry(dx.Entry.data(fnames={'value': file_names, 'units':'none'}))
 
+			element_names = [x.encode('utf-8') for x in element_names]
+			f.add_entry(dx.Entry.data(elements={'value': element_names, 'units':'none'}))
+
+			f.close()
+
+		except IOError:
+				print("ERROR saving sinogram stack")
+		except: 
+			print("Something went horribly wrong.")
 		pass
 
 	def save_center_position(self, angle, cen_pos):
@@ -257,8 +269,7 @@ class SaveOptions(object):
 	def save_correlation_analysis(self, elements, rMat):
 		num_elements = len(elements)
 		try:
-			# savedir = QtGui.QFileDialog.getSaveFileName()[0]
-			savedir = '/home/MARINF/Downloads/unzip/rMat.txt'
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
 			if savedir == "":
 				raise IOError
 

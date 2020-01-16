@@ -415,7 +415,7 @@ class SinogramActions(QtWidgets.QWidget):
         
         return self.x_shifts, self.y_shifts, data
 
-    def alignFromText2(self, data):
+    def alignFromText2(self, fileName, data):
         '''
         align by reading text file that saved prior image registration
         alignment info is saved in following format: name of the file, xshift, yshift
@@ -430,28 +430,30 @@ class SinogramActions(QtWidgets.QWidget):
 
         '''
         try:
-            fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
             ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
 
+            #TODO: if text file is not in correct format, do nothing, return and display reason for error.
             file = open(fileName[0], 'r')
             read = file.readlines()
             datacopy = zeros(data.shape)
             datacopy[...] = data[...]
             data[np.isnan(data)] = 1
             num_projections = data.shape[1]
+            y_shifts = np.zeros(num_projections)
+            x_shifts = np.zeros(num_projections)
             for i in arange(num_projections):
                 j = i + 1
                 secondcol = read[j].rfind(",")
                 firstcol = read[j][:secondcol].rfind(",")
-                self.y_shifts[i] += int(float(read[j][secondcol + 1:-1]))
-                self.x_shifts[i] += int(float(read[j][firstcol + 1:secondcol]))
-                data[:, i, :, :] = np.roll(data[:, i, :, :], self.x_shifts[i], axis=2)
-                data[:, i, :, :] = np.roll(data[:, i, :, :], -self.y_shifts[i], axis=1)
+                y_shifts[i] = int(float(read[j][secondcol + 1:-1]))
+                x_shifts[i] = int(float(read[j][firstcol + 1:secondcol]))
+                data[:, i, :, :] = np.roll(data[:, i, :, :], int(x_shifts[i]), axis=2)
+                data[:, i, :, :] = np.roll(data[:, i, :, :], int(-y_shifts[i]), axis=1)
 
             file.close()
             self.alignmentDone()
             # return data, self.x_shifts, self.y_shifts, self.centers
-            return data, self.x_shifts, self.y_shifts
+            return data, x_shifts, y_shifts
         except IndexError:
             print("index missmatch between align file and current dataset ")
         except IOError:

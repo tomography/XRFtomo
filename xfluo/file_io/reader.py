@@ -432,6 +432,9 @@ def read_tiffs(fnames):
     return data
 
 def read_exchange_file(fname):
+    #self contained data file with all relevant information. 
+    #alignment 
+    #misc parameters:
     data, elements, thetas = [],[],[]
     hFile = h5py.File(fname[0])
     tmp_elements = hFile['exchange']['elements'].value

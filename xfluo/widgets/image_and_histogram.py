@@ -112,7 +112,7 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
         self.lbl2.setText(str(x))
         self.lbl4.setText(str(y))
         try:
-            pixel_val = round(self.view.projView.image[abs(y)-1,x])
+            pixel_val = round(self.view.projView.image[abs(y)-1,x],4)
             self.lbl7.setText(str(pixel_val))
         except:
             self.lbl7.setText("")

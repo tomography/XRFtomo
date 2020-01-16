@@ -65,8 +65,6 @@ from scipy import fftpack
 from scipy.stats import tmean
 
 class ImageProcessActions(QtWidgets.QWidget):
-	dataSig = pyqtSignal(np.ndarray, name='dataSig')
-	# thetaSig = pyqtSignal(np.ndarray, name='thetaSig')
 
 	def __init__(self):
 		super(ImageProcessActions, self).__init__()
@@ -77,21 +75,21 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 	def shiftProjectionY(self, data, index, displacement):
 		data[:,index] = np.roll(data[:, index], displacement, axis=1)
-		self.dataSig.emit(data)
+		return data
 
 	def shiftProjectionX(self, data, index, displacement):
 		data[:,index] = np.roll(data[:,index],displacement,axis=2)
-		self.dataSig.emit(data)
+		return data
 
 	def shiftDataY(self, data, displacement):
 		for i in range(data.shape[1]):
 			data[:,i] = np.roll(data[:,i],displacement,axis=1)
-		self.dataSig.emit(data)
+		return data
 
 	def shiftDataX(self, data, displacement):
 		for i in range(data.shape[1]):
 			data[:,i] = np.roll(data[:,i],displacement, axis=2)
-		self.dataSig.emit(data)
+		return data
 
 	# def normalize(self, data, element):
 	# 	normData = data[element, :, :, :]
@@ -101,8 +99,12 @@ class ImageProcessActions(QtWidgets.QWidget):
 	# 		tempMin = temp.min()
 	# 		temp = (temp - tempMin) / tempMax * 10000
 	# 		data[element, i, :, :] = temp
-	# 	self.dataSig.emit(data)
 	# 	return data
+
+
+	def reshape_data(self, data, x_upscale, y_upscale):
+		new_data = data.repeat(y_upscale, axis=2).repeat(x_upscale, axis=3)
+		return new_data
 
 	def remove_hotspots(self, data, element):
 		imgs = data[element]
@@ -111,7 +113,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 			img = imgs[i]
 			img[img > 0.5*max_val] = 0.5*max_val
 			data[element,i] = img
-		self.dataSig.emit(data)
+		return data
 
 	def equalize(self, data, element):
 		# Equalization
@@ -124,9 +126,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 			# data[element,i] = exposure.equalize_hist(img)
 			img *= 1/img.max()
 			data[element,i] = exposure.equalize_adapthist(img)
-
-
-		self.dataSig.emit(data)
 		return data
 
 	def move_rot_axis(self, thetas, center, rAxis_pos, theta_pos):
@@ -140,7 +139,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		offsets = pos_from_center[0]*np.cos(rads)
 		# adjustment = pos_from_center[0]*-1 - offsets[0]
 		# offsets += adjustment
-
 		return offsets
 		
 
@@ -173,9 +171,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 				x1 = int(round(x_pos) + x_size//2)
 				temp_data[j,i,:,:] = data[j, i, y0:y1, x0:x1]
 		print("done")
-
 		data = temp_data
-		self.dataSig.emit(data)
 		return data
 
 	# def gauss33(self):
@@ -244,8 +240,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		data[element,projection,
 			int(round(abs(y_pos)) - y_size/2):int(round(abs(y_pos)) + y_size/2),
 			int(round(x_pos) - x_size/2):int(round(x_pos) + x_size/2)] = noise_generator
-
-		self.dataSig.emit(data)
+		return data
 
 	def exclude_projection(self, index, data, thetas, fnames, x_shifts, y_shifts):
 		'''
@@ -305,6 +300,8 @@ class ImageProcessActions(QtWidgets.QWidget):
 		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, posMat, data)
 #****************
 		num_projections = data.shape[1]
+		y_shifts = np.zeros(num_projections)
+		x_shifts = np.zeros(num_projections)
 		for j in arange(num_projections):
 
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
@@ -317,13 +314,11 @@ class ImageProcessActions(QtWidgets.QWidget):
 			if hs_y_pos[j] == 0:
 				yyshift = 0
 
-			self.x_shifts[j] += xxshift
-			self.y_shifts[j] += yyshift
-
-		self.centers[2] = hs_x_pos[0]
+			x_shifts[j] = xxshift
+			y_shifts[j] = -yyshift
 
 		print("align done")
-		return self.x_shifts, self.y_shifts, self.centers
+		return data, x_shifts, y_shifts
 
 	def hotspot2sine(self, element, x_size, y_size, hs_group, posMat, data, thetas):
 		'''
@@ -351,6 +346,8 @@ class ImageProcessActions(QtWidgets.QWidget):
 		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
 #****************
 		num_projections = data.shape[1]
+		y_shifts = np.zeros(num_projections)
+		x_shifts = np.zeros(num_projections)
 		thetas  = np.asarray(thetas)
 		for j in arange(num_projections):
 
@@ -362,8 +359,8 @@ class ImageProcessActions(QtWidgets.QWidget):
 			if hs_y_pos[j] == 0:
 				yyshift = 0
 
-			self.x_shifts[j] += xxshift
-			self.y_shifts[j] += yyshift
+			x_shifts[j] = xxshift
+			y_shifts[j] = yyshift
 
 		hotspotXPos = zeros(num_projections, dtype=np.int)
 		hotspotYPos = zeros(num_projections, dtype=np.int)
@@ -383,15 +380,15 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 		## yfit
 		for i in hotspotProj:
-			self.y_shifts[i] += int(hotspotYPos[hotspotProj[0]]) - int(hotspotYPos[i])
-			data[:, i, :, :] = np.roll(data[:, i, :, :], self.y_shifts[i], axis=1)
+			y_shifts[i] = int(hotspotYPos[hotspotProj[0]]) - int(hotspotYPos[i])
+			data[:, i, :, :] = np.roll(data[:, i, :, :], y_shifts[i], axis=1)
 
 		#update reconstruction slider value
 		# self.recon.sld.setValue(self.centers[2])
 
 		print("align done")
 		self.centers = list(np.round(self.centers))
-		return self.x_shifts, self.y_shifts, self.centers
+		return data, x_shifts, y_shifts
 
 
 	def setY(self, element, x_size, y_size, hs_group, posMat, data):
@@ -415,6 +412,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		self.posMat = posMat
 		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
 		num_projections = data.shape[1]
+		y_shifts = np.zeros(num_projections)
 		for j in arange(num_projections):
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
 				yyshift = int(round(y_size//2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
@@ -423,11 +421,11 @@ class ImageProcessActions(QtWidgets.QWidget):
 			if hs_y_pos[j] == 0:
 				yyshift = 0
 
-			self.y_shifts[j] -= yyshift
+			y_shifts[j] = -yyshift
 
 		print("align done")
-		self.centers = list(np.round(self.centers))
-		return self.y_shifts, self.centers
+
+		return data, y_shifts
 
 	def alignment_parameters(self, element, x_size, y_size, hs_group, posMat, data):
 		'''
@@ -497,7 +495,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		return hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data
 
 	def find_center(self, tomo, thetas, slice_index, init_center, tol, mask_bool, ratio):
-
 		center = tomopy.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
 		return center[0]
 

@@ -55,8 +55,9 @@ import numpy as np
 class SinogramWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
-    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
+    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, name="alignmentChangedSig")
     sinoChangedSig = pyqtSignal(np.ndarray, name="sinoChangedSig")
+    restoreSig = pyqtSignal(name="resoreSig")
 
     def __init__(self):
         super(SinogramWidget, self).__init__()
@@ -165,7 +166,7 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         self.sinogram(element)
 
-    def yChanged(self, ySize):
+    def ySizeChanged(self, ySize):
         self.sld.setRange(1, ySize)
         self.sld.setValue(1)
         self.lcd.display(1)
@@ -216,14 +217,14 @@ class SinogramWidget(QtWidgets.QWidget):
         thetas = self.thetas
         self.data, self.x_shifts = self.actions.runCenterOfMass(element, data, thetas)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
         
     # def centerOfMass2_params(self):
     #     element, row, data, thetas = self.get_params()
     #     self.data, self.x_shifts, self.centers = self.actions.runCenterOfMass2(element, row, data, thetas)
     #     self.dataChangedSig.emit(self.data)
-    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
     #     return
 
     def shiftEvent_params(self, shift_dir, col_number):
@@ -234,15 +235,15 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data, self.sinogramData = self.actions.shift(sinoData, data, shift_dir, col_number)
         self.x_shifts[col_number] += shift_dir
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
     def crossCorrelate_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate(element, data)
+        data, x_shifts, y_shifts = self.actions.crossCorrelate(element, data)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + x_shifts)
         return
 
     def phaseCorrelate_params(self):
@@ -250,7 +251,7 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         self.data, self.x_shifts, self.y_shifts = self.actions.phaseCorrelate(element, data)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
     def move2edge_params(self):
@@ -270,7 +271,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.y_shifts, self.data = self.actions.align2edge(element, data, loc, threshold) 
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
         
@@ -288,7 +289,7 @@ class SinogramWidget(QtWidgets.QWidget):
         x_shifts, self. data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, shift, slope)
         self.x_shifts += x_shifts
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
     # def matchTermplate_params(self):
@@ -331,7 +332,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, pad, blur_bool, rin, rout, center, algorithm, upsample_factor, save_bool, debug_bool, iters)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
         #save parameters 
@@ -342,14 +343,19 @@ class SinogramWidget(QtWidgets.QWidget):
 
 
     def alignFromText2_params(self):
+        fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
+
+        if fileName[0] == "":
+            return
+            
+        self.restoreSig.emit()
         data = self.data
         try:
-            self.data, self.x_shifts, self.y_shifts = self.actions.alignFromText2(data)
+            data, x_shifts, y_shifts = self.actions.alignFromText2(fileName, data)
         except TypeError:
             return
-        self.dataChangedSig.emit(self.data)
-        # self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
 
     # def alignfromHotspotxt_params(self):

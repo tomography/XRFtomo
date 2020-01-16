@@ -92,8 +92,8 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.y_sld.setRange(2, 10)
         self.y_sld.valueChanged.connect(self.ySldChange)
 
-        # self.normalizeBtn = QtWidgets.QPushButton("Normalize")
-        # self.normalizeBtn.setFixedWidth(button33size)
+        self.reshapeBtn = QtWidgets.QPushButton("reshape")
+        self.reshapeBtn.setFixedWidth(button33size)
         self.cropBtn = QtWidgets.QPushButton("Crop")
         self.cropBtn.setFixedWidth(button33size)
         self.captureBackground = QtWidgets.QPushButton("Copy Bg")
@@ -101,11 +101,11 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.setBackground = QtWidgets.QPushButton("Set Bg")
         self.setBackground.setFixedWidth(button33size)
         self.deleteProjection = QtWidgets.QPushButton("remove img")
-        self.deleteProjection.setFixedWidth(button2size)
+        self.deleteProjection.setFixedWidth(button33size)
         # self.hist_equalize = QtWidgets.QPushButton("Equalize")
         # self.hist_equalize.setFixedWidth(button33size)
         self.rm_hotspot = QtWidgets.QPushButton("Remove hs")
-        self.rm_hotspot.setFixedWidth(button2size)
+        self.rm_hotspot.setFixedWidth(button33size)
         self.Equalize = QtWidgets.QPushButton("Equalize")
         self.Equalize.setFixedWidth(button33size)
         self.center = QtWidgets.QPushButton("Find center")
@@ -162,6 +162,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb13 = QtWidgets.QHBoxLayout()
         hb13.addWidget(self.deleteProjection)
         hb13.addWidget(self.rm_hotspot)
+        hb13.addWidget(self.reshapeBtn)
 
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addLayout(hb1)
@@ -188,7 +189,6 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb5.addLayout(vb2)
 
         self.setLayout(vb5)
-
 
         #__________Popup window for center-find button__________   
 
@@ -223,6 +223,35 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
 
         self.center_parameters.setLayout(vbox)
         self.options.currentIndexChanged.connect(self.display)
+
+
+        #__________Popup window for reshape button__________
+        self.reshape_options = QtWidgets.QWidget()
+        self.reshape_options.resize(275,300)
+        self.reshape_options.setWindowTitle('data upsample settings')
+
+        xUpsample_label = QtWidgets.QLabel("x upsample multiplier")
+        yUpsample_label = QtWidgets.QLabel("y upsample multiplier ")
+
+        self.xUpsample_text = QtWidgets.QLineEdit("1")
+        self.yUpsample_text = QtWidgets.QLineEdit("1")
+        self.run_reshape = QtWidgets.QPushButton("reshape data")
+
+        hb21 = QtWidgets.QHBoxLayout()
+        hb21.addWidget(xUpsample_label)
+        hb21.addWidget(self.xUpsample_text)
+
+        hb22 = QtWidgets.QHBoxLayout()
+        hb22.addWidget(yUpsample_label)
+        hb22.addWidget(self.yUpsample_text)
+
+        vb20 = QtWidgets.QVBoxLayout()
+        vb20.addLayout(hb21)
+        vb20.addLayout(hb22)
+        vb20.addWidget(self.run_reshape)
+
+        self.reshape_options.setLayout(vb20)
+
 
     def stack1UI(self):
         button1size = 250       #long button (1 column)
@@ -451,6 +480,53 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
             except ValueError:
                 valid = False
                 self.limit_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+        return valid
+        #________________parameters for reshape_data
+
+    def validate_reshape_parameters(self):
+        valid = True
+        try: #check value >1 and is int
+            x_upsample = self.xUpsample_text.text()
+            if x_upsample == "":
+                self.xUpsample_text.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+            else:
+                x_upsample = float(self.xUpsample_text.text())
+                if x_upsample%1 == 0 and x_upsample >= 1:
+                    x_upsample = int(x_upsample)
+                    self.xUpsample_text.setText(str(x_upsample))
+                    self.xUpsample_text.setStyleSheet('* {background-color: }')
+                elif x_upsample%1 != 0:
+                    self.xUpsample_text.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    self.xUpsample_text.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+        except ValueError:
+            valid = False
+            self.xUpsample_text.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+        try: #check value >1 and is int
+            y_upsample = self.yUpsample_text.text()
+            if y_upsample == "":
+                self.yUpsample_text.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+            else:
+                y_upsample = float(self.yUpsample_text.text())
+                if y_upsample%1 == 0 and y_upsample >= 1:
+                    y_upsample = int(y_upsample)
+                    self.yUpsample_text.setText(str(y_upsample))
+                    self.yUpsample_text.setStyleSheet('* {background-color: }')
+                elif y_upsample%1 != 0:
+                    self.yUpsample_text.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    self.yUpsample_text.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+        except ValueError:
+            valid = False
+            self.yUpsample_text.setStyleSheet('* {background-color: rgb(255,200,200) }')
 
         return valid
 
