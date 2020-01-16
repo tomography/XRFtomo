@@ -139,6 +139,8 @@ class XfluoGui(QtGui.QMainWindow):
         undoAction.triggered.connect(self.undo)
         undoAction.setShortcut('Ctrl+Z')
 
+        preferencesAction = QtGui.QAction("exit preferences")
+
         restoreAction = QtGui.QAction("Restore", self)
         restoreAction.triggered.connect(self.restore)
 
@@ -255,6 +257,7 @@ class XfluoGui(QtGui.QMainWindow):
 
         self.editMenu = menubar.addMenu("Edit")
         self.editMenu.addAction(undoAction)
+        self.editMenu.addAction(preferencesAction)
         # self.editMenu.addAction(matcherAction)
         # self.editMenu.addAction(saveHotSpotPosAction)
         # self.editMenu.addAction(alignHotSpotPosAction)

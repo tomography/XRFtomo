@@ -441,5 +441,5 @@ def read_exchange_file(fname):
     elements = [x.decode('utf-8') for x in tmp_elements]
     thetas = hFile['exchange']['theta'].value
     data = hFile['exchange']['data'].value
-
+    
     return data, elements, thetas
