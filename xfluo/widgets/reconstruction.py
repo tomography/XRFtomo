@@ -136,7 +136,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.update_recon_image()
 
     def reconstruct_params(self):
-        self.ViewControl.lbl.setText("Reconstruction is currently running")
         element = self.ViewControl.combo1.currentIndex()
         # box_checked = self.ViewControl.cbox.isChecked()
         #TODO: figure out what center input does with respect to reconstructions. Doesnt seem to change output.
@@ -154,12 +153,10 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
-        self.ViewControl.lbl.setText("Done")
         self.reconChangedSig.emit(self.recon)
         return
 
     def reconstruct_all_params(self):
-        self.ViewControl.lbl.setText("Reconstruction is currently running")
         #figure out how to get a list of all selected elements
         num_elements = self.ViewControl.combo1.count()
         element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
@@ -178,7 +175,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
-        self.ViewControl.lbl.setText("Done")
         self.reconChangedSig.emit(self.recon)
         return
 

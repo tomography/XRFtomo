@@ -104,11 +104,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.Equalize.clicked.connect(self.histo_params)
-        self.ViewControl.center.clicked.connect(self.ViewControl.center_parameters.show)
-        self.ViewControl.center.clicked.connect(self.updateCenterFindParameters)
-        self.ViewControl.find_center_1.clicked.connect(self.center_tomopy_params)
-        self.ViewControl.find_center_2.clicked.connect(self.center_Everett_params)
-        self.ViewControl.move2center.clicked.connect(self.move2center_params)
+
         self.ViewControl.rot_axis.clicked.connect(self.rot_axis_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histogram)
 
@@ -226,13 +222,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.fnames = fnames
         self.imgAndHistoWidget.file_name_title.setText(str(self.fnames[index]))
 
-    def updateCenterFindParameters(self):
-        if self.ViewControl.init_textbox.text() == "-1":
-            self.ViewControl.init_textbox.setText(str(self.data.shape[3]//2))
-        if self.ViewControl.slice_textbox.text() == "-1":
-            self.ViewControl.slice_textbox.setText(str(self.data.shape[2]//2))
-        if self.ViewControl.limit_textbox.text() == "-1":
-            self.ViewControl.limit_textbox.setText("1")
+
 
     def imgProcessBoxSizeChange(self):
         xSize = self.ViewControl.xSize
@@ -588,22 +578,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.dataChangedSig.emit(data)
         return
 
-    def move2center_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        rot_center = int(np.round(float(self.ViewControl.center_1.text().split()[1])))
-        x_shifts = self.data.shape[3]//2 - rot_center
-
-        if x_shifts<0:
-            data = self.actions.shiftDataX(self.data, x_shifts)
-            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
-            self.dataChangedSig.emit(data)
-
-        if x_shifts>0:
-            data = self.actions.shiftDataX(data, x_shifts)
-            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
-            self.dataChangedSig.emit(data)
-
     def histo_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
@@ -612,40 +586,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
             data[element, i], m = self.actions.equalize_hist_ev(data[element,i], 2**16, mask)
         self.dataChangedSig.emit(data)
 
-    def center_tomopy_params(self):        
-        valid = self.ViewControl.validate_parameters()
-        if not valid:
-            return
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
 
-        data = self.data
-        thetas = self.thetas
-        tomo = data[element]
-        slice_index = int(self.ViewControl.slice_textbox.text())
-        init_center = int(self.ViewControl.init_textbox.text())
-        tol = float(self.ViewControl.tol_textbox.text())
-        mask_bool = self.ViewControl.mask_checkbox.isChecked()
-        ratio = float(self.ViewControl.ratio_textbox.text())
-
-        center = self.actions.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
-        self.ViewControl.center_1.setText("center: {}".format(center))
-        self.ViewControl.center_2.setText("center: {}".format(center))
-
-    def center_Everett_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        thetasum = np.sum(self.data[element], axis=1)
-        
-        valid = self.ViewControl.validate_parameters()
-        if not valid:
-            return
-
-        limit = self.ViewControl.limit_textbox.text()
-        center_offset = self.actions.rot_center3(thetasum, ave_mode = 'Median', limit = None, return_all = False)
-        center = self.data.shape[3]//2 - center_offset
-        center_int = np.round(center_offset)
-        self.ViewControl.center_1.setText("center: {}".format(center))
-        self.ViewControl.center_2.setText("center: {}".format(center))
 
 
     def equalize_colocalization(self, elements, mask = None, nbins = 2**16, eq_hsv = False,

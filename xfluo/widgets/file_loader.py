@@ -356,20 +356,25 @@ class FileTableWidget(QtWidgets.QWidget):
             #     self.quant_options.setEnabled(True)
 
         if self.version == 0:
-            # for old 2IDE HDF files with "exchange"
-            if self.imageTag.currentText() == 'exchange':
-                self.message.setText('exchange: Fitted normalized by DS-IC')
-                self.dataTag.clear()
-                self.dataTag.addItem('images')
-                # self.elementTag.clear()
-                self.element_tag = 'images_names'
-                self.thetaLineEdit.setEnabled(True)
-                self.dataTag.setEnabled(False)
-                # self.elementTag.setEnabled(False)
-                self.quant_options.setEnabled(False)
 
-            # for old 2IDE HDF files without "exchange"
-            else:
+
+            # for old 2IDE HDF files with "exchange"
+            # if self.imageTag.currentText() == 'exchange':
+            #     self.message.setText('exchange: Fitted normalized by DS-IC')
+            #     self.dataTag.clear()
+            #     self.dataTag.addItem('images')
+            #     # self.elementTag.clear()
+            #     self.element_tag = 'images_names'
+            #     self.thetaLineEdit.setEnabled(True)
+            #     self.dataTag.setEnabled(False)
+            #     # self.elementTag.setEnabled(False)
+            #     self.quant_options.setEnabled(False)
+            #
+            # # for old 2IDE HDF files without "exchange"
+            #
+            #
+
+            if True:
                 # for read
                 self.message.clear()
                 self.dataTags = {}
@@ -382,14 +387,14 @@ class FileTableWidget(QtWidgets.QWidget):
                     if indx == -1:
                         return
                 try:
-                    #filtering  drop-down menu to inlcude only relevant entries. 
-                    temp_tags1 = list(filter(lambda k: 'XRF' in k, self.dataTags[indx]))
-                    temp_tags1 = list(filter(lambda k: not 'quant' in k, temp_tags1))
-                    temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
-                    self.dataTags[indx] = temp_tags1 + temp_tags2
-                    # self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
+                    # #filtering  drop-down menu to inlcude only relevant entries.
+                    # temp_tags1 = list(filter(lambda k: 'XRF' in k, self.dataTags[indx]))
+                    # temp_tags1 = list(filter(lambda k: not 'quant' in k, temp_tags1))
+                    # temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
+                    # self.dataTags[indx] = temp_tags1 + temp_tags2
+                    # # self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
                     self.dataTag.clear()
-                    # self.elementTag.clear()
+                    # # self.elementTag.clear()
                     for i in range(len(self.dataTags[indx])):
                         self.dataTag.addItem(self.dataTags[indx][i])
 
@@ -422,10 +427,13 @@ class FileTableWidget(QtWidgets.QWidget):
             if self.dataTag.currentText() == 'scalers':
                 self.element_tag = 'scaler_names'
      
-            if self.dataTag.currentText() == 'images':
+            elif self.dataTag.currentText() == 'images':
                 self.element_tag = 'images_names'
 
-            if self.dataTag.currentText() != 'images' and self.dataTag.currentText() != 'scalers':
+            elif self.dataTag.currentText() == "data":
+                self.element_tag = "data_names"
+
+            else:
                 self.element_tag = 'channel_names'
             # element_tag = self.elementTag.currentText()
 
@@ -492,6 +500,7 @@ class FileTableWidget(QtWidgets.QWidget):
         #temporary definition of 'version'
         exchange_bool = list(self.img)
         self.version = 'exchange_1' in exchange_bool
+        self.version = False
         return self.version
 
     def onThetaUpdate(self):

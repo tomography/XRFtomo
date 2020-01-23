@@ -135,6 +135,10 @@ class SinogramActions(QtWidgets.QWidget):
             data[:,i,:,:] = np.roll(data[:,i,:,:], regShift[i], axis=2)
         return data, sinogramData  
 
+    def shiftDataX(self, data, displacement):
+        for i in range(data.shape[1]):
+            data[:,i] = np.roll(data[:,i],displacement, axis=2)
+        return data
 
     def slope_adjust(self, sinogramData, data, shift, delta):
         '''
@@ -465,3 +469,45 @@ class SinogramActions(QtWidgets.QWidget):
     def alignmentDone(self):
         '''send message that alignment has been done'''
         print("Alignment has been completed")
+
+    def find_center(self, tomo, thetas, slice_index, init_center, tol, mask_bool, ratio):
+        center = tomopy.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
+        return center[0]
+
+    def rot_center3(self, thetasum, ave_mode = None, limit = None, return_all = False):
+        # thetasum: 1d or 2d array of summed projections. (z,x)
+        if thetasum.ndim == 1:
+            thetasum = thetasum[None,:]
+        T = spf.fft(thetasum, axis = 1)
+        # Collect real and imaginary coefficients.
+        real, imag = T[:,1].real, T[:,1].imag
+        rows = thetasum.shape[0]
+        cols = thetasum.shape[1]
+        # In a sinogram the feature may be more positive or less positive than the background (i.e. fluorescence vs
+        # absorption contrast). This can mess with the T_phase value so we multiply by the sign of the even function
+        # to account for this.
+        T_phase = np.arctan2(imag*np.sign(real),real*np.sign(real))
+        if ave_mode == 'Mean':
+            # Use the mean of the centers from each row as center shift.
+            # Good for objects filling the field of view (i.e. local/roi tomography)
+            return np.mean(T_phase)/(np.pi*2)*cols
+
+        elif ave_mode == 'Median':
+            # Use median value as center shift.
+            return np.median(T_phase)/(np.pi*2)*cols
+
+        elif ave_mode == 'Local':
+            # Use local mean from window about the median vlimitalue as center shift.
+            # Good for objects fully contained within the field of view.
+            # Default window is 2*rows//10
+            med = np.median(T_phase)
+            if limit == None:
+                return tmean(T_phase, limits = (med-10, med+10))/(np.pi*2)*cols
+            else:
+                return tmean(T_phase, limits = (med-limit, med+limit))/(np.pi*2)*cols
+        else:
+            # Use value from center row as center shift.
+            # Fastest option.
+            if return_all:
+                return T_phase/(np.pi*2)*cols
+            return T_phase[rows//2]/(np.pi*2)*cols

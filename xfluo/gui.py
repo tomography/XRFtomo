@@ -147,6 +147,9 @@ class XfluoGui(QtGui.QMainWindow):
         keyMapAction = QtGui.QAction('key map settings', self)
         keyMapAction.triggered.connect(self.keyMapSettings)
 
+        configAction = QtGui.QAction('key map settings', self)
+        configAction.triggered.connect(self.configSettings)
+
         debugToolsAction = QtGui.QAction('enable debug tools', self)
         debugToolsAction.triggered.connect(self.debugMode)
 
@@ -289,6 +292,7 @@ class XfluoGui(QtGui.QMainWindow):
 
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(keyMapAction)
+        self.helpMenu.addAction(configAction)
         self.helpMenu.addAction(debugToolsAction)
         self.helpMenu.addAction(exitDebugToolsAction)
         self.afterConversionMenu.setDisabled(True)
@@ -300,14 +304,32 @@ class XfluoGui(QtGui.QMainWindow):
         self.setWindowTitle('xfluo')
         self.show()
 
+
     def debugMode(self):
         self.fileTableWidget.thetaLabel.setVisible(True)
         self.fileTableWidget.thetaLineEdit.setVisible(True)
+        self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
+        self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(True)
+        self.imageProcessWidget.ViewControl.btn2.setVisible(True)
+
+        self.sinogramWidget.ViewControl.btn1.setVisible(True)
+        self.sinogramWidget.ViewControl.btn3.setVisible(True)
+        self.sinogramWidget.ViewControl.btn5.setVisible(True)
+        self.sinogramWidget.ViewControl.btn6.setVisible(True)
         return
  
     def exitDebugMode(self):
         self.fileTableWidget.thetaLabel.setVisible(False)
         self.fileTableWidget.thetaLineEdit.setVisible(False)
+        self.imageProcessWidget.ViewControl.Equalize.setVisible(False)
+        self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(False)
+        self.imageProcessWidget.ViewControl.btn2.setVisible(False)
+
+        self.sinogramWidget.ViewControl.btn1.setVisible(False)
+        self.sinogramWidget.ViewControl.btn3.setVisible(False)
+        self.sinogramWidget.ViewControl.btn5.setVisible(False)
+        self.sinogramWidget.ViewControl.btn6.setVisible(False)
+
         return      
 
     def openFolder(self):
@@ -986,13 +1008,27 @@ class XfluoGui(QtGui.QMainWindow):
                     )
 
 
-
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(text)
 
         self.msg.setLayout(vbox)
         self.msg.show()
 
+    def configSettings(self):
+        self.config_options = QtWidgets.QWidget()
+        self.config_options.resize(300,400)
+        self.config_options.setWindowTitle('config options')
+        legacy_chbx = QtWidgets.QCheckBox("Load as legacy data")
+        directory_chbx = QtWidgets.QCheckBox("Load last directory")
+        element_chbx = QtWidgets.QCheckBox("Load last elements")
+
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(legacy_chbx)
+        vbox.addWidget(directory_chbx)
+        vbox.addWidget(element_chbx)
+
+        self.config_options.setLayout(vbox)
+        self.config_options.show()
 
     def closeEvent(self, event):
         try:

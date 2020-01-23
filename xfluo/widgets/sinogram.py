@@ -92,12 +92,13 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
         self.ViewControl.btn5.clicked.connect(self.ViewControl.move2edge.show)
         self.ViewControl.run_move2edge.clicked.connect(self.move2edge_params)
-
-
         self.ViewControl.btn9.clicked.connect(self.ViewControl.sino_manip.show)
         self.ViewControl.run_sino_adjust.clicked.connect(self.adjust_sino_params)
-
-
+        self.ViewControl.move2center.clicked.connect(self.move2center_params)
+        self.ViewControl.find_center_1.clicked.connect(self.center_tomopy_params)
+        self.ViewControl.find_center_2.clicked.connect(self.center_Everett_params)
+        self.ViewControl.center.clicked.connect(self.ViewControl.center_parameters.show)
+        self.ViewControl.center.clicked.connect(self.updateCenterFindParameters)
         self.sld.valueChanged.connect(self.imageSliderChanged)
         self.sinoView.keyPressSig.connect(self.shiftEvent_params)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
@@ -175,6 +176,64 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinogram(element)
         self.ViewControl.combo1.setCurrentIndex(element)
 
+    def center_tomopy_params(self):        
+        valid = self.ViewControl.validate_move2center_parameters()
+        if not valid:
+            return
+        element, row, data, thetas = self.get_params()
+
+        data = self.data
+        thetas = self.thetas
+        tomo = data[element]
+        slice_index = int(self.ViewControl.slice_textbox.text())
+        init_center = int(self.ViewControl.init_textbox.text())
+        tol = float(self.ViewControl.tol_textbox.text())
+        mask_bool = self.ViewControl.mask_checkbox.isChecked()
+        ratio = float(self.ViewControl.ratio_textbox.text())
+
+        center = self.actions.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
+        self.ViewControl.center_1.setText("center: {}".format(center))
+        self.ViewControl.center_2.setText("center: {}".format(center))
+
+    def center_Everett_params(self):
+        element, row, data, thetas = self.get_params()
+        data = self.data
+        thetasum = np.sum(self.data[element], axis=1)
+        
+        valid = self.ViewControl.validate_move2center_parameters()
+        if not valid:
+            return
+
+        limit = self.ViewControl.limit_textbox.text()
+        center_offset = self.actions.rot_center3(thetasum, ave_mode = 'Median', limit = None, return_all = False)
+        center = self.data.shape[3]//2 - center_offset
+        center_int = np.round(center_offset)
+        self.ViewControl.center_1.setText("center: {}".format(center))
+        self.ViewControl.center_2.setText("center: {}".format(center))
+
+    def move2center_params(self):
+        data = self.data
+        rot_center = int(np.round(float(self.ViewControl.center_1.text().split()[1])))
+        x_shifts = self.data.shape[3]//2 - rot_center
+
+        if x_shifts<0:
+            data = self.actions.shiftDataX(self.data, x_shifts)
+            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
+
+        if x_shifts>0:
+            data = self.actions.shiftDataX(data, x_shifts)
+            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
+
+    def updateCenterFindParameters(self):
+        if self.ViewControl.init_textbox.text() == "-1":
+            self.ViewControl.init_textbox.setText(str(self.data.shape[3]//2))
+        if self.ViewControl.slice_textbox.text() == "-1":
+            self.ViewControl.slice_textbox.setText(str(self.data.shape[2]//2))
+        if self.ViewControl.limit_textbox.text() == "-1":
+            self.ViewControl.limit_textbox.setText("1")
+            
     def sinogram(self, element):
         '''
         load variables and image for sinogram window
