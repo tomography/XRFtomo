@@ -35,7 +35,16 @@ OR install from source along with all dependencies:
     $ cd xfluo
     $ conda install -c conda-forge dxchange
     $ conda install -c conda-forge tomopy
-    $ conda install -c conda-forge ...
+    $ conda install -c conda-forge pyqt
+    $ conda install -c conda-forge h5py
+    $ conda install -c conda-forge scikit-image
+    $ conda install -c conda-forge pandas
+    $ conda install -c conda-forge seaborn
+    $ conda install -c conda-forge pyqtgraph
+    $ conda install -c conda-forge scipy
+    $ conda install git
+    $ conda install numpy
+
 
     $ python setup.py install
     $ cd bin 

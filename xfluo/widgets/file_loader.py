@@ -224,7 +224,11 @@ class FileTableWidget(QtWidgets.QWidget):
 
         #specify file extension by 'majority rule' for a given directory 
         if files == None:
-            filenames = os.listdir(self.dirLineEdit.text())
+            try:
+                filenames = os.listdir(self.dirLineEdit.text())
+            except FileNotFoundError:
+                self.message.setText("directory probably not mounted")
+                return
             extension_list = ["."+ x.split(".")[-1] for x in filenames]
             unique_ext = list(set(extension_list))
             counter = 0

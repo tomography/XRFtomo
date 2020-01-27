@@ -147,7 +147,7 @@ class XfluoGui(QtGui.QMainWindow):
         keyMapAction = QtGui.QAction('key map settings', self)
         keyMapAction.triggered.connect(self.keyMapSettings)
 
-        configAction = QtGui.QAction('key map settings', self)
+        configAction = QtGui.QAction('load configuration settings', self)
         configAction.triggered.connect(self.configSettings)
 
         debugToolsAction = QtGui.QAction('enable debug tools', self)
@@ -1003,8 +1003,6 @@ class XfluoGui(QtGui.QMainWindow):
                     "shift stack right: \t Shift + right \n\n"
                     "exclude image: \t Delete \n\n"
                     "copy background: \t Ctrl + C \n\npaste background:  Ctrl + V" 
-
-
                     )
 
 
@@ -1018,14 +1016,14 @@ class XfluoGui(QtGui.QMainWindow):
         self.config_options = QtWidgets.QWidget()
         self.config_options.resize(300,400)
         self.config_options.setWindowTitle('config options')
-        legacy_chbx = QtWidgets.QCheckBox("Load as legacy data")
-        directory_chbx = QtWidgets.QCheckBox("Load last directory")
-        element_chbx = QtWidgets.QCheckBox("Load last elements")
+        self.legacy_chbx = QtWidgets.QCheckBox("Load as legacy data")
+        self.directory_chbx = QtWidgets.QCheckBox("Load last directory")
+        self.element_chbx = QtWidgets.QCheckBox("Load last elements")
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(legacy_chbx)
-        vbox.addWidget(directory_chbx)
-        vbox.addWidget(element_chbx)
+        vbox.addWidget(self.legacy_chbx)
+        vbox.addWidget(self.directory_chbx)
+        vbox.addWidget(self.element_chbx)
 
         self.config_options.setLayout(vbox)
         self.config_options.show()
