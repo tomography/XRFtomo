@@ -513,6 +513,9 @@ class FileTableWidget(QtWidgets.QWidget):
         path_files = self.fileTableModel.getAllFiles()
         #get path_files list
         thetaPV = self.thetaLineEdit.text()
+        #TODO: check to see if thetas is available under exchange tag, if not, load in 
+        #legacy mode or just check under MAPS, or throw a warning (prompt user to enable 
+        #debug tools and enter PV otherweise load thetas file.
         try:
             thetas = load_thetas(path_files, self.imgTags[self.imageTag.currentIndex()], self.version, thetaPV)
         except:

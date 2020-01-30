@@ -323,7 +323,7 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_nam
     num_elements = len(elements)
     #get max dimensons
     for i in range(num_files):
-        #TODO: this errors out when loading h5/C+ after h5/MapsPy
+        #TODO: this errors out when loading h5/C+ after h5/MapsPy.
         proj = read_projection(path_files[i], element_names[0], hdf_tag, roi_tag, channel_tag)
         if proj is None:
             pass

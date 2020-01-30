@@ -304,6 +304,63 @@ class XfluoGui(QtGui.QMainWindow):
         self.setWindowTitle('xfluo')
         self.show()
 
+        #_______________________Help/config_options______________________
+        self.config_options = QtWidgets.QWidget()
+        self.config_options.resize(300,400)
+        self.config_options.setWindowTitle('config options')
+        self.legacy_chbx = QtWidgets.QCheckBox("Load as legacy data")
+        self.directory_chbx = QtWidgets.QCheckBox("Load last directory")
+        self.element_chbx = QtWidgets.QCheckBox("Load last elements")
+        self.image_tag_chbx = QtWidgets.QCheckBox("Load last image_tag")
+        self.data_tag_chbx= QtWidgets.QCheckBox("Load last data_tag")
+        self.debug_chbx = QtWidgets.QCheckBox("Enable debug tools at startup")
+        self.alingmen_chbx = QtWidgets.QCheckBox("Load alignment information")
+        self.iter_align_param_chbx = QtWidgets.QCheckBox("Load last iter-align parameters")
+        self.recon_method_chbx = QtWidgets.QCheckBox("Load last-used reconstruction method")
+
+        self.legacy_chbx.setChecked(True)
+        self.directory_chbx.setChecked(True)
+        self.element_chbx.setChecked(True)
+        self.image_tag_chbx.setChecked(True)
+        self.data_tag_chbx.setChecked(True)
+        self.debug_chbx.setChecked(True)
+        self.alingmen_chbx.setChecked(True)
+        self.iter_align_param_chbx.setChecked(True)
+        self.recon_method_chbx.setChecked(True)
+
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(self.legacy_chbx)
+        vbox.addWidget(self.directory_chbx)
+        vbox.addWidget(self.element_chbx)
+        vbox.addWidget(self.image_tag_chbx)
+        vbox.addWidget(self.data_tag_chbx)
+        vbox.addWidget(self.debug_chbx)
+        vbox.addWidget(self.alingmen_chbx)
+        vbox.addWidget(self.iter_align_param_chbx)
+        vbox.addWidget(self.recon_method_chbx)
+
+        self.config_options.setLayout(vbox)
+
+        #_______________________Help/keymap_options______________________
+        self.keymap_options = QtWidgets.QWidget()
+        self.keymap_options.resize(600,400)
+        self.keymap_options.setWindowTitle('key map')
+        text = QtWidgets.QLabel("Undo: \t\t Ctr+Z \t\t previous image: \t A \n\n" 
+                    "shift image up: \t up \t\t next image: \t D \n\n" 
+                    "shift image down: \t down  \t\t skip (hotspot): \t S \n\n"
+                    "shift image left: \t left \t\t next (hotspot): \t N \n\n"
+                    "shift image right: \t right  \n\n"
+                    "shift stack up: \t Shift + up \n\n"
+                    "shift stack down: \t Shift + down \n\n"
+                    "shift stack left: \t Shift + left \n\n"
+                    "shift stack right: \t Shift + right \n\n"
+                    "exclude image: \t Delete \n\n"
+                    "copy background: \t Ctrl + C \n\npaste background:  Ctrl + V"
+                    )
+
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(text)
+        self.keymap_options.setLayout(vbox)
 
     def debugMode(self):
         self.fileTableWidget.thetaLabel.setVisible(True)
@@ -989,57 +1046,24 @@ class XfluoGui(QtGui.QMainWindow):
 
 
     def keyMapSettings(self):
-        self.keymap_optison = QtWidgets.QWidget()
-        self.keymap_optison.resize(600,400)
-        self.keymap_optison.setWindowTitle('key map')
-        text = QtWidgets.QLabel("Undo: \t\t Ctr+Z \t\t previous image: \t A \n\n" 
-                    "shift image up: \t up \t\t next image: \t D \n\n" 
-                    "shift image down: \t down  \t\t skip (hotspot): \t S \n\n"
-                    "shift image left: \t left \t\t next (hotspot): \t N \n\n"
-                    "shift image right: \t right  \n\n"
-                    "shift stack up: \t Shift + up \n\n"
-                    "shift stack down: \t Shift + down \n\n"
-                    "shift stack left: \t Shift + left \n\n"
-                    "shift stack right: \t Shift + right \n\n"
-                    "exclude image: \t Delete \n\n"
-                    "copy background: \t Ctrl + C \n\npaste background:  Ctrl + V" 
-                    )
-
-
-        vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(text)
-
-        self.keymap_optison.setLayout(vbox)
-        self.keymap_optison.show()
+        self.keymap_options.show()
+        return
 
     def configSettings(self):
-        self.config_options = QtWidgets.QWidget()
-        self.config_options.resize(300,400)
-        self.config_options.setWindowTitle('config options')
-        self.legacy_chbx = QtWidgets.QCheckBox("Load as legacy data")
-        self.directory_chbx = QtWidgets.QCheckBox("Load last directory")
-        self.element_chbx = QtWidgets.QCheckBox("Load last elements")
-
-        vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.legacy_chbx)
-        vbox.addWidget(self.directory_chbx)
-        vbox.addWidget(self.element_chbx)
-
-        self.config_options.setLayout(vbox)
         self.config_options.show()
+        return
 
     def closeEvent(self, event):
         try:
             sections = config.TOMO_PARAMS + ('gui', 'file-io')
             config.write('xfluo.conf', args=self.params, sections=sections)
-            #TODO: close all other open windows.
             self.sinogramWidget.ViewControl.iter_parameters.close()
             self.sinogramWidget.ViewControl.center_parameters.close()
             self.sinogramWidget.ViewControl.move2edge.close()
             self.sinogramWidget.ViewControl.sino_manip.close()
             self.imageProcessWidget.ViewControl.reshape_options.close()
             self.config_options.close()
-            self.keymap_optison.close()
+            self.keymap_options.close()
             matplotlib.pyplot.close()
 
         except IOError as e:
