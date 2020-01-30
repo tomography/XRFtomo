@@ -504,6 +504,7 @@ class FileTableWidget(QtWidgets.QWidget):
         #temporary definition of 'version'
         exchange_bool = list(self.img)
         self.version = 'exchange_1' in exchange_bool
+        #Temporary hardcode version to 0 (legacy import mode)
         self.version = False
         return self.version
 

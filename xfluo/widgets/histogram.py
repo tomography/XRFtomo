@@ -162,7 +162,9 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
     def wheelEvent(self, ev): 
         #empty function, but leave it as it overrides some other unwanted functionality. 
         pass
-
+#TODO: on mac os, when keys are held down, they are sometimes missinterpreted as
+    #multiple key pressed, which does not fall under one of the logic below, nor
+    #does the
     def keyPressEvent(self, ev):
         self.firstrelease = True
         astr = ev.key()
@@ -173,10 +175,12 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
             self.processMultipleKeys(self.keylist)
 
         self.firstrelease = False
+
         try:    #complains about an index error for some reason.
             del self.keylist[-1]
         except:
             pass
+        return
 
     def processMultipleKeys(self, keyspressed):
         if len(keyspressed) ==1:
@@ -198,6 +202,7 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
                 self.keyPressSig.emit('A')
             if keyspressed[0] == QtCore.Qt.Key_D:
                 self.keyPressSig.emit('D')
+
         if len(keyspressed) == 2:
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Left:
                 self.keyPressSig.emit('shiftLeft')
@@ -217,4 +222,7 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
             if keyspressed[0] == QtCore.Qt.Key_Control and keyspressed[1] == QtCore.Qt.Key_V:
                 self.keyPressSig.emit('Paste')
                 return
+        if len(keyspressed) >=3:
+            self.keylist = []
+            return
 
