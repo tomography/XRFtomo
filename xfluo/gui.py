@@ -918,7 +918,7 @@ class XfluoGui(QtGui.QMainWindow):
         mask[np.triu_indices_from(mask,1)] = True
 
         # Set up the matplotlib figure
-        f, ax = plt.subplots(figsize=(11, 9))
+        self.analysis_figure, ax = plt.subplots(figsize=(11, 9))
 
         # Generate a custom diverging colormap
         cmap = sns.diverging_palette(220, 10, as_cmap=True)
@@ -927,7 +927,7 @@ class XfluoGui(QtGui.QMainWindow):
         d = pd.DataFrame(data=self.rMat, columns=self.elements, index=self.elements)
         sns.heatmap(d, mask=mask, annot=True, cmap=cmap, vmax=self.rMat.max(), center=0,
                     square=True, linewidths=.5, cbar_kws={"shrink": .5})
-        f.show()
+        self.analysis_figure.show()
 
         self.app.restoreOverrideCursor()
         return self.rMat
@@ -989,9 +989,9 @@ class XfluoGui(QtGui.QMainWindow):
 
 
     def keyMapSettings(self):
-        self.msg = QtWidgets.QWidget()
-        self.msg.resize(600,400)
-        self.msg.setWindowTitle('key map')
+        self.keymap_optison = QtWidgets.QWidget()
+        self.keymap_optison.resize(600,400)
+        self.keymap_optison.setWindowTitle('key map')
         text = QtWidgets.QLabel("Undo: \t\t Ctr+Z \t\t previous image: \t A \n\n" 
                     "shift image up: \t up \t\t next image: \t D \n\n" 
                     "shift image down: \t down  \t\t skip (hotspot): \t S \n\n"
@@ -1009,8 +1009,8 @@ class XfluoGui(QtGui.QMainWindow):
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(text)
 
-        self.msg.setLayout(vbox)
-        self.msg.show()
+        self.keymap_optison.setLayout(vbox)
+        self.keymap_optison.show()
 
     def configSettings(self):
         self.config_options = QtWidgets.QWidget()
@@ -1032,6 +1032,16 @@ class XfluoGui(QtGui.QMainWindow):
         try:
             sections = config.TOMO_PARAMS + ('gui', 'file-io')
             config.write('xfluo.conf', args=self.params, sections=sections)
+            #TODO: close all other open windows.
+            self.sinogramWidget.ViewControl.iter_parameters.close()
+            self.sinogramWidget.ViewControl.center_parameters.close()
+            self.sinogramWidget.ViewControl.move2edge.close()
+            self.sinogramWidget.ViewControl.sino_manip.close()
+            self.imageProcessWidget.ViewControl.reshape_options.close()
+            self.config_options.close()
+            self.keymap_optison.close()
+            matplotlib.pyplot.close()
+
         except IOError as e:
             self.gui_warn(str(e))
             self.on_save_as()

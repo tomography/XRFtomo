@@ -145,6 +145,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb4.addWidget(self.btn1)
         hb4.addWidget(self.btn3)        
         hb5 = QtWidgets.QHBoxLayout()
+        hb5.addWidget(self.btn2)
         hb5.addWidget(self.btn4)
 
         hb10 = QtWidgets.QHBoxLayout()

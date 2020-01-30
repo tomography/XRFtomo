@@ -53,7 +53,7 @@ def main():
         cmd_parser = cmd_params.add_arguments(cmd_parser)
         cmd_parser.set_defaults(_func=func)
 
-    args = config.parse_known_args(parser, subparser=True)
+    args = config.parse_known_args(cmd_parser, subparser=True)
     log_level = logging.DEBUG if args.verbose else logging.INFO
     LOG.setLevel(log_level)
 
