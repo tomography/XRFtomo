@@ -42,6 +42,14 @@ SECTIONS['gui'] = {
         'action': 'store_true'}}
 
 SECTIONS['file-io'] = {
+    'load-settings': {
+        'type': str,
+        'default': "[True, True, True, True, True, True, True, True, True]",
+        'help': "True/False state for checkboxes under help drowdown menu"},
+    'legacy-mode': {
+        'default': True,
+        'type': bool,
+        'help': "loads h5 file without ommiting dropdown options."},
     'input-file-path': {
         'default': '.',
         'type': str,

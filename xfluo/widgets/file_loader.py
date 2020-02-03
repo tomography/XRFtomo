@@ -59,6 +59,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent = parent
         self._num_cols = 4
         self._num_row = 4
+        self.auto_load_settings = eval(self.parent.params.load_settings)
         self.auto_theta_pv = self.parent.params.theta_pv
         self.auto_input_path = self.parent.params.input_path
         self.auto_image_tag = self.parent.params.image_tag
@@ -114,7 +115,6 @@ class FileTableWidget(QtWidgets.QWidget):
         self.imageTag.activated.connect(self.getDataTag)
         self.imageTag.activated.connect(self.getQuantOptions)
         self.imageTag.activated.connect(self.getElementList)
-
         self.imageTag.setFixedWidth(122.5)
 
         dataTag_label = QtWidgets.QLabel('')
@@ -124,11 +124,14 @@ class FileTableWidget(QtWidgets.QWidget):
         self.dataTag.currentIndexChanged.connect(self.getElementList)
         self.dataTag.setFixedWidth(122.5)
 
-        # elementTag_label = QtWidgets.QLabel('Elements:')
-        # elementTag_label.setFixedWidth(90)
-        # self.elementTag = QtWidgets.QComboBox()
+        self.elementTag_label = QtWidgets.QLabel('Elements:')
+        self.elementTag_label.setFixedWidth(90)
+        self.elementTag_label.setVisible(False)
+
+        self.elementTag = QtWidgets.QComboBox()
         # self.elementTag.currentIndexChanged.connect(self.getElementList)
-        # self.elementTag.setFixedWidth(122.5)
+        self.elementTag.setFixedWidth(122.5)
+        self.elementTag.setVisible(False)
 
         quant_label = QtWidgets.QLabel('Normalize by:')
         quant_label.setFixedWidth(90)
@@ -163,10 +166,10 @@ class FileTableWidget(QtWidgets.QWidget):
         hBox3.addWidget(self.dataTag)
         hBox3.setAlignment(QtCore.Qt.AlignLeft)
 
-        # hBox4 = QtWidgets.QHBoxLayout()
-        # hBox4.addWidget(elementTag_label)
-        # hBox4.addWidget(self.elementTag)
-        # hBox4.setAlignment(QtCore.Qt.AlignLeft)
+        hBox4 = QtWidgets.QHBoxLayout()
+        hBox4.addWidget(self.elementTag_label)
+        hBox4.addWidget(self.elementTag)
+        hBox4.setAlignment(QtCore.Qt.AlignLeft)
 
         hBox5 = QtWidgets.QHBoxLayout()
         hBox5.addWidget(quant_label)
@@ -181,7 +184,7 @@ class FileTableWidget(QtWidgets.QWidget):
         vBox1.addLayout(hBox1)
         vBox1.addLayout(hBox2)
         vBox1.addLayout(hBox3)
-        # vBox1.addLayout(hBox4)
+        vBox1.addLayout(hBox4)
         vBox1.addLayout(hBox5)
         # vBox1.addLayout(hBox6)
         vBox1.addLayout(hBox7)
@@ -291,11 +294,14 @@ class FileTableWidget(QtWidgets.QWidget):
 
         # for new HDF files
         if self.version == 1:
-            self.message.setText('exchange_0: '+ self.img['exchange_0']['description'][0].decode('utf-8')
-                                  + '; exchange_1: '+ self.img['exchange_1']['description'][0].decode('utf-8')
-                                  + '; exchang_2: '+ self.img['exchange_2']['description'][0].decode('utf-8')
-                                  + '; exchange_3: '+ self.img['exchange_3']['description'][0].decode('utf-8')
-                                  )
+            try:
+                self.message.setText('exchange_0: '+ self.img['exchange_0']['description'][0].decode('utf-8')
+                                      + '; exchange_1: '+ self.img['exchange_1']['description'][0].decode('utf-8')
+                                      + '; exchang_2: '+ self.img['exchange_2']['description'][0].decode('utf-8')
+                                      + '; exchange_3: '+ self.img['exchange_3']['description'][0].decode('utf-8')
+                                      )
+            except:
+                self.message.setText("no description available")
             self.thetaLineEdit.setEnabled(False)
             self.dataTag.setEnabled(False)
             # self.elementTag.setEnabled(False)
@@ -382,45 +388,36 @@ class FileTableWidget(QtWidgets.QWidget):
                 # for read
                 self.message.clear()
                 self.dataTags = {}
-                # self.elementTags = {}
+               
 
                 for i in range(len(self.imgTags)):      #get 'data' tags and element tags
                     self.dataTags[i] = list(self.img[self.imgTags[i]])
-                    # self.elementTags[i] = list(self.img[self.imgTags[i]])
                     indx = self.imageTag.currentIndex()
                     if indx == -1:
                         return
                 try:
                     # #filtering  drop-down menu to inlcude only relevant entries.
-                    # temp_tags1 = list(filter(lambda k: 'XRF' in k, self.dataTags[indx]))
-                    # temp_tags1 = list(filter(lambda k: not 'quant' in k, temp_tags1))
+                    temp_tags1 = list(filter(lambda k: not 'names' in k, self.dataTags[indx]))
+                    temp_tags1 = list(filter(lambda k: not 'units' in k, temp_tags1))
                     # temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
-                    # self.dataTags[indx] = temp_tags1 + temp_tags2
-                    # # self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
+                    self.dataTags[indx] = temp_tags1
                     self.dataTag.clear()
                     # # self.elementTag.clear()
                     for i in range(len(self.dataTags[indx])):
                         self.dataTag.addItem(self.dataTags[indx][i])
 
-                    # for i in range(len(self.elementTags[indx])):
-                    #     self.elementTag.addItem(self.elementTags[indx][i])
-
-                    # if self.auto_element_tag in self.dataTags:
-                    #     self.elementTag.setCurrentText(self.auto_element_tag)
                 except KeyError:
                     pass
 
                 try:
                     indx2 = self.dataTags[indx].index(self.auto_data_tag)
                     self.dataTag.setCurrentIndex(indx2)
-                    # indx3 = self.elementTags[indx].index(self.auto_element_tag)
-                    # self.elementTag.setCurrentIndex(indx3)
                 except ValueError:
                     pass
 
                 self.thetaLineEdit.setEnabled(True)
                 self.dataTag.setEnabled(True)
-                # self.elementTag.setEnabled(True)
+                self.elementTag.setEnabled(True)
                 self.quant_options.setEnabled(True)
 
     def getElementList(self):
@@ -428,19 +425,32 @@ class FileTableWidget(QtWidgets.QWidget):
             fpath = self.fileTableModel.getFirstCheckedFilePath()
             image_tag = self.imageTag.currentText()
 
-            if self.dataTag.currentText() == 'scalers':
-                self.element_tag = 'scaler_names'
-     
-            elif self.dataTag.currentText() == 'images':
-                self.element_tag = 'images_names'
+            # for read
+            self.message.clear()
+            self.elementTags = {}
+            num_image_tags = len(self.imgTags)
+            for i in range(num_image_tags):      #get element tags
+                self.elementTags[i] = list(self.img[self.imgTags[i]])
+                print(i, self.elementTags)
+            indx = self.imageTag.currentIndex()
+            if indx == -1:
+                return
+            try:
+                #filtering  drop-down menu to inlcude only relevant entries.
+                self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
+                self.elementTag.clear()
 
-            elif self.dataTag.currentText() == "data":
-                self.element_tag = "data_names"
+                for i in range(len(self.elementTags[indx])):
+                    self.elementTag.addItem(self.elementTags[indx][i])
 
-            else:
-                self.element_tag = 'channel_names'
-            # element_tag = self.elementTag.currentText()
+                # if self.auto_element_tag in self.dataTags:
+                #     self.elementTag.setCurrentText(self.auto_element_tag)
+                self.element_tag = self.elementTag.currentText()
+            except KeyError:
+                pass
 
+
+            # self.elementTag.setEnabled(True)
 
         if self.version == 1:   #9idbdata
             fpath = self.fileTableModel.getFirstCheckedFilePath()
@@ -505,7 +515,17 @@ class FileTableWidget(QtWidgets.QWidget):
         exchange_bool = list(self.img)
         self.version = 'exchange_1' in exchange_bool
         #Temporary hardcode version to 0 (legacy import mode)
-        self.version = False
+        #self.version = 0
+        if self.auto_load_settings[0]:
+            self.version = 0
+        try:
+            if self.parent.legacy_chbx.isChecked():
+                self.version = 0
+            if not self.parent.legacy_chbx.isChecked():
+                self.version = 1
+        except:
+            #checkboxes not yet defined
+            pass
         return self.version
 
     def onThetaUpdate(self):
@@ -601,7 +621,10 @@ class FileTableWidget(QtWidgets.QWidget):
             # return [], [] , [], []
 
         self.parent.clear_all()
-        data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
+        try:
+            data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
+        except:
+            pass
         if data is None or quants is None or scalers is None:
             return [], [], [], []
         # if self.quant_options.currentText() != 'None':

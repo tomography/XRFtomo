@@ -318,15 +318,32 @@ class XfluoGui(QtGui.QMainWindow):
         self.iter_align_param_chbx = QtWidgets.QCheckBox("Load last iter-align parameters")
         self.recon_method_chbx = QtWidgets.QCheckBox("Load last-used reconstruction method")
 
-        self.legacy_chbx.setChecked(True)
-        self.directory_chbx.setChecked(True)
-        self.element_chbx.setChecked(True)
-        self.image_tag_chbx.setChecked(True)
-        self.data_tag_chbx.setChecked(True)
-        self.debug_chbx.setChecked(True)
-        self.alingmen_chbx.setChecked(True)
-        self.iter_align_param_chbx.setChecked(True)
-        self.recon_method_chbx.setChecked(True)
+        checkbox_states = eval(self.params.load_settings)
+        self.legacy_chbx.setChecked(checkbox_states[0])
+        self.directory_chbx.setChecked(checkbox_states[1])
+        self.element_chbx.setChecked(checkbox_states[2])
+        self.image_tag_chbx.setChecked(checkbox_states[3])
+        self.data_tag_chbx.setChecked(checkbox_states[4])
+        self.debug_chbx.setChecked(checkbox_states[5])
+        self.alingmen_chbx.setChecked(checkbox_states[6])
+        self.iter_align_param_chbx.setChecked(checkbox_states[7])
+        self.recon_method_chbx.setChecked(checkbox_states[8])
+
+        if checkbox_states[5]:
+            self.debugMode()
+
+        self.legacy_chbx.stateChanged.connect(self.loadSettingsChanged)
+        self.legacy_chbx.stateChanged.connect(self.refresh_filetable)
+
+        self.directory_chbx.stateChanged.connect(self.loadSettingsChanged)
+        self.element_chbx.stateChanged.connect(self.loadSettingsChanged)
+        self.image_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
+        self.data_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
+        self.debug_chbx.stateChanged.connect(self.loadSettingsChanged)
+        self.debug_chbx.stateChanged.connect(self.debugMode)
+        self.alingmen_chbx.stateChanged.connect(self.loadSettingsChanged)
+        self.iter_align_param_chbx.stateChanged.connect(self.loadSettingsChanged)
+        self.recon_method_chbx.stateChanged.connect(self.loadSettingsChanged)
 
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(self.legacy_chbx)
@@ -340,6 +357,8 @@ class XfluoGui(QtGui.QMainWindow):
         vbox.addWidget(self.recon_method_chbx)
 
         self.config_options.setLayout(vbox)
+
+
 
         #_______________________Help/keymap_options______________________
         self.keymap_options = QtWidgets.QWidget()
@@ -361,10 +380,26 @@ class XfluoGui(QtGui.QMainWindow):
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(text)
         self.keymap_options.setLayout(vbox)
-
+    def refresh_filetable(self):
+        self.fileTableWidget.onLoadDirectory()
+        return
+    def loadSettingsChanged(self):
+        load_settings = [self.legacy_chbx.isChecked(),
+                    self.directory_chbx.isChecked(),
+                    self.element_chbx.isChecked(),
+                    self.image_tag_chbx.isChecked(),
+                    self.data_tag_chbx.isChecked(),
+                    self.debug_chbx.isChecked(),
+                    self.alingmen_chbx.isChecked(),
+                    self.iter_align_param_chbx.isChecked(),
+                    self.recon_method_chbx.isChecked()]
+        self.params.load_settings = str(load_settings)
+        # return
     def debugMode(self):
         self.fileTableWidget.thetaLabel.setVisible(True)
         self.fileTableWidget.thetaLineEdit.setVisible(True)
+        self.fileTableWidget.elementTag.setVisible(True)
+        self.fileTableWidget.elementTag_label.setVisible(True)
         self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
         self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(True)
         self.imageProcessWidget.ViewControl.btn2.setVisible(True)
@@ -378,6 +413,8 @@ class XfluoGui(QtGui.QMainWindow):
     def exitDebugMode(self):
         self.fileTableWidget.thetaLabel.setVisible(False)
         self.fileTableWidget.thetaLineEdit.setVisible(False)
+        self.fileTableWidget.elementTag.setVisible(False)
+        self.fileTableWidget.elementTag_label.setVisible(False)
         self.imageProcessWidget.ViewControl.Equalize.setVisible(False)
         self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(False)
         self.imageProcessWidget.ViewControl.btn2.setVisible(False)
