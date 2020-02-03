@@ -80,7 +80,13 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         self.cross_h = self.p1.addLine(y=-10)
         self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
         self.p1.scene().sigMouseClicked.connect(self.mouseClick)
+        self.p1.scene().sceneRectChanged.connect(self.windowResize)
         self.p1.setMouseEnabled(x=False, y=False)
+
+
+    def windowResize(self, evt):
+        pass
+
 
     def mouseMoved(self, evt):
         self.moving_x = int(round(self.p1.vb.mapSceneToView(evt).x()))
@@ -121,13 +127,13 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         roi_bottom = y_pos-y_size/2
 
         ## if way far left
-        if roi_left <= 0 :
+        if roi_left <= 0:
             x_pos = x_size/2
         ## if way far right
-        if roi_right>= max_x:
+        if roi_right >= max_x:
             x_pos = max_x - x_size/2
         ## if way far above
-        if roi_top >= 0 :
+        if roi_top >= 0:
             y_pos = -y_size/2
         ## if way far below
         if roi_bottom <= -max_y:
@@ -146,11 +152,19 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
         if cross_pos_y <= -max_y:
             cross_pos_y = -max_y
 
+        self.x_pos = x_pos
+        self.y_pos = y_pos
+        self.cross_pos_x = cross_pos_x
+        self.cross_pos_y = cross_pos_y
+        
         return x_pos, y_pos, cross_pos_x, cross_pos_y
 
-    def wheelEvent(self, ev):
+    def wheelEvent(self, ev): 
+        #empty function, but leave it as it overrides some other unwanted functionality. 
         pass
-
+#TODO: on mac os, when keys are held down, they are sometimes missinterpreted as
+    #multiple key pressed, which does not fall under one of the logic below, nor
+    #does the
     def keyPressEvent(self, ev):
         self.firstrelease = True
         astr = ev.key()
@@ -161,10 +175,12 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
             self.processMultipleKeys(self.keylist)
 
         self.firstrelease = False
+
         try:    #complains about an index error for some reason.
             del self.keylist[-1]
         except:
             pass
+        return
 
     def processMultipleKeys(self, keyspressed):
         if len(keyspressed) ==1:
@@ -186,17 +202,27 @@ class HistogramWidget(pyqtgraph.GraphicsLayoutWidget):
                 self.keyPressSig.emit('A')
             if keyspressed[0] == QtCore.Qt.Key_D:
                 self.keyPressSig.emit('D')
+
         if len(keyspressed) == 2:
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Left:
                 self.keyPressSig.emit('shiftLeft')
+                return
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Right:
                 self.keyPressSig.emit('shiftRight')
+                return
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Up:
                 self.keyPressSig.emit('shiftUp')
+                return
             if keyspressed[0] == QtCore.Qt.Key_Shift and keyspressed[1] == QtCore.Qt.Key_Down:
                 self.keyPressSig.emit('shiftDown')
+                return
             if keyspressed[0] == QtCore.Qt.Key_Control and keyspressed[1] == QtCore.Qt.Key_C:
                 self.keyPressSig.emit('Copy')
+                return
             if keyspressed[0] == QtCore.Qt.Key_Control and keyspressed[1] == QtCore.Qt.Key_V:
                 self.keyPressSig.emit('Paste')
+                return
+        if len(keyspressed) >=3:
+            self.keylist = []
+            return
 

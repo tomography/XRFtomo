@@ -56,22 +56,30 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
 
     def initUI(self):
         self.file_name_title = QtWidgets.QLabel("_")
-        lbl1 = QtWidgets.QLabel("x pos")
+        lbl1 = QtWidgets.QLabel("x po:")
         self.lbl2 = QtWidgets.QLabel("")
-        lbl3 = QtWidgets.QLabel("y pos")
+        lbl3 = QtWidgets.QLabel("y pos:")
         self.lbl4 = QtWidgets.QLabel("")
         self.lbl5 = QtWidgets.QLabel("Angle")
-        
+        lbl6 = QtWidgets.QLabel("value:")
+        self.lbl7 = QtWidgets.QLabel("")
+
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(lbl1)
         hb0.addWidget(self.lbl2)
         hb0.addWidget(lbl3)
         hb0.addWidget(self.lbl4)
+        hb0.addWidget(self.lbl5)
+        hb0.addWidget(lbl6)
+        hb0.addWidget(self.lbl7)
+
 
         # btn1.clicked.connect(self.updatePanel)
 
         self.view = xfluo.HistogramWidget(self)
         self.view.mouseMoveSig.connect(self.updatePanel)
+        #get pixel value from Histogram widget's projview 
+
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
@@ -103,3 +111,9 @@ class ImageAndHistogramWidget(QtWidgets.QWidget):
     def updatePanel(self,x,y):
         self.lbl2.setText(str(x))
         self.lbl4.setText(str(y))
+        try:
+            pixel_val = round(self.view.projView.image[abs(y)-1,x],4)
+            self.lbl7.setText(str(pixel_val))
+        except:
+            self.lbl7.setText("")
+

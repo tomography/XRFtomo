@@ -55,8 +55,9 @@ import numpy as np
 class SinogramWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
-    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
+    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, name="alignmentChangedSig")
     sinoChangedSig = pyqtSignal(np.ndarray, name="sinoChangedSig")
+    restoreSig = pyqtSignal(name="resoreSig")
 
     def __init__(self):
         super(SinogramWidget, self).__init__()
@@ -79,17 +80,25 @@ class SinogramWidget(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
+        self.data = None
+        self.sinogramData = None
 
         self.ViewControl.btn1.clicked.connect(self.centerOfMass_params)
         # self.ViewControl.btn1.clicked.connect(self.centerOfMass2_params)
         self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
-        self.ViewControl.btn4.clicked.connect(self.crossCorrelate2_params)
-        self.ViewControl.btn5.clicked.connect(self.align_y_top_params)
-        self.ViewControl.btn6.clicked.connect(self.iter_align_params)
+        self.ViewControl.btn6.clicked.connect(self.ViewControl.iter_parameters.show)
+        self.ViewControl.run_iter_align.clicked.connect(self.iter_align_params)
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
-        self.ViewControl.btn8.clicked.connect(self.align_y_bottom_params)
-        self.ViewControl.btn9.clicked.connect(self.adjust_sino_params)
+        self.ViewControl.btn5.clicked.connect(self.ViewControl.move2edge.show)
+        self.ViewControl.run_move2edge.clicked.connect(self.move2edge_params)
+        self.ViewControl.btn9.clicked.connect(self.ViewControl.sino_manip.show)
+        self.ViewControl.run_sino_adjust.clicked.connect(self.adjust_sino_params)
+        self.ViewControl.move2center.clicked.connect(self.move2center_params)
+        self.ViewControl.find_center_1.clicked.connect(self.center_tomopy_params)
+        self.ViewControl.find_center_2.clicked.connect(self.center_Everett_params)
+        self.ViewControl.center.clicked.connect(self.ViewControl.center_parameters.show)
+        self.ViewControl.center.clicked.connect(self.updateCenterFindParameters)
         self.sld.valueChanged.connect(self.imageSliderChanged)
         self.sinoView.keyPressSig.connect(self.shiftEvent_params)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
@@ -158,7 +167,7 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         self.sinogram(element)
 
-    def yChanged(self, ySize):
+    def ySizeChanged(self, ySize):
         self.sld.setRange(1, ySize)
         self.sld.setValue(1)
         self.lcd.display(1)
@@ -167,6 +176,64 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinogram(element)
         self.ViewControl.combo1.setCurrentIndex(element)
 
+    def center_tomopy_params(self):        
+        valid = self.ViewControl.validate_move2center_parameters()
+        if not valid:
+            return
+        element, row, data, thetas = self.get_params()
+
+        data = self.data
+        thetas = self.thetas
+        tomo = data[element]
+        slice_index = int(self.ViewControl.slice_textbox.text())
+        init_center = int(self.ViewControl.init_textbox.text())
+        tol = float(self.ViewControl.tol_textbox.text())
+        mask_bool = self.ViewControl.mask_checkbox.isChecked()
+        ratio = float(self.ViewControl.ratio_textbox.text())
+
+        center = self.actions.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
+        self.ViewControl.center_1.setText("center: {}".format(center))
+        self.ViewControl.center_2.setText("center: {}".format(center))
+
+    def center_Everett_params(self):
+        element, row, data, thetas = self.get_params()
+        data = self.data
+        thetasum = np.sum(self.data[element], axis=1)
+        
+        valid = self.ViewControl.validate_move2center_parameters()
+        if not valid:
+            return
+
+        limit = self.ViewControl.limit_textbox.text()
+        center_offset = self.actions.rot_center3(thetasum, ave_mode = 'Median', limit = None, return_all = False)
+        center = self.data.shape[3]//2 - center_offset
+        center_int = np.round(center_offset)
+        self.ViewControl.center_1.setText("center: {}".format(center))
+        self.ViewControl.center_2.setText("center: {}".format(center))
+
+    def move2center_params(self):
+        data = self.data
+        rot_center = int(np.round(float(self.ViewControl.center_1.text().split()[1])))
+        x_shifts = self.data.shape[3]//2 - rot_center
+
+        if x_shifts<0:
+            data = self.actions.shiftDataX(self.data, x_shifts)
+            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
+
+        if x_shifts>0:
+            data = self.actions.shiftDataX(data, x_shifts)
+            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
+
+    def updateCenterFindParameters(self):
+        if self.ViewControl.init_textbox.text() == "-1":
+            self.ViewControl.init_textbox.setText(str(self.data.shape[3]//2))
+        if self.ViewControl.slice_textbox.text() == "-1":
+            self.ViewControl.slice_textbox.setText(str(self.data.shape[2]//2))
+        if self.ViewControl.limit_textbox.text() == "-1":
+            self.ViewControl.limit_textbox.setText("1")
+            
     def sinogram(self, element):
         '''
         load variables and image for sinogram window
@@ -184,13 +251,18 @@ class SinogramWidget(QtWidgets.QWidget):
         if element == -1: # escape if element == -1.
             return
 
-        sinodata = self.data[element, :, :, :]
-
+        try: #TODO: fails when loading new dataset, be sure to clear absolutely everything or raise exception
+            sinodata = self.data[element, :, :, :]
+        except TypeError:
+            return
         self.sinogramData = zeros([sinodata.shape[0] * 10, sinodata.shape[2]], dtype=float32)
         num_projections = self.data.shape[1]
-        for i in arange(num_projections):
-            self.sinogramData[i * 10:(i + 1) * 10, :] = sinodata[i, self.sld.value()-1, :]
 
+        try: #TODO: fails when cropping
+            for i in arange(num_projections):
+                self.sinogramData[i * 10:(i + 1) * 10, :] = sinodata[i, self.sld.value()-1, :]
+        except IndexError:
+            return
         self.sinogramData[isinf(self.sinogramData)] = 0.001
         self.sinoView.projView.setImage(self.sinogramData, border='w')
         if len(self.thetas) > 0:
@@ -204,14 +276,14 @@ class SinogramWidget(QtWidgets.QWidget):
         thetas = self.thetas
         self.data, self.x_shifts = self.actions.runCenterOfMass(element, data, thetas)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
         
     # def centerOfMass2_params(self):
     #     element, row, data, thetas = self.get_params()
     #     self.data, self.x_shifts, self.centers = self.actions.runCenterOfMass2(element, row, data, thetas)
     #     self.dataChangedSig.emit(self.data)
-    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
     #     return
 
     def shiftEvent_params(self, shift_dir, col_number):
@@ -222,22 +294,15 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data, self.sinogramData = self.actions.shift(sinoData, data, shift_dir, col_number)
         self.x_shifts[col_number] += shift_dir
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
     def crossCorrelate_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate(element, data)
+        data, x_shifts, y_shifts = self.actions.crossCorrelate(element, data)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-        return
-
-    def crossCorrelate2_params(self):
-        data = self.data
-        self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate2(data)
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + x_shifts)
         return
 
     def phaseCorrelate_params(self):
@@ -245,36 +310,45 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         self.data, self.x_shifts, self.y_shifts = self.actions.phaseCorrelate(element, data)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
-    def align_y_top_params(self):
+    def move2edge_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        # thetas= self.thetas
-        self.y_shifts, self.data = self.actions.align_y_top(element, data) 
+
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+
+        if self.ViewControl.bottom_checkbox.isChecked():
+            loc=0
+        else: 
+            loc=1
+
+        threshold = int(self.ViewControl.threshold_textbox.text())
+
+        self.y_shifts, self.data = self.actions.align2edge(element, data, loc, threshold) 
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
-    def align_y_bottom_params(self):
-        data = self.data
-        element = self.ViewControl.combo1.currentIndex()
-        # thetas= self.thetas
-        self.y_shifts, self.data = self.actions.align_y_bottom(element, data) 
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-        return
         
     def adjust_sino_params(self):
         sinogramData = self.sinogramData
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        delta = int(self.ViewControl.slopeText.text())
-        x_shifts, self. data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, element, delta)
+
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+        shift = int(self.ViewControl.shift_textbox.text())
+        slope = int(self.ViewControl.slope_adjust_textbox.text())
+            
+        x_shifts, self. data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, shift, slope)
         self.x_shifts += x_shifts
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
     # def matchTermplate_params(self):
@@ -285,21 +359,62 @@ class SinogramWidget(QtWidgets.QWidget):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
         thetas = self.thetas
-        # sx =  self.actions.iterative_align(element, data, thetas, 2)
-        self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, 3)
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+            
+        if self.ViewControl.center_textbox.text() == "":
+            center = None
+        else:
+            center = int(self.ViewControl.center_textbox.text())
+            if center >0 and center < data.shape[3]:
+                pass
+            else:
+                self.ViewControl.center_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                return
+        iters = int(self.ViewControl.iter_textbox.text())
+        blur_bool = self.ViewControl.blur_checkbox.isChecked()
+        save_bool = self.ViewControl.save_checkbox.isChecked()
+        debug_bool = self.ViewControl.debug_checkbox.isChecked()
+        padX = int(self.ViewControl.paddingX_textbox.text())
+        padY = int(self.ViewControl.paddingY_textbox.text())
+        pad = (padX,padY)
+        algorithm = self.ViewControl.algorithm.currentText()
+        upsample_factor = int(self.ViewControl.upsample_factor_textbox.text())
+        
+        if self.ViewControl.blur_checkbox.isChecked():
+            rin = float(self.ViewControl.inner_radius_textbox.text())
+            rout = float(self.ViewControl.outer_radius_textbox.text())
+        else:
+            rin = None
+            rout = None
+
+        self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, pad, blur_bool, rin, rout, center, algorithm, upsample_factor, save_bool, debug_bool, iters)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
+        #save parameters 
+        #run iterative alignment
+        ##maybe put this entire function within 'iter_align_params'
+
+        pass
+
+
     def alignFromText2_params(self):
+        fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
+
+        if fileName[0] == "":
+            return
+            
+        self.restoreSig.emit()
         data = self.data
         try:
-            self.data, self.x_shifts, self.y_shifts = self.actions.alignFromText2(data)
+            data, x_shifts, y_shifts = self.actions.alignFromText2(fileName, data)
         except TypeError:
             return
-        self.dataChangedSig.emit(self.data)
-        # self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
 
     # def alignfromHotspotxt_params(self):
