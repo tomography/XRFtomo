@@ -318,29 +318,27 @@ class XfluoGui(QtGui.QMainWindow):
         self.iter_align_param_chbx = QtWidgets.QCheckBox("Load last iter-align parameters")
         self.recon_method_chbx = QtWidgets.QCheckBox("Load last-used reconstruction method")
 
-        checkbox_states = eval(self.params.load_settings)
-        self.legacy_chbx.setChecked(checkbox_states[0])
-        self.directory_chbx.setChecked(checkbox_states[1])
-        self.element_chbx.setChecked(checkbox_states[2])
-        self.image_tag_chbx.setChecked(checkbox_states[3])
-        self.data_tag_chbx.setChecked(checkbox_states[4])
-        self.debug_chbx.setChecked(checkbox_states[5])
-        self.alingmen_chbx.setChecked(checkbox_states[6])
-        self.iter_align_param_chbx.setChecked(checkbox_states[7])
-        self.recon_method_chbx.setChecked(checkbox_states[8])
+        self.checkbox_states = eval(self.params.load_settings)
+        self.legacy_chbx.setChecked(self.checkbox_states[0])
+        self.directory_chbx.setChecked(self.checkbox_states[1])
+        self.element_chbx.setChecked(self.checkbox_states[2])
+        self.image_tag_chbx.setChecked(self.checkbox_states[3])
+        self.data_tag_chbx.setChecked(self.checkbox_states[4])
+        self.debug_chbx.setChecked(self.checkbox_states[5])
+        self.alingmen_chbx.setChecked(self.checkbox_states[6])
+        self.iter_align_param_chbx.setChecked(self.checkbox_states[7])
+        self.recon_method_chbx.setChecked(self.checkbox_states[8])
 
-        if checkbox_states[5]:
-            self.debugMode()
+        self.toggleDebugMode()
 
         self.legacy_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.legacy_chbx.stateChanged.connect(self.refresh_filetable)
-
         self.directory_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.element_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.image_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.data_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.debug_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.debug_chbx.stateChanged.connect(self.debugMode)
+        self.debug_chbx.stateChanged.connect(self.toggleDebugMode)
         self.alingmen_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.iter_align_param_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.recon_method_chbx.stateChanged.connect(self.loadSettingsChanged)
@@ -383,6 +381,13 @@ class XfluoGui(QtGui.QMainWindow):
     def refresh_filetable(self):
         self.fileTableWidget.onLoadDirectory()
         return
+
+    def toggleDebugMode(self):
+        if self.debug_chbx.isChecked():
+            self.debugMode()
+        if not self.debug_chbx.isChecked():
+            self.exitDebugMode()
+
     def loadSettingsChanged(self):
         load_settings = [self.legacy_chbx.isChecked(),
                     self.directory_chbx.isChecked(),

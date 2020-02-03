@@ -431,7 +431,6 @@ class FileTableWidget(QtWidgets.QWidget):
             num_image_tags = len(self.imgTags)
             for i in range(num_image_tags):      #get element tags
                 self.elementTags[i] = list(self.img[self.imgTags[i]])
-                print(i, self.elementTags)
             indx = self.imageTag.currentIndex()
             if indx == -1:
                 return
