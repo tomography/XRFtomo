@@ -573,8 +573,8 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.elementTableModel.setChecked(rows, (check_action == action))
 
     def reset_widgets(self):
-        self.parent.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
-        self.parent.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
+        self.parent.imageProcessWidget.sld.setValue(0)
+        self.parent.reconstructionWidget.sld.setValue(0)
         self.parent.reconstructionWidget.recon = []
         self.parent.sinogramWidget.sld.setValue(0)
         

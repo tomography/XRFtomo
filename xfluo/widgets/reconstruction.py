@@ -43,11 +43,12 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 import numpy as np
 from pylab import *
 import xfluo
+import pyqtgraph
 import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
 # import tomopy
@@ -63,8 +64,27 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
     def initUI(self):
         self.ViewControl = xfluo.ReconstructionControlsWidget()
-        self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
+        self.ReconView = xfluo.ReconView(self)
         self.actions = xfluo.ReconstructionActions()
+
+        self.file_name_title = QtWidgets.QLabel("_")
+        lbl1 = QtWidgets.QLabel("x pos:")
+        self.lbl2 = QtWidgets.QLabel("")
+        lbl3 = QtWidgets.QLabel("y pos:")
+        self.lbl4 = QtWidgets.QLabel("")
+        lbl5 = QtWidgets.QLabel("Slice")
+        lbl6 = QtWidgets.QLabel("value:")
+        self.lbl7 = QtWidgets.QLabel("")
+
+        self.ReconView.mouseMoveSig.connect(self.updatePanel)
+        #get pixel value from Histogram widget's projview 
+
+        self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.lcd = QtWidgets.QLCDNumber(self)
+        self.hist = pyqtgraph.HistogramLUTWidget()
+        self.hist.setMinimumSize(120,120)
+        self.hist.setMaximumWidth(120)
+        self.hist.setImageItem(self.ReconView.projView)
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.btn.clicked.connect(self.reconstruct_params)
@@ -73,18 +93,48 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.divBtn.clicked.connect(self.call_reconDivide)
         self.ViewControl.end_indx.editingFinished.connect(self.update_y_range)
         self.ViewControl.start_indx.editingFinished.connect(self.update_y_range)
-        self.imgAndHistoWidget.sld.valueChanged.connect(self.update_recon_image)
-        self.imgAndHistoWidget.lbl5.setText(str('Slice'))
+        self.sld.valueChanged.connect(self.update_recon_image)
 
-        mainHBox = QtWidgets.QHBoxLayout()
-        mainHBox.addWidget(self.ViewControl)
-        mainHBox.addWidget(self.imgAndHistoWidget, 10)
-        self.setLayout(mainHBox)
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
         self.recon = None
         self.data = None
+
+        hb0 = QtWidgets.QHBoxLayout()
+        hb0.addWidget(lbl1)
+        hb0.addWidget(self.lbl2)
+        hb0.addWidget(lbl3)
+        hb0.addWidget(self.lbl4)
+        hb0.addWidget(lbl6)
+        hb0.addWidget(self.lbl7)
+
+        hb1 = QtWidgets.QHBoxLayout()
+        hb1.addWidget(lbl5)
+        hb1.addWidget(self.lcd)
+        hb1.addWidget(self.sld)
+
+        vb1 = QtWidgets.QVBoxLayout()
+        vb1.addWidget(self.file_name_title)
+        vb1.addLayout(hb0)
+        vb1.addWidget(self.ReconView)
+        vb1.addLayout(hb1)
+
+        hb2 = QtWidgets.QHBoxLayout()
+        hb2.addWidget(self.ViewControl)
+        hb2.addLayout(vb1)
+        hb2.addWidget(self.hist, 10)
+
+        self.setLayout(hb2)
+
+    def updatePanel(self,x,y):
+        self.lbl2.setText(str(x))
+        self.lbl4.setText(str(y))
+        try:
+            pixel_val = round(self.view.projView.image[abs(y)-1,x],4)
+            self.lbl7.setText(str(pixel_val))
+        except:
+            self.lbl7.setText("")
 
     def showReconstruct(self):
         '''
@@ -110,8 +160,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.divBtn.setEnabled(False)
         self.ViewControl.end_indx.setText((str(self.data.shape[2])))
 
-        self.imgAndHistoWidget.sld.setRange(0, self.y_range - 1)
-        self.imgAndHistoWidget.lcd.display(0)
+        self.sld.setRange(0, self.y_range - 1)
+        self.lcd.display(0)
 
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -181,8 +231,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
         self.ViewControl.end_indx.setText(str(ySize))
-        self.imgAndHistoWidget.sld.setValue(0)
-        self.imgAndHistoWidget.sld.setMaximum(ySize)
+        self.sld.setValue(0)
+        self.sld.setMaximum(ySize)
         #check for xSize too.
         pass
 
@@ -200,16 +250,16 @@ class ReconstructionWidget(QtWidgets.QWidget):
         if start_indx < 0:
             self.ViewControl.start_indx.setText(str(0))
     
-        self.imgAndHistoWidget.sld.setRange(0, end_indx-start_indx - 1)
-        self.imgAndHistoWidget.sld.setValue(0)
-        self.imgAndHistoWidget.lcd.display(0)
+        self.sld.setRange(0, end_indx-start_indx - 1)
+        self.sld.setValue(0)
+        self.lcd.display(0)
 
     def update_recon_image(self):
-        index = self.imgAndHistoWidget.sld.value()
-        self.imgAndHistoWidget.lcd.display(index)
+        index = self.sld.value()
+        self.lcd.display(index)
         try:
             self.ViewControl.maxText.setText(str(self.recon[index, :, :].max()))
             self.ViewControl.minText.setText(str(self.recon[index, :, :].min()))
-            self.imgAndHistoWidget.view.projView.setImage(self.recon[index, :, :])
+            self.ReconView.projView.setImage(self.recon[index, :, :])
         except:
             print("run reconstruction first")

@@ -43,7 +43,7 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 import xfluo
 from pylab import *
@@ -58,7 +58,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     sliderChangedSig = pyqtSignal(int, name='sliderChangedSig')
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
-    thetaChangedSig = pyqtSignal(np.ndarray, name='thetaChangedSig')
+    thetaChangedSig = pyqtSignal(int, np.ndarray, name='thetaChangedSig')
     fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
     alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, name="alignmentChangedSig")
     ySizeChangedSig = pyqtSignal(int, name='ySizeChangedSig')
@@ -72,7 +72,33 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def initUI(self):
         self.ViewControl = xfluo.ImageProcessControlsWidget()
-        self.imgAndHistoWidget = xfluo.ImageAndHistogramWidget(self)
+        # self.imageView = xfluo.ImageView(self)
+        self.imageView = xfluo.ImageView()
+        self.actions = xfluo.ImageProcessActions()
+
+        self.file_name_title = QtWidgets.QLabel("_")
+        lbl1 = QtWidgets.QLabel("x pos:")
+        self.lbl2 = QtWidgets.QLabel("")
+        lbl3 = QtWidgets.QLabel("y pos:")
+        self.lbl4 = QtWidgets.QLabel("")
+        self.lbl5 = QtWidgets.QLabel("Angle")
+        lbl6 = QtWidgets.QLabel("value:")
+        self.lbl7 = QtWidgets.QLabel("")
+
+        self.imageView.mouseMoveSig.connect(self.updatePanel)
+        #get pixel value from Histogram widget's projview 
+
+        self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.lcd = QtWidgets.QLCDNumber(self)
+        self.hist = pyqtgraph.HistogramLUTWidget()
+        self.hist.setMinimumSize(120,120)
+        self.hist.setMaximumWidth(120)
+        self.hist.setImageItem(self.imageView.projView)
+
+
+
+
+
         # self.imgAndHistoWidget.setSizePolicy(QtWidgets.QSizePolicy.setHeightForWidth(True))
 
         # sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -84,10 +110,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         # self.imgAndHistoWidget.resize(1000, 700)
 
-        self.actions = xfluo.ImageProcessActions()
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
-        self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
+        # self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.x_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.xSizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.y_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
@@ -121,15 +146,11 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.btn2.setEnabled(False)
         self.ViewControl.btn1.setEnabled(False)
 
-        self.imgAndHistoWidget.view.keyPressSig.connect(self.keyProcess)
+        self.imageView.keyPressSig.connect(self.keyProcess)
         # self.actions.dataSig.connect(self.send_data)
         # self.actions.thetaSig.connect(self.send_thetas)
-        self.imgAndHistoWidget.sld.valueChanged.connect(self.imageSliderChanged)
+        self.sld.valueChanged.connect(self.imageSliderChanged)
 
-        mainHBox = QtWidgets.QHBoxLayout()
-        mainHBox.addWidget(self.ViewControl)
-        mainHBox.addWidget(self.imgAndHistoWidget, 10)
-        self.setLayout(mainHBox)
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
@@ -137,7 +158,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.meanNoise = 0
         self.stdNoise = 0
 
-        palette = self.imgAndHistoWidget.lcd.palette()
+        palette = self.lcd.palette()
         # foreground color
         palette.setColor(palette.WindowText, QtGui.QColor(85, 85, 255))
         # background color
@@ -147,20 +168,54 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # "dark" border
         palette.setColor(palette.Dark, QtGui.QColor(0, 0, 0))
         # set the palette
-        self.imgAndHistoWidget.lcd.setPalette(palette)
-        self.imgAndHistoWidget.view.projView.setScaledMode()
+        self.lcd.setPalette(palette)
+        self.imageView.projView.setScaledMode()
+        
+        hb0 = QtWidgets.QHBoxLayout()
+        hb0.addWidget(lbl1)
+        hb0.addWidget(self.lbl2)
+        hb0.addWidget(lbl3)
+        hb0.addWidget(self.lbl4)
+        hb0.addWidget(lbl6)
+        hb0.addWidget(self.lbl7)
+
+        hb1 = QtWidgets.QHBoxLayout()
+        hb1.addWidget(self.lbl5)
+        hb1.addWidget(self.lcd)
+        hb1.addWidget(self.sld)
+
+        vb1 = QtWidgets.QVBoxLayout()
+        vb1.addWidget(self.file_name_title)
+        vb1.addLayout(hb0)
+        vb1.addWidget(self.imageView)
+        vb1.addLayout(hb1)
+
+        hb2 = QtWidgets.QHBoxLayout()
+        hb2.addWidget(self.ViewControl)
+        hb2.addLayout(vb1)
+        hb2.addWidget(self.hist, 10)
+
+        self.setLayout(hb2)
+    def updatePanel(self,x,y):
+        self.lbl2.setText(str(x))
+        self.lbl4.setText(str(y))
+        try:
+            pixel_val = round(self.view.projView.image[abs(y)-1,x],4)
+            self.lbl7.setText(str(pixel_val))
+        except:
+            self.lbl7.setText("")
 
     def lockAspect(self):
         if self.ViewControl.aspectChkbx.isChecked():
-            self.imgAndHistoWidget.view.setRange(lockAspect=True)
-            # self.imgAndHistoWidget.view.setAspectLocked(True)
+            self.imageView.setRange(lockAspect=True)
+            # self.imageView.setAspectLocked(True)
         else:
-            # self.imgAndHistoWidget.view.setAspectLocked(False)
-            self.imgAndHistoWidget.view.setRange(lockAspect=False)
+            # self.imageView.setAspectLocked(False)
+            self.imageView.setRange(lockAspect=False)
 
             #destroy and redraw
             #or disable locked aspect and set size policy to expanding
-            # self.imgAndHistoWidget.view.redraw(True)
+            # self.imageView.redraw(True)
         return
 
     def showImgProcess(self):
@@ -168,7 +223,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.actions.y_shifts = self.y_shifts
         self.actions.centers = self.centers
         self.posMat = np.zeros((5,int(self.data.shape[1]),2))
-        self.imgAndHistoWidget.view.hotSpotNumb = 0
+        self.imageView.hotSpotNumb = 0
         self.ViewControl.x_sld.setRange(1, self.data.shape[3])
         self.ViewControl.y_sld.setRange(1, self.data.shape[2])
 
@@ -181,12 +236,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.ViewControl.combo2.addItem(str(k+1))
 
         self.elementChanged()
-        self.imgAndHistoWidget.sld.setRange(0, num_projections - 1)
+        self.sld.setRange(0, num_projections - 1)
         self.ViewControl.combo2.setVisible(False)
-        self.imgAndHistoWidget.file_name_title.setText(str(self.fnames[0]))
+        self.file_name_title.setText(str(self.fnames[0]))
 
     def imageSliderChanged(self):
-        index = self.imgAndHistoWidget.sld.value()
+        index = self.sld.value()
         self.updateFileDisplay(self.fnames, index)
         # self.filename_event
         self.updateSliderSlot(index)
@@ -194,35 +249,33 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
-        projection = self.imgAndHistoWidget.sld.value()
+        projection = self.sld.value()
         self.updateElementSlot(element, projection)
         self.elementChangedSig.emit(element, projection)
 
     def filename_event(self):
-        index = self.imgAndHistoWidget.sld.value()
-        self.imgAndHistoWidget.file_name_title.setText(self.fnames[index])
+        index = self.sld.value()
+        self.file_name_title.setText(self.fnames[index])
 
     def updateSliderSlot(self, index):
         if len(self.thetas) == 0:
             return
         angle = round(self.thetas[index])
         element = self.ViewControl.combo1.currentIndex()
-        self.imgAndHistoWidget.lcd.display(angle)
-        self.imgAndHistoWidget.sld.setValue(index)
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
+        self.lcd.display(angle)
+        self.sld.setValue(index)
+        self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
 
     def updateElementSlot(self, element, projection = None):
         if projection == None:
-           projection =  self.imgAndHistoWidget.sld.value()
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, projection, :, :], border='w')
+           projection =  self.sld.value()
+        self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
         self.ViewControl.combo1.setCurrentIndex(element)
         self.ViewControl.combo2.setCurrentIndex(projection)
 
     def updateFileDisplay(self, fnames, index):
         self.fnames = fnames
-        self.imgAndHistoWidget.file_name_title.setText(str(self.fnames[index]))
-
-
+        self.file_name_title.setText(str(self.fnames[index]))
 
     def imgProcessBoxSizeChange(self):
         xSize = self.ViewControl.xSize
@@ -234,46 +287,45 @@ class ImageProcessWidget(QtWidgets.QWidget):
             ySize = self.data.shape[2]
             self.ViewControl.ySize = ySize
 
-        self.imgAndHistoWidget.view.xSize = xSize
-        self.imgAndHistoWidget.view.ySize = ySize
-        self.imgAndHistoWidget.view.ROI.setSize([xSize, ySize])
-        x_pos = int(round(self.imgAndHistoWidget.view.x_pos))
-        y_pos = int(round(self.imgAndHistoWidget.view.y_pos))
+        self.imageView.xSize = xSize
+        self.imageView.ySize = ySize
+        self.imageView.ROI.setSize([xSize, ySize])
+        x_pos = int(round(self.imageView.x_pos))
+        y_pos = int(round(self.imageView.y_pos))
         frame_height = self.data.shape[2]
         frame_width = self.data.shape[3]
-        x_pos, y_pos, cross_pos_x, cross_pos_y  = self.imgAndHistoWidget.view.update_roi(x_pos, y_pos, xSize, ySize, frame_height, frame_width)
+        x_pos, y_pos, cross_pos_x, cross_pos_y  = self.imageView.update_roi(x_pos, y_pos, xSize, ySize, frame_height, frame_width)
 
-        self.imgAndHistoWidget.view.ROI.setPos([x_pos-xSize/2, y_pos-ySize/2])
+        self.imageView.ROI.setPos([x_pos-xSize/2, y_pos-ySize/2])
 
     def imageChanged(self):
-        index = self.imgAndHistoWidget.sld.value()
+        index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
-        self.imgAndHistoWidget.view.projView.setImage(self.data[element, index, :, :], border='w')
+        self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
 
     def ySizeChanged(self, ySize):
         self.ViewControl.y_sld.setRange(2, ySize)
 
     def updateSldRange(self, index, thetas):
         element = self.ViewControl.combo1.currentIndex()
-        self.imgAndHistoWidget.sld.setRange(0, len(thetas) -1)
-        self.imgAndHistoWidget.lcd.display(thetas[index])
-        self.imgAndHistoWidget.sld.setValue(index)
+        self.sld.setRange(0, len(thetas) -1)
+        self.lcd.display(thetas[index])
+        self.sld.setValue(index)
         self.imageChanged()
         self.posMat = np.zeros((5,int(self.data.shape[1]), 2))
-        # self.imgAndHistoWidget.view.projView.setImage(data[element, projection])
 
     def keyProcess(self, command):
-        index = self.imgAndHistoWidget.sld.value()
+        index = self.sld.value()
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
 
         hs_group = self.ViewControl.combo3.currentIndex()
-        hs_number = self.imgAndHistoWidget.sld.value()
+        hs_number = self.sld.value()
         if command == 'A': #previous projection
-            self.imgAndHistoWidget.sld.setValue(self.imgAndHistoWidget.sld.value() - 1)
+            self.sld.setValue(self.sld.value() - 1)
             self.imageSliderChanged()
         if command == 'D':  #next projection
-            self.imgAndHistoWidget.sld.setValue(self.imgAndHistoWidget.sld.value() + 1)
+            self.sld.setValue(self.sld.value() + 1)
             self.imageSliderChanged()
         if command == 'left':
             self.x_shifts[index] -=1
@@ -342,14 +394,14 @@ class ImageProcessWidget(QtWidgets.QWidget):
                 self.sliderChangedSig.emit(hs_number)
 
     def hotSpotSetChanged(self):
-        self.imgAndHistoWidget.view.hotSpotSetNumb = self.ViewControl.combo3.currentIndex()
+        self.imageView.hotSpotSetNumb = self.ViewControl.combo3.currentIndex()
         # self.actions.saveHotSpotPos()
 
     def hotspot2line_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         hs_group = self.ViewControl.combo3.currentIndex()
-        hs_number = self.imgAndHistoWidget.sld.value()
+        hs_number = self.sld.value()
         posMat = self.posMat
         data, x_shifts, y_shifts = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
@@ -360,7 +412,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         hs_group = self.ViewControl.combo3.currentIndex()
-        hs_number = self.imgAndHistoWidget.sld.value()
+        hs_number = self.sld.value()
         posMat = self.posMat
         thetas = self.thetas
         data, x_shifts, y_shifts = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data, thetas)
@@ -372,7 +424,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         hs_group = self.ViewControl.combo3.currentIndex()
-        hs_number = self.imgAndHistoWidget.sld.value()
+        hs_number = self.sld.value()
         posMat = self.posMat
         data, y_shifts = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts + y_shifts)
@@ -388,9 +440,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def get_params(self):
         element = self.ViewControl.combo1.currentIndex()
-        projection = self.imgAndHistoWidget.sld.value()
-        x_pos = self.imgAndHistoWidget.view.x_pos
-        y_pos = self.imgAndHistoWidget.view.y_pos
+        projection = self.sld.value()
+        x_pos = self.imageView.x_pos
+        y_pos = self.imageView.y_pos
         x_size = self.ViewControl.xSize
         y_size = self.ViewControl.ySize
         img = self.data[element, projection,
@@ -486,7 +538,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.updateSldRange(index, self.thetas)
         self.imageSliderChanged()
         # self.sldRangeChanged.emit(index, self.data, self.thetas)
-        self.thetaChangedSig.emit(self.thetas)
+        self.thetaChangedSig.emit(index, self.thetas)
         self.dataChangedSig.emit(data)
 
     def rm_hotspot_params(self):
@@ -536,39 +588,13 @@ class ImageProcessWidget(QtWidgets.QWidget):
     #     return
     #
 
-    # def send_data(self, data):
-        '''
-        This sends a signal one level up indicating that the data array has changed
-        '''
-
-        # self.dataChangedSig.emit(data)
-
-    # def send_thetas(self, thetas):
-    #     '''
-    #     This sends a signal one level up indicating that the theta array has changed
-    #     '''
-
-    #     self.thetaChangedSig.emit(thetas)
-
-    # def send_fnames(self, fnames):
-    #     '''
-    #     This sends a signal one level up indicating that the fnames array has changed
-    #     '''
-    #     self.fnmaesChangedSig.emit(fnames)
-
-    # def send_alignment(self, x_shifts, y_shifts):
-    #     '''
-    #     This sends a signal one level up indicating that the alignment information has changed.
-    #     '''
-    #     self.alignemntChangedSig.emit(x_shifts, y_shifts)
-
     def rot_axis_params(self):
         data = self.data
         num_projections = data.shape[1]
         thetas = self.thetas
-        rAxis_pos = self.imgAndHistoWidget.view.cross_pos_x
+        rAxis_pos = self.imageView.cross_pos_x
         center = data.shape[3]//2
-        theta_pos = self.imgAndHistoWidget.lcd.value()
+        theta_pos = self.lcd.value()
         shift_arr = self.actions.move_rot_axis(thetas, center, rAxis_pos, theta_pos)
         shift_arr = np.round(shift_arr)
 

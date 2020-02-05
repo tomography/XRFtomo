@@ -203,6 +203,7 @@ class XfluoGui(QtGui.QMainWindow):
 
         # theta update
         self.imageProcessWidget.thetaChangedSig.connect(self.update_theta)
+        self.imageProcessWidget.thetaChangedSig.connect(self.sinogramWidget.updateImgSldRange)
 
         #data dimensions changed
         self.imageProcessWidget.ySizeChangedSig.connect(self.imageProcessWidget.ySizeChanged)
@@ -729,9 +730,10 @@ class XfluoGui(QtGui.QMainWindow):
 
         self.init_widgets()
         self.imageProcessWidget.showImgProcess()
-        self.imageProcessWidget.imgAndHistoWidget.view.setAspectLocked(True)
+        self.imageProcessWidget.imageView.setAspectLocked(True)
 
         self.sinogramWidget.showSinogram()
+        self.sinogramWidget.showImgProcess()
         self.reconstructionWidget.showReconstruct()
         # self.reset_widgets()
 
@@ -763,7 +765,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.imageProcessWidget.y_shifts = self.y_shifts
         self.imageProcessWidget.centers = self.centers
         self.imageProcessWidget.ViewControl.combo1.setCurrentIndex(0)
-        self.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
+        self.imageProcessWidget.sld.setValue(0)
 
         self.sinogramWidget.data = self.data 
         self.sinogramWidget.elements = self.elements 
@@ -784,16 +786,16 @@ class XfluoGui(QtGui.QMainWindow):
         self.reconstructionWidget.centers = self.centers
         self.reconstructionWidget.ViewControl.combo1.setCurrentIndex(0)
 
-        self.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
-        self.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
-        self.imageProcessWidget.imgAndHistoWidget.lcd.display(str(self.thetas[0]))
+        self.imageProcessWidget.sld.setValue(0)
+        self.reconstructionWidget.sld.setValue(0)
+        self.imageProcessWidget.lcd.display(str(self.thetas[0]))
         self.reconstructionWidget.recon = []
         self.sinogramWidget.sld.setValue(1)
 
     def update_history(self, data):
-        index = self.imageProcessWidget.imgAndHistoWidget.sld.value()
+        index = self.imageProcessWidget.sld.value()
         self.update_data(data)
-        self.update_theta(self.thetas)
+        self.update_theta(index, self.thetas)
         self.update_filenames(self.fnames, index)
         self.update_alignment(self.x_shifts, self.y_shifts)
 
@@ -831,7 +833,7 @@ class XfluoGui(QtGui.QMainWindow):
         self.reconstructionWidget.data = self.data
         return
 
-    def update_theta(self, thetas):
+    def update_theta(self, index, thetas):
         self.thetas = thetas
         self.imageProcessWidget.thetas = self.thetas
         self.sinogramWidget.thetas = self.thetas
@@ -859,8 +861,9 @@ class XfluoGui(QtGui.QMainWindow):
         return
 
     def update_slider_range(self, thetas):
-        index = self.imageProcessWidget.imgAndHistoWidget.sld.value()
+        index = self.imageProcessWidget.sld.value()
         self.imageProcessWidget.updateSldRange(index, thetas)
+        self.sinogramWidget.updateImgSldRange(index, thetas)
         return
 
     def clear_all(self):
@@ -870,22 +873,22 @@ class XfluoGui(QtGui.QMainWindow):
         self.fname_history = []
         self.update_alignment([],[])
 
-        self.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
-        self.imageProcessWidget.imgAndHistoWidget.sld.setRange(0,0)
-        self.imageProcessWidget.imgAndHistoWidget.lcd.display(0)
+        self.imageProcessWidget.sld.setValue(0)
+        self.imageProcessWidget.sld.setRange(0,0)
+        self.imageProcessWidget.lcd.display(0)
         self.sinogramWidget.sld.setRange(0,0)
         self.sinogramWidget.sld.setRange(0,0)
-        self.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
-        self.reconstructionWidget.imgAndHistoWidget.sld.setRange(0,0)
+        self.reconstructionWidget.sld.setValue(0)
+        self.reconstructionWidget.sld.setRange(0,0)
         
         # self.imageProcessWidget.ViewControl.x_sld.setValue(1)
         # self.imageProcessWidget.ViewControl.x_sld.setRange(1,10)
         # self.imageProcessWidget.ViewControl.y_sld.setValue(1)
         # self.imageProcessWidget.ViewControl.y_sld.setRange(1,10)
 
-        self.imageProcessWidget.imgAndHistoWidget.view.projView.clear()
+        self.imageProcessWidget.imageView.projView.clear()
         self.sinogramWidget.sinoView.projView.clear()
-        self.reconstructionWidget.imgAndHistoWidget.view.projView.clear()
+        self.reconstructionWidget.ReconView.projView.clear()
 
         self.data = None
         self.recon = None
@@ -926,8 +929,8 @@ class XfluoGui(QtGui.QMainWindow):
 
                 self.update_alignment(self.x_shifts, self.y_shifts)
                 self.update_slider_range(self.thetas)
-                index = self.imageProcessWidget.imgAndHistoWidget.sld.value()
-                self.update_theta(self.thetas)
+                index = self.imageProcessWidget.sld.value()
+                self.update_theta(index, self.thetas)
                 self.update_filenames(self.fnames, index)
                 self.update_data(self.data)
 

@@ -57,29 +57,23 @@ from xfluo.elements import *
 
 from xfluo.models.element_table import *
 from xfluo.models.file_table import *
-
 from xfluo.widgets.file_loader import *
-from xfluo.widgets.histogram import *
 
-# from xfluo.widgets.hotspot import *
-# from xfluo.widgets.hotspot_controls import *
-# from xfluo.widgets.hotspot_actions import *
-
-from xfluo.widgets.image_and_histogram import *
 from xfluo.widgets.image_process import *
+# from xfluo.widgets.image_and_histogram import *
 from xfluo.widgets.image_process_controls import *
+from xfluo.widgets.image_view import *
 from xfluo.widgets.image_process_actions import *
 
 from xfluo.widgets.reconstruction import *
 from xfluo.widgets.reconstruction_controls import *
+from xfluo.widgets.reconstruction_view import *
 from xfluo.widgets.reconstruction_actions import *
 
 from xfluo.widgets.sinogram import *
 from xfluo.widgets.sinogram_controls import *
 from xfluo.widgets.sinogram_view import *
 from xfluo.widgets.sinogram_actions import *
-
-
 
 
 try:
