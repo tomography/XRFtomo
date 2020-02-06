@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -46,39 +43,31 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
-from xfluo.file_io.reader import *
-from xfluo.file_io.writer import *
+from PyQt5 import QtCore
+from PyQt5.QtCore import pyqtSignal
+import pyqtgraph
 
-from xfluo.reco import *
-from xfluo.elements import *
-from xfluo.widgets.custom_view_box import *
+class CustomViewBox(pyqtgraph.ViewBox):
+    def __init__(self):
+        # super(CustomViewBox, self).__init__()
+        # pyqtgraph.ViewBox.__init__(self, *args, **kwds)
+        pyqtgraph.ViewBox.__init__(self)
+        self.setMouseMode(self.RectMode)
 
-from xfluo.models.element_table import *
-from xfluo.models.file_table import *
-from xfluo.widgets.file_loader import *
-
-from xfluo.widgets.image_process import *
-# from xfluo.widgets.image_and_histogram import *
-from xfluo.widgets.image_process_controls import *
-from xfluo.widgets.image_view import *
-from xfluo.widgets.image_process_actions import *
-
-from xfluo.widgets.reconstruction import *
-from xfluo.widgets.reconstruction_controls import *
-from xfluo.widgets.reconstruction_view import *
-from xfluo.widgets.reconstruction_actions import *
-
-from xfluo.widgets.sinogram import *
-from xfluo.widgets.sinogram_controls import *
-from xfluo.widgets.sinogram_view import *
-from xfluo.widgets.sinogram_actions import *
+    ## reimplement right-click to zoom out
+    def mouseClickEvent(self, ev):
+        if ev.button() == QtCore.Qt.RightButton:
+            # self.autoRange()
+            pass
 
 
-try:
-    import pkg_resources
-    __version__ = pkg_resources.working_set.require("xfluo")[0].version
-except:
-    pass
+    def mouseDragEvent(self, ev):
+        if ev.button() == QtCore.Qt.RightButton:
+            ev.ignore()
+        else:
+            pyqtgraph.ViewBox.mouseDragEvent(self, ev)
+            print(ev.buttonDownPos(), 'down')
+            self.autoRange()
+
+            

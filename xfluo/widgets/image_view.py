@@ -47,11 +47,13 @@
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
 import pyqtgraph
+import xfluo
 
 class ImageView(pyqtgraph.GraphicsLayoutWidget):
     # shiftSig = pyqtSignal(str, name='sliderChangedSig')
     mouseMoveSig = pyqtSignal(int,int, name= 'mouseMoveSig')
     keyPressSig = pyqtSignal(str, name= 'keyPressSig')
+    roiSizeSig = pyqtSignal(int, int, name= 'roiSizeSig')
 
     def __init__(self):
     # def __init__(self, parent):
@@ -68,26 +70,42 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         self.initUI()
 
     def initUI(self):
-        self.p1 = self.addPlot(enableMouse = False)
+        custom_vb = xfluo.CustomViewBox()
+        self.p1 = self.addPlot(viewBox = custom_vb, enableMouse = False)
         self.projView = pyqtgraph.ImageItem()
         self.projView.rotate(-90)
         self.projView.iniX = 0
         self.projView.iniY = -10
-        self.ROI = pyqtgraph.ROI([self.projView.iniX, self.projView.iniY], [10, 10])
+        self.ROI = pyqtgraph.ROI([self.projView.iniX, self.projView.iniY], [10, 10], scaleSnap = True)
+        self.ROI.addScaleHandle(pos=(1, 1), center=(0,0))
+        self.ROI.addScaleHandle(pos=(0,0), center=(1,1))
+        self.ROI.addScaleHandle(pos=(0,1), center=(1,0))
+        self.ROI.addScaleHandle(pos=(1,0), center=(0,1))
+        # self.ROI.addFreeHandle()
         # self.cross_h = p1.pyqtgraph.PlotItem.addLine(x=10, y=10, z=0)
         self.p1.addItem(self.projView)
         self.p1.addItem(self.ROI)
         self.cross_v = self.p1.addLine(x=10)
         self.cross_h = self.p1.addLine(y=-10)
         self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
+        self.ROI.sigRegionChangeFinished.connect(self.roi_dragged)
         self.p1.scene().sigMouseClicked.connect(self.mouseClick)
-        self.p1.scene().sceneRectChanged.connect(self.windowResize)
+        # self.p1.scene().sceneRectChanged.connect(self.windowResize)
         self.p1.setMouseEnabled(x=False, y=False)
+        self.p1.vb = custom_vb
 
+    # def windowResize(self, evt):
+    #     pass
 
-    def windowResize(self, evt):
-        pass
-
+    def roi_dragged(self):
+        x_pos = round(self.ROI.pos().x())
+        y_pos = round(self.ROI.pos().y())
+        xSize = int(self.ROI.size()[0])
+        ySize = int(self.ROI.size()[1])
+        frame_height = self.projView.width()
+        frame_width = self.projView.height()
+        self.x_pos, self.y_pos, self.xSize, self.ySize = self.update_roi(x_pos, y_pos, xSize, ySize, frame_height, frame_width)
+        self.ROI.setPos([self.x_pos, self.y_pos], finish=False)
 
     def mouseMoved(self, evt):
         self.moving_x = int(round(self.p1.vb.mapSceneToView(evt).x()))
@@ -95,50 +113,27 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         self.mouseMoveSig.emit(self.moving_x, self.moving_y)
 
     def mouseClick(self, evt):
-        self.x_pos = self.moving_x
-        self.y_pos = self.moving_y
-        self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
-
-    def mouseReleaseEvent(self, ev):
         x_pos = self.moving_x
         y_pos = self.moving_y
         frame_height = self.projView.width()
         frame_width = self.projView.height()
-        self.x_pos, self.y_pos, self.cross_pos_x, self.cross_pos_y = self.update_roi(x_pos, y_pos, self.xSize, self.ySize, frame_height, frame_width)
+        xSize = int(self.ROI.size()[0])
+        ySize = int(self.ROI.size()[1])
 
-        if ev.button() == 1:
-            self.ROI.setPos([self.x_pos-self.xSize/2,self.y_pos-self.ySize/2])
+        if evt.button() == 1:
+            self.x_pos, self.y_pos, self.xSize, self.ySize = self.update_roi(x_pos-xSize//2, y_pos-ySize//2, xSize, ySize, frame_height, frame_width)
+            self.ROI.setPos([self.x_pos, self.y_pos], finish=False)
 
-        if ev.button() == 2: 
+        if evt.button() == 2:
+            self.cross_pos_x, self.cross_pos_y = self.update_crosshair(x_pos, y_pos, frame_height, frame_width)
             self.p1.items[3].setValue(self.cross_pos_x)
             self.p1.items[4].setValue(self.cross_pos_y)
 
-    def update_roi(self, x_pos, y_pos, x_size, y_size, frame_height, frame_width):
+    def update_crosshair(self,x_pos, y_pos, frame_height, frame_width):
         cross_pos_x = x_pos
         cross_pos_y = y_pos
         max_y = frame_height
         max_x = frame_width
-
-        if max_x == None or max_y == None:
-             return 0, 0, 0, 0
-
-        roi_left =x_pos-x_size/2
-        roi_right = x_pos+x_size/2
-        roi_top = y_pos+y_size/2
-        roi_bottom = y_pos-y_size/2
-
-        ## if way far left
-        if roi_left <= 0:
-            x_pos = x_size/2
-        ## if way far right
-        if roi_right >= max_x:
-            x_pos = max_x - x_size/2
-        ## if way far above
-        if roi_top >= 0:
-            y_pos = -y_size/2
-        ## if way far below
-        if roi_bottom <= -max_y:
-            y_pos = -max_y + y_size/2
 
         ## if way far left
         if cross_pos_x <= 0 :
@@ -153,15 +148,54 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         if cross_pos_y <= -max_y:
             cross_pos_y = -max_y
 
-        self.x_pos = x_pos
-        self.y_pos = y_pos
         self.cross_pos_x = cross_pos_x
         self.cross_pos_y = cross_pos_y
-        
-        return x_pos, y_pos, cross_pos_x, cross_pos_y
 
-    def wheelEvent(self, ev): 
-        #empty function, but leave it as it overrides some other unwanted functionality. 
+        return cross_pos_x, cross_pos_y
+
+
+    def update_roi(self, x_pos, y_pos, x_size, y_size, frame_height, frame_width):
+        max_y = frame_height
+        max_x = frame_width
+
+        if x_size > max_x:
+            x_size = max_x
+
+        if y_size > max_y:
+            y_size = max_y
+
+        self.ROI.setSize([x_size, y_size], finish=False)
+
+        if max_x == None or max_y == None:
+             return 0, 0, 0, 0
+
+        roi_left =x_pos
+        roi_right = x_pos+x_size
+        roi_top = y_pos+y_size
+        roi_bottom = y_pos
+
+        ## if way far left
+        if roi_left <= 0:
+            x_pos = 0
+        ## if way far right
+        if roi_right >= max_x:
+            x_pos = max_x - x_size
+        ## if way far above
+        if roi_top >= 0:
+            y_pos = -y_size
+        ## if way far below
+        if roi_bottom <= -max_y:
+            y_pos = -max_y
+
+
+
+        self.x_pos = x_pos
+        self.y_pos = y_pos
+
+        return x_pos, y_pos, x_size, y_size
+
+    def wheelEvent(self, ev):
+        #empty function, but leave it as it overrides some other unwanted functionality.
         pass
 #TODO: on mac os, when keys are held down, they are sometimes missinterpreted as
     #multiple key pressed, which does not fall under one of the logic below, nor
@@ -226,4 +260,3 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         if len(keyspressed) >=3:
             self.keylist = []
             return
-

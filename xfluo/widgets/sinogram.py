@@ -64,19 +64,21 @@ class SinogramWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
+        button1size = 250       #long button (1 column)
+        button2size = 122.5     #mid button (2 column)
+        button33size = 78.3
+        button3size = 73.3      #small button (almost third)
+        button4size = 58.75     #textbox size (less than a third)
         self.ViewControl = xfluo.SinogramControlsWidget()
         self.sinoView = xfluo.SinogramView()
         self.imageView = xfluo.ImageView()
         self.actions = xfluo.SinogramActions()
 
+
         self.view_options = QtWidgets.QComboBox()
-        for j in ["sinogram", "projection"]:
+        self.view_options.setFixedWidth(button2size)
+        for j in ["sinogram view", "projection view"]:
             self.view_options.addItem(j)
-
-        # self.Stack = QtWidgets.QStackedWidget (self)
-        # self.Stack.addWidget(self.sinoView)
-        # self.Stack.addWidget(self.imageView)
-
 
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.sld2 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
@@ -125,10 +127,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.Stack = QtWidgets.QStackedWidget (self)
         self.Stack.addWidget(self.stack1)
         self.Stack.addWidget(self.stack2)
-
-
-        vb0 = QtWidgets.QVBoxLayout()
-        vb0.addWidget(self.Stack)
 
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addWidget(self.view_options)
@@ -266,7 +264,6 @@ class SinogramWidget(QtWidgets.QWidget):
         if projection == None:
            projection =  self.sld.value()
         self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
-
 
     def center_tomopy_params(self):        
         valid = self.ViewControl.validate_move2center_parameters()

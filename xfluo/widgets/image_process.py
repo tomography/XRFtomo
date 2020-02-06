@@ -82,7 +82,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         lbl3 = QtWidgets.QLabel("y pos:")
         self.lbl4 = QtWidgets.QLabel("")
         self.lbl5 = QtWidgets.QLabel("Angle")
-        lbl6 = QtWidgets.QLabel("value:")
+        lbl6 = QtWidgets.QLabel("pixel value:")
         self.lbl7 = QtWidgets.QLabel("")
 
         self.imageView.mouseMoveSig.connect(self.updatePanel)
@@ -113,10 +113,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         # self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
-        self.ViewControl.x_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
-        self.ViewControl.xSizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
-        self.ViewControl.y_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
-        self.ViewControl.ySizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
+        # self.ViewControl.x_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
+        # self.ViewControl.xSizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
+        # self.ViewControl.y_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
+        # self.ViewControl.ySizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.reshapeBtn.clicked.connect(self.ViewControl.reshape_options.show)
         self.ViewControl.run_reshape.clicked.connect(self.reshape_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
@@ -200,7 +200,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.lbl2.setText(str(x))
         self.lbl4.setText(str(y))
         try:
-            pixel_val = round(self.view.projView.image[abs(y)-1,x],4)
+            pixel_val = round(self.imageView.projView.image[abs(y)-1,x],4)
             self.lbl7.setText(str(pixel_val))
         except:
             self.lbl7.setText("")
@@ -224,8 +224,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.actions.centers = self.centers
         self.posMat = np.zeros((5,int(self.data.shape[1]),2))
         self.imageView.hotSpotNumb = 0
-        self.ViewControl.x_sld.setRange(1, self.data.shape[3])
-        self.ViewControl.y_sld.setRange(1, self.data.shape[2])
+        # self.ViewControl.x_sld.setRange(1, self.data.shape[3])
+        # self.ViewControl.y_sld.setRange(1, self.data.shape[2])
 
         self.ViewControl.combo1.clear()
         self.ViewControl.combo2.clear()
@@ -277,26 +277,26 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.fnames = fnames
         self.file_name_title.setText(str(self.fnames[index]))
 
-    def imgProcessBoxSizeChange(self):
-        xSize = self.ViewControl.xSize
-        ySize = self.ViewControl.ySize
-        if xSize > self.data.shape[3]:
-            xSize = self.data.shape[3]
-            self.ViewControl.xSize = xSize
-        if ySize > self.data.shape[2]:
-            ySize = self.data.shape[2]
-            self.ViewControl.ySize = ySize
+    # def imgProcessBoxSizeChange(self):
+    #     xSize = self.ViewControl.xSize
+    #     ySize = self.ViewControl.ySize
+    #     if xSize > self.data.shape[3]:
+    #         xSize = self.data.shape[3]
+    #         self.ViewControl.xSize = xSize
+    #     if ySize > self.data.shape[2]:
+    #         ySize = self.data.shape[2]
+    #         self.ViewControl.ySize = ySize
 
-        self.imageView.xSize = xSize
-        self.imageView.ySize = ySize
-        self.imageView.ROI.setSize([xSize, ySize])
-        x_pos = int(round(self.imageView.x_pos))
-        y_pos = int(round(self.imageView.y_pos))
-        frame_height = self.data.shape[2]
-        frame_width = self.data.shape[3]
-        x_pos, y_pos, cross_pos_x, cross_pos_y  = self.imageView.update_roi(x_pos, y_pos, xSize, ySize, frame_height, frame_width)
+    #     self.imageView.xSize = xSize
+    #     self.imageView.ySize = ySize
+    #     self.imageView.ROI.setSize([xSize, ySize])
+    #     x_pos = int(round(self.imageView.x_pos))
+    #     y_pos = int(round(self.imageView.y_pos))
+    #     frame_height = self.data.shape[2]
+    #     frame_width = self.data.shape[3]
+    #     x_pos, y_pos, cross_pos_x, cross_pos_y  = self.imageView.update_roi(x_pos, y_pos, xSize, ySize, frame_height, frame_width)
 
-        self.imageView.ROI.setPos([x_pos-xSize/2, y_pos-ySize/2])
+    #     self.imageView.ROI.setPos([x_pos-xSize/2, y_pos-ySize/2])
 
     def imageChanged(self):
         index = self.sld.value()
@@ -443,8 +443,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         projection = self.sld.value()
         x_pos = self.imageView.x_pos
         y_pos = self.imageView.y_pos
-        x_size = self.ViewControl.xSize
-        y_size = self.ViewControl.ySize
+        x_size = self.imageView.xSize
+        y_size = self.imageView.ySize
         img = self.data[element, projection,
             int(round(abs(y_pos)) - y_size/2): int(round(abs(y_pos)) + y_size/2),
             int(round(x_pos) - x_size/2): int(round(x_pos) + x_size/2)]
