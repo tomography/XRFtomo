@@ -55,11 +55,12 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
     def initUI(self):
          #__________Main control window for Alignment Tab__________
-        button1size = 250
-        button2size = 122.5
-        button33size = 78.3
-        button3size = 73.3
-        button4size = 58.75
+        button1size = 270       #long button (1 column)
+        button2size = 142.5     #mid button (2 column)
+        button33size = 98.3
+        button3size = 93.3      #small button (almost third)
+        button4size = 78.75     #textbox size (less than a third)
+
 
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setFixedWidth(button1size)
@@ -112,7 +113,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb3.addWidget(self.combo1)
         vb3.addWidget(self.combo2)
         vb3.addLayout(vb1)
-        self.setFixedWidth(275)
+        # self.setFixedWidth(button1size)
         self.setLayout(vb3)
 
 

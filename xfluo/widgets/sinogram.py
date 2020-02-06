@@ -57,21 +57,34 @@ class SinogramWidget(QtWidgets.QWidget):
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
     alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, name="alignmentChangedSig")
     sinoChangedSig = pyqtSignal(np.ndarray, name="sinoChangedSig")
-    restoreSig = pyqtSignal(name="resoreSig")
+    restoreSig = pyqtSignal(name="restoreSig")
 
     def __init__(self):
         super(SinogramWidget, self).__init__()
         self.initUI()
 
     def initUI(self):
+        button1size = 250       #long button (1 column)
+        button2size = 122.5     #mid button (2 column)
+        button33size = 78.3
+        button3size = 73.3      #small button (almost third)
+        button4size = 58.75     #textbox size (less than a third)
         self.ViewControl = xfluo.SinogramControlsWidget()
         self.sinoView = xfluo.SinogramView()
+        self.imageView = xfluo.ImageView()
         self.actions = xfluo.SinogramActions()
 
-        self.lbl = QtWidgets.QLabel('Row y')
+
+        self.view_options = QtWidgets.QComboBox()
+        self.view_options.setFixedWidth(button2size)
+        for j in ["sinogram view", "projection view"]:
+            self.view_options.addItem(j)
+
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.sld2 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.sld.setValue(1)
         self.lcd = QtWidgets.QLCDNumber(self)
+        self.lcd2 = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
         self.hist.setMinimumSize(120,120)
         self.hist.setMaximumWidth(120)
@@ -99,17 +112,25 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.find_center_2.clicked.connect(self.center_Everett_params)
         self.ViewControl.center.clicked.connect(self.ViewControl.center_parameters.show)
         self.ViewControl.center.clicked.connect(self.updateCenterFindParameters)
-        self.sld.valueChanged.connect(self.imageSliderChanged)
+        self.sld.valueChanged.connect(self.sinoSliderChanged)
+        self.sld2.valueChanged.connect(self.imageSliderChanged)
         self.sinoView.keyPressSig.connect(self.shiftEvent_params)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+        self.view_options.currentIndexChanged.connect(self.display)
 
-        hb0 = QtWidgets.QHBoxLayout()
-        hb0.addWidget(self.lbl)
-        hb0.addWidget(self.lcd)
-        hb0.addWidget(self.sld)
+        self.stack1 = QtWidgets.QWidget()
+        self.stack2 = QtWidgets.QWidget()
+
+        self.stack1UI()
+        self.stack2UI()
+
+        self.Stack = QtWidgets.QStackedWidget (self)
+        self.Stack.addWidget(self.stack1)
+        self.Stack.addWidget(self.stack2)
+
         vb1 = QtWidgets.QVBoxLayout()
-        vb1.addWidget(self.sinoView)
-        vb1.addLayout(hb0)
+        vb1.addWidget(self.view_options)
+        vb1.addWidget(self.Stack)
         vb1.maximumSize()
 
         sinoBox = QtWidgets.QHBoxLayout()
@@ -131,6 +152,66 @@ class SinogramWidget(QtWidgets.QWidget):
         # set the palette
         self.lcd.setPalette(palette)
 
+    def stack1UI(self):
+        lbl = QtWidgets.QLabel('Row y')
+        hb0 = QtWidgets.QHBoxLayout()
+        hb0.addWidget(lbl)
+        hb0.addWidget(self.lcd)
+        hb0.addWidget(self.sld)
+
+        vb = QtWidgets.QVBoxLayout()
+        vb.addWidget(self.sinoView)
+        vb.addLayout(hb0)
+
+        self.stack1.setLayout(vb)
+
+    def stack2UI(self):
+
+        lbl = QtWidgets.QLabel('Angle')
+        hb0 = QtWidgets.QHBoxLayout()
+        hb0.addWidget(lbl)
+        hb0.addWidget(self.lcd2)
+        hb0.addWidget(self.sld2)
+
+        vb = QtWidgets.QVBoxLayout()
+        vb.addWidget(self.imageView)
+        vb.addLayout(hb0)
+
+        self.stack2.setLayout(vb)
+
+    def display(self,i):
+        self.Stack.setCurrentIndex(i)
+        #change slider range and label here depending on i
+
+
+    def showImgProcess(self):
+        # self.posMat = np.zeros((5,int(self.data.shape[1]),2))
+        # self.imageView.hotSpotNumb = 0
+
+        num_projections  = self.data.shape[1]
+        self.sld2.setRange(0, num_projections - 1)
+
+    def imageSliderChanged(self):
+        index = self.sld2.value()
+        self.updateSliderSlot(index)
+        # self.sliderChangedSig.emit(index)
+
+    def updateSliderSlot(self, index):
+        if len(self.thetas) == 0:
+            return
+        angle = round(self.thetas[index],3)
+        element = self.ViewControl.combo1.currentIndex()
+        self.lcd2.display(angle)
+        self.sld2.setValue(index)
+        self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+
+    def updateImgSldRange(self, index, thetas):
+        element = self.ViewControl.combo1.currentIndex()
+        self.sld2.setRange(0, len(self.thetas) -1)
+        self.lcd2.display(thetas[index])
+        self.sld2.setValue(index)
+        self.imageChanged()
+
     def showSinogram(self):
         '''
         loads sinogram tabS
@@ -149,7 +230,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
 
-    def imageSliderChanged(self):
+    def sinoSliderChanged(self):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
         self.lcd.display(index)
@@ -161,11 +242,14 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         projection = 0
         self.updateElementSlot(element)
+        self.updateImgElementSlot(element,self.sld2.value())
         self.elementChangedSig.emit(element, projection)
 
     def imageChanged(self):
+        index = self.sld2.value()
         element = self.ViewControl.combo1.currentIndex()
         self.sinogram(element)
+        self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
 
     def ySizeChanged(self, ySize):
         self.sld.setRange(1, ySize)
@@ -175,6 +259,11 @@ class SinogramWidget(QtWidgets.QWidget):
     def updateElementSlot(self, element):
         self.sinogram(element)
         self.ViewControl.combo1.setCurrentIndex(element)
+
+    def updateImgElementSlot(self, element, projection = None):
+        if projection == None:
+           projection =  self.sld.value()
+        self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
 
     def center_tomopy_params(self):        
         valid = self.ViewControl.validate_move2center_parameters()

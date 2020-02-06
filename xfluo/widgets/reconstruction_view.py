@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -46,39 +43,38 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
-from xfluo.file_io.reader import *
-from xfluo.file_io.writer import *
+from PyQt5 import QtCore
+from PyQt5.QtCore import pyqtSignal
+import pyqtgraph
 
-from xfluo.reco import *
-from xfluo.elements import *
-from xfluo.widgets.custom_view_box import *
+class ReconView(pyqtgraph.GraphicsLayoutWidget):
+    # shiftSig = pyqtSignal(str, name='sliderChangedSig')
+    mouseMoveSig = pyqtSignal(int,int, name= 'mouseMoveSig')
+    keyPressSig = pyqtSignal(str, name= 'keyPressSig')
 
-from xfluo.models.element_table import *
-from xfluo.models.file_table import *
-from xfluo.widgets.file_loader import *
+    def __init__(self, parent):
+        super(ReconView, self).__init__()
+        self.parent = parent
+        self.initUI()
 
-from xfluo.widgets.image_process import *
-# from xfluo.widgets.image_and_histogram import *
-from xfluo.widgets.image_process_controls import *
-from xfluo.widgets.image_view import *
-from xfluo.widgets.image_process_actions import *
+    def initUI(self):
+        self.p1 = self.addPlot(enableMouse = False)
+        self.projView = pyqtgraph.ImageItem()
+        self.projView.rotate(-90)
+        self.p1.addItem(self.projView)
+        self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
+        self.p1.scene().sceneRectChanged.connect(self.windowResize)
+        self.p1.setMouseEnabled(x=False, y=False)
 
-from xfluo.widgets.reconstruction import *
-from xfluo.widgets.reconstruction_controls import *
-from xfluo.widgets.reconstruction_view import *
-from xfluo.widgets.reconstruction_actions import *
+    def windowResize(self, evt):
+        pass
 
-from xfluo.widgets.sinogram import *
-from xfluo.widgets.sinogram_controls import *
-from xfluo.widgets.sinogram_view import *
-from xfluo.widgets.sinogram_actions import *
+    def mouseMoved(self, evt):
+        self.moving_x = int(round(self.p1.vb.mapSceneToView(evt).x()))
+        self.moving_y = int(round(self.p1.vb.mapSceneToView(evt).y()))
+        self.mouseMoveSig.emit(self.moving_x, self.moving_y)
 
-
-try:
-    import pkg_resources
-    __version__ = pkg_resources.working_set.require("xfluo")[0].version
-except:
-    pass
+    def wheelEvent(self, ev): 
+        #empty function, but leave it as it overrides some other unwanted functionality. 
+        pass

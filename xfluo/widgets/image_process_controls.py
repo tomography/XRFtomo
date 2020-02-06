@@ -55,11 +55,11 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
     def initUI(self):
         self.xSize = 10
         self.ySize = 10
-        button1size = 250       #long button (1 column)
-        button2size = 122.5     #mid button (2 column)
-        button33size = 78.3
-        button3size = 73.3      #small button (almost third)
-        button4size = 58.75     #textbox size (less than a third)
+        button1size = 270       #long button (1 column)
+        button2size = 142.5     #mid button (2 column)
+        button33size = 98.3
+        button3size = 93.3      #small button (almost third)
+        button4size = 78.75     #textbox size (less than a third)
 
         self.combo1 = QtWidgets.QComboBox()
         self.combo1.setFixedWidth(button1size)
@@ -68,29 +68,29 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.combo3 = QtWidgets.QComboBox(self)
         self.combo3.setFixedWidth(button2size)
 
-        self.xSizeLbl = QtWidgets.QLabel("x Size")
-        self.xSizeLbl.setFixedWidth(button4size)
-        self.ySizeLbl = QtWidgets.QLabel("y Size")
-        self.ySizeLbl.setFixedWidth(button4size)
-        self.xSizeTxt = QtWidgets.QLineEdit(str(self.xSize))
-        self.xSizeTxt.setFixedWidth(button4size)
-        self.xSizeTxt.textChanged.connect(self.xTxtChange)
-        self.ySizeTxt = QtWidgets.QLineEdit(str(self.ySize))
-        self.ySizeTxt.setFixedWidth(button4size)
-        self.ySizeTxt.textChanged.connect(self.yTxtChange)
+        # self.xSizeLbl = QtWidgets.QLabel("x Size")
+        # self.xSizeLbl.setFixedWidth(button4size)
+        # self.ySizeLbl = QtWidgets.QLabel("y Size")
+        # self.ySizeLbl.setFixedWidth(button4size)
+        # self.xSizeTxt = QtWidgets.QLineEdit(str(self.xSize))
+        # self.xSizeTxt.setFixedWidth(button4size)
+        # self.xSizeTxt.textChanged.connect(self.xTxtChange)
+        # self.ySizeTxt = QtWidgets.QLineEdit(str(self.ySize))
+        # self.ySizeTxt.setFixedWidth(button4size)
+        # self.ySizeTxt.textChanged.connect(self.yTxtChange)
 
         self.aspectChkbx = QtWidgets.QCheckBox("Aspect ratio locked")
 
-        self.x_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.x_sld.setFixedWidth(button2size)
-        self.x_sld.setValue(self.xSize)
-        self.x_sld.setRange(2, 10)
-        self.x_sld.valueChanged.connect(self.xSldChange)
-        self.y_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.y_sld.setFixedWidth(button2size)
-        self.y_sld.setValue(self.xSize)
-        self.y_sld.setRange(2, 10)
-        self.y_sld.valueChanged.connect(self.ySldChange)
+        # self.x_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        # self.x_sld.setFixedWidth(button2size)
+        # self.x_sld.setValue(self.xSize)
+        # self.x_sld.setRange(2, 10)
+        # self.x_sld.valueChanged.connect(self.xSldChange)
+        # self.y_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        # self.y_sld.setFixedWidth(button2size)
+        # self.y_sld.setValue(self.xSize)
+        # self.y_sld.setRange(2, 10)
+        # self.y_sld.valueChanged.connect(self.ySldChange)
 
         self.reshapeBtn = QtWidgets.QPushButton("reshape")
         self.reshapeBtn.setFixedWidth(button33size)
@@ -129,14 +129,14 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.reshapeBtn.setVisible(False)
         self.btn2.setVisible(False)
 
-        hb1 = QtWidgets.QHBoxLayout()
-        hb1.addWidget(self.xSizeLbl)
-        hb1.addWidget(self.x_sld)
-        hb1.addWidget(self.xSizeTxt)
-        hb2 = QtWidgets.QHBoxLayout()
-        hb2.addWidget(self.ySizeLbl)
-        hb2.addWidget(self.y_sld)
-        hb2.addWidget(self.ySizeTxt)
+        # hb1 = QtWidgets.QHBoxLayout()
+        # hb1.addWidget(self.xSizeLbl)
+        # hb1.addWidget(self.x_sld)
+        # hb1.addWidget(self.xSizeTxt)
+        # hb2 = QtWidgets.QHBoxLayout()
+        # hb2.addWidget(self.ySizeLbl)
+        # hb2.addWidget(self.y_sld)
+        # hb2.addWidget(self.ySizeTxt)
 
         hb3 = QtWidgets.QHBoxLayout()
         hb3.addWidget(self.lbl3)
@@ -166,8 +166,8 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb13.addWidget(self.reshapeBtn)
 
         vb1 = QtWidgets.QVBoxLayout()
-        vb1.addLayout(hb1)
-        vb1.addLayout(hb2)
+        # vb1.addLayout(hb1)
+        # vb1.addLayout(hb2)
         vb1.addWidget(self.aspectChkbx)
 
         vb2 = QtWidgets.QVBoxLayout()
@@ -265,26 +265,26 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         return valid
 
 
-    def xTxtChange(self):
-        try:
-            self.xSize = int(self.xSizeTxt.text())
-        except ValueError:
-            print('integer values only')
-        self.x_sld.setValue(self.xSize)
+    # def xTxtChange(self):
+    #     try:
+    #         self.xSize = int(self.xSizeTxt.text())
+    #     except ValueError:
+    #         print('integer values only')
+    #     self.x_sld.setValue(self.xSize)
 
-    def yTxtChange(self):
-        try:
-            self.ySize = int(self.ySizeTxt.text())
-        except ValueError:
-            print('integer values only')
-        self.y_sld.setValue(self.ySize)
+    # def yTxtChange(self):
+    #     try:
+    #         self.ySize = int(self.ySizeTxt.text())
+    #     except ValueError:
+    #         print('integer values only')
+    #     self.y_sld.setValue(self.ySize)
 
-    def xSldChange(self):
-        self.xSize = self.x_sld.value()
-        self.xSizeTxt.setText(str(self.xSize))
+    # def xSldChange(self):
+    #     self.xSize = self.x_sld.value()
+    #     self.xSizeTxt.setText(str(self.xSize))
 
-    def ySldChange(self):
-        self.ySize = self.y_sld.value()
-        self.ySizeTxt.setText(str(self.ySize))
+    # def ySldChange(self):
+    #     self.ySize = self.y_sld.value()
+    #     self.ySizeTxt.setText(str(self.ySize))
 
 
