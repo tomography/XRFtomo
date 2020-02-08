@@ -55,10 +55,12 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        button1size = 250
-        button2size = 122.5
-        button3size = 78.3
-        button4size = 58.75
+        button1size = 270       #long button (1 column)
+        button2size = 142.5     #mid button (2 column)
+        button33size = 98.3
+        button3size = 93.3      #small button (almost third)
+        button4size = 78.75     #textbox size (less than a third)
+
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setFixedWidth(button1size)
         self.method = QtWidgets.QComboBox(self)
@@ -70,19 +72,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setFixedWidth(button3size)
 
-        self.cbox = QtWidgets.QCheckBox("")
-        self.cbox.setFixedWidth(20)
-        self.lbl2 = QtWidgets.QLabel("Center")
-        self.lbl2.setFixedWidth(53)
-        self.centerTextBox = QtWidgets.QLineEdit("0")
-        self.centerTextBox.setFixedWidth(160)
-        self.threshLbl = QtWidgets.QLabel("threshold")
-        self.threshLbl.setFixedWidth(button3size)
-        self.threshLe = QtWidgets.QLineEdit("")
-        self.threshLe.setFixedWidth(button3size)
-        self.threshBtn = QtWidgets.QPushButton("Apply")
-        self.threshBtn.setFixedWidth(button3size)
-
         self.start_lbl = QtWidgets.QLabel("bottom slice index")
         self.start_lbl.setFixedWidth(button2size)
         self.start_indx = QtWidgets.QLineEdit("0")
@@ -92,7 +81,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.end_indx = QtWidgets.QLineEdit("0")
         self.end_indx.setFixedWidth(button2size)
 
-        self.centerTextBox.setEnabled(False)
         self.mulBtn = QtWidgets.QPushButton("x 10")
         self.mulBtn.setFixedWidth(button2size)
         self.divBtn = QtWidgets.QPushButton("/ 10")
@@ -118,14 +106,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.minText = QtWidgets.QLineEdit()
         self.minText.setFixedWidth(button2size)
        
-        centerBox = QtWidgets.QHBoxLayout()
-        centerBox.addWidget(self.cbox)
-        centerBox.addWidget(self.lbl2)
-        centerBox.addWidget(self.centerTextBox)
-        threshBox = QtWidgets.QHBoxLayout()
-        threshBox.addWidget(self.threshLbl)
-        threshBox.addWidget(self.threshLe)
-        threshBox.addWidget(self.threshBtn)
         startBox = QtWidgets.QHBoxLayout()
         startBox.addWidget(self.start_lbl)
         startBox.addWidget(self.start_indx)
@@ -158,9 +138,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)
         vb.addWidget(self.method)
-        vb.addLayout(reconBox)
-        vb.addLayout(centerBox)
-        vb.addLayout(threshBox)
         vb.addLayout(endBox)
         vb.addLayout(startBox)
         vb.addWidget(self.lbl)
@@ -170,4 +147,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addLayout(itersBox)
         vb.addLayout(betaBox)
         vb.addLayout(deltaBox)
+        vb.addLayout(reconBox)
+        
         self.setLayout(vb)

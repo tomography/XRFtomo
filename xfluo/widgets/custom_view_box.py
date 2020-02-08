@@ -43,63 +43,31 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-import xfluo
-from PyQt5 import QtCore, QtWidgets
-# from widgets.histogram_widget import HistogramWidget
+
+from PyQt5 import QtCore
+from PyQt5.QtCore import pyqtSignal
 import pyqtgraph
 
-class ImageAndHistogramWidget(QtWidgets.QWidget):
-    def __init__(self, parent):
-        super(ImageAndHistogramWidget, self).__init__()
-        self.parent = parent
-        self.initUI()
+class CustomViewBox(pyqtgraph.ViewBox):
+    def __init__(self):
+        # super(CustomViewBox, self).__init__()
+        # pyqtgraph.ViewBox.__init__(self, *args, **kwds)
+        pyqtgraph.ViewBox.__init__(self)
+        self.setMouseMode(self.RectMode)
 
-    def initUI(self):
-        self.file_name_title = QtWidgets.QLabel("_")
-        lbl1 = QtWidgets.QLabel("x pos")
-        self.lbl2 = QtWidgets.QLabel("")
-        lbl3 = QtWidgets.QLabel("y pos")
-        self.lbl4 = QtWidgets.QLabel("")
-        self.lbl5 = QtWidgets.QLabel("Angle")
-        
-        hb0 = QtWidgets.QHBoxLayout()
-        hb0.addWidget(lbl1)
-        hb0.addWidget(self.lbl2)
-        hb0.addWidget(lbl3)
-        hb0.addWidget(self.lbl4)
+    ## reimplement right-click to zoom out
+    def mouseClickEvent(self, ev):
+        if ev.button() == QtCore.Qt.RightButton:
+            # self.autoRange()
+            pass
 
-        # btn1.clicked.connect(self.updatePanel)
 
-        self.view = xfluo.HistogramWidget(self)
-        self.view.mouseMoveSig.connect(self.updatePanel)
-        self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.lcd = QtWidgets.QLCDNumber(self)
-        self.hist = pyqtgraph.HistogramLUTWidget()
-        self.hist.setMinimumSize(120,120)
-        self.hist.setMaximumWidth(120)
-        self.hist.setImageItem(self.view.projView)
+    def mouseDragEvent(self, ev):
+        if ev.button() == QtCore.Qt.RightButton:
+            ev.ignore()
+        else:
+            pyqtgraph.ViewBox.mouseDragEvent(self, ev)
+            print(ev.buttonDownPos(), 'down')
+            self.autoRange()
 
-        hb1 = QtWidgets.QHBoxLayout()
-        hb1.addWidget(self.lbl5)
-        hb1.addWidget(self.lcd)
-        hb1.addWidget(self.sld)
-
-        vb1 = QtWidgets.QVBoxLayout()
-        vb1.addWidget(self.file_name_title)
-        vb1.addLayout(hb0)
-        vb1.addWidget(self.view)
-        vb1.addLayout(hb1)
-
-        hb2 = QtWidgets.QHBoxLayout()
-        hb2.addLayout(vb1)
-        hb2.addWidget(self.hist, 10)
-
-        self.setLayout(hb2)
-
-    # def keyPressEvent(self, ev):
-    #     if ev.key() == QtCore.Qt.Key_N:
-    #         self.sld.setValue(self.sld.value() + 1)
-
-    def updatePanel(self,x,y):
-        self.lbl2.setText(str(x))
-        self.lbl4.setText(str(y))
+            

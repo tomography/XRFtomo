@@ -121,7 +121,7 @@ class ElementTableModel(QtCore.QAbstractTableModel):
         topLeft = self.index(0, 0)
         self.layoutAboutToBeChanged.emit()
         try:
-            hFile = h5py.File(filePath)
+            hFile = h5py.File(filePath, 'r')
             elements = hFile["{}/{}".format(image_tag,element_tag)]
             for i in range(len(elements)):
                 self.arrayData += [TableArrayItem(elements[i].decode('UTF-8'))]

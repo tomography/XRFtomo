@@ -55,22 +55,36 @@ import numpy as np
 class SinogramWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
     dataChangedSig = pyqtSignal(np.ndarray, name='dataChangedSig')
-    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, list, name="alignmentChangedSig")
+    alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, name="alignmentChangedSig")
     sinoChangedSig = pyqtSignal(np.ndarray, name="sinoChangedSig")
+    restoreSig = pyqtSignal(name="restoreSig")
 
     def __init__(self):
         super(SinogramWidget, self).__init__()
         self.initUI()
 
     def initUI(self):
+        button1size = 250       #long button (1 column)
+        button2size = 122.5     #mid button (2 column)
+        button33size = 78.3
+        button3size = 73.3      #small button (almost third)
+        button4size = 58.75     #textbox size (less than a third)
         self.ViewControl = xfluo.SinogramControlsWidget()
         self.sinoView = xfluo.SinogramView()
+        self.imageView = xfluo.ImageView()
         self.actions = xfluo.SinogramActions()
 
-        self.lbl = QtWidgets.QLabel('Row y')
+
+        self.view_options = QtWidgets.QComboBox()
+        self.view_options.setFixedWidth(button2size)
+        for j in ["sinogram view", "projection view"]:
+            self.view_options.addItem(j)
+
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.sld2 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.sld.setValue(1)
         self.lcd = QtWidgets.QLCDNumber(self)
+        self.lcd2 = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
         self.hist.setMinimumSize(120,120)
         self.hist.setMaximumWidth(120)
@@ -79,28 +93,44 @@ class SinogramWidget(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
+        self.data = None
+        self.sinogramData = None
 
         self.ViewControl.btn1.clicked.connect(self.centerOfMass_params)
         # self.ViewControl.btn1.clicked.connect(self.centerOfMass2_params)
         self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
-        self.ViewControl.btn4.clicked.connect(self.crossCorrelate2_params)
-        self.ViewControl.btn5.clicked.connect(self.align_y_top_params)
-        self.ViewControl.btn6.clicked.connect(self.iter_align_params)
+        self.ViewControl.btn6.clicked.connect(self.ViewControl.iter_parameters.show)
+        self.ViewControl.run_iter_align.clicked.connect(self.iter_align_params)
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
-        self.ViewControl.btn8.clicked.connect(self.align_y_bottom_params)
-        self.ViewControl.btn9.clicked.connect(self.adjust_sino_params)
-        self.sld.valueChanged.connect(self.imageSliderChanged)
+        self.ViewControl.btn5.clicked.connect(self.ViewControl.move2edge.show)
+        self.ViewControl.run_move2edge.clicked.connect(self.move2edge_params)
+        self.ViewControl.btn9.clicked.connect(self.ViewControl.sino_manip.show)
+        self.ViewControl.run_sino_adjust.clicked.connect(self.adjust_sino_params)
+        self.ViewControl.move2center.clicked.connect(self.move2center_params)
+        self.ViewControl.find_center_1.clicked.connect(self.center_tomopy_params)
+        self.ViewControl.find_center_2.clicked.connect(self.center_Everett_params)
+        self.ViewControl.center.clicked.connect(self.ViewControl.center_parameters.show)
+        self.ViewControl.center.clicked.connect(self.updateCenterFindParameters)
+        self.sld.valueChanged.connect(self.sinoSliderChanged)
+        self.sld2.valueChanged.connect(self.imageSliderChanged)
         self.sinoView.keyPressSig.connect(self.shiftEvent_params)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+        self.view_options.currentIndexChanged.connect(self.display)
 
-        hb0 = QtWidgets.QHBoxLayout()
-        hb0.addWidget(self.lbl)
-        hb0.addWidget(self.lcd)
-        hb0.addWidget(self.sld)
+        self.stack1 = QtWidgets.QWidget()
+        self.stack2 = QtWidgets.QWidget()
+
+        self.stack1UI()
+        self.stack2UI()
+
+        self.Stack = QtWidgets.QStackedWidget (self)
+        self.Stack.addWidget(self.stack1)
+        self.Stack.addWidget(self.stack2)
+
         vb1 = QtWidgets.QVBoxLayout()
-        vb1.addWidget(self.sinoView)
-        vb1.addLayout(hb0)
+        vb1.addWidget(self.view_options)
+        vb1.addWidget(self.Stack)
         vb1.maximumSize()
 
         sinoBox = QtWidgets.QHBoxLayout()
@@ -122,6 +152,66 @@ class SinogramWidget(QtWidgets.QWidget):
         # set the palette
         self.lcd.setPalette(palette)
 
+    def stack1UI(self):
+        lbl = QtWidgets.QLabel('Row y')
+        hb0 = QtWidgets.QHBoxLayout()
+        hb0.addWidget(lbl)
+        hb0.addWidget(self.lcd)
+        hb0.addWidget(self.sld)
+
+        vb = QtWidgets.QVBoxLayout()
+        vb.addWidget(self.sinoView)
+        vb.addLayout(hb0)
+
+        self.stack1.setLayout(vb)
+
+    def stack2UI(self):
+
+        lbl = QtWidgets.QLabel('Angle')
+        hb0 = QtWidgets.QHBoxLayout()
+        hb0.addWidget(lbl)
+        hb0.addWidget(self.lcd2)
+        hb0.addWidget(self.sld2)
+
+        vb = QtWidgets.QVBoxLayout()
+        vb.addWidget(self.imageView)
+        vb.addLayout(hb0)
+
+        self.stack2.setLayout(vb)
+
+    def display(self,i):
+        self.Stack.setCurrentIndex(i)
+        #change slider range and label here depending on i
+
+
+    def showImgProcess(self):
+        # self.posMat = np.zeros((5,int(self.data.shape[1]),2))
+        # self.imageView.hotSpotNumb = 0
+
+        num_projections  = self.data.shape[1]
+        self.sld2.setRange(0, num_projections - 1)
+
+    def imageSliderChanged(self):
+        index = self.sld2.value()
+        self.updateSliderSlot(index)
+        # self.sliderChangedSig.emit(index)
+
+    def updateSliderSlot(self, index):
+        if len(self.thetas) == 0:
+            return
+        angle = round(self.thetas[index],3)
+        element = self.ViewControl.combo1.currentIndex()
+        self.lcd2.display(angle)
+        self.sld2.setValue(index)
+        self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+
+    def updateImgSldRange(self, index, thetas):
+        element = self.ViewControl.combo1.currentIndex()
+        self.sld2.setRange(0, len(self.thetas) -1)
+        self.lcd2.display(thetas[index])
+        self.sld2.setValue(index)
+        self.imageChanged()
+
     def showSinogram(self):
         '''
         loads sinogram tabS
@@ -140,7 +230,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
 
-    def imageSliderChanged(self):
+    def sinoSliderChanged(self):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
         self.lcd.display(index)
@@ -152,13 +242,16 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         projection = 0
         self.updateElementSlot(element)
+        self.updateImgElementSlot(element,self.sld2.value())
         self.elementChangedSig.emit(element, projection)
 
     def imageChanged(self):
+        index = self.sld2.value()
         element = self.ViewControl.combo1.currentIndex()
         self.sinogram(element)
+        self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
 
-    def yChanged(self, ySize):
+    def ySizeChanged(self, ySize):
         self.sld.setRange(1, ySize)
         self.sld.setValue(1)
         self.lcd.display(1)
@@ -167,6 +260,69 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinogram(element)
         self.ViewControl.combo1.setCurrentIndex(element)
 
+    def updateImgElementSlot(self, element, projection = None):
+        if projection == None:
+           projection =  self.sld.value()
+        self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
+
+    def center_tomopy_params(self):        
+        valid = self.ViewControl.validate_move2center_parameters()
+        if not valid:
+            return
+        element, row, data, thetas = self.get_params()
+
+        data = self.data
+        thetas = self.thetas
+        tomo = data[element]
+        slice_index = int(self.ViewControl.slice_textbox.text())
+        init_center = int(self.ViewControl.init_textbox.text())
+        tol = float(self.ViewControl.tol_textbox.text())
+        mask_bool = self.ViewControl.mask_checkbox.isChecked()
+        ratio = float(self.ViewControl.ratio_textbox.text())
+
+        center = self.actions.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
+        self.ViewControl.center_1.setText("center: {}".format(center))
+        self.ViewControl.center_2.setText("center: {}".format(center))
+
+    def center_Everett_params(self):
+        element, row, data, thetas = self.get_params()
+        data = self.data
+        thetasum = np.sum(self.data[element], axis=1)
+        
+        valid = self.ViewControl.validate_move2center_parameters()
+        if not valid:
+            return
+
+        limit = self.ViewControl.limit_textbox.text()
+        center_offset = self.actions.rot_center3(thetasum, ave_mode = 'Median', limit = None, return_all = False)
+        center = self.data.shape[3]//2 - center_offset
+        center_int = np.round(center_offset)
+        self.ViewControl.center_1.setText("center: {}".format(center))
+        self.ViewControl.center_2.setText("center: {}".format(center))
+
+    def move2center_params(self):
+        data = self.data
+        rot_center = int(np.round(float(self.ViewControl.center_1.text().split()[1])))
+        x_shifts = self.data.shape[3]//2 - rot_center
+
+        if x_shifts<0:
+            data = self.actions.shiftDataX(self.data, x_shifts)
+            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
+
+        if x_shifts>0:
+            data = self.actions.shiftDataX(data, x_shifts)
+            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
+
+    def updateCenterFindParameters(self):
+        if self.ViewControl.init_textbox.text() == "-1":
+            self.ViewControl.init_textbox.setText(str(self.data.shape[3]//2))
+        if self.ViewControl.slice_textbox.text() == "-1":
+            self.ViewControl.slice_textbox.setText(str(self.data.shape[2]//2))
+        if self.ViewControl.limit_textbox.text() == "-1":
+            self.ViewControl.limit_textbox.setText("1")
+            
     def sinogram(self, element):
         '''
         load variables and image for sinogram window
@@ -184,13 +340,18 @@ class SinogramWidget(QtWidgets.QWidget):
         if element == -1: # escape if element == -1.
             return
 
-        sinodata = self.data[element, :, :, :]
-
+        try: #TODO: fails when loading new dataset, be sure to clear absolutely everything or raise exception
+            sinodata = self.data[element, :, :, :]
+        except TypeError:
+            return
         self.sinogramData = zeros([sinodata.shape[0] * 10, sinodata.shape[2]], dtype=float32)
         num_projections = self.data.shape[1]
-        for i in arange(num_projections):
-            self.sinogramData[i * 10:(i + 1) * 10, :] = sinodata[i, self.sld.value()-1, :]
 
+        try: #TODO: fails when cropping
+            for i in arange(num_projections):
+                self.sinogramData[i * 10:(i + 1) * 10, :] = sinodata[i, self.sld.value()-1, :]
+        except IndexError:
+            return
         self.sinogramData[isinf(self.sinogramData)] = 0.001
         self.sinoView.projView.setImage(self.sinogramData, border='w')
         if len(self.thetas) > 0:
@@ -204,14 +365,14 @@ class SinogramWidget(QtWidgets.QWidget):
         thetas = self.thetas
         self.data, self.x_shifts = self.actions.runCenterOfMass(element, data, thetas)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
         
     # def centerOfMass2_params(self):
     #     element, row, data, thetas = self.get_params()
     #     self.data, self.x_shifts, self.centers = self.actions.runCenterOfMass2(element, row, data, thetas)
     #     self.dataChangedSig.emit(self.data)
-    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
     #     return
 
     def shiftEvent_params(self, shift_dir, col_number):
@@ -222,22 +383,15 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data, self.sinogramData = self.actions.shift(sinoData, data, shift_dir, col_number)
         self.x_shifts[col_number] += shift_dir
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
     def crossCorrelate_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate(element, data)
+        data, x_shifts, y_shifts = self.actions.crossCorrelate(element, data)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-        return
-
-    def crossCorrelate2_params(self):
-        data = self.data
-        self.data, self.x_shifts, self.y_shifts = self.actions.crossCorrelate2(data)
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + x_shifts)
         return
 
     def phaseCorrelate_params(self):
@@ -245,36 +399,45 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         self.data, self.x_shifts, self.y_shifts = self.actions.phaseCorrelate(element, data)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
-    def align_y_top_params(self):
+    def move2edge_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        # thetas= self.thetas
-        self.y_shifts, self.data = self.actions.align_y_top(element, data) 
+
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+
+        if self.ViewControl.bottom_checkbox.isChecked():
+            loc=0
+        else: 
+            loc=1
+
+        threshold = int(self.ViewControl.threshold_textbox.text())
+
+        self.y_shifts, self.data = self.actions.align2edge(element, data, loc, threshold) 
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
-    def align_y_bottom_params(self):
-        data = self.data
-        element = self.ViewControl.combo1.currentIndex()
-        # thetas= self.thetas
-        self.y_shifts, self.data = self.actions.align_y_bottom(element, data) 
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-        return
         
     def adjust_sino_params(self):
         sinogramData = self.sinogramData
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        delta = int(self.ViewControl.slopeText.text())
-        x_shifts, self. data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, element, delta)
+
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+        shift = int(self.ViewControl.shift_textbox.text())
+        slope = int(self.ViewControl.slope_adjust_textbox.text())
+            
+        x_shifts, self. data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, shift, slope)
         self.x_shifts += x_shifts
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
     # def matchTermplate_params(self):
@@ -285,21 +448,62 @@ class SinogramWidget(QtWidgets.QWidget):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
         thetas = self.thetas
-        # sx =  self.actions.iterative_align(element, data, thetas, 2)
-        self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, 3)
+        valid = self.ViewControl.validate_parameters()
+        if not valid:
+            return
+            
+        if self.ViewControl.center_textbox.text() == "":
+            center = None
+        else:
+            center = int(self.ViewControl.center_textbox.text())
+            if center >0 and center < data.shape[3]:
+                pass
+            else:
+                self.ViewControl.center_textbox.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                return
+        iters = int(self.ViewControl.iter_textbox.text())
+        blur_bool = self.ViewControl.blur_checkbox.isChecked()
+        save_bool = self.ViewControl.save_checkbox.isChecked()
+        debug_bool = self.ViewControl.debug_checkbox.isChecked()
+        padX = int(self.ViewControl.paddingX_textbox.text())
+        padY = int(self.ViewControl.paddingY_textbox.text())
+        pad = (padX,padY)
+        algorithm = self.ViewControl.algorithm.currentText()
+        upsample_factor = int(self.ViewControl.upsample_factor_textbox.text())
+        
+        if self.ViewControl.blur_checkbox.isChecked():
+            rin = float(self.ViewControl.inner_radius_textbox.text())
+            rout = float(self.ViewControl.outer_radius_textbox.text())
+        else:
+            rin = None
+            rout = None
+
+        self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, pad, blur_bool, rin, rout, center, algorithm, upsample_factor, save_bool, debug_bool, iters)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
+        #save parameters 
+        #run iterative alignment
+        ##maybe put this entire function within 'iter_align_params'
+
+        pass
+
+
     def alignFromText2_params(self):
+        fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
+
+        if fileName[0] == "":
+            return
+            
+        self.restoreSig.emit()
         data = self.data
         try:
-            self.data, self.x_shifts, self.y_shifts = self.actions.alignFromText2(data)
+            data, x_shifts, y_shifts = self.actions.alignFromText2(fileName, data)
         except TypeError:
             return
-        self.dataChangedSig.emit(self.data)
-        # self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts, self.centers)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
 
     # def alignfromHotspotxt_params(self):

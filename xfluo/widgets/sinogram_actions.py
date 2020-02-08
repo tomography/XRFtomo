@@ -52,7 +52,7 @@ import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
 import scipy.fftpack as spf
 import string
-import cv2
+#import cv2
 from PIL import Image, ImageChops, ImageOps
 import tomopy
 
@@ -135,8 +135,12 @@ class SinogramActions(QtWidgets.QWidget):
             data[:,i,:,:] = np.roll(data[:,i,:,:], regShift[i], axis=2)
         return data, sinogramData  
 
+    def shiftDataX(self, data, displacement):
+        for i in range(data.shape[1]):
+            data[:,i] = np.roll(data[:,i],displacement, axis=2)
+        return data
 
-    def slope_adjust(self, sinogramData, data, element, delta):
+    def slope_adjust(self, sinogramData, data, shift, delta):
         '''
         Sinograms are oftwen skewed when using xcor alignment method. slope_adjust offsets the sinogram's slope by 'delta' pixels
         Variables
@@ -145,17 +149,20 @@ class SinogramActions(QtWidgets.QWidget):
             3D array containing sinogram images for each row of data
         data: ndarray
             4D xrf dataset ndarray [elements, theta, y,x]
-        element: int
-            element index
+        shift: int
+            number of pixel to shift sinogram up or down by.
         delta: int
             number of pixels to shift by at right-hand side of sinogram.
         '''
+
         num_projections = data.shape[1]
         step = round(delta/num_projections)
         lin_shift = [int(x) for x in np.linspace(0, delta, num_projections)]
+        lin_shift = [x + shift for x in lin_shift]
 
         for i in range(num_projections):
             data, sinogramData = self.shift(sinogramData, data, lin_shift[i], i)
+            data[:,i] = np.roll(data[:,i],shift,axis=1)
 
         return lin_shift, data, sinogramData
         
@@ -263,7 +270,34 @@ class SinogramActions(QtWidgets.QWidget):
         self.alignmentDone()
         return data, self.x_shifts, self.y_shifts
 
-    def align_y_top(self, element, data):
+    # def align_y_top(self, element, data):
+    #     '''
+    #     This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
+    #     top of the ROI boundary. It does this for all projections, effectively adjusting for vertical drift or stage wobble. 
+
+    #     Variables
+    #     -----------
+    #     element: int
+    #         element index
+    #     data: ndarray
+    #         4D xrf dataset ndarray [elements, theta, y,x]
+    #     '''
+    #     self.data = data
+    #     num_projections = data.shape[1]
+    #     tmp_data = data[element,:,:,:]
+    #     bounds = self.get_boundaries(tmp_data,5)
+    #     y_bot = np.asarray(bounds[3])
+    #     translate = y_bot[0]-y_bot
+    #     # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
+    #     self.y_shifts -=translate
+
+    #     for i in range(num_projections):
+    #         self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(translate[i])), axis=1)
+
+    #     self.alignmentDone()
+    #     return self.y_shifts, self.data 
+
+    def align2edge(self, element, data, loc, threshold):
         '''
         This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
         top of the ROI boundary. It does this for all projections, effectively adjusting for vertical drift or stage wobble. 
@@ -274,13 +308,16 @@ class SinogramActions(QtWidgets.QWidget):
             element index
         data: ndarray
             4D xrf dataset ndarray [elements, theta, y,x]
+        loc: bool
+            0 = bottom, 1 = top
         '''
         self.data = data
         num_projections = data.shape[1]
         tmp_data = data[element,:,:,:]
-        bounds = self.get_boundaries(tmp_data,5)
-        y_bot = np.asarray(bounds[3])
-        translate = y_bot[0]-y_bot
+        bounds = self.get_boundaries(tmp_data,threshold)
+        edge = np.asarray(bounds[2+loc])
+        translate = -edge
+
         # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
         self.y_shifts -=translate
 
@@ -289,32 +326,6 @@ class SinogramActions(QtWidgets.QWidget):
 
         self.alignmentDone()
         return self.y_shifts, self.data 
-
-    def align_y_bottom(self, element, data):
-        '''
-        This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
-        bottom of the ROI boundary. It does this for all projections, effectively adjusting for vertical drift or stage wobble. 
-
-        Variables
-        -----------
-        element: int
-            element index
-        data: ndarray
-            4D xrf dataset ndarray [elements, theta, y,x]
-        '''
-        self.data = data
-        num_projections = data.shape[1]
-        tmp_data = data[element,:,:,:]
-        bounds = self.get_boundaries(tmp_data,70)
-        y_top = np.asarray(bounds[2])
-        translate = y_top[0]-y_top
-        # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
-        self.y_shifts -=translate
-        for i in range(num_projections):
-            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(translate[i])), axis=1)
-
-        self.alignmentDone()
-        return self.y_shifts, self.data
 
     def get_boundaries(self, data, coeff):
         '''
@@ -371,7 +382,7 @@ class SinogramActions(QtWidgets.QWidget):
                     break
         return bounds
 
-    def iterative_align(self, element, data, thetas, iters=5):
+    def iterative_align(self, element, data, thetas, pad, blur_bool, rin, rout, center, algorithm, upsample_factor, save_bool, debug_bool, iters=5):
         '''
         iterative alignment method from TomoPy
         Variables
@@ -391,9 +402,14 @@ class SinogramActions(QtWidgets.QWidget):
         prj = tomopy.remove_nan(prj, val=0.0)
         prj[np.where(prj == np.inf)] = 0.0
         self.thetas = thetas
-        prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=(0,0),
-                            blur=True, rin=0.8, rout=0.95, center=None, algorithm='mlem', 
-                            upsample_factor=100, save=False, debug=True)
+
+
+        # self.get_iter_paraeters()
+
+
+        prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=pad,
+                            blur=blur_bool, rin=rin, rout=rout, center=center, algorithm=algorithm, 
+                            upsample_factor=upsample_factor, save=save_bool, debug=debug_bool)
         self.x_shifts = np.round(sx).astype(int)
         self.y_shifts = np.round(sy).astype(int)
 
@@ -403,7 +419,7 @@ class SinogramActions(QtWidgets.QWidget):
         
         return self.x_shifts, self.y_shifts, data
 
-    def alignFromText2(self, data):
+    def alignFromText2(self, fileName, data):
         '''
         align by reading text file that saved prior image registration
         alignment info is saved in following format: name of the file, xshift, yshift
@@ -418,28 +434,30 @@ class SinogramActions(QtWidgets.QWidget):
 
         '''
         try:
-            fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
             ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
 
+            #TODO: if text file is not in correct format, do nothing, return and display reason for error.
             file = open(fileName[0], 'r')
             read = file.readlines()
             datacopy = zeros(data.shape)
             datacopy[...] = data[...]
             data[np.isnan(data)] = 1
             num_projections = data.shape[1]
+            y_shifts = np.zeros(num_projections)
+            x_shifts = np.zeros(num_projections)
             for i in arange(num_projections):
                 j = i + 1
                 secondcol = read[j].rfind(",")
                 firstcol = read[j][:secondcol].rfind(",")
-                self.y_shifts[i] += int(float(read[j][secondcol + 1:-1]))
-                self.x_shifts[i] += int(float(read[j][firstcol + 1:secondcol]))
-                data[:, i, :, :] = np.roll(data[:, i, :, :], self.x_shifts[i], axis=2)
-                data[:, i, :, :] = np.roll(data[:, i, :, :], -self.y_shifts[i], axis=1)
+                y_shifts[i] = int(float(read[j][secondcol + 1:-1]))
+                x_shifts[i] = int(float(read[j][firstcol + 1:secondcol]))
+                data[:, i, :, :] = np.roll(data[:, i, :, :], int(x_shifts[i]), axis=2)
+                data[:, i, :, :] = np.roll(data[:, i, :, :], int(-y_shifts[i]), axis=1)
 
             file.close()
             self.alignmentDone()
             # return data, self.x_shifts, self.y_shifts, self.centers
-            return data, self.x_shifts, self.y_shifts
+            return data, x_shifts, y_shifts
         except IndexError:
             print("index missmatch between align file and current dataset ")
         except IOError:
@@ -451,3 +469,45 @@ class SinogramActions(QtWidgets.QWidget):
     def alignmentDone(self):
         '''send message that alignment has been done'''
         print("Alignment has been completed")
+
+    def find_center(self, tomo, thetas, slice_index, init_center, tol, mask_bool, ratio):
+        center = tomopy.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
+        return center[0]
+
+    def rot_center3(self, thetasum, ave_mode = None, limit = None, return_all = False):
+        # thetasum: 1d or 2d array of summed projections. (z,x)
+        if thetasum.ndim == 1:
+            thetasum = thetasum[None,:]
+        T = spf.fft(thetasum, axis = 1)
+        # Collect real and imaginary coefficients.
+        real, imag = T[:,1].real, T[:,1].imag
+        rows = thetasum.shape[0]
+        cols = thetasum.shape[1]
+        # In a sinogram the feature may be more positive or less positive than the background (i.e. fluorescence vs
+        # absorption contrast). This can mess with the T_phase value so we multiply by the sign of the even function
+        # to account for this.
+        T_phase = np.arctan2(imag*np.sign(real),real*np.sign(real))
+        if ave_mode == 'Mean':
+            # Use the mean of the centers from each row as center shift.
+            # Good for objects filling the field of view (i.e. local/roi tomography)
+            return np.mean(T_phase)/(np.pi*2)*cols
+
+        elif ave_mode == 'Median':
+            # Use median value as center shift.
+            return np.median(T_phase)/(np.pi*2)*cols
+
+        elif ave_mode == 'Local':
+            # Use local mean from window about the median vlimitalue as center shift.
+            # Good for objects fully contained within the field of view.
+            # Default window is 2*rows//10
+            med = np.median(T_phase)
+            if limit == None:
+                return tmean(T_phase, limits = (med-10, med+10))/(np.pi*2)*cols
+            else:
+                return tmean(T_phase, limits = (med-limit, med+limit))/(np.pi*2)*cols
+        else:
+            # Use value from center row as center shift.
+            # Fastest option.
+            if return_all:
+                return T_phase/(np.pi*2)*cols
+            return T_phase[rows//2]/(np.pi*2)*cols

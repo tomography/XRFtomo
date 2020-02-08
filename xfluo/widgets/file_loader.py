@@ -49,7 +49,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 import xfluo
 import h5py
 import numpy as np
-import time
+import os
 # from file_io.reader import read_projection
 from xfluo.file_io.reader import *
 
@@ -59,11 +59,12 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent = parent
         self._num_cols = 4
         self._num_row = 4
+        self.auto_load_settings = eval(self.parent.params.load_settings)
         self.auto_theta_pv = self.parent.params.theta_pv
         self.auto_input_path = self.parent.params.input_path
         self.auto_image_tag = self.parent.params.image_tag
         self.auto_data_tag = self.parent.params.data_tag
-        self.auto_element_tag = self.parent.params.element_tag
+        # self.auto_element_tag = self.parent.params.element_tag
         self.auto_quant_names = self.parent.params.quant_name
         #self.auto_detector_tag = self.parent.params.detector_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
@@ -92,18 +93,21 @@ class FileTableWidget(QtWidgets.QWidget):
         self.extLineEdit = QtWidgets.QLineEdit('*.h5')
         self.extLineEdit.setMaximumSize(50, 30)
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
-        self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
-        self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
+        # self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
+        # self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
 
         self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL', '9idbTAU:SM:ST:ActPos']
         thetaCompleter = QtWidgets.QCompleter(self.thetaOptions)
-        thetaLabel = QtWidgets.QLabel('Theta PV:')
-        thetaLabel.setFixedWidth(90)
+        self.thetaLabel = QtWidgets.QLabel('Theta PV:')
+        self.thetaLabel.setFixedWidth(90)
+        self.thetaLabel.setVisible(False)
         self.thetaLineEdit = QtWidgets.QLineEdit(self.auto_theta_pv)
         self.thetaLineEdit.setCompleter(thetaCompleter)
         # self.thetaLineEdit.textChanged.connect(self.onThetaPVChange)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
         self.thetaLineEdit.setFixedWidth(122.5)
+        self.thetaLineEdit.setVisible(False)
+
 
         imageTag_label = QtWidgets.QLabel('Image tag:')
         imageTag_label.setFixedWidth(90)
@@ -111,20 +115,23 @@ class FileTableWidget(QtWidgets.QWidget):
         self.imageTag.activated.connect(self.getDataTag)
         self.imageTag.activated.connect(self.getQuantOptions)
         self.imageTag.activated.connect(self.getElementList)
-
         self.imageTag.setFixedWidth(122.5)
 
         dataTag_label = QtWidgets.QLabel('')
         dataTag_label.setFixedWidth(90)
         self.dataTag = QtWidgets.QComboBox()
         # self.dataTag.currentIndexChanged.connect(self.getDataTag)
+        self.dataTag.currentIndexChanged.connect(self.getElementList)
         self.dataTag.setFixedWidth(122.5)
 
-        elementTag_label = QtWidgets.QLabel('Elements:')
-        elementTag_label.setFixedWidth(90)
+        self.elementTag_label = QtWidgets.QLabel('Elements:')
+        self.elementTag_label.setFixedWidth(90)
+        self.elementTag_label.setVisible(False)
+
         self.elementTag = QtWidgets.QComboBox()
-        self.elementTag.currentIndexChanged.connect(self.getElementList)
+        # self.elementTag.currentIndexChanged.connect(self.getElementList)
         self.elementTag.setFixedWidth(122.5)
+        self.elementTag.setVisible(False)
 
         quant_label = QtWidgets.QLabel('Normalize by:')
         quant_label.setFixedWidth(90)
@@ -145,7 +152,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.message.setText('')
 
         hBox1 = QtWidgets.QHBoxLayout()
-        hBox1.addWidget(thetaLabel)
+        hBox1.addWidget(self.thetaLabel)
         hBox1.addWidget(self.thetaLineEdit)
         hBox1.setAlignment(QtCore.Qt.AlignLeft)
 
@@ -160,7 +167,7 @@ class FileTableWidget(QtWidgets.QWidget):
         hBox3.setAlignment(QtCore.Qt.AlignLeft)
 
         hBox4 = QtWidgets.QHBoxLayout()
-        hBox4.addWidget(elementTag_label)
+        hBox4.addWidget(self.elementTag_label)
         hBox4.addWidget(self.elementTag)
         hBox4.setAlignment(QtCore.Qt.AlignLeft)
 
@@ -187,7 +194,7 @@ class FileTableWidget(QtWidgets.QWidget):
         layout0.addWidget(dirLabel)
         layout0.addWidget(self.dirLineEdit)
         layout0.addWidget(self.extLineEdit)
-        layout0.addWidget(self.dirBrowseBtn)
+        # layout0.addWidget(self.dirBrowseBtn)
 
         layout1 = QtWidgets.QHBoxLayout()
         layout1.addLayout(vBox1)
@@ -205,6 +212,7 @@ class FileTableWidget(QtWidgets.QWidget):
         mainLayout.addLayout(layout2)
 
         self.setLayout(mainLayout)
+        # self.dataTag.currentIndexChanged.connect(self.getElementList)
 
         try:
             self.onLoadDirectory()
@@ -212,37 +220,70 @@ class FileTableWidget(QtWidgets.QWidget):
             print("Invalid directory or file; Try a new folder or remove problematic files.")
         self.onThetaUpdate()
 
-    def onDirBrowse(self):
-        currentDir = self.dirLineEdit.text()
-        try:
-            folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
-            self.dirLineEdit.setText(folderName)
-            self.onLoadDirectory()
-        except:
-            self.dirLineEdit.setText(currentDir)
-            try:
-                self.onLoadDirectory()
-            except:
-                print('invalid directory')
-            return
+        # self.dataTag.currentIndexChanged.connect(self.getElementList)
 
-    def onLoadDirectory(self):
+    def onLoadDirectory(self, files = None):
         self.version = 0
+
+        #specify file extension by 'majority rule' for a given directory 
+        if files == None:
+            try:
+                filenames = os.listdir(self.dirLineEdit.text())
+            except FileNotFoundError:
+                self.message.setText("directory probably not mounted")
+                return
+            extension_list = ["."+ x.split(".")[-1] for x in filenames]
+            unique_ext = list(set(extension_list))
+            counter = 0
+            for i in unique_ext:
+                tmp_counter = 0
+                for j in extension_list:
+                    tmp_counter += i == j
+                if tmp_counter > counter:
+                    dominant_ext = i
+                    counter = tmp_counter 
+                    self.extLineEdit.setText("*"+dominant_ext)
+                    ext = dominant_ext
+        else:
+            ext = "*."+ files[0].split(".")[-1]
+            self.extLineEdit.setText(ext)
+
+
+        #TODO: get filetablemodel to accept only the selected files and not all files in the directory. 
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         fpath = self.fileTableModel.getFirstCheckedFilePath()
+
         if fpath == None:
             self.message.setText('Invalid directory')
             return
         self.fileTableModel.setAllChecked(True)
-        try:
-            self.imageTag.clear()
-            self.getImgTags()
-            self.getDataTag()
-            self.getElementList()
-            self.getQuantOptions()
-            self.onThetaUpdate()
-        except KeyError:
+
+        if ext == '*.h5' or ext == '.h5':
+            try:
+                self.imageTag.clear()
+                self.getImgTags()
+                self.getDataTag()
+                self.getElementList()
+                self.getQuantOptions()
+                self.onThetaUpdate()
+            except KeyError:
+                pass
+
+        if ext == '*.tiff' or ext == ".tiff" or ext == ".tif" or ext == "*.tif":
+            # TODO: when loading from filemenu, check only files which were selected
+            self.elementTableModel.arrayData = []
+            self.imageTag.setEnabled(False)
+            self.dataTag.setEnabled(False)
+            self.quant_options.setEnabled(False)
+            self.message.setText("Load angle information using txt or csv file")
             pass
+
+
+
+
+
+
+
 
     def getImgTags(self):
         fpath = self.fileTableModel.getFirstCheckedFilePath()
@@ -253,14 +294,17 @@ class FileTableWidget(QtWidgets.QWidget):
 
         # for new HDF files
         if self.version == 1:
-            self.message.setText('exchange_0: '+ self.img['exchange_0']['description'][0].decode('utf-8')
-                                  + '; exchange_1: '+ self.img['exchange_1']['description'][0].decode('utf-8')
-                                  + '; exchang_2: '+ self.img['exchange_2']['description'][0].decode('utf-8')
-                                  + '; exchange_3: '+ self.img['exchange_3']['description'][0].decode('utf-8')
-                                  )
+            try:
+                self.message.setText('exchange_0: '+ self.img['exchange_0']['description'][0].decode('utf-8')
+                                      + '; exchange_1: '+ self.img['exchange_1']['description'][0].decode('utf-8')
+                                      + '; exchang_2: '+ self.img['exchange_2']['description'][0].decode('utf-8')
+                                      + '; exchange_3: '+ self.img['exchange_3']['description'][0].decode('utf-8')
+                                      )
+            except:
+                self.message.setText("no description available")
             self.thetaLineEdit.setEnabled(False)
             self.dataTag.setEnabled(False)
-            self.elementTag.setEnabled(False)
+            # self.elementTag.setEnabled(False)
 
             if 'MAPS' in self.imgTags:
                 self.imgTags.remove('MAPS')
@@ -283,7 +327,7 @@ class FileTableWidget(QtWidgets.QWidget):
             self.message.clear()
             self.thetaLineEdit.setEnabled(True)
             self.dataTag.setEnabled(True)
-            self.elementTag.setEnabled(True)
+            # self.elementTag.setEnabled(True)
             self.quant_options.setEnabled(True)
             
             for i in range(len(self.imgTags)):
@@ -311,8 +355,8 @@ class FileTableWidget(QtWidgets.QWidget):
 
             self.dataTag.clear()
             self.dataTag.addItem('data')
-            self.elementTag.clear()
-            self.elementTag.addItem('data_names')
+            # self.elementTag.clear()
+            # self.elementTag.addItem('data_names')
             # for exchange_0
             # if self.imgTags[self.imageTag.currentIndex()] == 'exchange_0':
             #     #temp
@@ -322,56 +366,52 @@ class FileTableWidget(QtWidgets.QWidget):
             #     self.quant_options.setEnabled(True)
 
         if self.version == 0:
-            # for old 2IDE HDF files with "exchange"
-            if self.imageTag.currentText() == 'exchange':
-                self.message.setText('exchange: Fitted normalized by DS-IC')
-                self.dataTag.clear()
-                self.dataTag.addItem('images')
-                self.elementTag.clear()
-                self.elementTag.addItem('images_names')
-                self.thetaLineEdit.setEnabled(True)
-                self.dataTag.setEnabled(False)
-                self.elementTag.setEnabled(False)
-                self.quant_options.setEnabled(False)
 
-            # for old 2IDE HDF files without "exchange"
-            else:
+
+            # for old 2IDE HDF files with "exchange"
+            # if self.imageTag.currentText() == 'exchange':
+            #     self.message.setText('exchange: Fitted normalized by DS-IC')
+            #     self.dataTag.clear()
+            #     self.dataTag.addItem('images')
+            #     # self.elementTag.clear()
+            #     self.element_tag = 'images_names'
+            #     self.thetaLineEdit.setEnabled(True)
+            #     self.dataTag.setEnabled(False)
+            #     # self.elementTag.setEnabled(False)
+            #     self.quant_options.setEnabled(False)
+            #
+            # # for old 2IDE HDF files without "exchange"
+            #
+            #
+
+            if True:
                 # for read
                 self.message.clear()
                 self.dataTags = {}
-                self.elementTags = {}
+               
 
                 for i in range(len(self.imgTags)):      #get 'data' tags and element tags
                     self.dataTags[i] = list(self.img[self.imgTags[i]])
-                    self.elementTags[i] = list(self.img[self.imgTags[i]])
                     indx = self.imageTag.currentIndex()
                     if indx == -1:
                         return
                 try:
-                    #filtering  drop-down menu to inlcude only relevant entries. 
-                    temp_tags1 = list(filter(lambda k: 'XRF' in k, self.dataTags[indx]))
-                    temp_tags1 = list(filter(lambda k: not 'quant' in k, temp_tags1))
-                    temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
-                    self.dataTags[indx] = temp_tags1 + temp_tags2
-                    self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
+                    # #filtering  drop-down menu to inlcude only relevant entries.
+                    temp_tags1 = list(filter(lambda k: not 'names' in k, self.dataTags[indx]))
+                    temp_tags1 = list(filter(lambda k: not 'units' in k, temp_tags1))
+                    # temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
+                    self.dataTags[indx] = temp_tags1
                     self.dataTag.clear()
-                    self.elementTag.clear()
+                    # # self.elementTag.clear()
                     for i in range(len(self.dataTags[indx])):
                         self.dataTag.addItem(self.dataTags[indx][i])
 
-                    for i in range(len(self.elementTags[indx])):
-                        self.elementTag.addItem(self.elementTags[indx][i])
-
-                    if self.auto_element_tag in self.dataTags:
-                        self.elementTag.setCurrentText(self.auto_element_tag)
                 except KeyError:
                     pass
 
                 try:
                     indx2 = self.dataTags[indx].index(self.auto_data_tag)
                     self.dataTag.setCurrentIndex(indx2)
-                    indx3 = self.elementTags[indx].index(self.auto_element_tag)
-                    self.elementTag.setCurrentIndex(indx3)
                 except ValueError:
                     pass
 
@@ -384,18 +424,45 @@ class FileTableWidget(QtWidgets.QWidget):
         if self.version == 0:   #legacy data
             fpath = self.fileTableModel.getFirstCheckedFilePath()
             image_tag = self.imageTag.currentText()
-            element_tag = self.elementTag.currentText()
-            self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
-            self.elementTableModel.setAllChecked(False)
-            self.elementTableModel.setChecked(self.auto_selected_elements, (True))
+
+            # for read
+            self.message.clear()
+            self.elementTags = {}
+            num_image_tags = len(self.imgTags)
+            for i in range(num_image_tags):      #get element tags
+                self.elementTags[i] = list(self.img[self.imgTags[i]])
+            indx = self.imageTag.currentIndex()
+            if indx == -1:
+                return
+            try:
+                #filtering  drop-down menu to inlcude only relevant entries.
+                self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
+                self.elementTag.clear()
+
+                for i in range(len(self.elementTags[indx])):
+                    self.elementTag.addItem(self.elementTags[indx][i])
+
+                # if self.auto_element_tag in self.dataTags:
+                #     self.elementTag.setCurrentText(self.auto_element_tag)
+                self.element_tag = self.elementTag.currentText()
+            except KeyError:
+                pass
+
+
+            # self.elementTag.setEnabled(True)
 
         if self.version == 1:   #9idbdata
             fpath = self.fileTableModel.getFirstCheckedFilePath()
             image_tag = self.imgTags[self.imageTag.currentIndex()]
-            element_tag = self.elementTag.currentText()
-            self.elementTableModel.loadElementNames(fpath, image_tag, element_tag)
-            self.elementTableModel.setAllChecked(False)
-            self.elementTableModel.setChecked(self.auto_selected_elements, (True))
+            if self.dataTag.currentText() == 'scalers':
+                self.element_tag = 'scaler_names'
+            else: 
+                self.element_tag = 'data_names'
+            # element_tag = self.elementTag.currentText()
+
+        self.elementTableModel.loadElementNames(fpath, image_tag, self.element_tag)
+        self.elementTableModel.setAllChecked(False)
+        self.elementTableModel.setChecked(self.auto_selected_elements, (True))
 
         # if self.version == 2:   #2ide data
     def getQuantOptions(self):
@@ -410,6 +477,7 @@ class FileTableWidget(QtWidgets.QWidget):
             if self.version == 1:   #9idbdata
                 quant_names = list(self.img[img_tag]['quant_names'])
                 quant_names = [quant_names[i].decode() for i in range(len(quant_names))]
+                self.quant_options.addItem('None')
                 for i in range(len(quant_names)):
                     self.quant_options.addItem(quant_names[i])
                 # default_idx = quant_names.index("DS_IC")
@@ -445,6 +513,18 @@ class FileTableWidget(QtWidgets.QWidget):
         #temporary definition of 'version'
         exchange_bool = list(self.img)
         self.version = 'exchange_1' in exchange_bool
+        #Temporary hardcode version to 0 (legacy import mode)
+        #self.version = 0
+        if self.auto_load_settings[0]:
+            self.version = 0
+        try:
+            if self.parent.legacy_chbx.isChecked():
+                self.version = 0
+            if not self.parent.legacy_chbx.isChecked():
+                self.version = 1
+        except:
+            #checkboxes not yet defined
+            pass
         return self.version
 
     def onThetaUpdate(self):
@@ -452,6 +532,9 @@ class FileTableWidget(QtWidgets.QWidget):
         path_files = self.fileTableModel.getAllFiles()
         #get path_files list
         thetaPV = self.thetaLineEdit.text()
+        #TODO: check to see if thetas is available under exchange tag, if not, load in 
+        #legacy mode or just check under MAPS, or throw a warning (prompt user to enable 
+        #debug tools and enter PV otherweise load thetas file.
         try:
             thetas = load_thetas(path_files, self.imgTags[self.imageTag.currentIndex()], self.version, thetaPV)
         except:
@@ -490,14 +573,16 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.elementTableModel.setChecked(rows, (check_action == action))
 
     def reset_widgets(self):
-        self.parent.imageProcessWidget.imgAndHistoWidget.sld.setValue(0)
-        self.parent.reconstructionWidget.imgAndHistoWidget.sld.setValue(0)
+        self.parent.imageProcessWidget.sld.setValue(0)
+        self.parent.reconstructionWidget.sld.setValue(0)
         self.parent.reconstructionWidget.recon = []
         self.parent.sinogramWidget.sld.setValue(0)
         
     def onSaveDataInMemory(self):
         files = [i.filename for i in self.fileTableModel.arrayData]
-        path_files = [self.fileTableModel.directory + '/' + s for s in files]
+        if len(files) == 0:
+            self.message.setText('Directory probably not mounted')
+            return [], [] , [], []
         thetas = [i.theta for i in self.fileTableModel.arrayData]
         elements = [i.element_name for i in self.elementTableModel.arrayData]
         files_bool = [i.use for i in self.fileTableModel.arrayData]
@@ -505,13 +590,14 @@ class FileTableWidget(QtWidgets.QWidget):
 
         hdf_tag = self.imgTags[self.imageTag.currentIndex()]
         data_tag = self.dataTag.currentText()
-        element_tag = self.elementTag.currentText()
+        element_tag = self.element_tag
         scaler_name = self.quant_options.currentText()
 
         k = np.arange(len(files))
         l = np.arange(len(elements))
 
         files = [files[j] for j in k if files_bool[j]==True]
+        path_files = [self.fileTableModel.directory + '/' + s for s in files]
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
 
@@ -520,7 +606,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.params.theta_pv = self.thetaLineEdit.text()
         self.parent.params.image_tag = self.imgTags[self.imageTag.currentIndex()]
         self.parent.params.data_tag = self.dataTag.currentText()
-        self.parent.params.element_tag = element_tag
+        # self.parent.params.element_tag = element_tag
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
         #self.parent.params.detector_tag = self.scaler_option.currentText()
 
@@ -534,8 +620,12 @@ class FileTableWidget(QtWidgets.QWidget):
             # return [], [] , [], []
 
         self.parent.clear_all()
-        data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
-        
+        try:
+            data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
+        except:
+            pass
+        if data is None or quants is None or scalers is None:
+            return [], [], [], []
         # if self.quant_options.currentText() != 'None':
         self.data = self.normalizeData(data, quants, scalers)
         self.message.setText('finished loading')

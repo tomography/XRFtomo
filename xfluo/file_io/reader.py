@@ -57,6 +57,9 @@ import dxchange
 import numpy as np 
 import xfluo
 import h5py
+from skimage import io
+import csv
+import os
 
 __author__ = "Francesco De Carlo, Fabricio S. Marin"
 __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
@@ -71,7 +74,9 @@ __all__ = ['find_elements',
            'load_thetas_legacy',
            'load_thetas_9idb',
            'load_thetas_2ide',
-           'read_exchange_file']
+           'read_exchange_file',
+           'read_tiffs',
+           'load_thetas_file']
 
 def find_index(a_list, element):
     try:
@@ -124,7 +129,11 @@ def read_channel_names(fname, hdf_tag, channel_tag):
         List of channel names
     
     """
-    b_channel_names = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, channel_tag))
+    try:
+        b_channel_names = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, channel_tag))
+    except:
+        print("File signature not found for {}, check file integrity".format(fname))
+        return []
     channel_names = []
     for i, e in enumerate(b_channel_names):
         channel_names.append(e.decode('utf-8'))
@@ -157,7 +166,8 @@ def read_projection(fname, element, hdf_tag, roi_tag, channel_tag):
     """
 
     elements = read_channel_names(fname, hdf_tag, channel_tag)
-
+    if elements == []:
+        return
     print(fname)
     projections = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, roi_tag))
 
@@ -213,7 +223,7 @@ def load_thetas_legacy( path_files, thetaPV):
     thetas = []
     for i in range(len(path_files)):
         try:
-            hFile = h5py.File(path_files[i])
+            hFile = h5py.File(path_files[i], 'r')
             extra_pvs = hFile['/MAPS/extra_pvs']
             idx = np.where(extra_pvs[0] == thetaBytes)
             if len(idx[0]) > 0:
@@ -226,8 +236,8 @@ def load_thetas_9idb(path_files, data_tag):
     thetas = []
     for i in range(len(path_files)):
         try:
-            hFile = h5py.File(path_files[i])
-            thetas.append(float(hFile[data_tag]['theta'].value[0]))
+            hFile = h5py.File(path_files[i], "r")
+            thetas.append(float(hFile[data_tag]['theta'][0]))
         except:
             pass
     return thetas
@@ -237,10 +247,48 @@ def load_thetas_2ide(path_files, data_tag):
     for i in range(len(path_files)):
         try:
             hFile = h5py.File(path_files[i])
-            thetas.append(float(hFile[data_tag]['theta'].value[0]))
+            thetas.append(float(hFile[data_tag]['theta'][0]))
         except:
             pass
     return thetas
+
+def load_thetas_file(path_file):
+
+    name, ext = os.path.splitext(path_file)
+    fnames = []
+    thetas = []
+    if ext == ".txt":
+        text_file = open(path_file, "r")
+        #TODO: check if fnames are present and save them to list, if not, just get thetas
+        lines = text_file.readlines()
+        text_file.close()
+        try:
+            cols = len(lines[0].split(","))
+        except IndexError:
+            print("invalid file formatting")
+            return [], []
+        if cols == 2:
+            thetas = [float(lines[1:][i].split(",")[1]) for i in range(len(lines)-1)]
+            fnames = [lines[1:][i].split(",")[0] for i in range(len(lines)-1)]
+            return fnames, thetas
+
+        elif cols ==1:
+            thetas = [float(lines[1:][i].split("\n")[0]) for i in range(len(lines)-1)]
+            return [], thetas
+
+    elif ext == ".csv" or ext == ".CSV":
+        with open('example.csv') as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=',')
+            #TODO: check if fnames are present and save them to list, if not, just get thetas
+            thetas = readCSV[0]
+            fnames = readCSV[1]
+            return fnames, thetas
+
+    else:
+        return 
+
+
+
 
 def load_thetas_13(path_files, data_tag):
     pass
@@ -275,11 +323,15 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_nam
     num_elements = len(elements)
     #get max dimensons
     for i in range(num_files):
+        #TODO: this errors out when loading h5/C+ after h5/MapsPy.
         proj = read_projection(path_files[i], element_names[0], hdf_tag, roi_tag, channel_tag)
-        if proj.shape[0] > max_y:
-            max_y = proj.shape[0]
-        if proj.shape[1] > max_x:
-            max_x = proj.shape[1]
+        if proj is None:
+            pass
+        else:
+            if proj.shape[0] > max_y:
+                max_y = proj.shape[0]
+            if proj.shape[1] > max_x:
+                max_x = proj.shape[1]
 
     data = np.zeros([num_elements,num_files, max_y, max_x])
     scalers = np.zeros([num_files,max_y,max_x])
@@ -288,11 +340,19 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_nam
     for i in range(num_elements):
         for j in range(num_files):
             proj = read_projection(path_files[j], elements[i], hdf_tag, roi_tag, channel_tag)
-            img_y = proj.shape[0]
-            img_x = proj.shape[1]
-            dx = (max_x-img_x)//2
-            dy = (max_y-img_y)//2
-            data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
+            if proj is None:
+                pass
+            if proj is not None:
+                img_y = proj.shape[0]
+                img_x = proj.shape[1]
+                dx = (max_x-img_x)//2
+                dy = (max_y-img_y)//2
+                try:
+                    data[i, j, dy:img_y+dy, dx:img_x+dx] = proj
+                except ValueError:
+                    print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
+                    data[i, j] = np.zeros([max_y,max_x])
+
     #get scalers
     if scaler_name == 'None':
         scalers = np.ones([num_files, max_y, max_x])
@@ -348,12 +408,38 @@ def read_quant(fname, element, hdf_tag, quant_name, channel_tag):
     quant_idx = find_index(quant_names,quant_name)
     return all_quants[quant_idx][0][elem_idx]
 
+def read_tiffs(fnames):
+
+    #TODO:check if fnames is a series of tiffs or a single tiff stack
+    max_x, max_y = 0,0
+    num_files = len(fnames)
+    for i in fnames: 
+        im = io.imread(i)
+        if im.shape[0] > max_y:
+            max_y = im.shape[0]
+        if im.shape[1] > max_x:
+            max_x = im.shape[1]
+    data = np.zeros([1,num_files, max_y, max_x])
+
+    for i in range(len(fnames)):
+        im = io.imread(fnames[i])
+        img_y = im.shape[0]
+        img_x = im.shape[1]
+        dx = (max_x-img_x)//2
+        dy = (max_y-img_y)//2
+        data[0,i, dy:img_y+dy, dx:img_x+dx] = im
+
+    return data
+
 def read_exchange_file(fname):
+    #self contained data file with all relevant information. 
+    #alignment 
+    #misc parameters:
     data, elements, thetas = [],[],[]
     hFile = h5py.File(fname[0])
     tmp_elements = hFile['exchange']['elements'].value
     elements = [x.decode('utf-8') for x in tmp_elements]
     thetas = hFile['exchange']['theta'].value
     data = hFile['exchange']['data'].value
-
+    
     return data, elements, thetas
