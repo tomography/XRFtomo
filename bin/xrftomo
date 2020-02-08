@@ -8,10 +8,10 @@ import argparse
 import logging
 import time
 import re
-from xfluo import config #, __version__
+from xrftomo import config #, __version__
 
 
-LOG = logging.getLogger('xfluo')
+LOG = logging.getLogger('xrftomo')
 
 
 def init(args):
@@ -21,12 +21,12 @@ def init(args):
         raise RuntimeError("{0} already exists".format(args.config))
 
 def rec(args):
-    from xfluo import reco
+    from xrftomo import reco
     reco.tomo(args)
 
 def gui(args):
     try:
-        from xfluo import gui
+        from xrftomo import gui
         gui.main(args)
     except ImportError as e:
         LOG.error(str(e))
@@ -42,7 +42,7 @@ def main():
     cmd_parsers = [
         ('init',        init,           (),                             "Create configuration file"),
         ('rec',         rec,            tomo_params,                    "Run tomographic reconstruction using the parameters selected with the GUI"),
-        ('gui',         gui,            gui_params,                     "GUI for xfluo tomographic reconstruction"),
+        ('gui',         gui,            gui_params,                     "GUI for xrftomo tomographic reconstruction"),
     ]
 
     subparsers = parser.add_subparsers(title="Commands", metavar='')
