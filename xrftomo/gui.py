@@ -1099,8 +1099,9 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def closeEvent(self, event):
+        print("here I am")
         try:
-            sections = config.TOMO_PARAMS + ('gui', 'file-io')
+            sections = config.TOMO_PARAMS + ('gui', )
             config.write('xrftomo.conf', args=self.params, sections=sections)
             self.sinogramWidget.ViewControl.iter_parameters.close()
             self.sinogramWidget.ViewControl.center_parameters.close()

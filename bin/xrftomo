@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#!/local/anaconda/bin/python
-#!/Users/decarlo/conda/anaconda3/bin/python
 
 import os
 import sys
@@ -35,7 +33,6 @@ def gui(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', **config.SECTIONS['general']['config'])
-    reco_params = ('reconstruction')
     tomo_params = config.TOMO_PARAMS
     gui_params = tomo_params + ('gui', )
 
@@ -53,7 +50,8 @@ def main():
         cmd_parser = cmd_params.add_arguments(cmd_parser)
         cmd_parser.set_defaults(_func=func)
 
-    args = config.parse_known_args(cmd_parser, subparser=True)
+    args = config.parse_known_args(parser, subparser=True)
+
     log_level = logging.DEBUG if args.verbose else logging.INFO
     LOG.setLevel(log_level)
 

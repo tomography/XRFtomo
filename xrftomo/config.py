@@ -1,3 +1,5 @@
+import os
+import pathlib
 import argparse
 import sys
 import logging
@@ -7,7 +9,7 @@ import numpy as np
 
 
 LOG = logging.getLogger(__name__)
-NAME = "xrftomo.conf"
+NAME = os.path.join(str(pathlib.Path.home()), 'xrftomo.conf')
 SECTIONS = OrderedDict()
 
 SECTIONS['general'] = {
