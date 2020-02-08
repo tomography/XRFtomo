@@ -1,7 +1,7 @@
-:mod:`xfluo.models.element_table`
-=================================
+:mod:`xrftomo.models.element_table`
+===================================
 
-.. automodule:: xfluo.models.element_table
+.. automodule:: xrftomo.models.element_table
    :members:
    :show-inheritance:
    :undoc-members:

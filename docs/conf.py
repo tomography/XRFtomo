@@ -66,8 +66,8 @@ master_doc = 'index'
 
 # General information about the project.
 Affiliation = u'Argonne National Laboratory'
-project = u'Xfluo'
-copyright = u'2018, ' + Affiliation
+project = u'XRFtomo'
+copyright = u'2018-2020, ' + Affiliation
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -280,7 +280,7 @@ texinfo_documents = [
   project+u' Documentation',
   Affiliation, 
   project, 
-  'Scientific Data Exchange'),
+  'XRFtomo'),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -297,7 +297,7 @@ texinfo_documents = [
 
 # http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_mock_imports
 autodoc_mock_imports = "cv2 numpy h5py tomopy tifffile dxchange matplotlib PyQt5 pyqtgraph glob \
-                        pylab sys scipy string PIL time collections configparser argparse os".split()
+                        pylab sys scipy string PIL time collections configparser argparse os skimage".split()
 
 
 

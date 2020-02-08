@@ -7,7 +7,7 @@ import numpy as np
 
 
 LOG = logging.getLogger(__name__)
-NAME = "xfluo.conf"
+NAME = "xrftomo.conf"
 SECTIONS = OrderedDict()
 
 SECTIONS['general'] = {

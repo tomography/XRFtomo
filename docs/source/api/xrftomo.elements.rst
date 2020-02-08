@@ -1,7 +1,7 @@
-:mod:`xfluo.elements`
-=====================
+:mod:`xrftomo.elements`
+=======================
 
-.. automodule:: xfluo.elements
+.. automodule:: xrftomo.elements
    :members:
    :show-inheritance:
    :undoc-members:

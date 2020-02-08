@@ -45,10 +45,10 @@
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
-import xfluo
+import xrftomo
 from pylab import *
 import pyqtgraph
-import xfluo.widgets.image_process_actions as actions
+import xrftomo.widgets.image_process_actions as actions
 import numpy as np
 
 
@@ -71,10 +71,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.ViewControl = xfluo.ImageProcessControlsWidget()
-        # self.imageView = xfluo.ImageView(self)
-        self.imageView = xfluo.ImageView()
-        self.actions = xfluo.ImageProcessActions()
+        self.ViewControl = xrftomo.ImageProcessControlsWidget()
+        # self.imageView = xrftomo.ImageView(self)
+        self.imageView = xrftomo.ImageView()
+        self.actions = xrftomo.ImageProcessActions()
 
         self.file_name_title = QtWidgets.QLabel("_")
         lbl1 = QtWidgets.QLabel("x pos:")

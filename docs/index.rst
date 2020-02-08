@@ -1,6 +1,6 @@
-=====
-Xfluo
-=====
+=======
+XRFtomo
+=======
 
 
 .. image:: source/img/project-logo.png
@@ -11,7 +11,7 @@ Xfluo
 This is a template to add `sphinx <http://www.sphinx-doc.org>`_ 
 / `Read The Docs <http://read-the-docs.readthedocs.io>`_
 documentation to any python project to generate this
-`Xfluo Docs <https://xfluo.readthedocs.io>`_. 
+`xrftomo Docs <https://xrftomo.readthedocs.io>`_. 
 
 These pages are written using `reStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_
 that allows *emphasis*, **strong**, ``literal`` and many more styles.
@@ -58,9 +58,9 @@ Features
 Contribute
 ----------
 
-* Documentation: https://github.com/tomography/xfluo/tree/master/doc
-* Issue Tracker: https://github.com/tomography/xfluo/docs/issues
-* Source Code: https://github.com/tomography/xfluo/xfluo
+* Documentation: https://github.com/tomography/xrftomo/tree/master/doc
+* Issue Tracker: https://github.com/tomography/xrftomo/docs/issues
+* Source Code: https://github.com/tomography/xrftomo/xrftomo
 
 Content
 -------

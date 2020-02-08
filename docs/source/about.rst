@@ -3,7 +3,7 @@ About
 =====
 
 This section describes what the
-`Xfluo <https://github.com/tomography/xfluo>`_
+`xrftomo <https://github.com/tomography/xrftomo>`_
 is about.
 
 .. contents:: Contents:

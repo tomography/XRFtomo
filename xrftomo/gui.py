@@ -45,8 +45,8 @@
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 import sys
-import xfluo
-import xfluo.config as config
+import xrftomo
+import xrftomo.config as config
 from pylab import *
 from scipy import signal, stats
 import pandas as pd
@@ -55,7 +55,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from skimage import measure
 
-from xfluo.file_io.reader import *
+from xrftomo.file_io.reader import *
 # from widgets.file_widget import  FileTableWidget
 # from widgets.image_process_widget import ImageProcessWidget
 # from widgets.sinogram_widget import SinogramWidget
@@ -66,7 +66,7 @@ import time
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
-class XfluoGui(QtGui.QMainWindow):
+class xrftomoGui(QtGui.QMainWindow):
     def __init__(self, app, params):
         super(QtGui.QMainWindow, self).__init__()
         self.params = params
@@ -176,11 +176,11 @@ class XfluoGui(QtGui.QMainWindow):
         # theta_auto_completes = self.params.theta_pv
         # if theta_auto_completes is None:
         #     theta_auto_completes = []
-        self.fileTableWidget = xfluo.FileTableWidget(self)
-        self.imageProcessWidget = xfluo.ImageProcessWidget()
-        self.sinogramWidget = xfluo.SinogramWidget()
-        self.reconstructionWidget = xfluo.ReconstructionWidget()
-        self.writer = xfluo.SaveOptions()
+        self.fileTableWidget = xrftomo.FileTableWidget(self)
+        self.imageProcessWidget = xrftomo.ImageProcessWidget()
+        self.sinogramWidget = xrftomo.SinogramWidget()
+        self.reconstructionWidget = xrftomo.ReconstructionWidget()
+        self.writer = xrftomo.SaveOptions()
 
 
         #refresh UI
@@ -302,7 +302,7 @@ class XfluoGui(QtGui.QMainWindow):
         if sys.platform == "win32":
             add = 50
         self.setGeometry(add, add, 1100 + add, 500 + add)
-        self.setWindowTitle('xfluo')
+        self.setWindowTitle('xrftomo')
         self.show()
 
         #_______________________Help/config_options______________________
@@ -469,7 +469,7 @@ class XfluoGui(QtGui.QMainWindow):
         fname = QtGui.QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
         if fname[0] == '':
             return
-        data, self.elements, thetas = xfluo.read_exchange_file(fname)
+        data, self.elements, thetas = xrftomo.read_exchange_file(fname)
 
         sort_angle_index = np.argsort(thetas)
         self.thetas= thetas[sort_angle_index]
@@ -494,7 +494,7 @@ class XfluoGui(QtGui.QMainWindow):
         #disable preprocessing, alignment, reconstructions, save, tools and edit, 
         #Clear self.data, history and reset everytihng prior to loading. 
 
-        self.data = xfluo.read_tiffs(files[0])
+        self.data = xrftomo.read_tiffs(files[0])
         self.fnames = [files[0][i].split("/")[-1] for i in range(len(files[0]))]
         self.tab_widget.setTabEnabled(1, False)
         self.tab_widget.setTabEnabled(2, False)
@@ -535,7 +535,7 @@ class XfluoGui(QtGui.QMainWindow):
                 self.fileTableWidget.message.setText("select valid directory or load data first. ")
                 return
         try:
-            fnames, thetas = xfluo.load_thetas_file(file[0])
+            fnames, thetas = xrftomo.load_thetas_file(file[0])
         except:
             return
         if not len(thetas)==num_projections:
@@ -1101,7 +1101,7 @@ class XfluoGui(QtGui.QMainWindow):
     def closeEvent(self, event):
         try:
             sections = config.TOMO_PARAMS + ('gui', 'file-io')
-            config.write('xfluo.conf', args=self.params, sections=sections)
+            config.write('xrftomo.conf', args=self.params, sections=sections)
             self.sinogramWidget.ViewControl.iter_parameters.close()
             self.sinogramWidget.ViewControl.center_parameters.close()
             self.sinogramWidget.ViewControl.move2edge.close()
@@ -1117,5 +1117,5 @@ class XfluoGui(QtGui.QMainWindow):
 
 def main(params):
     app = QtGui.QApplication(sys.argv)
-    mainWindow = XfluoGui(app, params)
+    mainWindow = xrftomoGui(app, params)
     sys.exit(app.exec_())

@@ -55,7 +55,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import dxchange
 import numpy as np 
-import xfluo
+import xrftomo
 import h5py
 from skimage import io
 import csv
@@ -103,7 +103,7 @@ def find_elements(channel_names):
 
     elements = []
     for i in range(1, 110, 1): 
-         elements.append(str(xfluo.ELEMENTS[i].symbol))
+         elements.append(str(xrftomo.ELEMENTS[i].symbol))
 
     elements = sorted(set(channel_names) & set(elements), key = channel_names.index)
 

@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -43,27 +46,39 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-import logging
-import numpy as np
-import tomopy
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
-__author__ = "Francesco De Carlo"
-__copyright__ = "Copyright (c) 2019, UChicago Argonne, LLC."
-__version__ = "0.0.1"
-__docformat__ = 'restructuredtext en'
-__all__ = ['tomo']
+from xrftomo.file_io.reader import *
+from xrftomo.file_io.writer import *
 
-LOG = logging.getLogger(__name__)
+from xrftomo.reco import *
+from xrftomo.elements import *
+from xrftomo.widgets.custom_view_box import *
 
-def tomo(params):
+from xrftomo.models.element_table import *
+from xrftomo.models.file_table import *
+from xrftomo.widgets.file_loader import *
 
-    # use https://github.com/tomography/ufot/blob/master/ufot/reco.py 
-    # as a template
-    # this module allows for batch reconstruction of multiple data set using
-    # the parameters selected/optimized with the xfluo GUI
-    # to run it use bin/xfluo rec
-    print ("do nothing for now ...")
+from xrftomo.widgets.image_process import *
+# from xrftomo.widgets.image_and_histogram import *
+from xrftomo.widgets.image_process_controls import *
+from xrftomo.widgets.image_view import *
+from xrftomo.widgets.image_process_actions import *
 
-    rec = True
+from xrftomo.widgets.reconstruction import *
+from xrftomo.widgets.reconstruction_controls import *
+from xrftomo.widgets.reconstruction_view import *
+from xrftomo.widgets.reconstruction_actions import *
 
-    return rec
+from xrftomo.widgets.sinogram import *
+from xrftomo.widgets.sinogram_controls import *
+from xrftomo.widgets.sinogram_view import *
+from xrftomo.widgets.sinogram_actions import *
+
+
+try:
+    import pkg_resources
+    __version__ = pkg_resources.working_set.require("xrftomo")[0].version
+except:
+    pass

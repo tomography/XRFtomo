@@ -1,7 +1,7 @@
-:mod:`xfluo.file_io.reader`
-===========================
+:mod:`xrftomo.file_io.reader`
+=============================
 
-.. automodule:: xfluo.file_io.reader
+.. automodule:: xrftomo.file_io.reader
    :members:
    :show-inheritance:
    :undoc-members:

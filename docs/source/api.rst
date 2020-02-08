@@ -1,17 +1,17 @@
 API reference
 =============
 
-.. rubric:: **Xfluo Modules:**
+.. rubric:: **xrftomo Modules:**
 
 .. toctree::
 
-   api/xfluo.reco
-   api/xfluo.elements
-   api/xfluo.file_io.reader
-   api/xfluo.models.file_table
-   api/xfluo.models.element_table
+   api/xrftomo.reco
+   api/xrftomo.elements
+   api/xrftomo.file_io.reader
+   api/xrftomo.models.file_table
+   api/xrftomo.models.element_table
 
-.. automodule:: xfluo
+.. automodule:: xrftomo
    :members:
    :undoc-members:
    :show-inheritance: 

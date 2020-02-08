@@ -4,14 +4,14 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='xfluo',
+    name='xrftomo',
     author='Fabricio Marin, Chris Roehrig, Arthur Glowacki, Francesco De Carlo, Si Chen',
     packages=find_packages(),
     version=open('VERSION').read().strip(),
     description = 'Pre-processing tools for x-ray fluorescence.',
     license='BSD-3',
     platforms='Any',
-    scripts=['bin/xfluo'],
+    scripts=['bin/xrftomo'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',

@@ -18,9 +18,9 @@ Fork the repository
 The project is maintained on GitHub, which is a version control and a 
 collaboration platform for software developers. To start first register 
 on `GitHub <https://github.com>`_ and fork the 
-`Xfluo repository <https://github.com/tomography/xfluo>`_ 
+`xrftomo repository <https://github.com/tomography/xrftomo>`_ 
 by clicking the **Fork** button in the header of the 
-`Xfluo repository <https://github.com/tomography/xfluo>`_: 
+`xrftomo repository <https://github.com/tomography/xrftomo>`_: 
 
 .. image:: img/fork-repo.png
 
