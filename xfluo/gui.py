@@ -302,7 +302,7 @@ class XfluoGui(QtGui.QMainWindow):
         if sys.platform == "win32":
             add = 50
         self.setGeometry(add, add, 1100 + add, 500 + add)
-        self.setWindowTitle('xfluo')
+        self.setWindowTitle('XRFtomo')
         self.show()
 
         #_______________________Help/config_options______________________
