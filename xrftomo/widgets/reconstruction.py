@@ -47,7 +47,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 import numpy as np
 from pylab import *
-import xfluo
+import xrftomo
 import pyqtgraph
 import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
@@ -63,9 +63,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.ViewControl = xfluo.ReconstructionControlsWidget()
-        self.ReconView = xfluo.ReconView(self)
-        self.actions = xfluo.ReconstructionActions()
+        self.ViewControl = xrftomo.ReconstructionControlsWidget()
+        self.ReconView = xrftomo.ReconView(self)
+        self.actions = xrftomo.ReconstructionActions()
 
         self.file_name_title = QtWidgets.QLabel("_")
         lbl1 = QtWidgets.QLabel("x pos:")
@@ -140,7 +140,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         '''
         load window for reconstruction window
         '''
-        self.write = xfluo.SaveOptions()
+        self.write = xrftomo.SaveOptions()
         self.actions.x_shifts = self.x_shifts
         self.actions.y_shifts = self.y_shifts
         self.actions.centers = self.centers

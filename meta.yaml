@@ -1,5 +1,5 @@
 package:
-  name: xfluo
+  name: xrftomo
   version: 0.1.1
 
 extra:
@@ -7,7 +7,7 @@ extra:
     - conda-forge
 
 source:
-  git_url: https://github.com/FabricioSMarin/xfluo.git
+  git_url: https://github.com/FabricioSMarin/xrftomo.git
   git_tag: testing
   
 build:
@@ -37,9 +37,9 @@ requirements:
 test:
   # Python imports
   imports:
-    - xfluo
+    - xrftomo
 
 about:
-  home: http://xfluo.readthedocs.org
+  home: http://xrftomo.readthedocs.org
   license: BSD-3
-  summary: 'Add docs to any xfluo.'
+  summary: 'Add docs to any xrftomo.'

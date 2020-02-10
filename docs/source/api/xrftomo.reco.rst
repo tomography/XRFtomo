@@ -1,7 +1,7 @@
-:mod:`xfluo.reco`
-=================
+:mod:`xrftomo.reco`
+===================
 
-.. automodule:: xfluo.reco
+.. automodule:: xrftomo.reco
    :members:
    :show-inheritance:
    :undoc-members:

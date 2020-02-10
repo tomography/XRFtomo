@@ -3,7 +3,7 @@ Install
 =======
 
 This section covers the basics of how to download and install 
-`Xfluo <https://github.com/tomography/xfluo>`_. We recommend you 
+`xrftomo <https://github.com/tomography/xrftomo>`_. We recommend you 
 to install the `Anaconda Python <http://continuum.io/downloads>`_
 distribution.
 
@@ -14,13 +14,13 @@ distribution.
 Installing from source
 ======================
   
-Clone the `Xfluo <https://github.com/tomography/xfluo>`_  
+Clone the `xrftomo <https://github.com/tomography/xrftomo>`_  
 from `GitHub <https://github.com>`_ repository::
 
-    git clone https://github.com/tomography/xfluo.git xfluo
+    git clone https://github.com/tomography/xrftomo.git xrftomo
 
 then::
 
-    cd xfluo
+    cd xrftomo
     python setup.py install
     

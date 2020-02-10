@@ -46,12 +46,12 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 # from models.file_table_model import FileTableModel
 # from models.element_table_model import ElementTableModel
-import xfluo
+import xrftomo
 import h5py
 import numpy as np
 import os
 # from file_io.reader import read_projection
-from xfluo.file_io.reader import *
+from xrftomo.file_io.reader import *
 
 class FileTableWidget(QtWidgets.QWidget):
     def __init__(self, parent):
@@ -72,7 +72,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.fileTableModel = xfluo.FileTableModel()
+        self.fileTableModel = xrftomo.FileTableModel()
         self.fileTableView = QtWidgets.QTableView()
         self.fileTableView.setModel(self.fileTableModel)
         self.fileTableView.setSortingEnabled(True)
@@ -80,7 +80,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.fileTableView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.fileTableView.customContextMenuRequested.connect(self.onFileTableContextMenu)
 
-        self.elementTableModel = xfluo.ElementTableModel()
+        self.elementTableModel = xrftomo.ElementTableModel()
         self.elementTableView = QtWidgets.QTableView()
         self.elementTableView.setModel(self.elementTableModel)
         self.elementTableView.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
@@ -621,7 +621,7 @@ class FileTableWidget(QtWidgets.QWidget):
 
         self.parent.clear_all()
         try:
-            data, quants, scalers = xfluo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
+            data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
         except:
             pass
         if data is None or quants is None or scalers is None:

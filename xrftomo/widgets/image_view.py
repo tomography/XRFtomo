@@ -47,7 +47,7 @@
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
 import pyqtgraph
-import xfluo
+import xrftomo
 
 class ImageView(pyqtgraph.GraphicsLayoutWidget):
     # shiftSig = pyqtSignal(str, name='sliderChangedSig')
@@ -70,7 +70,7 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         self.initUI()
 
     def initUI(self):
-        custom_vb = xfluo.CustomViewBox()
+        custom_vb = xrftomo.CustomViewBox()
         self.p1 = self.addPlot(viewBox = custom_vb, enableMouse = False)
         self.projView = pyqtgraph.ImageItem()
         self.projView.rotate(-90)

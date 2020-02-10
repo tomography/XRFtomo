@@ -43,7 +43,7 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-import xfluo
+import xrftomo
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
 # from widgets.sinogram_view import SinogramView
@@ -69,10 +69,10 @@ class SinogramWidget(QtWidgets.QWidget):
         button33size = 78.3
         button3size = 73.3      #small button (almost third)
         button4size = 58.75     #textbox size (less than a third)
-        self.ViewControl = xfluo.SinogramControlsWidget()
-        self.sinoView = xfluo.SinogramView()
-        self.imageView = xfluo.ImageView()
-        self.actions = xfluo.SinogramActions()
+        self.ViewControl = xrftomo.SinogramControlsWidget()
+        self.sinoView = xrftomo.SinogramView()
+        self.imageView = xrftomo.ImageView()
+        self.actions = xrftomo.SinogramActions()
 
 
         self.view_options = QtWidgets.QComboBox()
@@ -225,7 +225,7 @@ class SinogramWidget(QtWidgets.QWidget):
         for j in self.elements:
             self.ViewControl.combo1.addItem(j)
 
-        self.actions = xfluo.SinogramActions()
+        self.actions = xrftomo.SinogramActions()
         self.elementChanged()
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)

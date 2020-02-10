@@ -47,7 +47,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 import numpy as np
 from pylab import *
-import xfluo
+import xrftomo
 import matplotlib.pyplot as plt
 from scipy import ndimage, optimize, signal
 import scipy.fftpack as spf

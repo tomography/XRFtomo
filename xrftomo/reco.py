@@ -32,7 +32,7 @@
 # THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENTn SHALL UChicago     #
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
 # Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
 # INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
 # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
@@ -43,90 +43,27 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import pyqtSignal
+import logging
 import numpy as np
-from pylab import *
-import xfluo
-import matplotlib.pyplot as plt
-from scipy import ndimage, optimize, signal
 import tomopy
-import dxchange
-import os
 
-class ReconstructionActions(QtWidgets.QWidget):
-	dataSig = pyqtSignal(np.ndarray, name='dataSig')
-	fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
+__author__ = "Francesco De Carlo"
+__copyright__ = "Copyright (c) 2019, UChicago Argonne, LLC."
+__version__ = "0.0.1"
+__docformat__ = 'restructuredtext en'
+__all__ = ['tomo']
 
-	def __init__(self):
-		super(ReconstructionActions, self).__init__()
+LOG = logging.getLogger(__name__)
 
-	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas):
-		'''
-		load data for reconstruction and load variables for reconstruction
-		make it sure that data doesn't have infinity or nan as one of
-		entries
-		'''
-		recData = data[element, :, :, :]
-		recData[recData == inf] = True
-		recData[np.isnan(recData)] = True
-		recCenter = np.array(center, dtype=float32)
+def tomo(params):
 
-		print("working fine")
+    # use https://github.com/tomography/ufot/blob/master/ufot/reco.py 
+    # as a template
+    # this module allows for batch reconstruction of multiple data set using
+    # the parameters selected/optimized with the xrftomo GUI
+    # to run it use bin/xrftomo rec
+    print ("do nothing for now ...")
 
-		if method == 0:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
-				algorithm='mlem', center=recCenter, num_iter=iters, accelerated=True, device='cpu')
-		elif method == 1:
-			self.recon= tomopy.recon(recData, thetas, 
-				algorithm='gridrec')
-		elif method == 2:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
-				algorithm='art', num_iter=iters)
-		elif method == 3:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
-				algorithm='pml_hybrid', center=recCenter, 
-				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
-		elif method == 4:
-			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='pml_quad', center=recCenter,
-				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
-		elif method == 5:
-			self.recon= tomopy.recon(recData, thetas, 
-				algorithm='fbp')
-		elif method == 6:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
-				algorithm='sirt', num_iter=iters)
-		elif method == 7:
-			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='tv', center=recCenter,
-				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
+    rec = True
 
-		self.recon = tomopy.remove_nan(self.recon)
-		return self.recon
-	def reconstructAll(self, data, element_names, center, method, beta, delta, iters, thetas):
-		print("This will take a while")
-		save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
-		num_elements = data.shape[0]
-		for i in range(num_elements):
-			print("running reconstruction for:", element_names[i])
-			recon = self.reconstruct(data, i, center, method, beta, delta, iters, thetas)
-			savepath = save_path+'/'+element_names[i]
-			savedir = savepath+'/'+element_names[i]
-			os.makedirs(savepath)
-			xfluo.SaveOptions.save_reconstruction(self, recon, savedir)
-
-		return recon
-
-	def reconMultiply(self):
-		'''
-		multiply reconstruction by 10
-		'''
-		self.recon = self.recon * 10
-		return self.recon
-	def reconDivide(self, recon):
-		'''
-		divide reconstuction by 10
-		'''
-		self.recon = recon / 10
-		return self.recon
+    return rec

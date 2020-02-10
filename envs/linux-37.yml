@@ -1,4 +1,4 @@
-name: xfluo
+name: xrftomo
 channels:
   - conda-forge
 dependencies:

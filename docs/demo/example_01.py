@@ -56,7 +56,7 @@ import os
 import sys
 import argparse
 
-import xfluo
+import xrftomo
 
 def main(arg):
 
@@ -76,11 +76,11 @@ def main(arg):
 
     if os.path.isfile(fname):    
 
-        elements = xfluo.read_elements(fname)
+        elements = xrftomo.read_elements(fname)
         for i, e in enumerate(elements):
             print ('%d:  %s' % (i, e))
         
-        proj, theta = xfluo.read_projection(fname, element, 663)
+        proj, theta = xrftomo.read_projection(fname, element, 663)
         print ("theta:", theta)
 #        print (theta.shape)
         print ("proj:", proj)
@@ -93,7 +93,7 @@ def main(arg):
         h5_file_list = list(filter(lambda x: x.endswith(('.h5', '.hdf')), os.listdir(top)))
 
         for i, fname in enumerate(h5_file_list):
-            proj, theta = xfluo.file_io.read_projection(top+fname, element, 663) ##657 
+            proj, theta = xrftomo.file_io.read_projection(top+fname, element, 663) ##657 
             print(i, theta, fname)
 
     else:
