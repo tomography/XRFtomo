@@ -206,9 +206,9 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget.thetaChangedSig.connect(self.sinogramWidget.updateImgSldRange)
 
         #data dimensions changed
-        self.imageProcessWidget.ySizeChangedSig.connect(self.imageProcessWidget.ySizeChanged)
-        self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
-        self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
+        # self.imageProcessWidget.ySizeChangedSig.connect(self.imageProcessWidget.ySizeChanged)
+        # self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
+        # self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
 
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
@@ -734,6 +734,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.sinogramWidget.showSinogram()
         self.sinogramWidget.showImgProcess()
+        self.sinogramWidget.showDiffProcess()
         self.reconstructionWidget.showReconstruct()
         # self.reset_widgets()
 
@@ -864,6 +865,7 @@ class xrftomoGui(QtGui.QMainWindow):
         index = self.imageProcessWidget.sld.value()
         self.imageProcessWidget.updateSldRange(index, thetas)
         self.sinogramWidget.updateImgSldRange(index, thetas)
+        self.sinogramWidget.updateDiffSldRange(index, thetas)
         return
 
     def clear_all(self):

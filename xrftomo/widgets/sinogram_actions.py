@@ -61,7 +61,6 @@ from skimage.measure import regionprops
 
 
 
-
 class SinogramActions(QtWidgets.QWidget):
     dataSig = pyqtSignal(np.ndarray, name='dataSig')
 

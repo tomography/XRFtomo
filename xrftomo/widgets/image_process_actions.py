@@ -161,14 +161,14 @@ class ImageProcessActions(QtWidgets.QWidget):
 		'''
 		num_elements = data.shape[0]
 		num_projections = data.shape[1]
-		temp_data = zeros([num_elements,num_projections, y_size//2*2, x_size//2*2])
+		temp_data = zeros([num_elements,num_projections, y_size, x_size])
 
 		for i in range(num_projections):
 			for j in range(num_elements):
-				y0 = int(round(abs(y_pos)) - y_size//2)
-				y1 = int(round(abs(y_pos)) + y_size//2)
-				x0 = int(round(x_pos) - x_size//2)
-				x1 = int(round(x_pos) + x_size//2)
+				y0 = int(round(abs(y_pos)) - y_size)
+				y1 = int(round(abs(y_pos)))
+				x0 = int(round(x_pos))
+				x1 = int(round(x_pos) + x_size)
 				temp_data[j,i,:,:] = data[j, i, y0:y1, x0:x1]
 		print("done")
 		data = temp_data
