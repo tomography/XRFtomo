@@ -96,8 +96,8 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data = None
         self.sinogramData = None
 
-        self.ViewControl.btn1.clicked.connect(self.centerOfMass_params)
-        # self.ViewControl.btn1.clicked.connect(self.centerOfMass2_params)
+        self.ViewControl.btn1.clicked.connect(self.ViewControl.com_options.show)
+        self.ViewControl.run_com.clicked.connect(self.centerOfMass_params)
         self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
         self.ViewControl.btn6.clicked.connect(self.ViewControl.iter_parameters.show)
@@ -361,20 +361,13 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def centerOfMass_params(self):
         element, row, data, thetas = self.get_params()
-        data = self.data
-        thetas = self.thetas
-        self.data, self.x_shifts = self.actions.runCenterOfMass(element, data, thetas)
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        wcom = self.ViewControl.weighted_com_checkbox.isChecked()
+        shiftXY = self.ViewControl.shiftXY_checkbox.isChecked()
+        data, x_shifts, y_shifts = self.actions.runCenterOfMass(element, data, thetas, wcom, shiftXY)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
-        
-    # def centerOfMass2_params(self):
-    #     element, row, data, thetas = self.get_params()
-    #     self.data, self.x_shifts, self.centers = self.actions.runCenterOfMass2(element, row, data, thetas)
-    #     self.dataChangedSig.emit(self.data)
-    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
-    #     return
-
+ 
     def shiftEvent_params(self, shift_dir, col_number):
         sinoData = self.sinogramData
         data = self.data
