@@ -150,12 +150,6 @@ class xrftomoGui(QtGui.QMainWindow):
         configAction = QtGui.QAction('load configuration settings', self)
         configAction.triggered.connect(self.configSettings)
 
-        debugToolsAction = QtGui.QAction('enable debug tools', self)
-        debugToolsAction.triggered.connect(self.debugMode)
-
-        exitDebugToolsAction = QtGui.QAction('disable debug tools', self)
-        exitDebugToolsAction.triggered.connect(self.exitDebugMode)
-
         # matcherAction = QtGui.QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
 
@@ -294,8 +288,8 @@ class xrftomoGui(QtGui.QMainWindow):
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(keyMapAction)
         self.helpMenu.addAction(configAction)
-        self.helpMenu.addAction(debugToolsAction)
-        self.helpMenu.addAction(exitDebugToolsAction)
+        # self.helpMenu.addAction(debugToolsAction)
+        # self.helpMenu.addAction(exitDebugToolsAction)
         self.afterConversionMenu.setDisabled(True)
 
         add = 0
@@ -384,10 +378,8 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def toggleDebugMode(self):
-        if self.debug_chbx.isChecked():
+        if self.params.admin:
             self.debugMode()
-        if not self.debug_chbx.isChecked():
-            self.exitDebugMode()
 
     def loadSettingsChanged(self):
         load_settings = [self.legacy_chbx.isChecked(),
@@ -415,22 +407,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.ViewControl.btn5.setVisible(True)
         self.sinogramWidget.ViewControl.btn6.setVisible(True)
         return
- 
-    def exitDebugMode(self):
-        self.fileTableWidget.thetaLabel.setVisible(False)
-        self.fileTableWidget.thetaLineEdit.setVisible(False)
-        self.fileTableWidget.elementTag.setVisible(False)
-        self.fileTableWidget.elementTag_label.setVisible(False)
-        self.imageProcessWidget.ViewControl.Equalize.setVisible(False)
-        self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(False)
-        self.imageProcessWidget.ViewControl.btn2.setVisible(False)
 
-        self.sinogramWidget.ViewControl.btn1.setVisible(False)
-        self.sinogramWidget.ViewControl.btn3.setVisible(False)
-        self.sinogramWidget.ViewControl.btn5.setVisible(False)
-        self.sinogramWidget.ViewControl.btn6.setVisible(False)
-
-        return      
 
     def openFolder(self):
         try:

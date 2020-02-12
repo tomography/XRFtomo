@@ -5,8 +5,6 @@ import sys
 import logging
 import configparser
 from collections import OrderedDict
-import numpy as np
-
 
 LOG = logging.getLogger(__name__)
 NAME = os.path.join(str(pathlib.Path.home()), 'xrftomo.conf')
@@ -30,6 +28,10 @@ SECTIONS['general'] = {
 
 
 SECTIONS['gui'] = {
+    'admin': {
+        'default': False,
+        'type': bool,
+        'help': "debug tools and unstable options become available on gui"},
     'show-2d': {
         'default': False,
         'help': "Show 2D slices with pyqtgraph",
@@ -165,7 +167,6 @@ def get_config_name():
 
     return name
 
-
 def parse_known_args(parser, subparser=False):
     """
     Parse arguments from file and then override by the ones specified on the
@@ -214,7 +215,6 @@ def config_to_list(config_name=NAME):
                         result.append('--{}={}'.format(name, value))
 
     return result
-
 
 class Params(object):
     def __init__(self, sections=()):
