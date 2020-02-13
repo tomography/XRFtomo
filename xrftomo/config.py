@@ -28,10 +28,6 @@ SECTIONS['general'] = {
 
 
 SECTIONS['gui'] = {
-    'admin': {
-        'default': False,
-        'type': bool,
-        'help': "debug tools and unstable options become available on gui"},
     'show-2d': {
         'default': False,
         'help': "Show 2D slices with pyqtgraph",
@@ -43,12 +39,16 @@ SECTIONS['gui'] = {
     'pre-processing': {
         'default': False,
         'help': "Enable pre-proces correction",
-        'action': 'store_true'}}
+        'action': 'store_true'},
+    'admin': {
+        'default': False,
+        'help': "debug tools and unstable options become available on gui",
+        'action': "store_true"}}
 
 SECTIONS['file-io'] = {
     'load-settings': {
         'type': str,
-        'default': "[True, True, True, True, True, True, True, True, True]",
+        'default': "[True, True, True, True, True, True, True, True]",
         'help': "True/False state for checkboxes under help drowdown menu"},
     'legacy-mode': {
         'default': True,

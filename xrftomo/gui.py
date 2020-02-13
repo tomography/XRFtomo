@@ -288,8 +288,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(keyMapAction)
         self.helpMenu.addAction(configAction)
-        # self.helpMenu.addAction(debugToolsAction)
-        # self.helpMenu.addAction(exitDebugToolsAction)
+
         self.afterConversionMenu.setDisabled(True)
 
         add = 0
@@ -308,7 +307,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.element_chbx = QtWidgets.QCheckBox("Load last elements")
         self.image_tag_chbx = QtWidgets.QCheckBox("Load last image_tag")
         self.data_tag_chbx= QtWidgets.QCheckBox("Load last data_tag")
-        self.debug_chbx = QtWidgets.QCheckBox("Enable debug tools at startup")
         self.alingmen_chbx = QtWidgets.QCheckBox("Load alignment information")
         self.iter_align_param_chbx = QtWidgets.QCheckBox("Load last iter-align parameters")
         self.recon_method_chbx = QtWidgets.QCheckBox("Load last-used reconstruction method")
@@ -319,10 +317,10 @@ class xrftomoGui(QtGui.QMainWindow):
         self.element_chbx.setChecked(self.checkbox_states[2])
         self.image_tag_chbx.setChecked(self.checkbox_states[3])
         self.data_tag_chbx.setChecked(self.checkbox_states[4])
-        self.debug_chbx.setChecked(self.checkbox_states[5])
-        self.alingmen_chbx.setChecked(self.checkbox_states[6])
-        self.iter_align_param_chbx.setChecked(self.checkbox_states[7])
-        self.recon_method_chbx.setChecked(self.checkbox_states[8])
+
+        self.alingmen_chbx.setChecked(self.checkbox_states[5])
+        self.iter_align_param_chbx.setChecked(self.checkbox_states[6])
+        self.recon_method_chbx.setChecked(self.checkbox_states[7])
 
         self.toggleDebugMode()
 
@@ -332,8 +330,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.element_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.image_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.data_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.debug_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.debug_chbx.stateChanged.connect(self.toggleDebugMode)
+
         self.alingmen_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.iter_align_param_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.recon_method_chbx.stateChanged.connect(self.loadSettingsChanged)
@@ -344,7 +341,6 @@ class xrftomoGui(QtGui.QMainWindow):
         vbox.addWidget(self.element_chbx)
         vbox.addWidget(self.image_tag_chbx)
         vbox.addWidget(self.data_tag_chbx)
-        vbox.addWidget(self.debug_chbx)
         vbox.addWidget(self.alingmen_chbx)
         vbox.addWidget(self.iter_align_param_chbx)
         vbox.addWidget(self.recon_method_chbx)
@@ -380,6 +376,7 @@ class xrftomoGui(QtGui.QMainWindow):
     def toggleDebugMode(self):
         if self.params.admin:
             self.debugMode()
+            self.params.admin = False
 
     def loadSettingsChanged(self):
         load_settings = [self.legacy_chbx.isChecked(),
@@ -387,7 +384,6 @@ class xrftomoGui(QtGui.QMainWindow):
                     self.element_chbx.isChecked(),
                     self.image_tag_chbx.isChecked(),
                     self.data_tag_chbx.isChecked(),
-                    self.debug_chbx.isChecked(),
                     self.alingmen_chbx.isChecked(),
                     self.iter_align_param_chbx.isChecked(),
                     self.recon_method_chbx.isChecked()]

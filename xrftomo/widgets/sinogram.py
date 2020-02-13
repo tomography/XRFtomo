@@ -271,6 +271,11 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         x_index = int(self.data.shape[3] * 0.3)
         y_index = int(self.data.shape[2]* 0.3)
+
+        position = [0.0, 0.25, 0.4, 0.6, 0.75, 1.0]
+        colors = [[64, 0, 0, 255], [255, 0, 0, 255], [255, 255, 255, 255], [255, 255, 255, 255], [0, 0, 255, 255], [0, 0, 64, 255]]
+        bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
+        lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
         if index < self.data.shape[1]-1:
             img = self.data[element, index] - self.data[element, index+1]
             img = img[y_index:-y_index, x_index:-x_index]
@@ -278,6 +283,8 @@ class SinogramWidget(QtWidgets.QWidget):
             img = self.data[element, index] - self.data[element, 0]
             img = img[x_index:-x_index, y_index:-y_index]
         self.diffView.projView.setImage(img, border='w')
+        self.diffView.projView.setLookupTable(lookup_table)
+        
 
     def updateSliderSlot(self, index):
         if len(self.thetas) == 0:

@@ -66,13 +66,6 @@ class differenceView(pyqtgraph.GraphicsLayoutWidget):
         self.p1.addItem(self.projView)
         self.p1.vb = custom_vb
 
-        # position = [0.0, 0.25, 0.5, 0.75, 1.0]
-        # colors = [[0, 0, 0, 255], [0, 0, 256, 255], [256, 0, 0, 255], [242, 125, 0, 255], [253, 207, 88, 255]]
-        # bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
-        # lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
-        # self.projView.setLookupTable(lookup_table)
-        # self.projView.setLevels([0, 5])
-
     def wheelEvent(self, ev):
         #empty function, but leave it as it overrides some other unwanted functionality.
         pass
