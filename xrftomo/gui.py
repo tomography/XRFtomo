@@ -150,12 +150,6 @@ class xrftomoGui(QtGui.QMainWindow):
         configAction = QtGui.QAction('load configuration settings', self)
         configAction.triggered.connect(self.configSettings)
 
-        debugToolsAction = QtGui.QAction('enable debug tools', self)
-        debugToolsAction.triggered.connect(self.debugMode)
-
-        exitDebugToolsAction = QtGui.QAction('disable debug tools', self)
-        exitDebugToolsAction.triggered.connect(self.exitDebugMode)
-
         # matcherAction = QtGui.QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
 
@@ -206,9 +200,9 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget.thetaChangedSig.connect(self.sinogramWidget.updateImgSldRange)
 
         #data dimensions changed
-        self.imageProcessWidget.ySizeChangedSig.connect(self.imageProcessWidget.ySizeChanged)
-        self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
-        self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
+        # self.imageProcessWidget.ySizeChangedSig.connect(self.imageProcessWidget.ySizeChanged)
+        # self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
+        # self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
 
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
@@ -294,8 +288,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(keyMapAction)
         self.helpMenu.addAction(configAction)
-        self.helpMenu.addAction(debugToolsAction)
-        self.helpMenu.addAction(exitDebugToolsAction)
+
         self.afterConversionMenu.setDisabled(True)
 
         add = 0
@@ -314,7 +307,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.element_chbx = QtWidgets.QCheckBox("Load last elements")
         self.image_tag_chbx = QtWidgets.QCheckBox("Load last image_tag")
         self.data_tag_chbx= QtWidgets.QCheckBox("Load last data_tag")
-        self.debug_chbx = QtWidgets.QCheckBox("Enable debug tools at startup")
         self.alingmen_chbx = QtWidgets.QCheckBox("Load alignment information")
         self.iter_align_param_chbx = QtWidgets.QCheckBox("Load last iter-align parameters")
         self.recon_method_chbx = QtWidgets.QCheckBox("Load last-used reconstruction method")
@@ -325,10 +317,10 @@ class xrftomoGui(QtGui.QMainWindow):
         self.element_chbx.setChecked(self.checkbox_states[2])
         self.image_tag_chbx.setChecked(self.checkbox_states[3])
         self.data_tag_chbx.setChecked(self.checkbox_states[4])
-        self.debug_chbx.setChecked(self.checkbox_states[5])
-        self.alingmen_chbx.setChecked(self.checkbox_states[6])
-        self.iter_align_param_chbx.setChecked(self.checkbox_states[7])
-        self.recon_method_chbx.setChecked(self.checkbox_states[8])
+
+        self.alingmen_chbx.setChecked(self.checkbox_states[5])
+        self.iter_align_param_chbx.setChecked(self.checkbox_states[6])
+        self.recon_method_chbx.setChecked(self.checkbox_states[7])
 
         self.toggleDebugMode()
 
@@ -338,8 +330,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.element_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.image_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.data_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.debug_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.debug_chbx.stateChanged.connect(self.toggleDebugMode)
+
         self.alingmen_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.iter_align_param_chbx.stateChanged.connect(self.loadSettingsChanged)
         self.recon_method_chbx.stateChanged.connect(self.loadSettingsChanged)
@@ -350,7 +341,6 @@ class xrftomoGui(QtGui.QMainWindow):
         vbox.addWidget(self.element_chbx)
         vbox.addWidget(self.image_tag_chbx)
         vbox.addWidget(self.data_tag_chbx)
-        vbox.addWidget(self.debug_chbx)
         vbox.addWidget(self.alingmen_chbx)
         vbox.addWidget(self.iter_align_param_chbx)
         vbox.addWidget(self.recon_method_chbx)
@@ -384,10 +374,9 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def toggleDebugMode(self):
-        if self.debug_chbx.isChecked():
+        if self.params.admin:
             self.debugMode()
-        if not self.debug_chbx.isChecked():
-            self.exitDebugMode()
+            self.params.admin = False
 
     def loadSettingsChanged(self):
         load_settings = [self.legacy_chbx.isChecked(),
@@ -395,7 +384,6 @@ class xrftomoGui(QtGui.QMainWindow):
                     self.element_chbx.isChecked(),
                     self.image_tag_chbx.isChecked(),
                     self.data_tag_chbx.isChecked(),
-                    self.debug_chbx.isChecked(),
                     self.alingmen_chbx.isChecked(),
                     self.iter_align_param_chbx.isChecked(),
                     self.recon_method_chbx.isChecked()]
@@ -415,22 +403,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.ViewControl.btn5.setVisible(True)
         self.sinogramWidget.ViewControl.btn6.setVisible(True)
         return
- 
-    def exitDebugMode(self):
-        self.fileTableWidget.thetaLabel.setVisible(False)
-        self.fileTableWidget.thetaLineEdit.setVisible(False)
-        self.fileTableWidget.elementTag.setVisible(False)
-        self.fileTableWidget.elementTag_label.setVisible(False)
-        self.imageProcessWidget.ViewControl.Equalize.setVisible(False)
-        self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(False)
-        self.imageProcessWidget.ViewControl.btn2.setVisible(False)
 
-        self.sinogramWidget.ViewControl.btn1.setVisible(False)
-        self.sinogramWidget.ViewControl.btn3.setVisible(False)
-        self.sinogramWidget.ViewControl.btn5.setVisible(False)
-        self.sinogramWidget.ViewControl.btn6.setVisible(False)
-
-        return      
 
     def openFolder(self):
         try:
@@ -734,6 +707,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.sinogramWidget.showSinogram()
         self.sinogramWidget.showImgProcess()
+        self.sinogramWidget.showDiffProcess()
         self.reconstructionWidget.showReconstruct()
         # self.reset_widgets()
 
@@ -864,6 +838,7 @@ class xrftomoGui(QtGui.QMainWindow):
         index = self.imageProcessWidget.sld.value()
         self.imageProcessWidget.updateSldRange(index, thetas)
         self.sinogramWidget.updateImgSldRange(index, thetas)
+        self.sinogramWidget.updateDiffSldRange(index, thetas)
         return
 
     def clear_all(self):

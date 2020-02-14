@@ -5,8 +5,6 @@ import sys
 import logging
 import configparser
 from collections import OrderedDict
-import numpy as np
-
 
 LOG = logging.getLogger(__name__)
 NAME = os.path.join(str(pathlib.Path.home()), 'xrftomo.conf')
@@ -41,12 +39,16 @@ SECTIONS['gui'] = {
     'pre-processing': {
         'default': False,
         'help': "Enable pre-proces correction",
-        'action': 'store_true'}}
+        'action': 'store_true'},
+    'admin': {
+        'default': False,
+        'help': "debug tools and unstable options become available on gui",
+        'action': "store_true"}}
 
 SECTIONS['file-io'] = {
     'load-settings': {
         'type': str,
-        'default': "[True, True, True, True, True, True, True, True, True]",
+        'default': "[True, True, True, True, True, True, True, True]",
         'help': "True/False state for checkboxes under help drowdown menu"},
     'legacy-mode': {
         'default': True,
@@ -165,7 +167,6 @@ def get_config_name():
 
     return name
 
-
 def parse_known_args(parser, subparser=False):
     """
     Parse arguments from file and then override by the ones specified on the
@@ -214,7 +215,6 @@ def config_to_list(config_name=NAME):
                         result.append('--{}={}'.format(name, value))
 
     return result
-
 
 class Params(object):
     def __init__(self, sections=()):

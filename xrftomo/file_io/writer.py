@@ -126,7 +126,7 @@ class SaveOptions(object):
 				for i in arange(data.shape[1]):		#angle index
 					temp_img = data[j, i, :, :]
 					temp = Image.fromarray(temp_img.astype(np.float32))
-					temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[i]+".tif")
+					temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tif")
 			return
 		except IOError:
 			print("type the header name")

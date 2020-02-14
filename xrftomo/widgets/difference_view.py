@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 # #########################################################################
 # Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
 #                                                                         #
@@ -46,40 +43,64 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
-from xrftomo.file_io.reader import *
-from xrftomo.file_io.writer import *
+from PyQt5 import QtCore
+from PyQt5.QtCore import pyqtSignal
+import pyqtgraph
+import xrftomo
 
-from xrftomo.reco import *
-from xrftomo.elements import *
-from xrftomo.widgets.custom_view_box import *
-from xrftomo.widgets.difference_view import *
+class differenceView(pyqtgraph.GraphicsLayoutWidget):
+    keyPressSig = pyqtSignal(str, name= 'keyPressSig')
 
-from xrftomo.models.element_table import *
-from xrftomo.models.file_table import *
-from xrftomo.widgets.file_loader import *
+    def __init__(self):
+    # def __init__(self, parent):
+        super(differenceView, self).__init__()
+        self.keylist = []
+        self.initUI()
 
-from xrftomo.widgets.image_process import *
-# from xrftomo.widgets.image_and_histogram import *
-from xrftomo.widgets.image_process_controls import *
-from xrftomo.widgets.image_view import *
-from xrftomo.widgets.image_process_actions import *
+    def initUI(self):
+        custom_vb = xrftomo.CustomViewBox()
+        self.p1 = self.addPlot(viewBox = custom_vb, enableMouse = False)
+        self.projView = pyqtgraph.ImageItem()
+        self.projView.rotate(-90)
+        self.p1.addItem(self.projView)
+        self.p1.vb = custom_vb
 
-from xrftomo.widgets.reconstruction import *
-from xrftomo.widgets.reconstruction_controls import *
-from xrftomo.widgets.reconstruction_view import *
-from xrftomo.widgets.reconstruction_actions import *
+    def wheelEvent(self, ev):
+        #empty function, but leave it as it overrides some other unwanted functionality.
+        pass
 
-from xrftomo.widgets.sinogram import *
-from xrftomo.widgets.sinogram_controls import *
-from xrftomo.widgets.sinogram_view import *
-from xrftomo.widgets.sinogram_actions import *
+    def keyPressEvent(self, ev):
+        self.firstrelease = True
+        astr = ev.key()
+        self.keylist.append(astr)
 
+    def keyReleaseEvent(self, ev):
+        if self.firstrelease == True:
+            self.processMultipleKeys(self.keylist)
 
-try:
-    import pkg_resources
-    __version__ = pkg_resources.working_set.require("xrftomo")[0].version
-except:
-    pass
+        self.firstrelease = False
+
+        try:    #complains about an index error for some reason.
+            del self.keylist[-1]
+        except:
+            pass
+        return
+
+    def processMultipleKeys(self, keyspressed):
+        if len(keyspressed) ==1:
+            if keyspressed[0]== QtCore.Qt.Key_Left:
+                self.keyPressSig.emit('left')
+            if keyspressed[0] == QtCore.Qt.Key_Right:
+                self.keyPressSig.emit('right')
+            if keyspressed[0] == QtCore.Qt.Key_Up:
+                self.keyPressSig.emit('up')
+            if keyspressed[0] == QtCore.Qt.Key_Down:
+                self.keyPressSig.emit('down')
+            if keyspressed[0] == QtCore.Qt.Key_A:
+                self.keyPressSig.emit('A')
+            if keyspressed[0] == QtCore.Qt.Key_D:
+                self.keyPressSig.emit('D')
+        if len(keyspressed) >=2:
+            self.keylist = []
+            return

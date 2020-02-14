@@ -55,6 +55,8 @@ import string
 #import cv2
 from PIL import Image, ImageChops, ImageOps
 import tomopy
+from skimage import filters
+from skimage.measure import regionprops
 
 
 
@@ -67,52 +69,105 @@ class SinogramActions(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
-    def runCenterOfMass(self, element, data, thetas):
-        '''
-        Center of mass alignment
-        Variables
-        -----------
-        element: int
-            element index
-        data: ndarray
-            4D xrf dataset ndarray [elements, theta, y,x]
-        thetas: ndarray
-            sorted projection angle list
-        '''
+    # def runCenterOfMass(self, element, data, thetas):
+    #     '''
+    #     Center of mass alignment
+    #     Variables
+    #     -----------
+    #     element: int
+    #         element index
+    #     data: ndarray
+    #         4D xrf dataset ndarray [elements, theta, y,x]
+    #     thetas: ndarray
+    #         sorted projection angle list
+    #     '''
+    #     num_projections = data.shape[1]
+    #     com = zeros(num_projections)
+    #     temp = zeros(data.shape[3])
+    #     temp2 = zeros(data.shape[3])
+    #     for i in arange(num_projections):
+    #         temp = sum(data[element, i, :, :] - data[element, i, :10, :10].mean(), axis=0)
+    #         numb2 = sum(temp)
+    #         for j in arange(data.shape[3]):
+    #             temp2[j] = temp[j] * j
+    #         if numb2 <= 0:
+    #             numb2 = 1
+    #         numb = float(sum(temp2)) / numb2
+    #         if numb == NaN:
+    #             numb = 0.000
+    #         com[i] = numb
+
+    #     x=thetas
+    #     fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
+    #     errfunc = lambda p, x, y: fitfunc(p, x) - y
+    #     p0 = [100, 100, 100]
+    #     self.centers, success = optimize.leastsq(errfunc, p0, args=(x, com))
+    #     centerOfMassDiff = fitfunc(self.centers, x) - com
+
+    #     #set some label within the sinogram widget to the string defined in the line below
+    #     # self.lbl.setText("Center of Mass: " + str(p1[2]))
+
+    #     num_projections = data.shape[1]
+    #     for i in arange(num_projections):
+    #         self.x_shifts[i] += int(centerOfMassDiff[i])
+    #         data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(self.x_shifts[i])), axis=2)
+    #     #set some status label
+    #     self.alignmentDone()
+    #     # return data, self.x_shifts, self.centers
+    #     return data, self.x_shifts
+
+    def runCenterOfMass(self, element, data, thetas, weighted = True, shift_y = False):
+
         num_projections = data.shape[1]
-        com = zeros(num_projections)
-        temp = zeros(data.shape[3])
-        temp2 = zeros(data.shape[3])
-        for i in arange(num_projections):
-            temp = sum(data[element, i, :, :] - data[element, i, :10, :10].mean(), axis=0)
-            numb2 = sum(temp)
-            for j in arange(data.shape[3]):
-                temp2[j] = temp[j] * j
-            if numb2 <= 0:
-                numb2 = 1
-            numb = float(sum(temp2)) / numb2
-            if numb == NaN:
-                numb = 0.000
-            com[i] = numb
+        view_center_x = data.shape[3]//2
+        view_center_y = data.shape[2]//2
 
-        x=thetas
-        fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
-        errfunc = lambda p, x, y: fitfunc(p, x) - y
-        p0 = [100, 100, 100]
-        self.centers, success = optimize.leastsq(errfunc, p0, args=(x, com))
-        centerOfMassDiff = fitfunc(self.centers, x) - com
+        x_shifts = []
+        y_shifts = []
+        w_x_shifts = []
+        w_y_shifts = []
+        tmp_lst = []
+        if weighted:
+            for i in range(num_projections):
+                image = data[element, i]
+                threshold_value = filters.threshold_otsu(image)
+                labeled_foreground = (image > threshold_value).astype(int)
+                properties = regionprops(labeled_foreground, image)
+                weighted_center_of_mass = properties[0].weighted_centroid
+                w_x_shifts.append(int(round(view_center_x - weighted_center_of_mass[1])))
+                w_y_shifts.append(int(round(view_center_y - weighted_center_of_mass[0])))
+                data = self.shiftProjectionX(data, i, w_x_shifts[i])
+                if shift_y:
+                    data = self.shiftProjectionY(data, i, w_y_shifts[i])
 
-        #set some label within the sinogram widget to the string defined in the line below
-        # self.lbl.setText("Center of Mass: " + str(p1[2]))
+            if not shift_y: 
+                w_y_shifts = np.asarray(w_y_shifts)*0
+            return data, np.asarray(w_x_shifts), np.asarray(w_y_shifts)
 
-        num_projections = data.shape[1]
-        for i in arange(num_projections):
-            self.x_shifts[i] += int(centerOfMassDiff[i])
-            data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(self.x_shifts[i])), axis=2)
-        #set some status label
-        self.alignmentDone()
-        # return data, self.x_shifts, self.centers
-        return data, self.x_shifts
+        if not weighted:
+            for i in range(num_projections):
+                image = data[element, i]
+                threshold_value = filters.threshold_otsu(image)
+                labeled_foreground = (image > threshold_value).astype(int)
+                properties = regionprops(labeled_foreground, image)
+                center_of_mass = properties[0].centroid
+                x_shifts.append(int(round(view_center_x -center_of_mass[1])))
+                y_shifts.append(int(round(view_center_y - center_of_mass[0])))
+                data = self.shiftProjectionX(data, i, x_shifts[i])
+                if shift_y:
+                    data = self.shiftProjectionY(data, i, y_shifts[i])
+                    
+            if not shift_y: 
+                y_shifts = np.asarray(y_shifts)*0
+            return data, np.asarray(x_shifts), np.asarray(y_shifts)
+
+    def shiftProjectionX(self, data, index, displacement):
+        data[:,index] = np.roll(data[:,index],displacement,axis=2)
+        return data
+
+    def shiftProjectionY(self, data, index, displacement):
+        data[:,index] = np.roll(data[:,index],displacement,axis=1)
+        return data
 
     def shift(self, sinogramData, data, shift_number, col_number):
         '''
