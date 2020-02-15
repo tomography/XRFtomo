@@ -102,8 +102,18 @@ class ReconstructionActions(QtWidgets.QWidget):
 				algorithm='tv', center=recCenter,
 				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
 
+		#tomopy.remove_nan() does not remove inf values
 		self.recon = tomopy.remove_nan(self.recon)
+
+		if np.isinf(self.recon).max():
+			print("WARNING: inf values found in reconstruction, consider reconstructing with less iterations")
+			print("inf values replaced with 0.001")
+			self.recon[self.recon == np.inf] = 0.001
+
+		err, mse  = self.assessRecon(self.recon, data, thetas, )
+		print(mse)
 		return self.recon
+
 	def reconstructAll(self, data, element_names, center, method, beta, delta, iters, thetas):
 		print("This will take a while")
 		save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
@@ -117,6 +127,32 @@ class ReconstructionActions(QtWidgets.QWidget):
 			xrftomo.SaveOptions.save_reconstruction(self, recon, savedir)
 
 		return recon
+
+	def assessRecon(self,recon, data, thetas, show_plots=True):
+		#get index where projection angle is zero
+		zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]
+		num_slices = recon.shape[0]
+		width = self.recon.shape[1]
+		reprojection = np.zeros([num_slices, width])
+		tmp = np.zeros([num_slices, width])
+
+		# get recon reporjection for slice i and take the difference with data projection (at angle ~=0).
+		for i in range(num_slices):
+			reprojection[i] = np.sum(recon[i], axis=0)
+			tmp[i] = data[0, zero_index, i] / (data[0, zero_index, i].max() / np.sum(recon[i], axis=0).max())
+		tmp = tmp/(tmp.max()/width)
+		reprojection = reprojection/(reprojection.max()/width)
+		#difference between reporjection and original projection at angle == 0
+		# err = tmp - reprojection/reprojection
+		err = tmp - reprojection
+		#mean squared error
+		mse = (np.square(err)).mean(axis=None)
+		imshow(recon[num_slices//2], origin='lower'), plot(tmp[num_slices//2]), plot(reprojection[num_slices//2])
+		legend((' original data', 'reprojection'), loc=1)
+		title("MSE:{}".format(np.round(mse, 4)))
+		if show_plots:
+			show()
+		return err, mse
 
 	def reconMultiply(self):
 		'''
