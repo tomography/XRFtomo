@@ -232,7 +232,8 @@ class SinogramActions(QtWidgets.QWidget):
             4D xrf dataset ndarray [elements, theta, y,x]
         '''
         num_projections = data.shape[1]
-
+        x_shifts = np.zeros(num_projections)
+        y_shifts = np.zeros(num_projections)
         for i in arange(num_projections - 1):
             a = data[element, i, :, :]
             b = data[element, i + 1, :, :]
@@ -251,11 +252,11 @@ class SinogramActions(QtWidgets.QWidget):
 
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
-            self.x_shifts[i + 1] += t1
-            self.y_shifts[i + 1] += -t0
+            x_shifts[i + 1] += t1
+            y_shifts[i + 1] += -t0
 
         self.alignmentDone()
-        return data, self.x_shifts, self.y_shifts
+        return data, x_shifts, y_shifts
 
     def crossCorrelate2(self, data):
         '''
