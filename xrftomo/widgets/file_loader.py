@@ -44,13 +44,10 @@
 # #########################################################################
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-# from models.file_table_model import FileTableModel
-# from models.element_table_model import ElementTableModel
 import xrftomo
 import h5py
 import numpy as np
 import os
-# from file_io.reader import read_projection
 from xrftomo.file_io.reader import *
 
 class FileTableWidget(QtWidgets.QWidget):

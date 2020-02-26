@@ -52,7 +52,6 @@ Module for importing raw data files.
 
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 import dxchange
-import string
 from PyQt5 import QtGui
 from pylab import *
 import tomopy

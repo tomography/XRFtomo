@@ -45,13 +45,9 @@
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
-import numpy as np
 from pylab import *
 import xrftomo
 import pyqtgraph
-import matplotlib.pyplot as plt
-from scipy import ndimage, optimize, signal
-# import tomopy
 
 class ReconstructionWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, name='elementChangedSig')

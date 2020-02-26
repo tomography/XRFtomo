@@ -46,8 +46,6 @@
 import xrftomo
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
-# from widgets.sinogram_view import SinogramView
-# from widgets.sinogram_controls_widget import SinogramControlsWidget
 import pyqtgraph
 from pylab import *
 import numpy as np
@@ -402,10 +400,10 @@ class SinogramWidget(QtWidgets.QWidget):
     def move2center_params(self):
         data = self.data
         rot_center = int(np.round(float(self.ViewControl.center_1.text().split()[1])))
-        x_shifts = self.data.shape[3]//2 - rot_center
+        x_shifts = data.shape[3]//2 - rot_center
 
         if x_shifts<0:
-            data = self.actions.shiftDataX(self.data, x_shifts)
+            data = self.actions.shiftDataX(data, x_shifts)
             self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
 
@@ -472,9 +470,9 @@ class SinogramWidget(QtWidgets.QWidget):
         data = self.data
         thetas = self.thetas
 
-        self.data, self.sinogramData = self.actions.shift(sinoData, data, shift_dir, col_number)
+        data, self.sinogramData = self.actions.shift(sinoData, data, shift_dir, col_number)
         self.x_shifts[col_number] += shift_dir
-        self.dataChangedSig.emit(self.data)
+        self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         return
 
@@ -483,15 +481,15 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         data, x_shifts, y_shifts = self.actions.crossCorrelate(element, data)
         self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + x_shifts)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
 
     def phaseCorrelate_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        self.data, self.x_shifts, self.y_shifts = self.actions.phaseCorrelate(element, data)
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        data, x_shifts, y_shifts = self.actions.phaseCorrelate(element, data)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts+x_shifts, self.y_shifts+y_shifts)
         return
 
     def move2edge_params(self):
@@ -509,9 +507,9 @@ class SinogramWidget(QtWidgets.QWidget):
 
         threshold = int(self.ViewControl.threshold_textbox.text())
 
-        self.y_shifts, self.data = self.actions.align2edge(element, data, loc, threshold) 
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        y_shifts, data = self.actions.align2edge(element, data, loc, threshold) 
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts+y_shifts)
         return
 
         
@@ -526,10 +524,9 @@ class SinogramWidget(QtWidgets.QWidget):
         shift = int(self.ViewControl.shift_textbox.text())
         slope = int(self.ViewControl.slope_adjust_textbox.text())
             
-        x_shifts, self. data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, shift, slope)
-        self.x_shifts += x_shifts
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        x_shifts, data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, shift, slope)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts+x_shifts, self.y_shifts)
         return
 
     # def matchTermplate_params(self):
@@ -570,9 +567,9 @@ class SinogramWidget(QtWidgets.QWidget):
             rin = None
             rout = None
 
-        self.x_shifts, self.y_shifts, self.data = self.actions.iterative_align(element, data, thetas, pad, blur_bool, rin, rout, center, algorithm, upsample_factor, save_bool, debug_bool, iters)
-        self.dataChangedSig.emit(self.data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        x_shifts, y_shifts, data = self.actions.iterative_align(element, data, thetas, pad, blur_bool, rin, rout, center, algorithm, upsample_factor, save_bool, debug_bool, iters)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts+x_shifts, self.y_shifts+y_shifts)
         return
 
         #save parameters 
@@ -580,7 +577,6 @@ class SinogramWidget(QtWidgets.QWidget):
         ##maybe put this entire function within 'iter_align_params'
 
         pass
-
 
     def alignFromText2_params(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")

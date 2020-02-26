@@ -50,8 +50,6 @@ Subclasses the h5py module for interacting with Data Exchange files.
 
 from PyQt5 import QtCore
 from glob import glob
-import h5py
-import numpy as np
 import os
 
 

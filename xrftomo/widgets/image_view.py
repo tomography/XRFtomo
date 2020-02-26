@@ -71,6 +71,7 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
 
     def initUI(self):
         custom_vb = xrftomo.CustomViewBox()
+        # custom_vb.invertY(True)
         self.p1 = self.addPlot(viewBox = custom_vb, enableMouse = False)
         self.projView = pyqtgraph.ImageItem()
         self.projView.rotate(-90)
@@ -153,7 +154,6 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
 
         return cross_pos_x, cross_pos_y
 
-
     def update_roi(self, x_pos, y_pos, x_size, y_size, frame_height, frame_width):
         max_y = frame_height
         max_x = frame_width
@@ -187,8 +187,6 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         if roi_bottom <= -max_y:
             y_pos = -max_y
 
-
-
         self.x_pos = x_pos
         self.y_pos = y_pos
 
@@ -197,9 +195,7 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
     def wheelEvent(self, ev):
         #empty function, but leave it as it overrides some other unwanted functionality.
         pass
-#TODO: on mac os, when keys are held down, they are sometimes missinterpreted as
-    #multiple key pressed, which does not fall under one of the logic below, nor
-    #does the
+
     def keyPressEvent(self, ev):
         self.firstrelease = True
         astr = ev.key()

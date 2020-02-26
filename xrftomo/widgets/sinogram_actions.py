@@ -44,31 +44,16 @@
 # #########################################################################
 
 from PyQt5 import QtGui, QtCore, QtWidgets
-from PyQt5.QtCore import pyqtSignal
-import numpy as np
 from pylab import *
-import xrftomo
-import matplotlib.pyplot as plt
-from scipy import ndimage, optimize, signal
 import scipy.fftpack as spf
-import string
-#import cv2
-from PIL import Image, ImageChops, ImageOps
 import tomopy
 from skimage import filters
 from skimage.measure import regionprops
 
 
-
-
 class SinogramActions(QtWidgets.QWidget):
-    dataSig = pyqtSignal(np.ndarray, name='dataSig')
-
     def __init__(self):
         super(SinogramActions, self).__init__()
-        self.x_shifts = None
-        self.y_shifts = None
-        self.centers = None
     # def runCenterOfMass(self, element, data, thetas):
     #     '''
     #     Center of mass alignment
@@ -117,7 +102,21 @@ class SinogramActions(QtWidgets.QWidget):
     #     return data, self.x_shifts
 
     def runCenterOfMass(self, element, data, thetas, weighted = True, shift_y = False):
-
+    #     '''
+    #     Center of mass alignment
+    #     Variables
+    #     -----------
+    #     element: int
+    #         element index
+    #     data: ndarray
+    #         4D xrf dataset ndarray [elements, theta, y,x]
+    #     thetas: ndarray
+    #         sorted projection angle list
+    #     weighted: bool
+    #         run center of mass or weighted center of mass
+    #     shift_y: bool
+    #         align in y as well as x 
+    #     '''
         num_projections = data.shape[1]
         view_center_x = data.shape[3]//2
         view_center_y = data.shape[2]//2
@@ -267,6 +266,8 @@ class SinogramActions(QtWidgets.QWidget):
             4D xrf dataset ndarray [elements, theta, y,x]
         '''
         num_projections = data.shape[1]
+        x_shifts = np.zeros(num_projections)
+        y_shifts = np.zeros(num_projections)
         for i in arange(num_projections - 1):
             flat = np.sum(data, axis=0)
             a = flat[i]
@@ -286,11 +287,12 @@ class SinogramActions(QtWidgets.QWidget):
 
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
-            self.x_shifts[i + 1] += t1
-            self.y_shifts[i + 1] += -t0
+            x_shifts[i + 1] += t1
+            y_shifts[i + 1] += -t0
 
         self.alignmentDone()
-        return data, self.x_shifts, self.y_shifts
+        return data, x_shifts, y_shifts
+
 
     def phaseCorrelate(self, element, data):
         '''
@@ -303,6 +305,8 @@ class SinogramActions(QtWidgets.QWidget):
             4D xrf dataset ndarray [elements, theta, y,x]
         '''
         num_projections = data.shape[1]
+        x_shifts = np.zeros(num_projections)
+        y_shifts = np.zeros(num_projections)
         for i in arange(num_projections - 1):
             # onlyfilenameIndex=self.fileNames[i+1].rfind("/")
             a = data[element, i, :, :]
@@ -321,11 +325,10 @@ class SinogramActions(QtWidgets.QWidget):
 
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
             data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
-            self.x_shifts[i + 1] += t1
-            self.y_shifts[i + 1] += -t0
+            x_shifts[i + 1] += t1
+            y_shifts[i + 1] += -t0
         self.alignmentDone()
-        return data, self.x_shifts, self.y_shifts
-
+        return data, x_shifts, y_shifts
     # def align_y_top(self, element, data):
     #     '''
     #     This alingment method sets takes a hotspot or a relatively bright and isolated part of the projection and moves it to the 
@@ -367,21 +370,21 @@ class SinogramActions(QtWidgets.QWidget):
         loc: bool
             0 = bottom, 1 = top
         '''
-        self.data = data
         num_projections = data.shape[1]
+        y_shifts = np.zeros(num_projections)
         tmp_data = data[element,:,:,:]
         bounds = self.get_boundaries(tmp_data,threshold)
         edge = np.asarray(bounds[2+loc])
         translate = -edge
 
         # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
-        self.y_shifts -=translate
+        y_shifts -= translate
 
         for i in range(num_projections):
-            self.data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(translate[i])), axis=1)
+            data[:,i] = np.roll(data[:,i], int(np.round(translate[i])), axis=1)
 
         self.alignmentDone()
-        return self.y_shifts, self.data 
+        return y_shifts, data 
 
     def get_boundaries(self, data, coeff):
         '''
@@ -453,11 +456,12 @@ class SinogramActions(QtWidgets.QWidget):
             number of iterations
         '''
         num_projections = data.shape[1]
+        x_shifts = np.zeros(num_projections)
+        y_shifts = np.zeros(num_projections)
         prj = data[element]
         # prj = np.sum(data, axis=0)
         prj = tomopy.remove_nan(prj, val=0.0)
         prj[np.where(prj == np.inf)] = 0.0
-        self.thetas = thetas
 
 
         # self.get_iter_paraeters()
@@ -466,14 +470,14 @@ class SinogramActions(QtWidgets.QWidget):
         prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=pad,
                             blur=blur_bool, rin=rin, rout=rout, center=center, algorithm=algorithm, 
                             upsample_factor=upsample_factor, save=save_bool, debug=debug_bool)
-        self.x_shifts = np.round(sx).astype(int)
-        self.y_shifts = np.round(sy).astype(int)
+        x_shifts = np.round(sx).astype(int)
+        y_shifts = np.round(sy).astype(int)
 
         for i in range(num_projections):
-            data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(self.y_shifts[i])), axis=1)
-            data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(self.x_shifts[i])), axis=2)
+            data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(y_shifts[i])), axis=1)
+            data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(x_shifts[i])), axis=2)
         
-        return self.x_shifts, self.y_shifts, data
+        return x_shifts, y_shifts, data
 
     def alignFromText2(self, fileName, data):
         '''
@@ -512,7 +516,6 @@ class SinogramActions(QtWidgets.QWidget):
 
             file.close()
             self.alignmentDone()
-            # return data, self.x_shifts, self.y_shifts, self.centers
             return data, x_shifts, y_shifts
         except IndexError:
             print("index missmatch between align file and current dataset ")

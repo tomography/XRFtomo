@@ -48,7 +48,6 @@ from PyQt5.QtCore import pyqtSignal
 import xrftomo
 from pylab import *
 import pyqtgraph
-import xrftomo.widgets.image_process_actions as actions
 import numpy as np
 
 
@@ -207,11 +206,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def lockAspect(self):
         if self.ViewControl.aspectChkbx.isChecked():
-            self.imageView.setRange(lockAspect=True)
-            # self.imageView.setAspectLocked(True)
+            self.imageView.p1.vb.setAspectLocked(True)
         else:
-            # self.imageView.setAspectLocked(False)
-            self.imageView.setRange(lockAspect=False)
+            self.imageView.p1.vb.setAspectLocked(False)
 
             #destroy and redraw
             #or disable locked aspect and set size policy to expanding
@@ -265,11 +262,14 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.lcd.display(angle)
         self.sld.setValue(index)
         self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        # self.imageView.projView.setImage(self.data[element, index, ::-1, :])
 
     def updateElementSlot(self, element, projection = None):
         if projection == None:
            projection =  self.sld.value()
         self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
+        # self.imageView.projView.setImage(self.data[element, projection, ::-1, :])
+
         self.ViewControl.combo1.setCurrentIndex(element)
         self.ViewControl.combo2.setCurrentIndex(projection)
 
@@ -302,6 +302,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
         self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        # self.imageView.projView.setImage(self.data[element, index, ::-1, :])
 
     # def ySizeChanged(self, ySize):
     #     self.ViewControl.y_sld.setRange(2, ySize)

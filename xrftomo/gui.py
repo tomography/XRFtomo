@@ -44,25 +44,15 @@
 # #########################################################################
 
 from PyQt5 import QtGui, QtWidgets, QtCore
-import sys
 import xrftomo
 import xrftomo.config as config
 from pylab import *
-from scipy import signal, stats
+from scipy import stats
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from skimage import measure
 
-from xrftomo.file_io.reader import *
-# from widgets.file_widget import  FileTableWidget
-# from widgets.image_process_widget import ImageProcessWidget
-# from widgets.sinogram_widget import SinogramWidget
-# from widgets.reconstruction_widget import ReconstructionWidget
-import json
-import os
-import time
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
