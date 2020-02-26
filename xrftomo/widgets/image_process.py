@@ -261,14 +261,14 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         self.lcd.display(angle)
         self.sld.setValue(index)
-        self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
-        # self.imageView.projView.setImage(self.data[element, index, ::-1, :])
+        # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
 
     def updateElementSlot(self, element, projection = None):
         if projection == None:
            projection =  self.sld.value()
-        self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
-        # self.imageView.projView.setImage(self.data[element, projection, ::-1, :])
+        # self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
+        self.imageView.projView.setImage(self.data[element, projection, ::-1, :], border='w')
 
         self.ViewControl.combo1.setCurrentIndex(element)
         self.ViewControl.combo2.setCurrentIndex(projection)
@@ -301,8 +301,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def imageChanged(self):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
-        self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
-        # self.imageView.projView.setImage(self.data[element, index, ::-1, :])
+        # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
 
     # def ySizeChanged(self, ySize):
     #     self.ViewControl.y_sld.setRange(2, ySize)

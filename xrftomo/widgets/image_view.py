@@ -63,9 +63,9 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         self.xSize = 10
         self.ySize = 10
         self.x_pos = 5
-        self.y_pos = -5
+        self.y_pos = 5
         self.cross_pos_x = 5
-        self.cross_pos_y = -5
+        self.cross_pos_y = 5
         self.keylist = []
         self.initUI()
 
@@ -73,10 +73,10 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         custom_vb = xrftomo.CustomViewBox()
         # custom_vb.invertY(True)
         self.p1 = self.addPlot(viewBox = custom_vb, enableMouse = False)
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.rotate(-90)
+        self.projView = pyqtgraph.ImageItem(axisOrder = "row-major")
+        self.projView.rotate(0)
         self.projView.iniX = 0
-        self.projView.iniY = -10
+        self.projView.iniY = 0
         self.ROI = pyqtgraph.ROI([self.projView.iniX, self.projView.iniY], [10, 10], scaleSnap = True)
         self.ROI.addScaleHandle(pos=(1, 1), center=(0,0))
         self.ROI.addScaleHandle(pos=(0,0), center=(1,1))
@@ -87,7 +87,7 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         self.p1.addItem(self.projView)
         self.p1.addItem(self.ROI)
         self.cross_v = self.p1.addLine(x=10)
-        self.cross_h = self.p1.addLine(y=-10)
+        self.cross_h = self.p1.addLine(y=10)
         self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
         self.ROI.sigRegionChangeFinished.connect(self.roi_dragged)
         self.p1.scene().sigMouseClicked.connect(self.mouseClick)
@@ -103,8 +103,8 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         y_pos = round(self.ROI.pos().y())
         xSize = int(self.ROI.size()[0])
         ySize = int(self.ROI.size()[1])
-        frame_height = self.projView.width()
-        frame_width = self.projView.height()
+        frame_height = self.projView.height()
+        frame_width = self.projView.width()
         self.x_pos, self.y_pos, self.xSize, self.ySize = self.update_roi(x_pos, y_pos, xSize, ySize, frame_height, frame_width)
         self.ROI.setPos([self.x_pos, self.y_pos], finish=False)
 
@@ -116,8 +116,8 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
     def mouseClick(self, evt):
         x_pos = self.moving_x
         y_pos = self.moving_y
-        frame_height = self.projView.width()
-        frame_width = self.projView.height()
+        frame_height = self.projView.height()
+        frame_width = self.projView.width()
         xSize = int(self.ROI.size()[0])
         ySize = int(self.ROI.size()[1])
 
@@ -143,11 +143,11 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         if cross_pos_x >= max_x:
             cross_pos_x = max_x
         ## if way far above
-        if cross_pos_y >= 0 :
-            cross_pos_y = 0
+        if cross_pos_y >= max_y :
+            cross_pos_y = max_y
         ## if way far below
-        if cross_pos_y <= -max_y:
-            cross_pos_y = -max_y
+        if cross_pos_y <= 0:
+            cross_pos_y = 0
 
         self.cross_pos_x = cross_pos_x
         self.cross_pos_y = cross_pos_y
@@ -181,11 +181,11 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         if roi_right >= max_x:
             x_pos = max_x - x_size
         ## if way far above
-        if roi_top >= 0:
-            y_pos = -y_size
+        if roi_top >= max_y:
+            y_pos = max_y-y_size
         ## if way far below
-        if roi_bottom <= -max_y:
-            y_pos = -max_y
+        if roi_bottom <= 0:
+            y_pos = 0
 
         self.x_pos = x_pos
         self.y_pos = y_pos
