@@ -47,7 +47,6 @@ import xrftomo
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
 import pyqtgraph
-from pylab import *
 import numpy as np
 
 class SinogramWidget(QtWidgets.QWidget):
@@ -457,15 +456,15 @@ class SinogramWidget(QtWidgets.QWidget):
             sinodata = self.data[element, :, :, :]
         except TypeError:
             return
-        self.sinogramData = zeros([sinodata.shape[0] * 10, sinodata.shape[2]], dtype=float32)
+        self.sinogramData = np.zeros([sinodata.shape[0] * 10, sinodata.shape[2]], dtype=np.float32)
         num_projections = self.data.shape[1]
 
         try: #TODO: fails when cropping
-            for i in arange(num_projections):
+            for i in range(num_projections):
                 self.sinogramData[i * 10:(i + 1) * 10, :] = sinodata[i, self.sld.value()-1, :]
         except IndexError:
             return
-        self.sinogramData[isinf(self.sinogramData)] = 0.001
+        self.sinogramData[np.isinf(self.sinogramData)] = 0.001
         self.sinoView.projView.setImage(self.sinogramData, border='w')
         if len(self.thetas) > 0:
             self.sinoView.projView.setRect(QtCore.QRect(round(self.thetas[0]), 0, round(self.thetas[-1])- round(self.thetas[0]), self.sinogramData.shape[1]))
@@ -495,7 +494,7 @@ class SinogramWidget(QtWidgets.QWidget):
     def crossCorrelate_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        data, x_shifts, y_shifts = self.actions.crossCorrelate(element, data)
+        data, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return

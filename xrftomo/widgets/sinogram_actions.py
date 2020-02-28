@@ -44,12 +44,12 @@
 # #########################################################################
 
 from PyQt5 import QtGui, QtCore, QtWidgets
-from pylab import *
 import scipy.fftpack as spf
 import tomopy
 from skimage import filters
 from skimage.measure import regionprops
-
+from skimage.feature import register_translation
+import numpy as np
 
 class SinogramActions(QtWidgets.QWidget):
     def __init__(self):
@@ -182,10 +182,10 @@ class SinogramActions(QtWidgets.QWidget):
         col_number: int
         '''
         num_projections = data.shape[1]
-        regShift = zeros(sinogramData.shape[0], dtype=np.int)
+        regShift = np.zeros(sinogramData.shape[0], dtype=np.int)
         sinogramData[col_number * 10:col_number * 10 + 10, :] = np.roll(sinogramData[col_number * 10:col_number * 10 + 10, :], shift_number, axis=1)
         regShift[col_number] += shift_number
-        for i in arange(num_projections):
+        for i in range(num_projections):
             data[:,i,:,:] = np.roll(data[:,i,:,:], regShift[i], axis=2)
         return data, sinogramData  
 
@@ -233,7 +233,7 @@ class SinogramActions(QtWidgets.QWidget):
         num_projections = data.shape[1]
         x_shifts = np.zeros(num_projections)
         y_shifts = np.zeros(num_projections)
-        for i in arange(num_projections - 1):
+        for i in range(num_projections - 1):
             a = data[element, i, :, :]
             b = data[element, i + 1, :, :]
 
@@ -257,7 +257,7 @@ class SinogramActions(QtWidgets.QWidget):
         self.alignmentDone()
         return data, x_shifts, y_shifts
 
-    def crossCorrelate2(self, data):
+    def crossCorrelate2(self, element, data):
         '''
         cross correlate image registration aplies to all loaded elements.
         Variables
@@ -268,31 +268,19 @@ class SinogramActions(QtWidgets.QWidget):
         num_projections = data.shape[1]
         x_shifts = np.zeros(num_projections)
         y_shifts = np.zeros(num_projections)
-        for i in arange(num_projections - 1):
-            flat = np.sum(data, axis=0)
-            a = flat[i]
-            b = flat[i + 1]
-            fa = spf.fft2(a)
-            fb = spf.fft2(b)
-            shape = a.shape
 
-            c = abs(spf.ifft2(fa * fb.conjugate()))
+        for i in range(1, num_projections):
 
-            t0, t1 = np.unravel_index(np.argmax(c), a.shape)
+            shift, error, diffphase = register_translation(data[element,i-1], data[element,i])
+            # shift, error, diffphase = register_translation(data[element,i-1], data[element,i], 100)
 
-            if t0 > shape[0] // 2:
-                t0 -= shape[0]
-            if t1 > shape[1] // 2:
-                t1 -= shape[1]
-
-            data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
-            data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
-            x_shifts[i + 1] += t1
-            y_shifts[i + 1] += -t0
+            x_shifts[i] += int(shift[1])
+            y_shifts[i] += int(shift[0])
+            data[:, i, :, :] = np.roll(data[:, i, :, :], int(shift[0]), axis=1)
+            data[:, i, :, :] = np.roll(data[:, i, :, :], int(shift[1]), axis=2)
 
         self.alignmentDone()
         return data, x_shifts, y_shifts
-
 
     def phaseCorrelate(self, element, data):
         '''
@@ -307,7 +295,7 @@ class SinogramActions(QtWidgets.QWidget):
         num_projections = data.shape[1]
         x_shifts = np.zeros(num_projections)
         y_shifts = np.zeros(num_projections)
-        for i in arange(num_projections - 1):
+        for i in range(num_projections - 1):
             # onlyfilenameIndex=self.fileNames[i+1].rfind("/")
             a = data[element, i, :, :]
             b = data[element, i + 1, :, :]
@@ -463,9 +451,7 @@ class SinogramActions(QtWidgets.QWidget):
         prj = tomopy.remove_nan(prj, val=0.0)
         prj[np.where(prj == np.inf)] = 0.0
 
-
         # self.get_iter_paraeters()
-
 
         prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=pad,
                             blur=blur_bool, rin=rin, rout=rout, center=center, algorithm=algorithm, 
@@ -499,13 +485,13 @@ class SinogramActions(QtWidgets.QWidget):
             #TODO: if text file is not in correct format, do nothing, return and display reason for error.
             file = open(fileName[0], 'r')
             read = file.readlines()
-            datacopy = zeros(data.shape)
+            datacopy = np.zeros(data.shape)
             datacopy[...] = data[...]
             data[np.isnan(data)] = 1
             num_projections = data.shape[1]
             y_shifts = np.zeros(num_projections)
             x_shifts = np.zeros(num_projections)
-            for i in arange(num_projections):
+            for i in range(num_projections):
                 j = i + 1
                 secondcol = read[j].rfind(",")
                 firstcol = read[j][:secondcol].rfind(",")
@@ -561,9 +547,9 @@ class SinogramActions(QtWidgets.QWidget):
             # Default window is 2*rows//10
             med = np.median(T_phase)
             if limit == None:
-                return tmean(T_phase, limits = (med-10, med+10))/(np.pi*2)*cols
+                return np.tmean(T_phase, limits = (med-10, med+10))/(np.pi*2)*cols
             else:
-                return tmean(T_phase, limits = (med-limit, med+limit))/(np.pi*2)*cols
+                return np.tmean(T_phase, limits = (med-limit, med+limit))/(np.pi*2)*cols
         else:
             # Use value from center row as center shift.
             # Fastest option.

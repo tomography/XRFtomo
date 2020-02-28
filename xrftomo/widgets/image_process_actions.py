@@ -44,9 +44,8 @@
 # #########################################################################
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from pylab import *
 from scipy import ndimage, optimize, signal
-
+import numpy as np
 
 #testing
 from skimage.exposure import equalize_hist
@@ -54,7 +53,6 @@ from skimage.morphology import remove_small_objects, disk
 from skimage import exposure
 from skimage.filters import rank
 import skimage
-from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 from scipy import ndimage as ndi
 from scipy import fftpack
 from scipy.stats import tmean
@@ -156,15 +154,15 @@ class ImageProcessActions(QtWidgets.QWidget):
 		'''
 		num_elements = data.shape[0]
 		num_projections = data.shape[1]
-		temp_data = zeros([num_elements,num_projections, y_size, x_size])
-
+		temp_data = np.zeros([num_elements,num_projections, y_size, x_size])
+		frame_height = data.shape[2]
 		for i in range(num_projections):
 			for j in range(num_elements):
-				y0 = int(round(abs(y_pos)) - y_size)
-				y1 = int(round(abs(y_pos)))
+				y0 = int(round(y_pos))
+				y1 = int(round(y0+y_size))
 				x0 = int(round(x_pos))
 				x1 = int(round(x_pos) + x_size)
-				temp_data[j,i,:,:] = data[j, i, y0:y1, x0:x1]
+				temp_data[j,i,:,:] = data[j, i, frame_height-y1:frame_height-y0, x0:x1]
 		print("done")
 		data = temp_data
 		return data
@@ -297,7 +295,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		num_projections = data.shape[1]
 		y_shifts = np.zeros(num_projections)
 		x_shifts = np.zeros(num_projections)
-		for j in arange(num_projections):
+		for j in range(num_projections):
 
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
 				yyshift = int(round(y_size//2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
@@ -344,7 +342,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		y_shifts = np.zeros(num_projections)
 		x_shifts = np.zeros(num_projections)
 		thetas  = np.asarray(thetas)
-		for j in arange(num_projections):
+		for j in range(num_projections):
 
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
 				xxshift = int(round(x_size//2 - hotSpotX[j]))
@@ -357,9 +355,9 @@ class ImageProcessActions(QtWidgets.QWidget):
 			x_shifts[j] = xxshift
 			y_shifts[j] = yyshift
 
-		hotspotXPos = zeros(num_projections, dtype=np.int)
-		hotspotYPos = zeros(num_projections, dtype=np.int)
-		for i in arange(num_projections):
+		hotspotXPos = np.zeros(num_projections, dtype=np.int)
+		hotspotYPos = np.zeros(num_projections, dtype=np.int)
+		for i in range(num_projections):
 			hotspotYPos[i] = int(round(hs_y_pos[i]))
 			hotspotXPos[i] = int(round(hs_x_pos[i]))
 		hotspotProj = np.where(hotspotXPos != 0)[0]
@@ -408,7 +406,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
 		num_projections = data.shape[1]
 		y_shifts = np.zeros(num_projections)
-		for j in arange(num_projections):
+		for j in range(num_projections):
 			if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
 				yyshift = int(round(y_size//2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
 				data[:, j, :, :] = np.roll(data[:, j, :, :], yyshift, axis=1)
@@ -442,11 +440,11 @@ class ImageProcessActions(QtWidgets.QWidget):
 		'''
 		self.posMat = posMat
 		num_projections = data.shape[1]
-		hs_x_pos = zeros(num_projections, dtype=np.int)
-		hs_y_pos = zeros(num_projections, dtype=np.int)
-		hs_array = zeros([num_projections, y_size//2*2, x_size//2*2], dtype=np.int)
+		hs_x_pos = np.zeros(num_projections, dtype=np.int)
+		hs_y_pos = np.zeros(num_projections, dtype=np.int)
+		hs_array = np.zeros([num_projections, y_size//2*2, x_size//2*2], dtype=np.int)
 
-		for i in arange(num_projections):
+		for i in range(num_projections):
 			hs_x_pos[i] = int(round(self.posMat[hs_group, i, 0]))
 			hs_y_pos[i] = int(abs(round(self.posMat[hs_group, i, 1])))
 
@@ -465,14 +463,14 @@ class ImageProcessActions(QtWidgets.QWidget):
 				x1 = hs_x_pos[i] + x_size//2
 				hs_array[i, :, :] = data[element, i, y0:y1, x0:x1]
 
-		hotSpotX = zeros(num_projections, dtype=np.int)
-		hotSpotY = zeros(num_projections, dtype=np.int)
-		new_hs_array = zeros(hs_array.shape, dtype=np.int)
+		hotSpotX = np.zeros(num_projections, dtype=np.int)
+		hotSpotY = np.zeros(num_projections, dtype=np.int)
+		new_hs_array = np.zeros(hs_array.shape, dtype=np.int)
 		new_hs_array[...] = hs_array[...]
 		firstPosOfHotSpot = 0
 
 		add = 1
-		for i in arange(num_projections):
+		for i in range(num_projections):
 			if hs_x_pos[i] == 0 and hs_y_pos[i] == 0:
 				firstPosOfHotSpot += add
 			if hs_x_pos[i] != 0 or hs_y_pos[i] != 0:
@@ -490,7 +488,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		return hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data
 
 	def fitCenterOfMass(self, com, x):
-		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
+		fitfunc = lambda p, x: p[0] * np.sin(2 * np.pi / 360 * (x - p[1])) + p[2]
 		errfunc = lambda p, x, y: fitfunc(p, x) - y
 		p0 = [100, 100, 100]
 		self.centers, success = optimize.leastsq(errfunc, np.asarray(p0), args=(x, com))
@@ -498,7 +496,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		print(self.centerOfMassDiff)
 
 	def fitCenterOfMass2(self, com, x):
-		fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + self.centers[2]
+		fitfunc = lambda p, x: p[0] * np.sin(2 * np.pi / 360 * (x - p[1])) + self.centers[2]
 		errfunc = lambda p, x, y: fitfunc(p, x) - y
 		p0 = [100, 100]
 		p2, success = optimize.leastsq(errfunc, np.asarray(p0), args=(x, com))
@@ -521,7 +519,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		the gaussian parameters of a 2D distribution found by a fit
 		"""
 		params = self.moments(data)
-		errorfunction = lambda p: ravel(self.gaussian(*p)(*indices(data.shape)) - data)
+		errorfunction = lambda p: np.ravel(self.gaussian(*p)(*np.indices(data.shape)) - data)
 		p, success = optimize.leastsq(errorfunction, params)
 		return p
 
@@ -536,7 +534,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 			x = 0
 			y = 0
 		else:
-			X, Y = indices(data.shape)
+			X, Y = np.indices(data.shape)
 			x = (X * data).sum() / total
 			y = (Y * data).sum() / total
 
@@ -545,14 +543,14 @@ class ImageProcessActions(QtWidgets.QWidget):
 		if col.sum() == 0:
 			width_x = 0
 		else:
-			width_x = sqrt(abs((arange(col.size) - y) ** 2 * col).sum() / col.sum())
+			width_x = np.sqrt(abs((np.arange(col.size) - y) ** 2 * col).sum() / col.sum())
 		# TODO: rundime wasrning: invalid value encountered in double_scalars
 
 		row = data[int(x), :]
 		if row.sum() == 0:
 			width_y = 0
 		else:
-			width_y = sqrt(abs((arange(row.size) - x) ** 2 * row).sum() / row.sum())
+			width_y = np.sqrt(abs((np.arange(row.size) - x) ** 2 * row).sum() / row.sum())
 
 		height = data.max()
 
@@ -571,14 +569,14 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 		# ss = lambda x, y: height * exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
 
-		return lambda x, y: height * exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
+		return lambda x, y: height * np.exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
 
 	def clrHotspot(self, posMat):
 		'''
 		resets
 		hotspot position matrix
 		'''
-		posMat[...] = zeros_like(posMat)
+		posMat[...] = np.zeros_like(posMat)
 		return posMat
 
 
@@ -619,7 +617,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		return out.reshape(image.shape), out_m
 
 	def cumulative_distribution(self, image, nbins=2**16):
-		hist, bin_centers = histogram(image, nbins)
+		hist, bin_centers = np.histogram(image, nbins)
 		img_cdf = hist.cumsum()
 		img_cdf = img_cdf / float(img_cdf[-1])
 		return img_cdf, bin_centers

@@ -46,12 +46,13 @@
 from PyQt5 import QtGui, QtWidgets, QtCore
 import xrftomo
 import xrftomo.config as config
-from pylab import *
 from scipy import stats
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import sys
+import matplotlib
 
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
@@ -685,8 +686,8 @@ class xrftomoGui(QtGui.QMainWindow):
                 return
 
         self.centers = [100,100,self.data.shape[3]//2]
-        self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
-        self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
+        self.x_shifts = np.zeros(self.data.shape[1], dtype=np.int)
+        self.y_shifts = np.zeros(self.data.shape[1], dtype=np.int)
         self.original_data = self.data.copy()
         self.original_fnames = self.fnames.copy()
         self.original_thetas = self.thetas.copy()
@@ -911,8 +912,8 @@ class xrftomoGui(QtGui.QMainWindow):
             self.data = self.original_data.copy()
             self.thetas = self.original_thetas.copy()
             self.fnames = self.original_fnames.copy()
-            self.x_shifts = zeros(self.data.shape[1], dtype=np.int)
-            self.y_shifts = zeros(self.data.shape[1], dtype=np.int)
+            self.x_shifts = np.zeros(self.data.shape[1], dtype=np.int)
+            self.y_shifts = np.zeros(self.data.shape[1], dtype=np.int)
             self.centers = [100,100,self.data.shape[3]//2]
             self.update_history(self.data)
             self.update_slider_range(self.thetas)

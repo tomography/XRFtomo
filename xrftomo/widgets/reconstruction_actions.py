@@ -45,10 +45,12 @@
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal
-from pylab import *
 import xrftomo
 import tomopy
 import os
+from matplotlib.pyplot import *
+import numpy as np
+
 
 class ReconstructionActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
@@ -57,16 +59,16 @@ class ReconstructionActions(QtWidgets.QWidget):
 	def __init__(self):
 		super(ReconstructionActions, self).__init__()
 
-	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas):
+	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas, show_stats=False):
 		'''
 		load data for reconstruction and load variables for reconstruction
 		make it sure that data doesn't have infinity or nan as one of
 		entries
 		'''
 		recData = data[element, :, :, :]
-		recData[recData == inf] = True
+		recData[recData == np.inf] = True
 		recData[np.isnan(recData)] = True
-		recCenter = np.array(center, dtype=float32)
+		recCenter = np.array(center, dtype=np.float32)
 
 		print("working fine")
 
@@ -106,7 +108,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 			print("inf values replaced with 0.001")
 			self.recon[self.recon == np.inf] = 0.001
 
-		err, mse  = self.assessRecon(self.recon, data, thetas, )
+		err, mse  = self.assessRecon(self.recon, data, thetas, show_stats)
 		print(mse)
 		return self.recon
 

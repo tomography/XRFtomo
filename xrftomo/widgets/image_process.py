@@ -46,10 +46,9 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
-from pylab import *
 import pyqtgraph
 import numpy as np
-
+from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 
 
 class ImageProcessWidget(QtWidgets.QWidget):
@@ -196,13 +195,18 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.setLayout(hb2)
     def updatePanel(self,x,y):
-        self.lbl2.setText(str(x))
-        self.lbl4.setText(str(y))
-        try:
-            pixel_val = round(self.imageView.projView.image[abs(y)-1,x],4)
-            self.lbl7.setText(str(pixel_val))
-        except:
+        if x >= self.data.shape[3] or x < 0 or y >= self.data.shape[2] or y < 0:
+            self.lbl2.setText("")
+            self.lbl4.setText("")
             self.lbl7.setText("")
+        else:
+            self.lbl2.setText(str(x))
+            self.lbl4.setText(str(y))
+            try:
+                pixel_val = round(self.imageView.projView.image[abs(y)-1,x],4)
+                self.lbl7.setText(str(pixel_val))
+            except:
+                self.lbl7.setText("")
 
     def lockAspect(self):
         if self.ViewControl.aspectChkbx.isChecked():
@@ -229,7 +233,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         for j in self.elements:
             self.ViewControl.combo1.addItem(j)
         num_projections  = self.data.shape[1]
-        for k in arange(num_projections):
+        for k in range(num_projections):
             self.ViewControl.combo2.addItem(str(k+1))
 
         self.elementChanged()
@@ -446,10 +450,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
         y_pos = self.imageView.y_pos
         x_size = self.imageView.xSize
         y_size = self.imageView.ySize
-        img = self.data[element, projection,
-            int(round(abs(y_pos)) - y_size/2): int(round(abs(y_pos)) + y_size/2),
-            int(round(x_pos) - x_size/2): int(round(x_pos) + x_size/2)]
-        return element, projection, x_pos, y_pos, x_size, y_size, img
+        frame_height = self.data.shape[2]
+        img = self.data[element, projection, int(round(frame_height - y_pos)):int(round(frame_height-y_pos-y_size)):-1,
+            int(round(x_pos)): int(round(x_pos) + x_size)]
+        return element, projection, x_pos, y_pos, x_size, y_size, img[::-1]
 
     def background_value_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
