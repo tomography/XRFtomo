@@ -1,12 +1,7 @@
 Documentation
 =============
 
-* Readthedocs: https://xrftomo.readthedocs.io/en/latest/index.html
-
-Features
-========
-
-* X-ray fluorescence data processing.
+To be completed
 
 
 Pre-requisites
@@ -78,7 +73,7 @@ Contribute
 ==========
 
 * Issue Tracker: https://github.com/tomography/xrftomo/issues
-* Documentation: https://github.com/tomography/xrftomo/tree/master/docs
+* Documentation: to be completed
 * Source Code: https://github.com/tomography/xrftomo/tree/master/xrftomo
 
 License
