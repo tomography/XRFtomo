@@ -205,7 +205,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.Stack.setCurrentIndex(i)
         #change slider range and label here depending on i
 
-
     def keyProcess(self, command):
         index = self.sld3.value()
         data = self.data

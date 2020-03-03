@@ -76,7 +76,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
 				algorithm='mlem', center=recCenter, num_iter=iters, accelerated=True, device='cpu')
 		elif method == 1:
-			self.recon= tomopy.recon(recData, thetas, 
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
 				algorithm='gridrec')
 		elif method == 2:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
@@ -90,7 +90,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 				algorithm='pml_quad', center=recCenter,
 				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
 		elif method == 5:
-			self.recon= tomopy.recon(recData, thetas, 
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
 				algorithm='fbp')
 		elif method == 6:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 

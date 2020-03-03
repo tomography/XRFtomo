@@ -132,6 +132,10 @@ class xrftomoGui(QtGui.QMainWindow):
 
         preferencesAction = QtGui.QAction("exit preferences")
 
+        setAspectratio = QtGui.QAction("lock aspect ratio",self)
+        setAspectratio.setCheckable(True)
+        setAspectratio.triggered.connect(self.toggle_aspect_ratio)
+
         restoreAction = QtGui.QAction("Restore", self)
         restoreAction.triggered.connect(self.restore)
 
@@ -263,6 +267,11 @@ class xrftomoGui(QtGui.QMainWindow):
         self.toolsMenu.addMenu(analysis)
         self.toolsMenu.setDisabled(True)
 
+        self.viewMenu = menubar.addMenu("View")
+        # self.aspectChkbx= QtWidgets.QCheckBox("Aspect ratio locked")
+        self.viewMenu.addAction(setAspectratio)
+        self.viewMenu.setDisabled(True)
+
         self.afterConversionMenu = menubar.addMenu('Save')
         self.afterConversionMenu.addAction(saveProjectionAction)
         # self.afterConversionMenu.addAction(saveHotSpotPosAction)
@@ -368,6 +377,20 @@ class xrftomoGui(QtGui.QMainWindow):
         if self.params.admin:
             self.debugMode()
             self.params.admin = False
+
+    def toggle_aspect_ratio(self, checkbox_state):
+        if checkbox_state:
+            self.imageProcessWidget.imageView.p1.vb.setAspectLocked(True)
+            self.sinogramWidget.sinoView.p1.vb.setAspectLocked(True)
+            self.sinogramWidget.imageView.p1.vb.setAspectLocked(True)
+            self.sinogramWidget.diffView.p1.vb.setAspectLocked(True)
+            self.reconstructionWidget.ReconView.p1.vb.setAspectLocked(True)
+        else:
+            self.imageProcessWidget.imageView.p1.vb.setAspectLocked(False)
+            self.sinogramWidget.sinoView.p1.vb.setAspectLocked(False)
+            self.sinogramWidget.imageView.p1.vb.setAspectLocked(False)
+            self.sinogramWidget.diffView.p1.vb.setAspectLocked(False)
+            self.reconstructionWidget.ReconView.p1.vb.setAspectLocked(False)
 
     def loadSettingsChanged(self):
         load_settings = [self.legacy_chbx.isChecked(),
@@ -556,6 +579,7 @@ class xrftomoGui(QtGui.QMainWindow):
             self.afterConversionMenu.setDisabled(False)
             self.editMenu.setDisabled(False)
             self.toolsMenu.setDisabled(False)
+            self.viewMenu.setDisabled(False)
             self.fileTableWidget.message.setText("Angle information loaded.")
 
         return
@@ -708,6 +732,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.afterConversionMenu.setDisabled(False)
         self.editMenu.setDisabled(False)
         self.toolsMenu.setDisabled(False)
+        self.viewMenu.setDisabled(False)
         # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_history(self.data)
         self.update_alignment(self.x_shifts, self.y_shifts)

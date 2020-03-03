@@ -118,7 +118,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.reshapeBtn.clicked.connect(self.ViewControl.reshape_options.show)
         self.ViewControl.run_reshape.clicked.connect(self.reshape_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
-        self.ViewControl.aspectChkbx.clicked.connect(self.lockAspect)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
         # self.ViewControl.gaussian55Btn.clicked.connect(self.actions.gauss55)
         self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
@@ -207,16 +206,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
                 self.lbl7.setText(str(pixel_val))
             except:
                 self.lbl7.setText("")
-
-    def lockAspect(self):
-        if self.ViewControl.aspectChkbx.isChecked():
-            self.imageView.p1.vb.setAspectLocked(True)
-        else:
-            self.imageView.p1.vb.setAspectLocked(False)
-
-            #destroy and redraw
-            #or disable locked aspect and set size policy to expanding
-            # self.imageView.redraw(True)
         return
 
     def showImgProcess(self):

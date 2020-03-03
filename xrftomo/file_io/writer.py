@@ -55,9 +55,9 @@ import dxchange
 from PyQt5 import QtGui
 import tomopy
 import os
-from PIL import Image
 import dxfile.dxtomo as dx
 import numpy as np
+from skimage import io
 
 class SaveOptions(object):
 	def save_alignemnt_information(self,fnames, x_shift, y_shift, centers):
@@ -123,9 +123,10 @@ class SaveOptions(object):
 				path = savedir + "/" + element_names[j]
 				os.makedirs(path)
 				for i in range(data.shape[1]):		#angle index
-					temp_img = data[j, i, :, :]
-					temp = Image.fromarray(temp_img.astype(np.float32))
-					temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tif")
+					img = data[j, i, :, :]
+					# temp = Image.fromarray(img.astype(np.float32))
+					# temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tif")
+					io.imsave(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tif", img)
 			return
 		except IOError:
 			print("type the header name")
@@ -156,8 +157,9 @@ class SaveOptions(object):
 				raise IOError
 
 			os.makedirs(savedir)
-			temp_img = Image.fromarray(sinodata.astype(np.float32))
-			temp_img.save(savedir + "/" + "sinogram.tif")
+			# temp_img = Image.fromarray(sinodata.astype(np.float32))
+			# temp_img.save(savedir + "/" + "sinogram.tif")
+			io.imsave(savedir + "/" + "sinogram.tif", sinodata)
 			return
 			
 		except IOError:
@@ -182,8 +184,9 @@ class SaveOptions(object):
 
 			for i in range(num_elements):
 				element = element_names[i]
-				temp_img = Image.fromarray(sinogramData[i].astype(np.float32))
-				temp_img.save(savedir + "/"+element+"_sinogram.tif")
+				# temp_img = Image.fromarray(sinogramData[i].astype(np.float32))
+				# temp_img.save(savedir + "/"+element+"_sinogram.tif")
+				io.imsave(savedir + "/"+element+"_sinogram.tif", sinogramData[i])
 			return
 
 		except IOError:

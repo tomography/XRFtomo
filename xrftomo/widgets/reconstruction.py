@@ -185,7 +185,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         # box_checked = self.ViewControl.cbox.isChecked()
         #TODO: figure out what center input does with respect to reconstructions. Doesnt seem to change output.
-        center = np.array(float(self.data.shape[3]), dtype=np.float32)
+        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
         delta = float(self.ViewControl.delta.text())
