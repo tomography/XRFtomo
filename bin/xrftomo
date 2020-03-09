@@ -4,8 +4,7 @@ import os
 import sys
 import argparse
 import logging
-import time
-import re
+
 from xrftomo import config #, __version__
 
 

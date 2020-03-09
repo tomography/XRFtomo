@@ -47,10 +47,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from PyQt5 import QtCore
-from glob import glob
 import h5py
-import numpy as np
-import os
 
 __author__ = "Arthur T. Glowacki"
 __copyright__ = "Copyright (c) 2018-19, UChicago Argonne, LLC."

@@ -46,11 +46,9 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
-from pylab import *
 import pyqtgraph
-import xrftomo.widgets.image_process_actions as actions
 import numpy as np
-
+from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 
 
 class ImageProcessWidget(QtWidgets.QWidget):
@@ -120,7 +118,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.reshapeBtn.clicked.connect(self.ViewControl.reshape_options.show)
         self.ViewControl.run_reshape.clicked.connect(self.reshape_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
-        self.ViewControl.aspectChkbx.clicked.connect(self.lockAspect)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
         # self.ViewControl.gaussian55Btn.clicked.connect(self.actions.gauss55)
         self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
@@ -197,25 +194,18 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.setLayout(hb2)
     def updatePanel(self,x,y):
-        self.lbl2.setText(str(x))
-        self.lbl4.setText(str(y))
-        try:
-            pixel_val = round(self.imageView.projView.image[abs(y)-1,x],4)
-            self.lbl7.setText(str(pixel_val))
-        except:
+        if x >= self.data.shape[3] or x < 0 or y >= self.data.shape[2] or y < 0:
+            self.lbl2.setText("")
+            self.lbl4.setText("")
             self.lbl7.setText("")
-
-    def lockAspect(self):
-        if self.ViewControl.aspectChkbx.isChecked():
-            self.imageView.setRange(lockAspect=True)
-            # self.imageView.setAspectLocked(True)
         else:
-            # self.imageView.setAspectLocked(False)
-            self.imageView.setRange(lockAspect=False)
-
-            #destroy and redraw
-            #or disable locked aspect and set size policy to expanding
-            # self.imageView.redraw(True)
+            self.lbl2.setText(str(x))
+            self.lbl4.setText(str(y))
+            try:
+                pixel_val = round(self.imageView.projView.image[abs(y)-1,x],4)
+                self.lbl7.setText(str(pixel_val))
+            except:
+                self.lbl7.setText("")
         return
 
     def showImgProcess(self):
@@ -232,7 +222,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         for j in self.elements:
             self.ViewControl.combo1.addItem(j)
         num_projections  = self.data.shape[1]
-        for k in arange(num_projections):
+        for k in range(num_projections):
             self.ViewControl.combo2.addItem(str(k+1))
 
         self.elementChanged()
@@ -264,12 +254,15 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         self.lcd.display(angle)
         self.sld.setValue(index)
-        self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
 
     def updateElementSlot(self, element, projection = None):
         if projection == None:
            projection =  self.sld.value()
-        self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
+        # self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
+        self.imageView.projView.setImage(self.data[element, projection, ::-1, :], border='w')
+
         self.ViewControl.combo1.setCurrentIndex(element)
         self.ViewControl.combo2.setCurrentIndex(projection)
 
@@ -301,7 +294,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def imageChanged(self):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
-        self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
 
     # def ySizeChanged(self, ySize):
     #     self.ViewControl.y_sld.setRange(2, ySize)
@@ -445,10 +439,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
         y_pos = self.imageView.y_pos
         x_size = self.imageView.xSize
         y_size = self.imageView.ySize
-        img = self.data[element, projection,
-            int(round(abs(y_pos)) - y_size/2): int(round(abs(y_pos)) + y_size/2),
-            int(round(x_pos) - x_size/2): int(round(x_pos) + x_size/2)]
-        return element, projection, x_pos, y_pos, x_size, y_size, img
+        frame_height = self.data.shape[2]
+        img = self.data[element, projection, int(round(frame_height - y_pos)):int(round(frame_height-y_pos-y_size)):-1,
+            int(round(x_pos)): int(round(x_pos) + x_size)]
+        return element, projection, x_pos, y_pos, x_size, y_size, img[::-1]
 
     def background_value_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()

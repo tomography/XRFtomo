@@ -45,13 +45,9 @@
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
-import numpy as np
-from pylab import *
 import xrftomo
 import pyqtgraph
-import matplotlib.pyplot as plt
-from scipy import ndimage, optimize, signal
-# import tomopy
+import numpy as np
 
 class ReconstructionWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, name='elementChangedSig')
@@ -151,7 +147,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
         for j in self.elements:
             self.ViewControl.combo1.addItem(j)
-        for k in arange(len(methodname)):
+        for k in range(len(methodname)):
             self.ViewControl.method.addItem(methodname[k])
 
         self.elementChanged()
@@ -189,7 +185,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         # box_checked = self.ViewControl.cbox.isChecked()
         #TODO: figure out what center input does with respect to reconstructions. Doesnt seem to change output.
-        center = np.array(float(self.data.shape[3]), dtype=float32)
+        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
         delta = float(self.ViewControl.delta.text())
@@ -198,8 +194,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         start_indx = int(self.ViewControl.start_indx.text())
         end_indx = int(self.ViewControl.end_indx.text())
         data = self.data[:,:,start_indx:end_indx,:]
-
-        self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas)
+        show_stats = self.ViewControl.recon_stats.isChecked()
+        self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, show_stats)
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
@@ -211,7 +207,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         num_elements = self.ViewControl.combo1.count()
         element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
         # box_checked = self.ViewControl.cbox.isChecked()
-        center = np.array(float(self.data.shape[3]), dtype=float32)
+        center = np.array(float(self.data.shape[3]), dtype=np.float32)
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
         delta = float(self.ViewControl.delta.text())

@@ -80,6 +80,8 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.end_lbl.setFixedWidth(button2size)
         self.end_indx = QtWidgets.QLineEdit("0")
         self.end_indx.setFixedWidth(button2size)
+        self.recon_stats = QtWidgets.QCheckBox("show reconstructions statistics")
+        self.recon_stats.setChecked(False)
 
         self.mulBtn = QtWidgets.QPushButton("x 10")
         self.mulBtn.setFixedWidth(button2size)
@@ -140,6 +142,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addWidget(self.method)
         vb.addLayout(endBox)
         vb.addLayout(startBox)
+        vb.addWidget(self.recon_stats)
         vb.addWidget(self.lbl)
         vb.addLayout(mdBox)
         vb.addLayout(maxBox)

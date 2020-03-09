@@ -52,13 +52,12 @@ Module for importing raw data files.
 
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 import dxchange
-import string
 from PyQt5 import QtGui
-from pylab import *
 import tomopy
 import os
-from PIL import Image
 import dxfile.dxtomo as dx
+import numpy as np
+from skimage import io
 
 class SaveOptions(object):
 	def save_alignemnt_information(self,fnames, x_shift, y_shift, centers):
@@ -79,7 +78,7 @@ class SaveOptions(object):
 			print(str(savedir))
 			file = open(savedir, "w")
 			file.writelines("rotation axis, " + str(centers[2]) + "\n")
-			for i in arange(num_files):
+			for i in range(num_files):
 				# file.writelines(fnames[i] + ", " + str(x_shift[i]) + ", " + str(y_shift[i]) + "\n")
 				file.writelines("{}, {}, {} \n".format(fnames[i], str(x_shift[i]), str(y_shift[i])))
 			file.close()
@@ -102,7 +101,7 @@ class SaveOptions(object):
 			print(str(savedir))
 			file = open(savedir, "w")
 			file.writelines("file names, " + "thetas" + "\n")
-			for i in arange(num_files):
+			for i in range(num_files):
 				file.writelines(fnames[i] + ", " + str(thetas[i]) + "\n")
 			file.close()
 			return
@@ -120,13 +119,14 @@ class SaveOptions(object):
 			if savedir == "":
 				raise IOError
 
-			for j in arange(data.shape[0]):			#elemen t index
+			for j in range(data.shape[0]):			#elemen t index
 				path = savedir + "/" + element_names[j]
 				os.makedirs(path)
-				for i in arange(data.shape[1]):		#angle index
-					temp_img = data[j, i, :, :]
-					temp = Image.fromarray(temp_img.astype(np.float32))
-					temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tif")
+				for i in range(data.shape[1]):		#angle index
+					img = data[j, i, :, :]
+					# temp = Image.fromarray(img.astype(np.float32))
+					# temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tif")
+					io.imsave(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tif", img)
 			return
 		except IOError:
 			print("type the header name")
@@ -157,8 +157,9 @@ class SaveOptions(object):
 				raise IOError
 
 			os.makedirs(savedir)
-			temp_img = Image.fromarray(sinodata.astype(np.float32))
-			temp_img.save(savedir + "/" + "sinogram.tif")
+			# temp_img = Image.fromarray(sinodata.astype(np.float32))
+			# temp_img.save(savedir + "/" + "sinogram.tif")
+			io.imsave(savedir + "/" + "sinogram.tif", sinodata)
 			return
 			
 		except IOError:
@@ -179,12 +180,13 @@ class SaveOptions(object):
 			num_elements = data.shape[0]
 			num_projections = data.shape[1]
 			sinogramData = np.sum(data, axis=2)
-			sinogramData[isinf(sinogramData)] = 0.001
+			sinogramData[np.isinf(sinogramData)] = 0.001
 
 			for i in range(num_elements):
 				element = element_names[i]
-				temp_img = Image.fromarray(sinogramData[i].astype(np.float32))
-				temp_img.save(savedir + "/"+element+"_sinogram.tif")
+				# temp_img = Image.fromarray(sinogramData[i].astype(np.float32))
+				# temp_img.save(savedir + "/"+element+"_sinogram.tif")
+				io.imsave(savedir + "/"+element+"_sinogram.tif", sinogramData[i])
 			return
 
 		except IOError:
@@ -278,7 +280,7 @@ class SaveOptions(object):
 			print(str(savedir))
 			file = open(savedir, "w")
 			file.writelines("elements, " + (', '.join(elements))+ "\n")
-			for i in arange(num_elements):
+			for i in range(num_elements):
 				file.writelines(str(elements[i]) + ", " + str(list(rMat[i]))[1:-1] + "\n")
 			file.close()
 			return

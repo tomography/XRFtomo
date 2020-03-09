@@ -49,11 +49,7 @@ Subclasses the h5py module for interacting with Data Exchange files.
 
 
 from PyQt5 import QtCore
-from glob import glob
-import h5py
-import numpy as np
 import os
-
 
 __author__ = "Arthur T. Glowacki"
 __copyright__ = "Copyright (c) 2018-19, UChicago Argonne, LLC."
@@ -144,7 +140,10 @@ class FileTableModel(QtCore.QAbstractTableModel):
         self.directory = directoryName
         topLeft = self.index(0, 0)
         self.layoutAboutToBeChanged.emit()
-        fileNames = [os.path.basename(x) for x in glob(directoryName+'/'+ext)]
+        all_files = [x for x in os.listdir(directoryName)]
+        fileNames = [x for x in all_files if x.split(".")[-1] == ext.split(".")[-1]]
+
+        # fileNames = [os.path.basename(x) for x in glob(directoryName+'/'+ext)]
         fileNames = sorted(fileNames)
         self.arrayData = []
         for i in range(len(fileNames)):

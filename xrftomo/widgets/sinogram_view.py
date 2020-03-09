@@ -46,7 +46,6 @@
 
 from PyQt5 import QtCore
 import pyqtgraph
-import numpy as np
 from PyQt5.QtCore import pyqtSignal
 
 class SinogramView(pyqtgraph.GraphicsLayoutWidget):
