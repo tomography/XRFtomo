@@ -1,8 +1,13 @@
-scikit-image 
-numpy
 dxfile
-dxchange
-pyqt
+h5py
 matplotlib
+numpy
+pandas
+pyqt >=5
 pyqtgraph
-
+scipy
+seaborn
+setuptools
+scikit-image
+tomopy
+dxchange
