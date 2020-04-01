@@ -1,45 +1,73 @@
-package:
-  name: xrftomo
-  version: 0.1.1
 
-extra:
-  channels:
-    - conda-forge
+{% set name = "XRFtomo" %}
+{% set version = "1.0.1" %}
+{% set repo = "fabricioSMarin" %}
+#tomography
+#fabricioSMarin
+
+package:
+  name: {{ name|lower }} 
+  version: {{ version }}
 
 source:
-  git_url: https://github.com/FabricioSMarin/xrftomo.git
-  git_tag: testing
-  
-build:
-  number: 0
+  # path: /home/MARINF/Downloads/XRFtomo-1.0.0.tar.gz
+  url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
+  # sha256: b1c7a9655e76a86ab555fb1360adcd61ae14bcd8e5397bb38c76d8750b2c84f2
+  # url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
+  # sha256: 986c4ea85c7fe8bcef274b7085209b74e8a93acd444ad1f9b947fb3f1352cbbb
+# extra:
+#   channels:
+#     - conda-forge
 
-python:
-    version: 3.7
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install ."
+  # script: "{{ python }} setup.py install"
+  # entry_points: 
+  #   - xrftomo = xrftomo.xrftomo:main
+  # ignore_prefix_files:
+  #   - xrftomo
 
 requirements:
-  build:
-    - python
-    - setuptools
- 
+  host:
+    - python =3.6
+    - pip
   run:
-  - tomopy
-  - pyqt
-  - git
-  - h5py
-  - numpy
-  - python=3.7
-  - scikit-image
-  - scipy
-  - dxchange
-  - pandas
-  - seaborn
-  - pyqtgraph
+    - python =3.6
+    - dxfile
+    - h5py
+    - matplotlib
+    - numpy
+    - pandas
+    - pyqt >=5
+    - pyqtgraph
+    - scipy
+    - seaborn
+    - setuptools
+    - scikit-image
+    - tomopy
+    - dxchange
+
 test:
-  # Python imports
   imports:
     - xrftomo
 
 about:
-  home: http://xrftomo.readthedocs.org
-  license: BSD-3
-  summary: 'Add docs to any xrftomo.'
+  home: https://github.com/{{ repo }}/XRFtomo
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE.txt
+  summary: 'Tomography software for APS beamlines'
+  description: |
+    XRFtomo brings together a variety of image processing tools used for preparing, 
+    processing and reconstructing 3D renditions of samples imaged using a 
+    synchrotron-based x-ray fluorescence (XRF) microprobe or nanoprobe at the 
+    Advanced Photon Source (APS).
+  dev_url: https://github.com/{{ repo }}/XRFtomo
+
+extra:
+  recipe-maintainers:
+    - FabricioSMarin
+
+
