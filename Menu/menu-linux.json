@@ -1,0 +1,18 @@
+{
+    "menu_name": "xrftomo",
+    "menu_items":
+        [
+            {
+                "cmd": ["/usr/bin/xrftomo", "gui", "admin"],
+                // The following options can be applied to any shortcut type:
+                "id": "xrf_1",  // For shortcut file name, becomes "World_id1"
+                "name": "xrftomo",
+                "comment": "xrftomo appliation",
+                "terminal": true,
+                // "icon": "path/to/icon"
+            },
+            {
+                "cmd": ["{{FILEBROWSER}}", "~/HelloWorld.txt"]
+            }
+        ]
+}

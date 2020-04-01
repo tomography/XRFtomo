@@ -1,0 +1,11 @@
+{
+    "menu_name": "xrftomo",
+    "menu_items":
+        [
+            {
+                "cmd": "${BIN_DIR}/xrftomo",
+                "name": "xrftomo",
+                // "icns": "${MENU_DIR}/app.icns"
+            }
+        ]
+}
