@@ -191,8 +191,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         delta = float(self.ViewControl.delta.text())
         iters = int(self.ViewControl.iters.text())
         thetas = self.thetas
-        start_indx = int(self.ViewControl.start_indx.text())
-        end_indx = int(self.ViewControl.end_indx.text())
+        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
+        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
         data = self.data[:,:,start_indx:end_indx,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
         self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, show_stats)

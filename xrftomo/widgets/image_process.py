@@ -462,7 +462,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def cut_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.actions.cut(self.data, x_pos, y_pos, x_size, y_size)
-        # self.ySizeChangedSig.emit(y_size)
+        self.ySizeChangedSig.emit(y_size)
         self.dataChangedSig.emit(data)
         self.refreshSig.emit()
 
@@ -502,7 +502,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         datasize_y = self.data.shape[2]
         data = self.actions.reshape_data(self.data, x_multiplier, y_multiplier)
         new_ySize = int(datasize_y*y_multiplier)
-        # self.ySizeChangedSig.emit(new_ySize)
+        self.ySizeChangedSig.emit(new_ySize)
         # self.xSizeChangedSig.emit(new_xSize)
         self.dataChangedSig.emit(data)
         self.refreshSig.emit()

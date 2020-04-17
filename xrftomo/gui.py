@@ -197,8 +197,8 @@ class xrftomoGui(QtGui.QMainWindow):
 
         #data dimensions changed
         # self.imageProcessWidget.ySizeChangedSig.connect(self.imageProcessWidget.ySizeChanged)
-        # self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
-        # self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
+        self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
+        self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
 
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
