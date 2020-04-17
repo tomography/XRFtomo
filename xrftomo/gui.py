@@ -53,6 +53,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import sys
 import matplotlib
+from os.path import expanduser
 
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
@@ -290,12 +291,12 @@ class xrftomoGui(QtGui.QMainWindow):
         self.helpMenu.addAction(configAction)
 
         self.afterConversionMenu.setDisabled(True)
-
+        version = "1.0.3"
         add = 0
         if sys.platform == "win32":
             add = 50
         self.setGeometry(add, add, 1100 + add, 500 + add)
-        self.setWindowTitle('xrftomo')
+        self.setWindowTitle('XRFtomo v{}'.format(version))
         self.show()
 
         #_______________________Help/config_options______________________
@@ -374,9 +375,9 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def toggleDebugMode(self):
-        if self.params.admin:
+        if self.params.experimental:
             self.debugMode()
-            self.params.admin = False
+            self.params.experimental = False
 
     def toggle_aspect_ratio(self, checkbox_state):
         if checkbox_state:
@@ -410,14 +411,13 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileTableWidget.elementTag_label.setVisible(True)
         self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
         self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(True)
-        self.imageProcessWidget.ViewControl.btn2.setVisible(True)
+        # self.imageProcessWidget.ViewControl.btn2.setVisible(True)
 
         self.sinogramWidget.ViewControl.btn1.setVisible(True)
         self.sinogramWidget.ViewControl.btn3.setVisible(True)
         self.sinogramWidget.ViewControl.btn5.setVisible(True)
         self.sinogramWidget.ViewControl.btn6.setVisible(True)
         return
-
 
     def openFolder(self):
         try:
@@ -1093,7 +1093,8 @@ class xrftomoGui(QtGui.QMainWindow):
         print("here I am")
         try:
             sections = config.TOMO_PARAMS + ('gui', )
-            config.write('xrftomo.conf', args=self.params, sections=sections)
+            home = expanduser("~")
+            config.write('{}/xrftomo.conf'.format(home), args=self.params, sections=sections)
             self.sinogramWidget.ViewControl.iter_parameters.close()
             self.sinogramWidget.ViewControl.center_parameters.close()
             self.sinogramWidget.ViewControl.move2edge.close()

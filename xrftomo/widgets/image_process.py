@@ -126,22 +126,17 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.Equalize.clicked.connect(self.histo_params)
-
-        self.ViewControl.rot_axis.clicked.connect(self.rot_axis_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histogram)
 
         # x_pos, y_pos, x_size, y_size, frame_height, frame_width
 
         # self.ViewControl.x_sld.valueChanged.connect(self.xSldChange)
         # self.ViewControl.y_sld.valueChanged.connect(self.xSldChange)
-        self.ViewControl.btn1.clicked.connect(self.hotspot2line_params)
-        self.ViewControl.btn2.clicked.connect(self.hotspot2sine_params)
-        self.ViewControl.btn3.clicked.connect(self.setY_params)
-        self.ViewControl.btn4.clicked.connect(self.clrHotspot_params)
-        self.ViewControl.btn4.setEnabled(False)
-        self.ViewControl.btn3.setEnabled(False)
-        self.ViewControl.btn2.setEnabled(False)
-        self.ViewControl.btn1.setEnabled(False)
+
+        # self.ViewControl.btn4.setEnabled(False)
+        # self.ViewControl.btn3.setEnabled(False)
+        # self.ViewControl.btn2.setEnabled(False)
+        # self.ViewControl.btn1.setEnabled(False)
 
         self.imageView.keyPressSig.connect(self.keyProcess)
         # self.actions.dataSig.connect(self.send_data)
@@ -313,8 +308,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
 
-        hs_group = self.ViewControl.combo3.currentIndex()
-        hs_number = self.sld.value()
+        # hs_group = self.ViewControl.combo3.currentIndex()
+        # hs_number = self.sld.value()
         if command == 'A': #previous projection
             self.sld.setValue(self.sld.value() - 1)
             self.imageSliderChanged()
@@ -367,70 +362,70 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.copyBG_params(img)
         if command == 'Paste':
             data = self.pasteBG_params()
-        if command == 'Next':
-            self.posMat[int(hs_group), int(hs_number)-1] = [x_pos, y_pos]
-            if hs_number < self.posMat.shape[1]:
-                print("Total projections", self.posMat.shape[1], "current position", hs_number+1, "group number", hs_group + 1)
-                hs_number += 1
-                if hs_number < self.posMat.shape[1]:
-                    self.sliderChangedSig.emit(hs_number)
-                else:
-                    self.sliderChangedSig.emit(hs_number-1)
-                    print("This is the last projection")
-            self.ViewControl.btn3.setEnabled(True)
-            self.ViewControl.btn2.setEnabled(True)
-            self.ViewControl.btn1.setEnabled(True)
-            self.ViewControl.btn4.setEnabled(True)
-        if command == 'Skip':
-            self.posMat[int(hs_group), int(hs_number)-1] = [0, 0]
-            if hs_number < self.posMat.shape[1]:
-                hs_number += 1
-                self.sliderChangedSig.emit(hs_number)
+        # if command == 'Next':
+        #     self.posMat[int(hs_group), int(hs_number)-1] = [x_pos, y_pos]
+        #     if hs_number < self.posMat.shape[1]:
+        #         print("Total projections", self.posMat.shape[1], "current position", hs_number+1, "group number", hs_group + 1)
+        #         hs_number += 1
+        #         if hs_number < self.posMat.shape[1]:
+        #             self.sliderChangedSig.emit(hs_number)
+        #         else:
+        #             self.sliderChangedSig.emit(hs_number-1)
+        #             print("This is the last projection")
+        #     self.ViewControl.btn3.setEnabled(True)
+        #     self.ViewControl.btn2.setEnabled(True)
+        #     self.ViewControl.btn1.setEnabled(True)
+        #     self.ViewControl.btn4.setEnabled(True)
+        # if command == 'Skip':
+        #     self.posMat[int(hs_group), int(hs_number)-1] = [0, 0]
+        #     if hs_number < self.posMat.shape[1]:
+        #         hs_number += 1
+        #         self.sliderChangedSig.emit(hs_number)
 
-    def hotSpotSetChanged(self):
-        self.imageView.hotSpotSetNumb = self.ViewControl.combo3.currentIndex()
-        # self.actions.saveHotSpotPos()
+    # def hotSpotSetChanged(self):
+    #     self.imageView.hotSpotSetNumb = self.ViewControl.combo3.currentIndex()
+    #     # self.actions.saveHotSpotPos()
 
-    def hotspot2line_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        hs_group = self.ViewControl.combo3.currentIndex()
-        hs_number = self.sld.value()
-        posMat = self.posMat
-        data, x_shifts, y_shifts = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
-        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
-        self.dataChangedSig.emit(data)
-        self.ViewControl.btn4.setEnabled(True)
+    # def hotspot2line_params(self):
+    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     data = self.data
+    #     hs_group = self.ViewControl.combo3.currentIndex()
+    #     hs_number = self.sld.value()
+    #     posMat = self.posMat
+    #     data, x_shifts, y_shifts = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
+    #     self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+    #     self.dataChangedSig.emit(data)
+    #     self.ViewControl.btn4.setEnabled(True)
 
-    def hotspot2sine_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        hs_group = self.ViewControl.combo3.currentIndex()
-        hs_number = self.sld.value()
-        posMat = self.posMat
-        thetas = self.thetas
-        data, x_shifts, y_shifts = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data, thetas)
-        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts +y_shifts)
-        self.dataChangedSig.emit(data)
-        self.ViewControl.btn4.setEnabled(True)
+    # def hotspot2sine_params(self):
+    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     data = self.data
+    #     hs_group = self.ViewControl.combo3.currentIndex()
+    #     hs_number = self.sld.value()
+    #     posMat = self.posMat
+    #     thetas = self.thetas
+    #     data, x_shifts, y_shifts = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data, thetas)
+    #     self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts +y_shifts)
+    #     self.dataChangedSig.emit(data)
+    #     self.ViewControl.btn4.setEnabled(True)
 
-    def setY_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        hs_group = self.ViewControl.combo3.currentIndex()
-        hs_number = self.sld.value()
-        posMat = self.posMat
-        data, y_shifts = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts + y_shifts)
-        self.dataChangedSig.emit(data)
-        self.ViewControl.btn4.setEnabled(True)
+    # def setY_params(self):
+    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     data = self.data
+    #     hs_group = self.ViewControl.combo3.currentIndex()
+    #     hs_number = self.sld.value()
+    #     posMat = self.posMat
+    #     data, y_shifts = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
+    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts + y_shifts)
+    #     self.dataChangedSig.emit(data)
+    #     self.ViewControl.btn4.setEnabled(True)
 
-    def clrHotspot_params(self):
-        self.posMat = self.actions.clrHotspot(self.posMat)
-        self.ViewControl.btn4.setEnabled(False)
-        self.ViewControl.btn3.setEnabled(False)
-        self.ViewControl.btn2.setEnabled(False)
-        self.ViewControl.btn1.setEnabled(False)
+    # def clrHotspot_params(self):
+    #     self.posMat = self.actions.clrHotspot(self.posMat)
+    #     self.ViewControl.btn4.setEnabled(False)
+    #     self.ViewControl.btn3.setEnabled(False)
+    #     self.ViewControl.btn2.setEnabled(False)
+    #     self.ViewControl.btn1.setEnabled(False)
 
     def get_params(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -440,8 +435,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
         x_size = self.imageView.xSize
         y_size = self.imageView.ySize
         frame_height = self.data.shape[2]
-        img = self.data[element, projection, int(round(frame_height - y_pos)):int(round(frame_height-y_pos-y_size)):-1,
-            int(round(x_pos)): int(round(x_pos) + x_size)]
+        y_end = int(round(frame_height - y_pos))
+        y_start = int(round(frame_height-y_pos-y_size))
+        x_start = int(round(x_pos))
+        x_end = int(round(x_pos) + x_size)
+
+        img = self.data[element, projection, y_start:y_end, x_start: x_end]
         return element, projection, x_pos, y_pos, x_size, y_size, img[::-1]
 
     def background_value_params(self):
@@ -582,21 +581,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
     #     return
     #
 
-    def rot_axis_params(self):
-        data = self.data
-        num_projections = data.shape[1]
-        thetas = self.thetas
-        rAxis_pos = self.imageView.cross_pos_x
-        center = data.shape[3]//2
-        theta_pos = self.lcd.value()
-        shift_arr = self.actions.move_rot_axis(thetas, center, rAxis_pos, theta_pos)
-        shift_arr = np.round(shift_arr)
-
-        for i in range(num_projections):
-            data[:,i] = np.roll(data[:,i],int(shift_arr[i]),axis=2)
-        self.alignmentChangedSig.emit(self.x_shifts + shift_arr, self.y_shifts)
-        self.dataChangedSig.emit(data)
-        return
 
     def histo_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -605,9 +589,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
             mask = self.actions.create_mask(data[element,i])
             data[element, i], m = self.actions.equalize_hist_ev(data[element,i], 2**16, mask)
         self.dataChangedSig.emit(data)
-
-
-
 
     def equalize_colocalization(self, elements, mask = None, nbins = 2**16, eq_hsv = False,
                                 global_shift = True, shift_funct = np.median):

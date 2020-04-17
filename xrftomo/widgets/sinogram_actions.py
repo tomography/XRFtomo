@@ -45,6 +45,7 @@
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 import scipy.fftpack as spf
+from scipy import ndimage, optimize, signal
 import tomopy
 from skimage import filters
 from skimage.measure import regionprops
@@ -519,6 +520,19 @@ class SinogramActions(QtWidgets.QWidget):
         center = tomopy.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
         return center[0]
 
+    def move_rot_axis(self, thetas, center, rAxis_pos, theta_pos):
+        #set 0th angle to 
+        num_theas = thetas.shape[0]
+        pos_from_center = [rAxis_pos - center]
+        angle_offset = -180-theta_pos
+        thetas = thetas + angle_offset
+        rads = np.radians(thetas)
+        # angle_increments = rads[1:]-rads[:-1]
+        offsets = pos_from_center[0]*np.cos(rads)
+        # adjustment = pos_from_center[0]*-1 - offsets[0]
+        # offsets += adjustment
+        return offsets
+        
     def rot_center3(self, thetasum, ave_mode = None, limit = None, return_all = False):
         # thetasum: 1d or 2d array of summed projections. (z,x)
         if thetasum.ndim == 1:
@@ -556,3 +570,313 @@ class SinogramActions(QtWidgets.QWidget):
             if return_all:
                 return T_phase/(np.pi*2)*cols
             return T_phase[rows//2]/(np.pi*2)*cols
+
+    def hotspot2line(self, element, x_size, y_size, hs_group, posMat, data):
+        '''
+        aligns projections to a line based on hotspot information
+
+        Variables
+        -----------
+        element: int
+            element index
+        x_size: int
+            ROI pixel dimension in x
+        y_size: int
+            ROI pixel dimension in y
+        hs_group: int
+            hotspot group number
+        posMat: ndarray
+            position matrix.
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
+        #TODO: onsider having posMat as part of the history state and have it update one level up.
+        self.posMat = posMat
+        hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, posMat, data)
+#****************
+        num_projections = data.shape[1]
+        y_shifts = np.zeros(num_projections)
+        x_shifts = np.zeros(num_projections)
+        for j in range(num_projections):
+
+            if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
+                yyshift = int(round(y_size//2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
+                xxshift = int(round(x_size//2 - hotSpotX[j] - hs_x_pos[j] + hs_x_pos[firstPosOfHotSpot]))
+                data[:, j, :, :] = np.roll(np.roll(data[:, j, :, :], xxshift, axis=2), yyshift, axis=1)
+
+            if hs_x_pos[j] == 0:
+                xxshift = 0
+            if hs_y_pos[j] == 0:
+                yyshift = 0
+
+            x_shifts[j] = xxshift
+            y_shifts[j] = -yyshift
+
+        print("align done")
+        return data, x_shifts, y_shifts
+
+    def hotspot2sine(self, element, x_size, y_size, hs_group, posMat, data, thetas):
+        '''
+        aligns projections to a sine curve based on hotspot information
+
+        Variables
+        -----------
+        element: int
+            element index
+        x_size: int
+            ROI pixel dimension in x
+        y_size: int
+            ROI pixel dimension in y
+        hs_group: int
+            hotspot group number
+        posMat: ndarray
+            position matrix. 2
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        thetas: ndarray
+            sorted projection angle list
+        '''
+
+        self.posMat = posMat
+        hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
+#****************
+        num_projections = data.shape[1]
+        y_shifts = np.zeros(num_projections)
+        x_shifts = np.zeros(num_projections)
+        thetas  = np.asarray(thetas)
+        for j in range(num_projections):
+
+            if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
+                xxshift = int(round(x_size//2 - hotSpotX[j]))
+                yyshift = int(round(y_size//2 - hotSpotY[j]))
+            if hs_x_pos[j] == 0:
+                xxshift = 0
+            if hs_y_pos[j] == 0:
+                yyshift = 0
+
+            x_shifts[j] = xxshift
+            y_shifts[j] = yyshift
+
+        hotspotXPos = np.zeros(num_projections, dtype=np.int)
+        hotspotYPos = np.zeros(num_projections, dtype=np.int)
+        for i in range(num_projections):
+            hotspotYPos[i] = int(round(hs_y_pos[i]))
+            hotspotXPos[i] = int(round(hs_x_pos[i]))
+        hotspotProj = np.where(hotspotXPos != 0)[0]
+
+        theta_tmp = thetas[hotspotProj]
+        com = hotspotXPos[hotspotProj]
+
+        if hs_group == 0:
+            self.fitCenterOfMass(com, x=theta_tmp)
+        else:
+            self.fitCenterOfMass2(com, self.centers, x=theta_tmp)
+        self.alignCenterOfMass2(hotspotProj, data)
+
+        ## yfit
+        for i in hotspotProj:
+            y_shifts[i] = int(hotspotYPos[hotspotProj[0]]) - int(hotspotYPos[i])
+            data[:, i, :, :] = np.roll(data[:, i, :, :], y_shifts[i], axis=1)
+
+        #update reconstruction slider value
+        # self.recon.sld.setValue(self.centers[2])
+
+        print("align done")
+        self.centers = list(np.round(self.centers))
+        return data, x_shifts, y_shifts
+
+
+    def setY(self, element, x_size, y_size, hs_group, posMat, data):
+        '''
+        aligns projections vertically
+        Variables
+        -----------
+        element: int
+            element index
+        x_size: int
+            ROI pixel dimension in x
+        y_size: int
+            ROI pixel dimension in y
+        hs_group: int
+            hotspot group number
+        posMat: ndarray
+            position matrix. 2
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
+        self.posMat = posMat
+        hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
+        num_projections = data.shape[1]
+        y_shifts = np.zeros(num_projections)
+        for j in range(num_projections):
+            if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
+                yyshift = int(round(y_size//2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
+                data[:, j, :, :] = np.roll(data[:, j, :, :], yyshift, axis=1)
+
+            if hs_y_pos[j] == 0:
+                yyshift = 0
+
+            y_shifts[j] = -yyshift
+
+        print("align done")
+
+        return data, y_shifts
+
+    def alignment_parameters(self, element, x_size, y_size, hs_group, posMat, data):
+        '''
+        gathers parameters for alignment functions
+        Variables
+        -----------
+        element: int
+            element index
+        x_size: int
+            ROI pixel dimension in x
+        y_size: int
+            ROI pixel dimension in y
+        hs_group: int
+            hotspot group number
+        posMat: ndarray
+            position matrix. 2
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
+        self.posMat = posMat
+        num_projections = data.shape[1]
+        hs_x_pos = np.zeros(num_projections, dtype=np.int)
+        hs_y_pos = np.zeros(num_projections, dtype=np.int)
+        hs_array = np.zeros([num_projections, y_size//2*2, x_size//2*2], dtype=np.int)
+
+        for i in range(num_projections):
+            hs_x_pos[i] = int(round(self.posMat[hs_group, i, 0]))
+            hs_y_pos[i] = int(abs(round(self.posMat[hs_group, i, 1])))
+
+            if hs_x_pos[i] != 0 and hs_y_pos[i] != 0:
+                if hs_y_pos[i] < - y_size//2:   # if ROI is past top edge of projection
+                    hs_y_pos[i] = y_size
+                if hs_y_pos[i] > (data.shape[2] - y_size//2): # if ROI is past top bottom of projection
+                    hs_y_pos[i] = data.shape[2] - y_size//2
+                if hs_x_pos[i] < x_size//2: # if ROI is past left edge of projection
+                    hs_x_pos[i] = x_size//2
+                if hs_x_pos[i] > (data.shape[3] - x_size//2): # if ROI is past right edge of projection
+                    hs_x_pos[i] = data.shape[3] - x_size//2
+                y0 = hs_y_pos[i] - y_size//2
+                y1 = hs_y_pos[i] + y_size//2
+                x0 = hs_x_pos[i] - x_size//2
+                x1 = hs_x_pos[i] + x_size//2
+                hs_array[i, :, :] = data[element, i, y0:y1, x0:x1]
+
+        hotSpotX = np.zeros(num_projections, dtype=np.int)
+        hotSpotY = np.zeros(num_projections, dtype=np.int)
+        new_hs_array = np.zeros(hs_array.shape, dtype=np.int)
+        new_hs_array[...] = hs_array[...]
+        firstPosOfHotSpot = 0
+
+        add = 1
+        for i in range(num_projections):
+            if hs_x_pos[i] == 0 and hs_y_pos[i] == 0:
+                firstPosOfHotSpot += add
+            if hs_x_pos[i] != 0 or hs_y_pos[i] != 0:
+                img = hs_array[i, :, :]
+                print(img.sum(), i)
+                a, x, y, b, c = self.fitgaussian(img)
+                hotSpotY[i] = x
+                hotSpotX[i] = y
+                yshift_tmp = int(round(y_size - hotSpotY[i]))
+                xshift_tmp = int(round(x_size - hotSpotX[i]))
+                new_hs_array[i, :, :] = np.roll(new_hs_array[i, :, :], xshift_tmp, axis=1)
+                new_hs_array[i, :, :] = np.roll(new_hs_array[i, :, :], yshift_tmp, axis=0)
+                add = 0
+
+        return hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data
+
+    def fitCenterOfMass(self, com, x):
+        fitfunc = lambda p, x: p[0] * np.sin(2 * np.pi / 360 * (x - p[1])) + p[2]
+        errfunc = lambda p, x, y: fitfunc(p, x) - y
+        p0 = [100, 100, 100]
+        self.centers, success = optimize.leastsq(errfunc, np.asarray(p0), args=(x, com))
+        self.centerOfMassDiff = fitfunc(p0, x) - com
+        print(self.centerOfMassDiff)
+        
+    def alignCenterOfMass2(self, hotspotProj, data):
+        j = 0
+        for i in hotspotProj:
+            self.x_shifts[i] += int(self.centerOfMassDiff[j])
+
+            data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(self.x_shifts[i])), axis=2)
+            j += 1
+
+      #set some label to be show that the alignment has completed. perhaps print this in a logbox
+
+    def fitCenterOfMass2(self, com, x):
+        fitfunc = lambda p, x: p[0] * np.sin(2 * np.pi / 360 * (x - p[1])) + self.centers[2]
+        errfunc = lambda p, x, y: fitfunc(p, x) - y
+        p0 = [100, 100]
+        p2, success = optimize.leastsq(errfunc, np.asarray(p0), args=(x, com))
+        self.centerOfMassDiff = fitfunc(p2, x) - com
+        print(self.centerOfMassDiff)
+
+    def fitgaussian(self, data):
+        """
+        Returns (height, x, y, width_x, width_y)
+        the gaussian parameters of a 2D distribution found by a fit
+        """
+        params = self.moments(data)
+        errorfunction = lambda p: np.ravel(self.gaussian(*p)(*np.indices(data.shape)) - data)
+        p, success = optimize.leastsq(errorfunction, params)
+        return p
+
+    def moments(self, data):
+        """
+        Returns (height, x, y, width_x, width_y)
+        the gaussian parameters of a 2D distribution by calculating its
+        moments
+        """
+        total = data.sum()
+        if total == 0:
+            x = 0
+            y = 0
+        else:
+            X, Y = np.indices(data.shape)
+            x = (X * data).sum() / total
+            y = (Y * data).sum() / total
+
+        col = data[:, int(y)]
+
+        if col.sum() == 0:
+            width_x = 0
+        else:
+            width_x = np.sqrt(abs((np.arange(col.size) - y) ** 2 * col).sum() / col.sum())
+        # TODO: rundime wasrning: invalid value encountered in double_scalars
+
+        row = data[int(x), :]
+        if row.sum() == 0:
+            width_y = 0
+        else:
+            width_y = np.sqrt(abs((np.arange(row.size) - x) ** 2 * row).sum() / row.sum())
+
+        height = data.max()
+
+        return height, x, y, width_x, width_y
+
+    def gaussian(self, height, center_x, center_y, width_x, width_y):
+        """
+        Returns a gaussian function with the given parameters
+        """
+        width_x = float(width_x)
+        width_y = float(width_y)
+        if width_x == 0:
+            return lambda x, y: 0
+        if width_y == 0:
+            return lambda x, y: 0
+
+        # ss = lambda x, y: height * exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
+
+        return lambda x, y: height * np.exp(-(((center_x - x) / width_x) ** 2 + ((center_y - y) / width_y) ** 2) / 2)
+
+    def clrHotspot(self, posMat):
+        '''
+        resets
+        hotspot position matrix
+        '''
+        posMat[...] = np.zeros_like(posMat)
+        return posMat

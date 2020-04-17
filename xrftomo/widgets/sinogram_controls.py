@@ -64,12 +64,14 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setFixedWidth(button1size)
-        self.combo2 = QtWidgets.QComboBox(self)
-        self.combo2.setFixedWidth(button1size)
+        # self.combo2 = QtWidgets.QComboBox(self)
+        # self.combo2.setFixedWidth(button1size)
+        self.combo3 = QtWidgets.QComboBox(self)
+        self.combo3.setFixedWidth(button2size)
 
         self.btn1 = QtWidgets.QPushButton('center of mass')
         self.btn1.setFixedWidth(button2size)
-        self.btn2 = QtWidgets.QPushButton('x corr.')
+        self.btn2 = QtWidgets.QPushButton('cross corr.')
         self.btn2.setFixedWidth(button2size)
         self.btn3 = QtWidgets.QPushButton('phase corr.')
         self.btn3.setFixedWidth(button2size)
@@ -83,13 +85,44 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.btn9.setFixedWidth(button2size)
         self.center = QtWidgets.QPushButton("Find center")
         self.center.setFixedWidth(button2size)
+        self.rot_axis = QtWidgets.QPushButton("Set rot. axis")
+        self.rot_axis.setFixedWidth(button2size)
+        self.rot_axis.setDisabled(True)
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setFixedWidth(button2size)
-        self.combo2.setVisible(False)
+        # self.combo2.setVisible(False)
+
+
+        for i in range(5):
+            self.combo3.addItem(str(i + 1))
+        self.fit_line = QtWidgets.QPushButton("fit to a line")
+        self.fit_line.setFixedWidth(button2size)
+        self.fit_sine = QtWidgets.QPushButton("fit to sine curve")
+        self.fit_sine.setFixedWidth(button2size)
+        self.fit_y = QtWidgets.QPushButton("set y")
+        self.fit_y.setFixedWidth(button2size)
+        self.clear_data = QtWidgets.QPushButton("Clear data")
+        self.clear_data.setFixedWidth(button2size)
+        self.hotspot_lbl = QtWidgets.QLabel("hotspot group#")
+        self.hotspot_lbl.setFixedWidth(button2size)
+        self.hotspot_mode_chbx = QtWidgets.QCheckBox("enable hotspot mode")
+        self.hotspot_mode_chbx.setFixedWidth(button1size)
+
+
+
+        self.hotspot_mode_chbx.setVisible(False)
+        self.hotspot_lbl.setVisible(False)
+        self.combo3.setVisible(False)
+        self.fit_line.setVisible(False)
+        self.fit_sine.setVisible(False)
+        self.fit_y.setVisible(False)
+        self.clear_data.setVisible(False)
+        self.fit_sine.setVisible(False)
+
+
 
         hb1 = QtWidgets.QHBoxLayout()
         hb1.addWidget(self.btn1)
-        hb1.addWidget(self.center)
 
         hb2 = QtWidgets.QHBoxLayout()
         hb2.addWidget(self.btn2)
@@ -103,21 +136,48 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         hb4.addWidget(self.btn5)
         hb4.addWidget(self.btn9)
 
+        hb5 = QtWidgets.QHBoxLayout()
+        hb5.addWidget(self.center)
+
+        hb6 = QtWidgets.QHBoxLayout()
+        hb6.addWidget(self.rot_axis)
+
+        hb65 = QtWidgets.QHBoxLayout()
+        hb65.addWidget(self.hotspot_mode_chbx)
+        hb7 = QtWidgets.QHBoxLayout()
+        hb7.addWidget(self.hotspot_lbl)
+        hb7.addWidget(self.combo3)
+        hb8 = QtWidgets.QHBoxLayout()
+        hb8.addWidget(self.fit_line)
+        hb8.addWidget(self.fit_y)        
+        hb9 = QtWidgets.QHBoxLayout()
+        hb9.addWidget(self.fit_sine)
+        hb9.addWidget(self.clear_data)
+
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addLayout(hb1)
         vb1.addLayout(hb2)
         vb1.addLayout(hb3)
         vb1.addLayout(hb4)
+        vb1.addLayout(hb5)
+        vb1.addLayout(hb6)
+
+        vb2 = QtWidgets.QVBoxLayout()
+        vb2.addLayout(hb65)
+        vb2.addLayout(hb7)
+        vb2.addLayout(hb8)
+        vb2.addLayout(hb9)
+
 
         vb3 = QtWidgets.QVBoxLayout()
         vb3.addWidget(self.combo1)
-        vb3.addWidget(self.combo2)
+        # vb3.addWidget(self.combo2)
         vb3.addLayout(vb1)
+        vb3.addLayout(vb2)
         # self.setFixedWidth(button1size)
         self.setLayout(vb3)
 
 
-        self.btn1.setVisible(False)
         self.btn3.setVisible(False)
         self.btn5.setVisible(False)
         self.btn6.setVisible(False)
@@ -379,7 +439,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.center_parameters.resize(275,300)
         self.center_parameters.setWindowTitle('center-finiding options')
 
-        method = ["tomopy center-find", "Everett's center-find"]
+        method = ["tomopy center-find", "Vacek's center-find"]
         self.options = QtWidgets.QComboBox()
         self.options.setFixedWidth(button1size)
 
