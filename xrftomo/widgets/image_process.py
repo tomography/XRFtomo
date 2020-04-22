@@ -111,10 +111,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         # self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
-        # self.ViewControl.x_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
-        # self.ViewControl.xSizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
-        # self.ViewControl.y_sld.valueChanged.connect(self.imgProcessBoxSizeChange)
-        # self.ViewControl.ySizeTxt.editingFinished.connect(self.imgProcessBoxSizeChange)
         self.ViewControl.reshapeBtn.clicked.connect(self.ViewControl.reshape_options.show)
         self.ViewControl.run_reshape.clicked.connect(self.reshape_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
@@ -127,11 +123,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.Equalize.clicked.connect(self.histo_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histogram)
-
-        # x_pos, y_pos, x_size, y_size, frame_height, frame_width
-
-        # self.ViewControl.x_sld.valueChanged.connect(self.xSldChange)
-        # self.ViewControl.y_sld.valueChanged.connect(self.xSldChange)
 
         # self.ViewControl.btn4.setEnabled(False)
         # self.ViewControl.btn3.setEnabled(False)
@@ -264,27 +255,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def updateFileDisplay(self, fnames, index):
         self.fnames = fnames
         self.file_name_title.setText(str(self.fnames[index]))
-
-    # def imgProcessBoxSizeChange(self):
-    #     xSize = self.ViewControl.xSize
-    #     ySize = self.ViewControl.ySize
-    #     if xSize > self.data.shape[3]:
-    #         xSize = self.data.shape[3]
-    #         self.ViewControl.xSize = xSize
-    #     if ySize > self.data.shape[2]:
-    #         ySize = self.data.shape[2]
-    #         self.ViewControl.ySize = ySize
-
-    #     self.imageView.xSize = xSize
-    #     self.imageView.ySize = ySize
-    #     self.imageView.ROI.setSize([xSize, ySize])
-    #     x_pos = int(round(self.imageView.x_pos))
-    #     y_pos = int(round(self.imageView.y_pos))
-    #     frame_height = self.data.shape[2]
-    #     frame_width = self.data.shape[3]
-    #     x_pos, y_pos, cross_pos_x, cross_pos_y  = self.imageView.update_roi(x_pos, y_pos, xSize, ySize, frame_height, frame_width)
-
-    #     self.imageView.ROI.setPos([x_pos-xSize/2, y_pos-ySize/2])
 
     def imageChanged(self):
         index = self.sld.value()
@@ -464,6 +434,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.actions.cut(self.data, x_pos, y_pos, x_size, y_size)
         self.ySizeChangedSig.emit(y_size)
         self.dataChangedSig.emit(data)
+        #TODO: move crosshairs an ROI to crop region after crop
+        self.imageView.p1.items[3].setValue(0)
+        self.imageView.p1.items[4].setValue(0)
+        self.imageView.ROI.setPos([0, 0], finish=False)
         self.refreshSig.emit()
 
     def copyBG_params(self,*img):

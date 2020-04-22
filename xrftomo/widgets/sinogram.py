@@ -709,7 +709,8 @@ class SinogramWidget(QtWidgets.QWidget):
         pass
 
     def alignFromText2_params(self):
-        fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
+        ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
+        fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt) ;; NPY (*.npy)")
 
         if fileName[0] == "":
             return

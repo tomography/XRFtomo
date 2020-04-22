@@ -481,9 +481,7 @@ class SinogramActions(QtWidgets.QWidget):
 
         '''
         try:
-            ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
 
-            #TODO: if text file is not in correct format, do nothing, return and display reason for error.
             file = open(fileName[0], 'r')
             read = file.readlines()
             datacopy = np.zeros(data.shape)
@@ -499,7 +497,7 @@ class SinogramActions(QtWidgets.QWidget):
                 y_shifts[i] = int(float(read[j][secondcol + 1:-1]))
                 x_shifts[i] = int(float(read[j][firstcol + 1:secondcol]))
                 data[:, i, :, :] = np.roll(data[:, i, :, :], int(x_shifts[i]), axis=2)
-                data[:, i, :, :] = np.roll(data[:, i, :, :], int(-y_shifts[i]), axis=1)
+                data[:, i, :, :] = np.roll(data[:, i, :, :], int(y_shifts[i]), axis=1)
 
             file.close()
             self.alignmentDone()
@@ -592,6 +590,8 @@ class SinogramActions(QtWidgets.QWidget):
         '''
         #TODO: onsider having posMat as part of the history state and have it update one level up.
         self.posMat = posMat
+        self.posMat[0] = posMat[0] + x_size//2
+        self.posMat[1] = posMat[1] + y_size//2
         hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, posMat, data)
 #****************
         num_projections = data.shape[1]
@@ -610,7 +610,7 @@ class SinogramActions(QtWidgets.QWidget):
                 yyshift = 0
 
             x_shifts[j] = xxshift
-            y_shifts[j] = -yyshift
+            y_shifts[j] = yyshift
 
         print("align done")
         return data, x_shifts, y_shifts
@@ -636,8 +636,10 @@ class SinogramActions(QtWidgets.QWidget):
         thetas: ndarray
             sorted projection angle list
         '''
-
         self.posMat = posMat
+        self.posMat[0] = posMat[0] + x_size//2
+        self.posMat[1] = posMat[1] + y_size//2
+
         hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
 #****************
         num_projections = data.shape[1]
@@ -705,6 +707,9 @@ class SinogramActions(QtWidgets.QWidget):
             4D xrf dataset ndarray [elements, theta, y,x]
         '''
         self.posMat = posMat
+        self.posMat[0] = posMat[0] + x_size//2
+        self.posMat[1] = posMat[1] + y_size//2
+
         hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
         num_projections = data.shape[1]
         y_shifts = np.zeros(num_projections)
@@ -741,6 +746,7 @@ class SinogramActions(QtWidgets.QWidget):
             4D xrf dataset ndarray [elements, theta, y,x]
         '''
         self.posMat = posMat
+
         num_projections = data.shape[1]
         hs_x_pos = np.zeros(num_projections, dtype=np.int)
         hs_y_pos = np.zeros(num_projections, dtype=np.int)
@@ -751,10 +757,10 @@ class SinogramActions(QtWidgets.QWidget):
             hs_y_pos[i] = int(abs(round(self.posMat[hs_group, i, 1])))
 
             if hs_x_pos[i] != 0 and hs_y_pos[i] != 0:
-                if hs_y_pos[i] < - y_size//2:   # if ROI is past top edge of projection
-                    hs_y_pos[i] = y_size
-                if hs_y_pos[i] > (data.shape[2] - y_size//2): # if ROI is past top bottom of projection
+                if hs_y_pos[i] > (data.shape[2] - y_size//2):   # if ROI is past top edge of projection
                     hs_y_pos[i] = data.shape[2] - y_size//2
+                if hs_y_pos[i] < y_size//2: # if ROI is past bottom of projection
+                    hs_y_pos[i] = y_size//2
                 if hs_x_pos[i] < x_size//2: # if ROI is past left edge of projection
                     hs_x_pos[i] = x_size//2
                 if hs_x_pos[i] > (data.shape[3] - x_size//2): # if ROI is past right edge of projection
@@ -763,7 +769,7 @@ class SinogramActions(QtWidgets.QWidget):
                 y1 = hs_y_pos[i] + y_size//2
                 x0 = hs_x_pos[i] - x_size//2
                 x1 = hs_x_pos[i] + x_size//2
-                hs_array[i, :, :] = data[element, i, y0:y1, x0:x1]
+                hs_array[i, :, :] = data[element, i, (data.shape[2] - y1):(data.shape[2] - y0), x0:x1]
 
         hotSpotX = np.zeros(num_projections, dtype=np.int)
         hotSpotY = np.zeros(num_projections, dtype=np.int)
@@ -777,7 +783,6 @@ class SinogramActions(QtWidgets.QWidget):
                 firstPosOfHotSpot += add
             if hs_x_pos[i] != 0 or hs_y_pos[i] != 0:
                 img = hs_array[i, :, :]
-                print(img.sum(), i)
                 a, x, y, b, c = self.fitgaussian(img)
                 hotSpotY[i] = x
                 hotSpotX[i] = y

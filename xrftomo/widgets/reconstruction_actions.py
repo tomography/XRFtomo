@@ -59,7 +59,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 	def __init__(self):
 		super(ReconstructionActions, self).__init__()
 
-	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas, show_stats=False):
+	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False):
 		'''
 		load data for reconstruction and load variables for reconstruction
 		make it sure that data doesn't have infinity or nan as one of
@@ -108,7 +108,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 			print("inf values replaced with 0.001")
 			self.recon[self.recon == np.inf] = 0.001
 
-		err, mse  = self.assessRecon(self.recon, data, thetas, show_stats)
+		err, mse  = self.assessRecon(self.recon, recData, thetas, mid_indx, show_stats)
 		print(mse)
 		return self.recon
 
@@ -126,7 +126,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 		return recon
 
-	def assessRecon(self,recon, data, thetas, show_plots=True):
+	def assessRecon(self,recon, data, thetas, mid_indx, show_plots=True):
 		#get index where projection angle is zero
 		zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]
 		num_slices = recon.shape[0]
@@ -137,16 +137,23 @@ class ReconstructionActions(QtWidgets.QWidget):
 		# get recon reporjection for slice i and take the difference with data projection (at angle ~=0).
 		for i in range(num_slices):
 			reprojection[i] = np.sum(recon[i], axis=0)
-			tmp[i] = data[0, zero_index, i] / (data[0, zero_index, i].max() / np.sum(recon[i], axis=0).max())
-		tmp = tmp/(tmp.max()/width)
-		reprojection = reprojection/(reprojection.max()/width)
+			if data[zero_index, i].max() == 0:
+				tmp[i] = np.zeros(width)
+			else:
+				#projection for 0 angle at row i / projection for angle 0 at row i, mximum value / maximum value of recon for row i
+				#projection row / (proj max / reproj max)
+				tmp[i] = data[zero_index, i] / (data[zero_index, i].max() / np.sum(recon[i], axis=0).max())
+		projection = tmp*width/tmp.max()
+		reprojection = reprojection*width/reprojection.max()
+		projection_xSection = tmp[mid_indx]*width/tmp[mid_indx].max()
+		reprojection_xSection = reprojection[mid_indx]*width/reprojection[mid_indx].max()
 		#difference between reporjection and original projection at angle == 0
 		# err = tmp - reprojection/reprojection
-		err = tmp - reprojection
+		err = projection - reprojection
 		#mean squared error
 		mse = (np.square(err)).mean(axis=None)
-		imshow(recon[num_slices//2], origin='lower'), plot(tmp[num_slices//2]), plot(reprojection[num_slices//2])
-		legend((' original data', 'reprojection'), loc=1)
+		imshow(recon[mid_indx], origin='lower'), plot(projection_xSection), plot(reprojection_xSection)
+		legend(('projection', 'reprojection'), loc=1)
 		title("MSE:{}".format(np.round(mse, 4)))
 		if show_plots:
 			show()

@@ -196,7 +196,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget.thetaChangedSig.connect(self.sinogramWidget.updateImgSldRange)
 
         #data dimensions changed
-        # self.imageProcessWidget.ySizeChangedSig.connect(self.imageProcessWidget.ySizeChanged)
         self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
         self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
 
@@ -920,6 +919,8 @@ class xrftomoGui(QtGui.QMainWindow):
 
                 self.update_alignment(self.x_shifts, self.y_shifts)
                 self.update_slider_range(self.thetas)
+                # self.update_y_slider_range(self.data.shape[2])
+                self.sinogramWidget.ySizeChanged(self.data.shape[2])
                 index = self.imageProcessWidget.sld.value()
                 self.update_theta(index, self.thetas)
                 self.update_filenames(self.fnames, index)
@@ -943,47 +944,9 @@ class xrftomoGui(QtGui.QMainWindow):
             self.update_history(self.data)
             self.update_slider_range(self.thetas)
 
-            self.imageProcessWidget.ViewControl.ySizeTxt.setText(str(10))
-            self.imageProcessWidget.ViewControl.xSizeTxt.setText(str(10))
-            self.imageProcessWidget.ViewControl.y_sld.setRange(2,self.data.shape[2])
-            self.imageProcessWidget.ViewControl.x_sld.setRange(2,self.data.shape[3])
-
         except AttributeError:
             print("Load dataset first")
             return
-
-    # def corrElem2(self):
-    #     self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
-        
-    #     data = self.data
-    #     corrMat = np.zeros((data.shape[0],data.shape[0]))
-    #     for i in range(data.shape[0]):
-    #         for j in range(data.shape[0]):
-    #             elemA = data[i]
-    #             elemB = data[j]
-    #             corr = np.mean(signal.correlate(elemA, elemB, method='direct', mode='same') / (data.shape[1]*data.shape[2]*data.shape[3]))
-    #             corrMat[i,j] = corr
-
-    #     sns.set(style="white")
-
-    #     # Generate a mask for the upper triangle
-    #     mask = np.zeros_like(corrMat, dtype=np.bool)
-    #     mask[np.triu_indices_from(mask,1)] = True
-
-    #     # Set up the matplotlib figure
-    #     f, ax = plt.subplots(figsize=(11, 9))
-
-    #     # Generate a custom diverging colormap
-    #     cmap = sns.diverging_palette(220, 10, as_cmap=True)
-
-    #     # Draw the heatmap with the mask and correct aspect ratio
-    #     d = pd.DataFrame(data=corrMat, columns=self.elements, index=self.elements)
-    #     sns.heatmap(d, mask=mask, cmap=cmap, vmax=corrMat.max(), center=0,
-    #                 square=True, linewidths=.5, cbar_kws={"shrink": .5})
-    #     f.show()
-    #     self.app.restoreOverrideCursor()
-    #     return corrMat
-
 
     def corrElem(self):
         self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
