@@ -128,7 +128,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.clear_data.clicked.connect(self.clrHotspot_params)
 
         self.diffView.keyPressSig.connect(self.keyProcess)
-
+        self.imageView.keyPressSig.connect(self.keyProcess)
 
         self.ViewControl.fit_line.setEnabled(False)
         self.ViewControl.fit_sine.setEnabled(False)
@@ -238,37 +238,50 @@ class SinogramWidget(QtWidgets.QWidget):
         index = self.sld3.value()
         data = self.data
 
-        if command == 'A': #previous projection
-            self.sld3.setValue(self.sld3.value() - 1)
-            self.imageSliderChanged()
-        if command == 'D':  #next projection
-            self.sld3.setValue(self.sld3.value() + 1)
-            self.imageSliderChanged()
         if command == 'left':
             self.x_shifts[index] -=1
-            data = self.actions.shiftProjectionX(self.data, index, -1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            data = self.actions.shiftProjection(self.data, -1, 0, index)
             self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'right':
             self.x_shifts[index] +=1
-            data = self.actions.shiftProjectionX(self.data, index, 1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            data = self.actions.shiftProjection(self.data, 1, 0, index)
             self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'up':
             self.y_shifts[index] +=1
-            data = self.actions.shiftProjectionY(self.data, index, -1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            data = self.actions.shiftProjection(self.data, 0, -1, index)
             self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'down':
             self.y_shifts[index] -=1
-            data = self.actions.shiftProjectionY(self.data, index, 1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            data = self.actions.shiftProjection(self.data, 0, 1, index)
             self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        if command == 'shiftLeft':
+            self.x_shifts -=1
+            data = self.actions.shiftStack(self.data, -1, 0)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        if command == 'shiftRight':
+            self.x_shifts +=1
+            data = self.actions.shiftStack(self.data, 1, 0)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        if command == 'shiftUp':
+            self.y_shifts +=1
+            data = self.actions.shiftStack(self.data, 0, -1)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        if command == 'shiftDown':
+            self.y_shifts -=1
+            data = self.actions.shiftStack(self.data, 0, 1)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
 
     def showImgProcess(self):
         self.posMat = np.zeros((5,int(self.data.shape[1]),2))
         self.imageView.hotSpotNumb = 0
-
         num_projections  = self.data.shape[1]
         self.sld2.setRange(0, num_projections - 1)
 
@@ -466,7 +479,6 @@ class SinogramWidget(QtWidgets.QWidget):
                 self.sld2.setValue(self.sld2.value() + 1)
                 self.imageSliderChanged()
 
-
     def clrHotspot_params(self):
         self.posMat = self.actions.clrHotspot(self.posMat)
         self.ViewControl.clear_data.setEnabled(False)
@@ -532,13 +544,8 @@ class SinogramWidget(QtWidgets.QWidget):
         rot_center = int(np.round(float(self.ViewControl.center_1.text().split()[1])))
         x_shifts = data.shape[3]//2 - rot_center
 
-        if x_shifts<0:
-            data = self.actions.shiftDataX(data, x_shifts)
-            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
-            self.dataChangedSig.emit(data)
-
-        if x_shifts>0:
-            data = self.actions.shiftDataX(data, x_shifts)
+        if x_shifts !=0:
+            data = self.actions.shiftStack(data, x_shifts, 0)
             self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
 

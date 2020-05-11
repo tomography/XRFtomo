@@ -93,10 +93,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.hist.setMaximumWidth(120)
         self.hist.setImageItem(self.imageView.projView)
 
-
-
-
-
         # self.imgAndHistoWidget.setSizePolicy(QtWidgets.QSizePolicy.setHeightForWidth(True))
 
         # sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -123,11 +119,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.Equalize.clicked.connect(self.histo_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histogram)
-
-        # self.ViewControl.btn4.setEnabled(False)
-        # self.ViewControl.btn3.setEnabled(False)
-        # self.ViewControl.btn2.setEnabled(False)
-        # self.ViewControl.btn1.setEnabled(False)
 
         self.imageView.keyPressSig.connect(self.keyProcess)
         # self.actions.dataSig.connect(self.send_data)
@@ -288,42 +279,42 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.imageSliderChanged()
         if command == 'left':
             self.x_shifts[index] -=1
-            data = self.actions.shiftProjectionX(self.data, index, -1)
+            data = self.actions.shiftProjection(self.data, -1, 0, index)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'right':
             self.x_shifts[index] +=1
-            data = self.actions.shiftProjectionX(self.data, index, 1)
+            data = self.actions.shiftProjection(self.data, 1, 0, index)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'up':
             self.y_shifts[index] +=1
-            data = self.actions.shiftProjectionY(self.data, index, -1)
+            data = self.actions.shiftProjection(self.data, 0, -1, index)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'down':
             self.y_shifts[index] -=1
-            data = self.actions.shiftProjectionY(self.data, index, 1)
+            data = self.actions.shiftProjection(self.data, 0, 1, index) #image axis flipped
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftLeft':
             self.x_shifts -=1
-            data = self.actions.shiftDataX(self.data, -1)
+            data = self.actions.shiftStack(self.data, -1, 0)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftRight':
             self.x_shifts +=1
-            data = self.actions.shiftDataX(self.data, 1)
+            data = self.actions.shiftStack(self.data, 1, 0)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftUp':
             self.y_shifts +=1
-            data = self.actions.shiftDataY(self.data, -1)
+            data = self.actions.shiftStack(self.data, 0, -1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftDown':
             self.y_shifts -=1
-            data = self.actions.shiftDataY(self.data, 1)
+            data = self.actions.shiftStack(self.data, 0, 1)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'Delete':
@@ -332,70 +323,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.copyBG_params(img)
         if command == 'Paste':
             data = self.pasteBG_params()
-        # if command == 'Next':
-        #     self.posMat[int(hs_group), int(hs_number)-1] = [x_pos, y_pos]
-        #     if hs_number < self.posMat.shape[1]:
-        #         print("Total projections", self.posMat.shape[1], "current position", hs_number+1, "group number", hs_group + 1)
-        #         hs_number += 1
-        #         if hs_number < self.posMat.shape[1]:
-        #             self.sliderChangedSig.emit(hs_number)
-        #         else:
-        #             self.sliderChangedSig.emit(hs_number-1)
-        #             print("This is the last projection")
-        #     self.ViewControl.btn3.setEnabled(True)
-        #     self.ViewControl.btn2.setEnabled(True)
-        #     self.ViewControl.btn1.setEnabled(True)
-        #     self.ViewControl.btn4.setEnabled(True)
-        # if command == 'Skip':
-        #     self.posMat[int(hs_group), int(hs_number)-1] = [0, 0]
-        #     if hs_number < self.posMat.shape[1]:
-        #         hs_number += 1
-        #         self.sliderChangedSig.emit(hs_number)
-
-    # def hotSpotSetChanged(self):
-    #     self.imageView.hotSpotSetNumb = self.ViewControl.combo3.currentIndex()
-    #     # self.actions.saveHotSpotPos()
-
-    # def hotspot2line_params(self):
-    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-    #     data = self.data
-    #     hs_group = self.ViewControl.combo3.currentIndex()
-    #     hs_number = self.sld.value()
-    #     posMat = self.posMat
-    #     data, x_shifts, y_shifts = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
-    #     self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
-    #     self.dataChangedSig.emit(data)
-    #     self.ViewControl.btn4.setEnabled(True)
-
-    # def hotspot2sine_params(self):
-    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-    #     data = self.data
-    #     hs_group = self.ViewControl.combo3.currentIndex()
-    #     hs_number = self.sld.value()
-    #     posMat = self.posMat
-    #     thetas = self.thetas
-    #     data, x_shifts, y_shifts = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data, thetas)
-    #     self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts +y_shifts)
-    #     self.dataChangedSig.emit(data)
-    #     self.ViewControl.btn4.setEnabled(True)
-
-    # def setY_params(self):
-    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-    #     data = self.data
-    #     hs_group = self.ViewControl.combo3.currentIndex()
-    #     hs_number = self.sld.value()
-    #     posMat = self.posMat
-    #     data, y_shifts = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
-    #     self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts + y_shifts)
-    #     self.dataChangedSig.emit(data)
-    #     self.ViewControl.btn4.setEnabled(True)
-
-    # def clrHotspot_params(self):
-    #     self.posMat = self.actions.clrHotspot(self.posMat)
-    #     self.ViewControl.btn4.setEnabled(False)
-    #     self.ViewControl.btn3.setEnabled(False)
-    #     self.ViewControl.btn2.setEnabled(False)
-    #     self.ViewControl.btn1.setEnabled(False)
 
     def get_params(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -480,9 +407,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.xSizeChangedSig.emit(new_xSize)
         self.dataChangedSig.emit(data)
         self.refreshSig.emit()
-
         pass
-
 
     def save_analysis(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()

@@ -56,6 +56,9 @@ from xrftomo.reco import *
 from xrftomo.elements import *
 from xrftomo.widgets.custom_view_box import *
 from xrftomo.widgets.difference_view import *
+from xrftomo.widgets.scatter_view import *
+from xrftomo.widgets.mini_recon_view import *
+
 
 from xrftomo.models.element_table import *
 from xrftomo.models.file_table import *

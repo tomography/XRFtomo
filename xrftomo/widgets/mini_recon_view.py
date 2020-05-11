@@ -44,80 +44,30 @@
 # #########################################################################
 
 
-from PyQt5 import QtCore
-import pyqtgraph
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from matplotlib.figure import Figure
+# from matplotlib.figure import Figure
+import pyqtgraph
+import xrftomo
 
-
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
-    keyPressSig = pyqtSignal(int, int, name= 'keyPressSig')
+class MiniReconView(pyqtgraph.GraphicsLayoutWidget):
 
     def __init__(self):
-        super(SinogramView, self).__init__()
+    # def __init__(self, parent):
+        super(MiniReconView, self).__init__()
         self.keylist = []
-        self.hotSpotNumb = 0
         self.initUI()
 
     def initUI(self):
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
-        self.p1.items[0].scene().sigMouseMoved.connect(self.mouseMoved)
-        self.p1.items[0].scene().sigMouseClicked.connect(self.mouseClick)
-        self.p1.setMouseEnabled(x=False, y=False)
-        self.show()
-        self.moving_x = 0
-        self.moving_y = 0
+        custom_vb = xrftomo.CustomViewBox()
+        custom_vb.disableAutoRange(axis="xy")
+        custom_vb.setRange(xRange=(0,1), yRange=(0,1), padding=0)
+        # custom_vb.invertY(True)
 
-
-    def mouseMoved(self, evt):
-        try:
-            self.moving_x = self.projView.mapFromDevice(evt).x()
-            self.moving_y = self.projView.mapFromDevice(evt).y()
-        except:
-            "TODO: error when incorrect PV loaded or when only single angle information is available. "
-            print("WARNING: single column for sinogram. Load more projections with unique angles. ")
-
-    def mouseClick(self, evt):
-        self.x_pos = int(round(self.moving_x))
-        self.y_pos = int(round(self.moving_y))
-
-    def mouseReleaseEvent(self, ev):
-        self.x_pos = int(self.moving_x)
-        self.y_pos = int(self.moving_y)
-
-    def wheelEvent(self, ev):
-        '''
-        keep this here. It overrides the built in wheel event in order to keep the mouse wheel disabled.
-        '''
-        pass
-
-    def keyPressEvent(self, ev):
-        self.firstrelease = True
-        astr = ev.key()
-        self.keylist.append(astr)
-        return
-
-    def keyReleaseEvent(self, ev):
-        if self.firstrelease == True:
-            self.processMultipleKeys(self.keylist)
-
-        self.firstrelease = False
-        try:
-            del self.keylist[-1]
-        except:
-            pass
-
-    def processMultipleKeys(self, keyspressed):
-        if len(keyspressed) ==1:
-
-            if keyspressed[0] == QtCore.Qt.Key_Up:
-                col_number = int(self.x_pos/10)
-                self.keyPressSig.emit(1, col_number)
-
-            if keyspressed[0] == QtCore.Qt.Key_Down:
-                col_number = int(self.x_pos/10)
-                self.keyPressSig.emit(-1, col_number)
- 
+        #___________________ reconstruction view ___________________
+        self.p2 = self.addPlot(viewBox = custom_vb, enableMouse = False)
+        self.p2.setAutoPan(x=None, y=None)
+        self.reconView = pyqtgraph.ImageItem(axisOrder = "row-major")
+        self.p2.addItem(self.reconView)
+        self.p2.setMouseEnabled(x=False, y=False)
+        self.p2.vb = custom_vb

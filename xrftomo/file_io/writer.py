@@ -89,6 +89,20 @@ class SaveOptions(object):
 		except:
 			print("Something went horribly wrong.")
 
+	def save_scatter_plot(self, fig):
+		try:
+			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError	
+			if str(savedir).rfind(".png") == -1:
+				savedir = str(savedir) + ".png"
+			print(str(savedir))
+			fig.savefig(savedir)
+		except IOError:
+			print("enter file name")
+		except:
+			print("Something went horribly wrong.")
+
 	def save_thetas(self, fnames, thetas):
 		num_files = len(fnames)
 		try:

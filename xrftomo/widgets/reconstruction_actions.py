@@ -118,7 +118,8 @@ class ReconstructionActions(QtWidgets.QWidget):
 		num_elements = data.shape[0]
 		for i in range(num_elements):
 			print("running reconstruction for:", element_names[i])
-			recon = self.reconstruct(data, i, center, method, beta, delta, iters, thetas)
+			#data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False
+			recon = self.reconstruct(data, i, center, method, beta, delta, iters, thetas, 0, show_stats=False)
 			savepath = save_path+'/'+element_names[i]
 			savedir = savepath+'/'+element_names[i]
 			os.makedirs(savepath)

@@ -44,6 +44,7 @@
 # #########################################################################
 
 from PyQt5 import QtGui, QtWidgets, QtCore
+# from matplotlib.figure import Figure
 import xrftomo
 import xrftomo.config as config
 from scipy import stats
@@ -54,7 +55,6 @@ import matplotlib.pyplot as plt
 import sys
 import matplotlib
 from os.path import expanduser
-
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
@@ -170,8 +170,10 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget = xrftomo.ImageProcessWidget()
         self.sinogramWidget = xrftomo.SinogramWidget()
         self.reconstructionWidget = xrftomo.ReconstructionWidget()
-        self.writer = xrftomo.SaveOptions()
+        self.scatterWidget = xrftomo.ScatterView()
+        self.miniReconWidget = xrftomo.MiniReconView()
 
+        self.writer = xrftomo.SaveOptions()
 
         #refresh UI
         self.imageProcessWidget.refreshSig.connect(self.refreshUI)
@@ -263,6 +265,10 @@ class xrftomoGui(QtGui.QMainWindow):
         analysis.addAction(corrElemAction)
         corrElemAction.triggered.connect(self.corrElem)
 
+        scatterPlotAction = QtGui.QAction('Scatter Plot', self)
+        analysis.addAction(scatterPlotAction)
+        scatterPlotAction.triggered.connect(self.scatterPlot)
+
         self.toolsMenu = menubar.addMenu("Tools")
         self.toolsMenu.addMenu(analysis)
         self.toolsMenu.setDisabled(True)
@@ -284,13 +290,12 @@ class xrftomoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveToNumpyAction)
         self.afterConversionMenu.addAction(saveCorrAnalysisAction)
 
-
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(keyMapAction)
         self.helpMenu.addAction(configAction)
 
         self.afterConversionMenu.setDisabled(True)
-        version = "1.0.3"
+        version = "1.0.5"
         add = 0
         if sys.platform == "win32":
             add = 50
@@ -369,6 +374,279 @@ class xrftomoGui(QtGui.QMainWindow):
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(text)
         self.keymap_options.setLayout(vbox)
+
+
+        #_______________________ scatter plot window ______________________
+        self.scatter_window = QtWidgets.QWidget()
+        self.scatter_window.resize(1000,500)
+        self.scatter_window.setWindowTitle('scatter')
+
+        self.elem1_options = QtWidgets.QComboBox()
+        self.elem1_options.setFixedWidth(100)
+        self.elem2_options = QtWidgets.QComboBox()
+        self.elem2_options.setFixedWidth(100)
+
+        self.projection_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.projection_lcd = QtWidgets.QLCDNumber(self)
+        projection_lbl = QtWidgets.QLabel("Projection index")
+        self.width_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.width_lcd = QtWidgets.QLCDNumber(self)
+        width_lbl = QtWidgets.QLabel("curve width")
+
+
+
+        self.apply_globally = QtWidgets.QPushButton("set red region to zero")
+
+        ##_____ left blok: scatter view _____
+        hboxA1 = QtWidgets.QHBoxLayout()
+        hboxA1.addWidget(self.elem1_options)
+        hboxA1.addWidget(self.elem2_options)
+        hboxA1.addWidget(self.apply_globally)
+
+        hboxA2 = QtWidgets.QHBoxLayout()
+        hboxA2.addWidget(projection_lbl)
+        hboxA2.addWidget(self.projection_lcd)
+        hboxA2.addWidget(self.projection_sld)
+
+        hboxA3 = QtWidgets.QHBoxLayout()
+        hboxA3.addWidget(width_lbl)
+        hboxA3.addWidget(self.width_lcd)
+        hboxA3.addWidget(self.width_sld)
+
+        vboxA1 = QtWidgets.QVBoxLayout()
+        vboxA1.addWidget(self.scatterWidget)
+        vboxA1.addLayout(hboxA1)
+        vboxA1.addLayout(hboxA2)
+        vboxA1.addLayout(hboxA3)
+
+        ##_____ right block: recon_view _____
+        self.recon_views = QtWidgets.QComboBox()
+        views = ["recon #1", "recon #2", "difference:#2 - #1"]
+        for k in range(len(views)):
+            self.recon_views.addItem(views[k])
+
+        self.recon_method = QtWidgets.QComboBox()
+        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
+        for k in range(len(methodname)):
+            self.recon_method.addItem(methodname[k])
+
+        self.recon_button = QtWidgets.QPushButton("reconstruct")
+        self.recon_button.clicked.connect(self.updateMiniRecon)
+
+        spacer = QtWidgets.QLabel("")
+
+        hboxB1 = QtWidgets.QHBoxLayout()
+        hboxB1.addWidget(self.recon_views)
+        hboxB1.addWidget(self.recon_method)
+        hboxB1.addWidget(self.recon_button)
+
+        vboxB1 = QtWidgets.QVBoxLayout()
+        vboxB1.addWidget(self.miniReconWidget)
+        vboxB1.addLayout(hboxB1)
+        vboxB1.addWidget(spacer)
+        vboxB1.addWidget(spacer)
+        vboxB1.addWidget(spacer)
+
+
+        hboxC1 = QtWidgets.QHBoxLayout()
+        hboxC1.addLayout(vboxA1)
+        hboxC1.addLayout(vboxB1)
+
+        self.scatter_window.setLayout(hboxC1)
+
+        self.elem1_options.currentIndexChanged.connect(self.updateScatter)
+        self.elem2_options.currentIndexChanged.connect(self.updateScatter)
+        self.projection_sld.valueChanged.connect(self.updateScatter)
+        self.width_sld.valueChanged.connect(self.updateWidth)
+        self.width_sld.valueChanged.connect(self.updateInnerScatter)
+        self.scatterWidget.mousePressSig.connect(self.updateInnerScatter)
+        self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
+        self.apply_globally.clicked.connect(self.sendData)
+
+    def updateScatter(self):
+        self.projection_sld.setRange(0, self.data.shape[1]-1)
+        self.elem1_options.currentIndexChanged.disconnect(self.updateScatter)
+        self.elem2_options.currentIndexChanged.disconnect(self.updateScatter)
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+        self.elem1_options.clear()
+        self.elem2_options.clear()
+
+        for i in self.elements:
+            self.elem1_options.addItem(i)
+            self.elem2_options.addItem(i)
+        try:
+            self.elem1_options.setCurrentIndex(e1)
+            self.elem1_options.setCurrentText(self.elements[e1])
+            self.elem2_options.setCurrentIndex(e2)
+            self.elem2_options.setCurrentText(self.elements[e2])
+            self.scatterWidget.p1.setLabel(axis='left', text=self.elements[e1])
+            self.scatterWidget.p1.setLabel(axis='bottom', text=self.elements[e2])
+
+        except:
+            self.elem1_options.setCurrentIndex(0)
+            self.elem2_options.setCurrentIndex(0)
+
+        #Normalizeself.projection_sld.currentIndex()
+        elem1 = self.data[self.elem1_options.currentIndex(),self.projection_sld.value()] / self.data[self.elem1_options.currentIndex(), self.projection_sld.value()].max()
+        elem1 = elem1.flatten()
+        elem2 = self.data[self.elem2_options.currentIndex(), self.projection_sld.value()] / self.data[self.elem2_options.currentIndex(), self.projection_sld.value()].max()
+        elem2 = elem2.flatten()
+
+        #update projection index LCD
+        self.projection_lcd.display(self.projection_sld.value())
+
+        self.elem1_options.currentIndexChanged.connect(self.updateScatter)
+        self.elem2_options.currentIndexChanged.connect(self.updateScatter)
+        # self.elem1_options.currentIndexChanged.connect(self.updateInnerScatter)
+        # self.elem2_options.currentIndexChanged.connect(self.updateInnerScatter)
+
+        self.scatterWidget.plotView.setData(elem1, elem2)
+        self.scatterWidget.p1.setLabel(axis='left', text=self.elements[e1])
+        self.scatterWidget.p1.setLabel(axis='bottom', text=self.elements[e2])
+        self.updateInnerScatter()
+        return
+
+    def updateWidth(self):
+
+        # self.width_lcd.display(self.width_sld.value())
+        width_values = np.linspace(0,1,101)
+        self.width_sld.setRange(0, len(width_values)-1)
+        self.width_lcd.display(width_values[self.width_sld.value()])
+        return
+
+    def updateInnerScatter(self,*dummy):
+
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+
+        #Normalizeself.projection_sld.currentIndex()
+        elem1 = self.data[self.elem1_options.currentIndex(),self.projection_sld.value()] / self.data[self.elem1_options.currentIndex(), self.projection_sld.value()].max()
+        elem1 = elem1.flatten()
+        elem2 = self.data[self.elem2_options.currentIndex(), self.projection_sld.value()] / self.data[self.elem2_options.currentIndex(), self.projection_sld.value()].max()
+        elem2 = elem2.flatten()
+
+        #_____ calculate points within bounded region _____
+        #get handle pos
+        x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
+        slope = y_pos/x_pos
+
+        tmp_arr = [(slope*elem1-self.width_lcd.value()) <= elem2]
+        tmp_elem1 = elem1[tmp_arr]
+        tmp_elem2 = elem2[tmp_arr]
+
+        tmp_arr = [tmp_elem2 <= (slope*tmp_elem1+self.width_lcd.value())]
+        tmp_elem1 = tmp_elem1[tmp_arr]
+        tmp_elem2 = tmp_elem2[tmp_arr]
+
+        self.scatterWidget.plotView2.setData(tmp_elem1, tmp_elem2, brush='r')
+
+        return
+
+    def updateMiniRecon(self):
+        
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+
+        data2 = self.data.copy()
+        element= e2
+        original_shape = data2[element,0].shape
+        tmp_data = np.zeros_like(data2[element])
+
+
+        #_____ calculate points within bounded region _____
+        #get handle pos
+        x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
+        slope = y_pos/x_pos
+
+        for i in range(data2.shape[1]):
+            #Normalizeself.projection_sld.currentIndex()
+            elem1 = self.data[e1,i] / self.data[e1, i].max()
+            elem1 = elem1.flatten()
+            data1 = self.data[e1,i].flatten()
+
+            elem2 = self.data[e2, i] / self.data[e2, i].max()
+            elem2 = elem2.flatten()
+
+            tmp_arr = [(slope * elem1 - self.width_lcd.value()) <= elem2]
+            tmp_elem1 = elem1[tmp_arr]
+            tmp_elem2 = elem2[tmp_arr]
+            index_arr1 = np.where(tmp_arr)[1]
+
+            tmp_arr = [tmp_elem2 <= (slope * tmp_elem1 + self.width_lcd.value())]
+            index_arr2 = np.where(tmp_arr)[1]
+
+            bounded_index = index_arr1[index_arr2]
+
+            tmp = data2[e2, i].flatten()
+            tmp[bounded_index] = 0
+            tmp_data[i] = tmp.reshape(original_shape)
+
+
+        data2[element] = tmp_data
+        center = self.data.shape[3]//2
+        method = self.recon_method.currentIndex()
+        beta = 1
+        delta = 0.01
+        iters = 10
+        thetas = self.thetas
+        mid_indx = data2.shape[2]//2
+        tmp_data2 = data2.copy()
+        tmp_data2[element] = tmp_data
+        tmp_data2 = tmp_data2[:, :, mid_indx:mid_indx + 1, :]
+
+        recon = self.reconstructionWidget.actions.reconstruct(tmp_data2, element, center, method, beta, delta, iters, thetas, 0, show_stats=False)
+
+        self.miniReconWidget.reconView.setImage(recon[0])
+        return
+    def sendData(self):
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+        proj_indx = self.projection_sld.value()
+
+        data2 = self.data.copy()
+        element= e2
+        original_shape = data2[element,0].shape
+        tmp_data = np.zeros_like(data2[element])
+
+
+        #_____ calculate points within bounded region _____
+        #get handle pos
+        x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
+        slope = y_pos/x_pos
+
+        for i in range(data2.shape[1]):
+            #Normalizeself.projection_sld.currentIndex()
+            elem1 = self.data[e1,i] / self.data[e1, i].max()
+            elem1 = elem1.flatten()
+            data1 = self.data[e1,i].flatten()
+
+            elem2 = self.data[e2, i] / self.data[e2, i].max()
+            elem2 = elem2.flatten()
+
+            tmp_arr = [(slope * elem1 - self.width_lcd.value()) <= elem2]
+            tmp_elem1 = elem1[tmp_arr]
+            tmp_elem2 = elem2[tmp_arr]
+            index_arr1 = np.where(tmp_arr)[1]
+
+            tmp_arr = [tmp_elem2 <= (slope * tmp_elem1 + self.width_lcd.value())]
+            index_arr2 = np.where(tmp_arr)[1]
+
+            bounded_index = index_arr1[index_arr2]
+
+            tmp = data2[e2, i].flatten()
+            tmp[bounded_index] = 0
+            tmp_data[i] = tmp.reshape(original_shape)
+
+
+        data2[element] = tmp_data
+
+        self.data = data2.copy()
+        self.update_data(self.data)
+
     def refresh_filetable(self):
         self.fileTableWidget.onLoadDirectory()
         return
@@ -610,6 +888,13 @@ class xrftomoGui(QtGui.QMainWindow):
             pass
         self.prevTab = index
 
+    # def saveScatterPlot(self):
+    #     try:
+    #         self.writer.save_scatter_plot(self.figure)
+    #     except AttributeError:
+    #         print("Run correlation analysis first")
+    #     return
+
     def saveCorrAlsys(self):
         try:
             self.writer.save_correlation_analysis(self.elements, self.rMat)
@@ -697,6 +982,8 @@ class xrftomoGui(QtGui.QMainWindow):
         if not from_open:
             self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
             self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
+            #populate scatter plot combo box windows
+            self.updateScatter()
             self.app.restoreOverrideCursor()
 
             if len(self.data) == 0:
@@ -947,6 +1234,19 @@ class xrftomoGui(QtGui.QMainWindow):
         except AttributeError:
             print("Load dataset first")
             return
+
+    def scatterPlot(self):
+        self.scatter_window.show()
+        self.updateScatter()
+
+
+        # self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        #create window, create two drop-down menus (for element selection)
+        #load data[element1], load data2[element2], normalize the two,
+        #assign elem1 to x axis, assign elem2 to y axis
+        #divide data[elem2] by data[elem1], plot this.
+
+
 
     def corrElem(self):
         self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))

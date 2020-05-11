@@ -136,13 +136,13 @@ class SinogramActions(QtWidgets.QWidget):
                 weighted_center_of_mass = properties[0].weighted_centroid
                 w_x_shifts.append(int(round(view_center_x - weighted_center_of_mass[1])))
                 w_y_shifts.append(int(round(view_center_y - weighted_center_of_mass[0])))
-                data = self.shiftProjectionX(data, i, w_x_shifts[i])
+                data = self.shiftProjection(data, w_x_shifts[i], 0, i)
                 if shift_y:
-                    data = self.shiftProjectionY(data, i, w_y_shifts[i])
+                    data = self.shiftProjection(data, 0, w_y_shifts[i], i)
 
             if not shift_y: 
                 w_y_shifts = np.asarray(w_y_shifts)*0
-            return data, np.asarray(w_x_shifts), np.asarray(w_y_shifts)
+            return data, np.asarray(w_x_shifts), -np.asarray(w_y_shifts)
 
         if not weighted:
             for i in range(num_projections):
@@ -153,21 +153,93 @@ class SinogramActions(QtWidgets.QWidget):
                 center_of_mass = properties[0].centroid
                 x_shifts.append(int(round(view_center_x -center_of_mass[1])))
                 y_shifts.append(int(round(view_center_y - center_of_mass[0])))
-                data = self.shiftProjectionX(data, i, x_shifts[i])
+                data = self.shiftProjection(data, x_shifts[i], 0, i)
                 if shift_y:
-                    data = self.shiftProjectionY(data, i, y_shifts[i])
+                    data = self.shiftProjection(data, 0, y_shifts[i], i)
                     
             if not shift_y: 
                 y_shifts = np.asarray(y_shifts)*0
-            return data, np.asarray(x_shifts), np.asarray(y_shifts)
+            return data, np.asarray(x_shifts), -np.asarray(y_shifts)
 
-    def shiftProjectionX(self, data, index, displacement):
-        data[:,index] = np.roll(data[:,index],displacement,axis=2)
-        return data
+    def shiftProjection(self, data, x, y, index):
+        X = int(x//1)
+        Y = int(y//1)
+        x = x - X
+        y = y - Y 
 
-    def shiftProjectionY(self, data, index, displacement):
-        data[:,index] = np.roll(data[:,index],displacement,axis=1)
-        return data
+        if x > 0: 
+            x_dir = 1
+        elif x < 0:
+            x_dir = -1
+        else:
+            x_dir = 0
+
+        if y > 0: 
+            y_dir = 1
+        elif x < 0:
+            y_dir = -1
+        else:
+            y_dir = 0
+
+        data[:,index] = np.roll(data[:,index], Y, axis=1)  #negative because image coordinates are flipped
+        data[:,index] = np.roll(data[:,index], X, axis=2)
+
+        if x_dir == 0 and y_dir == 0:
+            return data
+
+        else:
+            data_a = data*x
+            data_b = data*(1-x)
+            data_b = self.shiftProjection(data_b,x_dir,0, index)
+            data_c = data_a+data_b
+
+            data_a = data_c*y
+            data_b = data_c*(1-y)
+            data_b = self.shiftProjection(data_b,0,y_dir, index)
+            data = data_a+data_b
+
+            return data
+
+    def shiftStack(self, data, x, y):
+        X = int(x//1)
+        Y = int(y//1)
+        x = x - X
+        y = y - Y 
+
+        if x > 0: 
+            x_dir = 1
+        elif x < 0:
+            x_dir = -1
+        else:
+            x_dir = 0
+
+        if y > 0: 
+            y_dir = 1
+        elif x < 0:
+            y_dir = -1
+        else:
+            y_dir = 0
+
+        for i in range(data.shape[1]):
+            data[:,i] = np.roll(data[:,i],Y,axis=1)
+        for i in range(data.shape[1]):
+            data[:,i] = np.roll(data[:,i],X, axis=2)
+
+        if x_dir == 0 and y_dir == 0:
+            return data
+
+        else:
+            data_a = data*x
+            data_b = data*(1-x)
+            data_b = self.shiftStack(data_b,x_dir,0)
+            data_c = data_a+data_b
+
+            data_a = data_c*y
+            data_b = data_c*(1-y)
+            data_b = self.shiftStack(data_b,0,y_dir)
+            data = data_a+data_b
+
+            return data
 
     def shift(self, sinogramData, data, shift_number, col_number):
         '''
@@ -187,13 +259,9 @@ class SinogramActions(QtWidgets.QWidget):
         sinogramData[col_number * 10:col_number * 10 + 10, :] = np.roll(sinogramData[col_number * 10:col_number * 10 + 10, :], shift_number, axis=1)
         regShift[col_number] += shift_number
         for i in range(num_projections):
-            data[:,i,:,:] = np.roll(data[:,i,:,:], regShift[i], axis=2)
+            # data[:,i,:,:] = np.roll(data[:,i,:,:], regShift[i], axis=2)
+            data = self.shiftProjection(data, regShift[i],0,i)
         return data, sinogramData  
-
-    def shiftDataX(self, data, displacement):
-        for i in range(data.shape[1]):
-            data[:,i] = np.roll(data[:,i],displacement, axis=2)
-        return data
 
     def slope_adjust(self, sinogramData, data, shift, delta):
         '''
@@ -213,11 +281,13 @@ class SinogramActions(QtWidgets.QWidget):
         num_projections = data.shape[1]
         step = round(delta/num_projections)
         lin_shift = [int(x) for x in np.linspace(0, delta, num_projections)]
+        #TODO: make this a continuou (subpixel/fractional) shift
         lin_shift = [x + shift for x in lin_shift]
 
         for i in range(num_projections):
             data, sinogramData = self.shift(sinogramData, data, lin_shift[i], i)
-            data[:,i] = np.roll(data[:,i],shift,axis=1)
+            # data[:,i] = np.roll(data[:,i],shift,axis=1)
+            data = self.shiftProjection(data,shift,0,i)
 
         return lin_shift, data, sinogramData
         
@@ -249,14 +319,15 @@ class SinogramActions(QtWidgets.QWidget):
             if t1 > shape[1] // 2:
                 t1 -= shape[1]
 
+            # data[:, i + 1] = np.roll(data[:, i + 1], t0, axis=1)
+            # data[:, i + 1] = np.roll(data[:, i + 1], t1, axis=2)
+            data = self.shiftProjection(data,t1,t0,i+1)
 
-            data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
-            data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
             x_shifts[i + 1] += t1
-            y_shifts[i + 1] += -t0
+            y_shifts[i + 1] += t0
 
         self.alignmentDone()
-        return data, x_shifts, y_shifts
+        return data, x_shifts, -y_shifts
 
     def crossCorrelate2(self, element, data):
         '''
@@ -275,13 +346,15 @@ class SinogramActions(QtWidgets.QWidget):
             shift, error, diffphase = register_translation(data[element,i-1], data[element,i])
             # shift, error, diffphase = register_translation(data[element,i-1], data[element,i], 100)
 
-            x_shifts[i] += int(shift[1])
-            y_shifts[i] += int(shift[0])
-            data[:, i, :, :] = np.roll(data[:, i, :, :], int(shift[0]), axis=1)
-            data[:, i, :, :] = np.roll(data[:, i, :, :], int(shift[1]), axis=2)
+            x_shifts[i] += round(shift[1],2)
+            y_shifts[i] += round(shift[0],2)
+            # data[:, i] = np.roll(data[:, i], y_shifts[i], axis=1)
+            # data[:, i] = np.roll(data[:, i], x_shifts[i], axis=2)
+            data = self.shiftProjection(data,x_shifts[i],y_shifts[i],i)
+
 
         self.alignmentDone()
-        return data, x_shifts, y_shifts
+        return data, x_shifts, -y_shifts
 
     def phaseCorrelate(self, element, data):
         '''
@@ -312,8 +385,10 @@ class SinogramActions(QtWidgets.QWidget):
             if t1 > shape[1] // 2:
                 t1 -= shape[1]
 
-            data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t0, axis=1)
-            data[:, i + 1, :, :] = np.roll(data[:, i + 1, :, :], t1, axis=2)
+            # data[:, i + 1] = np.roll(data[:, i + 1], t0, axis=1)
+            # data[:, i + 1] = np.roll(data[:, i + 1], t1, axis=2)
+            data = self.shiftProjection(data,t1,t0,i+1)
+
             x_shifts[i + 1] += t1
             y_shifts[i + 1] += -t0
         self.alignmentDone()
@@ -370,7 +445,8 @@ class SinogramActions(QtWidgets.QWidget):
         y_shifts -= translate
 
         for i in range(num_projections):
-            data[:,i] = np.roll(data[:,i], int(np.round(translate[i])), axis=1)
+            # data[:,i] = np.roll(data[:,i], int(np.round(translate[i])), axis=1)
+            data = self.shiftProjection(data, 0, np.round(translate[i],2), i)
 
         self.alignmentDone()
         return y_shifts, data 
@@ -457,12 +533,13 @@ class SinogramActions(QtWidgets.QWidget):
         prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=pad,
                             blur=blur_bool, rin=rin, rout=rout, center=center, algorithm=algorithm, 
                             upsample_factor=upsample_factor, save=save_bool, debug=debug_bool)
-        x_shifts = np.round(sx).astype(int)
-        y_shifts = np.round(sy).astype(int)
+        x_shifts = np.round(sx,2)
+        y_shifts = np.round(sy,2)
 
         for i in range(num_projections):
-            data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(y_shifts[i])), axis=1)
-            data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(x_shifts[i])), axis=2)
+            # data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(y_shifts[i])), axis=1)
+            # data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(x_shifts[i])), axis=2)
+            data = self.shiftProjection(data, x_shifts[i], y_shifts[i], i)
         
         return x_shifts, y_shifts, data
 
@@ -494,10 +571,11 @@ class SinogramActions(QtWidgets.QWidget):
                 j = i + 1
                 secondcol = read[j].rfind(",")
                 firstcol = read[j][:secondcol].rfind(",")
-                y_shifts[i] = int(float(read[j][secondcol + 1:-1]))
-                x_shifts[i] = int(float(read[j][firstcol + 1:secondcol]))
-                data[:, i, :, :] = np.roll(data[:, i, :, :], int(x_shifts[i]), axis=2)
-                data[:, i, :, :] = np.roll(data[:, i, :, :], int(y_shifts[i]), axis=1)
+                y_shifts[i] = round(float(read[j][secondcol + 1:-1]),2)
+                x_shifts[i] = round(float(read[j][firstcol + 1:secondcol]),2)
+                # data[:, i] = np.roll(data[:, i], x_shifts[i], axis=2)
+                # data[:, i] = np.roll(data[:, i], y_shifts[i],, axis=1)
+                data = self.shiftProjection(data,x_shifts[i],-y_shifts[i],i)
 
             file.close()
             self.alignmentDone()
@@ -602,8 +680,8 @@ class SinogramActions(QtWidgets.QWidget):
             if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
                 yyshift = int(round(y_size//2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
                 xxshift = int(round(x_size//2 - hotSpotX[j] - hs_x_pos[j] + hs_x_pos[firstPosOfHotSpot]))
-                data[:, j, :, :] = np.roll(np.roll(data[:, j, :, :], xxshift, axis=2), yyshift, axis=1)
-
+                # data[:, j, :, :] = np.roll(np.roll(data[:, j, :, :], xxshift, axis=2), yyshift, axis=1)
+                data = self.shiftProjection(data, xxshift,yyshift,j)
             if hs_x_pos[j] == 0:
                 xxshift = 0
             if hs_y_pos[j] == 0:
@@ -678,7 +756,8 @@ class SinogramActions(QtWidgets.QWidget):
         ## yfit
         for i in hotspotProj:
             y_shifts[i] = int(hotspotYPos[hotspotProj[0]]) - int(hotspotYPos[i])
-            data[:, i, :, :] = np.roll(data[:, i, :, :], y_shifts[i], axis=1)
+            # data[:, i] = np.roll(data[:, i], y_shifts[i], axis=1)
+            data = self.shiftProjection(data, 0,y_shifts[i],i)
 
         #update reconstruction slider value
         # self.recon.sld.setValue(self.centers[2])
@@ -716,7 +795,8 @@ class SinogramActions(QtWidgets.QWidget):
         for j in range(num_projections):
             if hs_x_pos[j] != 0 and hs_y_pos[j] != 0:
                 yyshift = int(round(y_size//2 - hotSpotY[j] - hs_y_pos[j] + hs_y_pos[firstPosOfHotSpot]))
-                data[:, j, :, :] = np.roll(data[:, j, :, :], yyshift, axis=1)
+                # data[:, j] = np.roll(data[:, j], yyshift, axis=1)
+                data = self.shiftProjection(data,0, yyshift,j)
 
             if hs_y_pos[j] == 0:
                 yyshift = 0
@@ -807,7 +887,8 @@ class SinogramActions(QtWidgets.QWidget):
         for i in hotspotProj:
             self.x_shifts[i] += int(self.centerOfMassDiff[j])
 
-            data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(self.x_shifts[i])), axis=2)
+            # data[:, i] = np.roll(data[:, i], int(round(self.x_shifts[i])), axis=2)
+            data = self.shiftProjection(data, self.x_shifts[i],0,i)
             j += 1
 
       #set some label to be show that the alignment has completed. perhaps print this in a logbox

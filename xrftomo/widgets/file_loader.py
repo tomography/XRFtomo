@@ -126,7 +126,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.elementTag_label.setVisible(False)
 
         self.elementTag = QtWidgets.QComboBox()
-        # self.elementTag.currentIndexChanged.connect(self.getElementList)
+        self.elementTag.currentIndexChanged.connect(self.getElementList)
         self.elementTag.setFixedWidth(122.5)
         self.elementTag.setVisible(False)
 
@@ -140,7 +140,6 @@ class FileTableWidget(QtWidgets.QWidget):
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
         # self.saveDataBtn.setEnabled(False)
         self.saveDataBtn.setFixedWidth(220.5)
-
 
         message_label = QtWidgets.QLabel('Messages:')
         self.message = QtWidgets.QTextEdit()
@@ -434,14 +433,23 @@ class FileTableWidget(QtWidgets.QWidget):
             try:
                 #filtering  drop-down menu to inlcude only relevant entries.
                 self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
+                self.elementTag.currentIndexChanged.disconnect(self.getElementList)
+                self.element_tag = self.elementTag.currentText()
                 self.elementTag.clear()
 
                 for i in range(len(self.elementTags[indx])):
                     self.elementTag.addItem(self.elementTags[indx][i])
 
+                try:
+                    indx = self.elementTags[0].index(self.element_tag)
+                except:
+                    indx = 0
+                self.elementTag.setCurrentIndex(indx)
+                # self.elementTag.currentIndexChanged.connect(self.getElementList)
+
                 # if self.auto_element_tag in self.dataTags:
                 #     self.elementTag.setCurrentText(self.auto_element_tag)
-                self.element_tag = self.elementTag.currentText()
+                # self.element_tag = self.elementTag.currentText()
             except KeyError:
                 pass
 
@@ -460,6 +468,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.elementTableModel.loadElementNames(fpath, image_tag, self.element_tag)
         self.elementTableModel.setAllChecked(False)
         self.elementTableModel.setChecked(self.auto_selected_elements, (True))
+        self.elementTag.currentIndexChanged.connect(self.getElementList)
 
         # if self.version == 2:   #2ide data
     def getQuantOptions(self):
@@ -544,7 +553,9 @@ class FileTableWidget(QtWidgets.QWidget):
                 except:
                     print("trying theta PV {}".format(i))
                 if len(thetas) >0:
-                    break
+                    if len(set(thetas)) > 1:
+                        self.thetaLineEdit.setText(i)
+                        break
                 else:
                     thetas = np.ones(len(path_files))
 
@@ -628,7 +639,9 @@ class FileTableWidget(QtWidgets.QWidget):
         try:
             data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
         except:
-            pass
+            self.message.setText('Loading failed')
+            return [], [], [], []
+
         if data is None or quants is None or scalers is None:
             return [], [], [], []
         # if self.quant_options.currentText() != 'None':
