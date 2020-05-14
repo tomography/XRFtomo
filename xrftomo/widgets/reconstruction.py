@@ -248,7 +248,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
             self.ViewControl.start_indx.setText(str(end_indx-1))
         if start_indx < 0:
             self.ViewControl.start_indx.setText(str(0))
-        self.update_middle_index(self)
+        self.update_middle_index()
 
         self.sld.setRange(0, end_indx-start_indx - 1)
         self.sld.setValue(0)

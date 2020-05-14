@@ -389,9 +389,11 @@ class xrftomoGui(QtGui.QMainWindow):
         self.projection_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.projection_lcd = QtWidgets.QLCDNumber(self)
         projection_lbl = QtWidgets.QLabel("Projection index")
-        self.width_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.width_lcd = QtWidgets.QLCDNumber(self)
+        # self.width_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        # self.width_lcd = QtWidgets.QLCDNumber(self)
         width_lbl = QtWidgets.QLabel("curve width")
+        slope_lbl = QtWidgets.QLabel("Slope: ")
+        self.slope_value = QtWidgets.QLineEdit("")
 
 
 
@@ -408,16 +410,21 @@ class xrftomoGui(QtGui.QMainWindow):
         hboxA2.addWidget(self.projection_lcd)
         hboxA2.addWidget(self.projection_sld)
 
-        hboxA3 = QtWidgets.QHBoxLayout()
-        hboxA3.addWidget(width_lbl)
-        hboxA3.addWidget(self.width_lcd)
-        hboxA3.addWidget(self.width_sld)
+        # hboxA3 = QtWidgets.QHBoxLayout()
+        # hboxA3.addWidget(width_lbl)
+        # hboxA3.addWidget(self.width_lcd)
+        # hboxA3.addWidget(self.width_sld)
+
+        hboxA4 = QtWidgets.QHBoxLayout()
+        hboxA4.addWidget(slope_lbl)
+        hboxA4.addWidget(self.slope_value)
 
         vboxA1 = QtWidgets.QVBoxLayout()
         vboxA1.addWidget(self.scatterWidget)
         vboxA1.addLayout(hboxA1)
         vboxA1.addLayout(hboxA2)
-        vboxA1.addLayout(hboxA3)
+        # vboxA1.addLayout(hboxA3)
+        vboxA1.addLayout(hboxA4)
 
         ##_____ right block: recon_view _____
         self.recon_views = QtWidgets.QComboBox()
@@ -457,18 +464,25 @@ class xrftomoGui(QtGui.QMainWindow):
         self.elem1_options.currentIndexChanged.connect(self.updateScatter)
         self.elem2_options.currentIndexChanged.connect(self.updateScatter)
         self.projection_sld.valueChanged.connect(self.updateScatter)
-        self.width_sld.valueChanged.connect(self.updateWidth)
-        self.width_sld.valueChanged.connect(self.updateInnerScatter)
+        # self.width_sld.valueChanged.connect(self.updateWidth)
+        # self.width_sld.valueChanged.connect(self.updateInnerScatter)
         self.scatterWidget.mousePressSig.connect(self.updateInnerScatter)
         self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
         self.apply_globally.clicked.connect(self.sendData)
+        self.slope_value.returnPressed.connect(self.slopeEntered)
+        self.first_run = True
 
     def updateScatter(self):
+        if self.first_run:
+            self.scatterWidget.ROI.endpoints[1].setPos(self.data[0,0].max(), self.data[0,0].max())
+            self.first_run = False
+
         self.projection_sld.setRange(0, self.data.shape[1]-1)
         self.elem1_options.currentIndexChanged.disconnect(self.updateScatter)
         self.elem2_options.currentIndexChanged.disconnect(self.updateScatter)
         e1 = self.elem1_options.currentIndex()
         e2 = self.elem2_options.currentIndex()
+        proj_indx = self.projection_sld.value()
         self.elem1_options.clear()
         self.elem2_options.clear()
 
@@ -487,10 +501,9 @@ class xrftomoGui(QtGui.QMainWindow):
             self.elem1_options.setCurrentIndex(0)
             self.elem2_options.setCurrentIndex(0)
 
-        #Normalizeself.projection_sld.currentIndex()
-        elem1 = self.data[self.elem1_options.currentIndex(),self.projection_sld.value()] / self.data[self.elem1_options.currentIndex(), self.projection_sld.value()].max()
+        elem1 = self.data[e1,proj_indx]
         elem1 = elem1.flatten()
-        elem2 = self.data[self.elem2_options.currentIndex(), self.projection_sld.value()] / self.data[self.elem2_options.currentIndex(), self.projection_sld.value()].max()
+        elem2 = self.data[e2, proj_indx]
         elem2 = elem2.flatten()
 
         #update projection index LCD
@@ -501,48 +514,96 @@ class xrftomoGui(QtGui.QMainWindow):
         # self.elem1_options.currentIndexChanged.connect(self.updateInnerScatter)
         # self.elem2_options.currentIndexChanged.connect(self.updateInnerScatter)
 
-        self.scatterWidget.plotView.setData(elem1, elem2)
+        self.scatterWidget.plotView.setData(elem2, elem1)
         self.scatterWidget.p1.setLabel(axis='left', text=self.elements[e1])
         self.scatterWidget.p1.setLabel(axis='bottom', text=self.elements[e2])
         self.updateInnerScatter()
         return
 
-    def updateWidth(self):
+    # def updateWidth(self):
 
-        # self.width_lcd.display(self.width_sld.value())
-        width_values = np.linspace(0,1,101)
-        self.width_sld.setRange(0, len(width_values)-1)
-        self.width_lcd.display(width_values[self.width_sld.value()])
-        return
+    #     # self.width_lcd.display(self.width_sld.value())
+    #     width_values = np.linspace(0,1,101)
+    #     self.width_sld.setRange(0, len(width_values)-1)
+    #     self.width_lcd.display(width_values[self.width_sld.value()])
+    #     return
 
     def updateInnerScatter(self,*dummy):
+        self.scatterWidget.mousePressSig.disconnect(self.updateInnerScatter)
+        self.scatterWidget.roiDraggedSig.disconnect(self.updateInnerScatter)
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+
+        #Normalizeself.projection_sld.currentIndex()
+        elem1 = self.data[self.elem1_options.currentIndex(),self.projection_sld.value()]
+        elem1 = elem1.flatten()
+        elem2 = self.data[self.elem2_options.currentIndex(), self.projection_sld.value()]
+        elem2 = elem2.flatten()
+
+        # get slope then calculate new handle pos
+        x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
+        slope = y_pos/x_pos
+        x_pos = 1/slope
+        y_pos = x_pos*slope
+
+        if elem2.max()*slope < elem1.max():
+            x_pos = elem2.max()
+            y_pos = x_pos*slope
+        if elem2.max()*slope > elem1.max():
+            x_pos = elem1.max()/slope
+            y_pos = x_pos*slope
+
+        self.scatterWidget.ROI.endpoints[1].setPos(x_pos,y_pos)
+        self.slope_value.setText(str(round(slope,4)))
+
+        tmp_arr = [(slope*elem2) <= elem1]
+        tmp_elem1 = elem1[tmp_arr[0]]
+        tmp_elem2 = elem2[tmp_arr[0]]
+        self.scatterWidget.plotView2.setData(tmp_elem2, tmp_elem1, brush='r')
+
+        self.scatterWidget.mousePressSig.connect(self.updateInnerScatter)
+        self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
+
+        return
+
+    def slopeEntered(self):
+        slope = eval(self.slope_value.text())
+        if slope < 0 :
+            return
+        self.scatterWidget.mousePressSig.disconnect(self.updateInnerScatter)
+        self.scatterWidget.roiDraggedSig.disconnect(self.updateInnerScatter)
+
 
         e1 = self.elem1_options.currentIndex()
         e2 = self.elem2_options.currentIndex()
 
         #Normalizeself.projection_sld.currentIndex()
-        elem1 = self.data[self.elem1_options.currentIndex(),self.projection_sld.value()] / self.data[self.elem1_options.currentIndex(), self.projection_sld.value()].max()
+        elem1 = self.data[self.elem1_options.currentIndex(),self.projection_sld.value()]
         elem1 = elem1.flatten()
-        elem2 = self.data[self.elem2_options.currentIndex(), self.projection_sld.value()] / self.data[self.elem2_options.currentIndex(), self.projection_sld.value()].max()
+        elem2 = self.data[self.elem2_options.currentIndex(), self.projection_sld.value()]
         elem2 = elem2.flatten()
+        x_pos = 1/slope
+        y_pos = x_pos*slope
 
-        #_____ calculate points within bounded region _____
-        #get handle pos
-        x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
-        y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
-        slope = y_pos/x_pos
+        if elem2.max()*slope < elem1.max():
+            x_pos = elem2.max()
+            y_pos = x_pos*slope
+        if elem2.max()*slope > elem1.max():
+            x_pos = elem1.max()/slope
+            y_pos = x_pos*slope
 
-        tmp_arr = [(slope*elem1-self.width_lcd.value()) <= elem2]
+        self.scatterWidget.ROI.endpoints[1].setPos(x_pos,y_pos)
+        self.slope_value.setText(str(round(slope,4)))
+
+        tmp_arr = [(slope*elem2) <= elem1]
         tmp_elem1 = elem1[tmp_arr]
         tmp_elem2 = elem2[tmp_arr]
+        self.scatterWidget.plotView2.setData(tmp_elem2, tmp_elem1, brush='r')
 
-        tmp_arr = [tmp_elem2 <= (slope*tmp_elem1+self.width_lcd.value())]
-        tmp_elem1 = tmp_elem1[tmp_arr]
-        tmp_elem2 = tmp_elem2[tmp_arr]
+        self.scatterWidget.mousePressSig.connect(self.updateInnerScatter)
+        self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
 
-        self.scatterWidget.plotView2.setData(tmp_elem1, tmp_elem2, brush='r')
-
-        return
 
     def updateMiniRecon(self):
         
@@ -563,22 +624,14 @@ class xrftomoGui(QtGui.QMainWindow):
 
         for i in range(data2.shape[1]):
             #Normalizeself.projection_sld.currentIndex()
-            elem1 = self.data[e1,i] / self.data[e1, i].max()
+            elem1 = self.data[e1,i] 
             elem1 = elem1.flatten()
-            data1 = self.data[e1,i].flatten()
 
-            elem2 = self.data[e2, i] / self.data[e2, i].max()
+            elem2 = self.data[e2, i]
             elem2 = elem2.flatten()
 
-            tmp_arr = [(slope * elem1 - self.width_lcd.value()) <= elem2]
-            tmp_elem1 = elem1[tmp_arr]
-            tmp_elem2 = elem2[tmp_arr]
-            index_arr1 = np.where(tmp_arr)[1]
-
-            tmp_arr = [tmp_elem2 <= (slope * tmp_elem1 + self.width_lcd.value())]
-            index_arr2 = np.where(tmp_arr)[1]
-
-            bounded_index = index_arr1[index_arr2]
+            tmp_arr = [(slope * elem2) < elem1]
+            bounded_index = np.where(tmp_arr)[1]
 
             tmp = data2[e2, i].flatten()
             tmp[bounded_index] = 0
@@ -601,7 +654,9 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.miniReconWidget.reconView.setImage(recon[0])
         return
+
     def sendData(self):
+
         e1 = self.elem1_options.currentIndex()
         e2 = self.elem2_options.currentIndex()
         proj_indx = self.projection_sld.value()
@@ -611,8 +666,6 @@ class xrftomoGui(QtGui.QMainWindow):
         original_shape = data2[element,0].shape
         tmp_data = np.zeros_like(data2[element])
 
-
-        #_____ calculate points within bounded region _____
         #get handle pos
         x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
         y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
@@ -620,27 +673,19 @@ class xrftomoGui(QtGui.QMainWindow):
 
         for i in range(data2.shape[1]):
             #Normalizeself.projection_sld.currentIndex()
-            elem1 = self.data[e1,i] / self.data[e1, i].max()
+            elem1 = self.data[e1,i] 
             elem1 = elem1.flatten()
             data1 = self.data[e1,i].flatten()
 
-            elem2 = self.data[e2, i] / self.data[e2, i].max()
+            elem2 = self.data[e2, i]
             elem2 = elem2.flatten()
 
-            tmp_arr = [(slope * elem1 - self.width_lcd.value()) <= elem2]
-            tmp_elem1 = elem1[tmp_arr]
-            tmp_elem2 = elem2[tmp_arr]
-            index_arr1 = np.where(tmp_arr)[1]
-
-            tmp_arr = [tmp_elem2 <= (slope * tmp_elem1 + self.width_lcd.value())]
-            index_arr2 = np.where(tmp_arr)[1]
-
-            bounded_index = index_arr1[index_arr2]
+            tmp_arr = [(slope * elem2) < elem1]
+            bounded_index = np.where(tmp_arr)[1]
 
             tmp = data2[e2, i].flatten()
             tmp[bounded_index] = 0
             tmp_data[i] = tmp.reshape(original_shape)
-
 
         data2[element] = tmp_data
 

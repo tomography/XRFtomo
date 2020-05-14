@@ -243,16 +243,19 @@ class SinogramWidget(QtWidgets.QWidget):
             data = self.actions.shiftProjection(self.data, -1, 0, index)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
         if command == 'right':
             self.x_shifts[index] +=1
             data = self.actions.shiftProjection(self.data, 1, 0, index)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
         if command == 'up':
             self.y_shifts[index] +=1
             data = self.actions.shiftProjection(self.data, 0, -1, index)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
         if command == 'down':
             self.y_shifts[index] -=1
             data = self.actions.shiftProjection(self.data, 0, 1, index)
@@ -263,21 +266,29 @@ class SinogramWidget(QtWidgets.QWidget):
             data = self.actions.shiftStack(self.data, -1, 0)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
         if command == 'shiftRight':
             self.x_shifts +=1
             data = self.actions.shiftStack(self.data, 1, 0)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
         if command == 'shiftUp':
             self.y_shifts +=1
             data = self.actions.shiftStack(self.data, 0, -1)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
         if command == 'shiftDown':
             self.y_shifts -=1
             data = self.actions.shiftStack(self.data, 0, 1)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
+        if command == "Next":
+            self.hotspot_event(1)
+            return
+
 
     def showImgProcess(self):
         self.posMat = np.zeros((5,int(self.data.shape[1]),2))
@@ -303,36 +314,36 @@ class SinogramWidget(QtWidgets.QWidget):
         angle = round(self.thetas[index],3)
         self.lcd3.display(angle)
         self.sld3.setValue(index)
-        self.updateDiffImage(index)
+        # self.updateDiffImage(index)
         
-    def updateDiffImage(self, index):
-        element = self.ViewControl.combo1.currentIndex()
-        x_index = int(self.data.shape[3] * 0.3)
-        y_index = int(self.data.shape[2]* 0.3)
-
-        # position = [0.0, 0.25, 0.4, 0.6, 0.75, 1.0]
-        # colors = [[64, 0, 0, 255], [255, 0, 0, 255], [255, 255, 255, 255], [255, 255, 255, 255], [0, 0, 255, 255], [0, 0, 64, 255]]
-        # bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
-        # lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
-
-
-        # if index < self.data.shape[1]-1:
-        #     img = self.data[element, index] - self.data[element, index+1]
-        #     img = img[y_index:-y_index, x_index:-x_index]
-        # else:
-        #     img = self.data[element, index] - self.data[element, 0]
-        #     img = img[x_index:-x_index, y_index:-y_index]
-
-        if index < self.data.shape[1]-1:
-            img = self.data[element, index]/2 + self.data[element, index+1]/2
-            img = img[y_index:-y_index, x_index:-x_index]
-        else:
-            img = self.data[element, index]/2 + self.data[element, 0]/2
-            img = img[x_index:-x_index, y_index:-y_index]
-
-        self.diffView.projView.setImage(img, border='w')
-        # self.diffView.projView.setLookupTable(lookup_table)
-        
+    # def updateDiffImage(self, index):
+    #     element = self.ViewControl.combo1.currentIndex()
+    #     x_index = int(self.data.shape[3] * 0.3)
+    #     y_index = int(self.data.shape[2]* 0.3)
+    #
+    #     # position = [0.0, 0.25, 0.4, 0.6, 0.75, 1.0]
+    #     # colors = [[64, 0, 0, 255], [255, 0, 0, 255], [255, 255, 255, 255], [255, 255, 255, 255], [0, 0, 255, 255], [0, 0, 64, 255]]
+    #     # bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
+    #     # lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
+    #
+    #
+    #     # if index < self.data.shape[1]-1:
+    #     #     img = self.data[element, index] - self.data[element, index+1]
+    #     #     img = img[y_index:-y_index, x_index:-x_index]
+    #     # else:
+    #     #     img = self.data[element, index] - self.data[element, 0]
+    #     #     img = img[x_index:-x_index, y_index:-y_index]
+    #
+    #     if index < self.data.shape[1]-1:
+    #         img = self.data[element, index]/2 + self.data[element, index+1]/2
+    #         img = img[y_index:-y_index, x_index:-x_index]
+    #     else:
+    #         img = self.data[element, index]/2 + self.data[element, 0]/2
+    #         img = img[x_index:-x_index, y_index:-y_index]
+    #
+    #     self.diffView.projView.setImage(img, border='w')
+    #     # self.diffView.projView.setLookupTable(lookup_table)
+    #
 
     def updateSliderSlot(self, index):
         if len(self.thetas) == 0:
@@ -399,7 +410,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinogram(element)
         # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
         self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
-        self.updateDiffImage(index3)
+        # self.updateDiffImage(index3)
 
     def ySizeChanged(self, ySize):
         self.sld.setRange(1, ySize)
@@ -426,24 +437,27 @@ class SinogramWidget(QtWidgets.QWidget):
     def fitLine_params(self):
         element, x_size, y_size, hs_group, posMat, data = self.get_params_imgView()
         data, x_shifts, y_shifts = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
-        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts - y_shifts)
         self.ViewControl.clear_data.setEnabled(True)
+        return
 
     def fitSine_params(self):
         element, x_size, y_size, hs_group, posMat, data = self.get_params_imgView()
         thetas = self.thetas
         data, x_shifts, y_shifts = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data, thetas)
-        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts +y_shifts)
         self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts +y_shifts)
         self.ViewControl.clear_data.setEnabled(True)
+        return
 
     def fitY_params(self):
         element, x_size, y_size, hs_group, posMat, data = self.get_params_imgView()
         data, y_shifts = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts + y_shifts)
         self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts + y_shifts)
         self.ViewControl.clear_data.setEnabled(True)
+        return
 
     def hotspot_event(self, mouse_button):
         if not self.ViewControl.hotspot_mode_chbx.isChecked():
@@ -498,8 +512,8 @@ class SinogramWidget(QtWidgets.QWidget):
 
         for i in range(num_projections):
             data[:,i] = np.roll(data[:,i],int(shift_arr[i]),axis=2)
-        self.alignmentChangedSig.emit(self.x_shifts + shift_arr, self.y_shifts)
         self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + shift_arr, self.y_shifts)
         return
 
     def center_tomopy_params(self):        
@@ -548,6 +562,7 @@ class SinogramWidget(QtWidgets.QWidget):
             data = self.actions.shiftStack(data, x_shifts, 0)
             self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
+        return
 
     def updateCenterFindParameters(self):
         if self.ViewControl.init_textbox.text() == "-1":

@@ -108,8 +108,9 @@ class ReconstructionActions(QtWidgets.QWidget):
 			print("inf values replaced with 0.001")
 			self.recon[self.recon == np.inf] = 0.001
 
-		err, mse  = self.assessRecon(self.recon, recData, thetas, mid_indx, show_stats)
-		print(mse)
+		if show_stats:
+			err, mse  = self.assessRecon(self.recon, recData, thetas, mid_indx, show_stats)
+			print(mse)
 		return self.recon
 
 	def reconstructAll(self, data, element_names, center, method, beta, delta, iters, thetas):
@@ -128,6 +129,8 @@ class ReconstructionActions(QtWidgets.QWidget):
 		return recon
 
 	def assessRecon(self,recon, data, thetas, mid_indx, show_plots=True):
+
+		#TODO: make sure cros-section index does not exceed the data height
 		#get index where projection angle is zero
 		zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]
 		num_slices = recon.shape[0]

@@ -287,7 +287,7 @@ class SinogramActions(QtWidgets.QWidget):
         for i in range(num_projections):
             data, sinogramData = self.shift(sinogramData, data, lin_shift[i], i)
             # data[:,i] = np.roll(data[:,i],shift,axis=1)
-            data = self.shiftProjection(data,shift,0,i)
+            # data = self.shiftProjection(data,shift,0,i)
 
         return lin_shift, data, sinogramData
         

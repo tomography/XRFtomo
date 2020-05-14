@@ -69,6 +69,7 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         self.cross_pos_x = 5
         self.cross_pos_y = 5
         self.keylist = []
+        self.firstrelease = False
         self.initUI()
 
     def initUI(self):
