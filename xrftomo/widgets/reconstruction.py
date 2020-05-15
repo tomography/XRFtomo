@@ -98,6 +98,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.centers = None
         self.recon = None
         self.data = None
+        self.data_original = None
 
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(lbl1)
@@ -197,6 +198,24 @@ class ReconstructionWidget(QtWidgets.QWidget):
         mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
         data = self.data[:,:,start_indx:end_indx,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
+
+        padding_x = int(eval(self.ViewControl.padding_x.text()))
+        padding_y = int(eval(self.ViewControl.padding_y.text()))
+
+        x_shifts = self.x_shifts
+        y_shifts = self.y_shifts
+        x_dimension = data.shape[3]
+        y_dimension = data.shape[2]
+        if padding_x > 0 or padding_y > 0:
+            data = self.padData(self.data_original, padding_x, padding_y)
+            for i in range(len(self.x_shifts)):
+                #TODO: if xy_shift exceeds xy dimension, then apply 2xy_padding_xy, else, dont.
+                if x_shifts[i] > x_dimension:
+                    x_shifts[i] = x_shifts[i] - x_dimension
+                if y_shifts[i] > y_dimension:
+                    y_shifts[i] = y_shifts[i] - y_dimension
+                data = self.actions.shiftProjection(data, self.x_shifts[i], self.y_shifts[i], i)
+
         self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
@@ -209,15 +228,24 @@ class ReconstructionWidget(QtWidgets.QWidget):
         num_elements = self.ViewControl.combo1.count()
         element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
         # box_checked = self.ViewControl.cbox.isChecked()
-        center = np.array(float(self.data.shape[3]), dtype=np.float32)
+        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
         delta = float(self.ViewControl.delta.text())
         iters = int(self.ViewControl.iters.text())
         thetas = self.thetas
-        start_indx = int(self.ViewControl.start_indx.text())
-        end_indx = int(self.ViewControl.end_indx.text())
+        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
+        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
+        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
         data = self.data[:,:,start_indx:end_indx,:]
+
+        padding_x = int(eval(self.ReconView.padding_x.text()))
+        padding_y = int(eval(self.ReconView.padding_y.text()))
+
+        if padding_x > 0 or padding_y > 0:
+            data = self.padData(self.data_original, padding_x, padding_y)
+            for i in range(len(self.x_shifts)):
+                data = self.actions.shiftProjection(data, self.x_shifts[i], self.y_shifts[i], i)
 
         self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas)
         self.ViewControl.mulBtn.setEnabled(True)
@@ -225,6 +253,40 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.update_recon_image()
         self.reconChangedSig.emit(self.recon)
         return
+
+    def padData(self,data,x,y):
+
+        data_shape = data.shape
+
+        if len(data_shape) == 4:
+            new_data = np.zeros([data_shape[0], data_shape[1], data_shape[2]+y*2, data_shape[3]+x*2])
+            if x == 0:
+                new_data[:,:,y:-y,:] = data
+            elif y == 0:
+                new_data[:,:,:,x:-x] = data
+            else:
+                new_data[:,:,y:-y,x:-x] = data
+
+        elif len(data_shape) == 3:
+            new_data = np.zeros([data_shape[0], data_shape[1]+y*2, data_shape[2]+x*2])
+            if x == 0:
+                new_data[:,y:-y,:] = data
+            elif y == 0:
+                new_data[:,:,x:-x] = data
+            else:
+                new_data[:,y:-y,x:-x] = data
+
+        elif len(data_shape) == 2: 
+            new_data = np.zeros([data_shape[1]+y*2, data_shape[2]+x*2])
+            if x == 0:
+                new_data[y:-y,:] = data
+            elif y == 0:
+                new_data[:,x:-x] = data
+            else:
+                new_data[:,y:-y,x:-x] = data
+        else: 
+            print("incompatible data shape")
+        return new_data
 
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')

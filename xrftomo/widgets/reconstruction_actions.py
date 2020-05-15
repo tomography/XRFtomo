@@ -163,12 +163,52 @@ class ReconstructionActions(QtWidgets.QWidget):
 			show()
 		return err, mse
 
+	def shiftProjection(self, data, x, y, index):
+		X = int(x//1)
+		Y = int(y//1)
+		x = x - X
+		y = y - Y 
+
+		if x > 0: 
+			x_dir = 1
+		elif x < 0:
+			x_dir = -1
+		else:
+			x_dir = 0
+
+		if y > 0: 
+			y_dir = 1
+		elif x < 0:
+			y_dir = -1
+		else:
+			y_dir = 0
+
+		data[:,index] = np.roll(data[:,index], Y, axis=1)  #negative because image coordinates are flipped
+		data[:,index] = np.roll(data[:,index], X, axis=2)
+
+		if x_dir == 0 and y_dir == 0:
+			return data
+
+		else:
+			data_a = data*x
+			data_b = data*(1-x)
+			data_b = self.shiftProjection(data_b,x_dir,0, index)
+			data_c = data_a+data_b
+
+			data_a = data_c*y
+			data_b = data_c*(1-y)
+			data_b = self.shiftProjection(data_b,0,y_dir, index)
+			data = data_a+data_b
+
+			return data
+
 	def reconMultiply(self):
 		'''
 		multiply reconstruction by 10
 		'''
 		self.recon = self.recon * 10
 		return self.recon
+
 	def reconDivide(self, recon):
 		'''
 		divide reconstuction by 10

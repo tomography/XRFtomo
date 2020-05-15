@@ -1098,6 +1098,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.ViewControl.combo1.setCurrentIndex(0)
         self.sinogramWidget.sld.setValue(0)
 
+        self.reconstructionWidget.data_original = self.original_data
         self.reconstructionWidget.data = self.data 
         self.reconstructionWidget.elements = self.elements 
         self.reconstructionWidget.thetas = self.thetas 
@@ -1172,6 +1173,9 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.y_shifts = self.y_shifts
         self.sinogramWidget.actions.x_shifts = self.x_shifts
         self.sinogramWidget.actions.y_shifts = self.y_shifts
+        self.reconstructionWidget.x_shifts = self.x_shifts
+        self.reconstructionWidget.y_shifts = self.y_shifts
+
         # self.sinogramWidget.actions.centers = self.centers
         return
         

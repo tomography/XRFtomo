@@ -88,6 +88,14 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.mid_indx.setDisabled(True)
         self.recon_stats = QtWidgets.QCheckBox("show reconstructions statistics")
         self.recon_stats.setChecked(False)
+        padding_lbl = QtWidgets.QLabel("pad edges ")
+        padding_x_lbl = QtWidgets.QLabel("pad edges ")
+        padding_y_lbl = QtWidgets.QLabel("pad edges ")
+        self.padding_x = QtWidgets.QLineEdit("0")
+        self.padding_y = QtWidgets.QLineEdit("0")
+
+
+        self.recon_stats.setChecked(False)
 
         self.mulBtn = QtWidgets.QPushButton("x 10")
         self.mulBtn.setFixedWidth(button2size)
@@ -123,6 +131,12 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         midBox = QtWidgets.QHBoxLayout()
         midBox.addWidget(self.mid_lbl)
         midBox.addWidget(self.mid_indx)
+        paddingBox = QtWidgets.QHBoxLayout()
+        paddingBox.addWidget(padding_lbl)
+        paddingBox.addWidget(padding_x_lbl)
+        paddingBox.addWidget(self.padding_x)
+        paddingBox.addWidget(padding_y_lbl)
+        paddingBox.addWidget(self.padding_y)
 
         mdBox = QtWidgets.QHBoxLayout()
         mdBox.addWidget(self.mulBtn)
@@ -152,6 +166,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addLayout(endBox)
         vb.addLayout(startBox)
         vb.addLayout(midBox)
+        vb.addLayout(paddingBox)
         vb.addWidget(self.recon_stats)
         vb.addWidget(self.lbl)
         vb.addLayout(mdBox)
