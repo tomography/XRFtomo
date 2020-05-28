@@ -44,6 +44,7 @@
 # #########################################################################
 
 from PyQt5 import QtGui, QtWidgets, QtCore
+# from matplotlib.figure import Figure
 import xrftomo
 import xrftomo.config as config
 from scipy import stats
@@ -53,7 +54,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import sys
 import matplotlib
-
+from os.path import expanduser
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
@@ -169,8 +170,10 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget = xrftomo.ImageProcessWidget()
         self.sinogramWidget = xrftomo.SinogramWidget()
         self.reconstructionWidget = xrftomo.ReconstructionWidget()
-        self.writer = xrftomo.SaveOptions()
+        self.scatterWidget = xrftomo.ScatterView()
+        self.miniReconWidget = xrftomo.MiniReconView()
 
+        self.writer = xrftomo.SaveOptions()
 
         #refresh UI
         self.imageProcessWidget.refreshSig.connect(self.refreshUI)
@@ -195,9 +198,8 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget.thetaChangedSig.connect(self.sinogramWidget.updateImgSldRange)
 
         #data dimensions changed
-        # self.imageProcessWidget.ySizeChangedSig.connect(self.imageProcessWidget.ySizeChanged)
-        # self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
-        # self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
+        self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
+        self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
 
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
@@ -263,6 +265,10 @@ class xrftomoGui(QtGui.QMainWindow):
         analysis.addAction(corrElemAction)
         corrElemAction.triggered.connect(self.corrElem)
 
+        scatterPlotAction = QtGui.QAction('Scatter Plot', self)
+        analysis.addAction(scatterPlotAction)
+        scatterPlotAction.triggered.connect(self.scatterPlot)
+
         self.toolsMenu = menubar.addMenu("Tools")
         self.toolsMenu.addMenu(analysis)
         self.toolsMenu.setDisabled(True)
@@ -284,18 +290,17 @@ class xrftomoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveToNumpyAction)
         self.afterConversionMenu.addAction(saveCorrAnalysisAction)
 
-
         self.helpMenu = menubar.addMenu('&Help')
         self.helpMenu.addAction(keyMapAction)
         self.helpMenu.addAction(configAction)
 
         self.afterConversionMenu.setDisabled(True)
-
+        version = "1.0.5"
         add = 0
         if sys.platform == "win32":
             add = 50
         self.setGeometry(add, add, 1100 + add, 500 + add)
-        self.setWindowTitle('xrftomo')
+        self.setWindowTitle('XRFtomo v{}'.format(version))
         self.show()
 
         #_______________________Help/config_options______________________
@@ -369,14 +374,332 @@ class xrftomoGui(QtGui.QMainWindow):
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(text)
         self.keymap_options.setLayout(vbox)
+
+
+        #_______________________ scatter plot window ______________________
+        self.scatter_window = QtWidgets.QWidget()
+        self.scatter_window.resize(1000,500)
+        self.scatter_window.setWindowTitle('scatter')
+
+        self.elem1_options = QtWidgets.QComboBox()
+        self.elem1_options.setFixedWidth(100)
+        self.elem2_options = QtWidgets.QComboBox()
+        self.elem2_options.setFixedWidth(100)
+
+        self.projection_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.projection_lcd = QtWidgets.QLCDNumber(self)
+        projection_lbl = QtWidgets.QLabel("Projection index")
+        # self.width_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        # self.width_lcd = QtWidgets.QLCDNumber(self)
+        width_lbl = QtWidgets.QLabel("curve width")
+        slope_lbl = QtWidgets.QLabel("Slope: ")
+        self.slope_value = QtWidgets.QLineEdit("")
+
+
+
+        self.apply_globally = QtWidgets.QPushButton("set red region to zero")
+
+        ##_____ left blok: scatter view _____
+        hboxA1 = QtWidgets.QHBoxLayout()
+        hboxA1.addWidget(self.elem1_options)
+        hboxA1.addWidget(self.elem2_options)
+        hboxA1.addWidget(self.apply_globally)
+
+        hboxA2 = QtWidgets.QHBoxLayout()
+        hboxA2.addWidget(projection_lbl)
+        hboxA2.addWidget(self.projection_lcd)
+        hboxA2.addWidget(self.projection_sld)
+
+        # hboxA3 = QtWidgets.QHBoxLayout()
+        # hboxA3.addWidget(width_lbl)
+        # hboxA3.addWidget(self.width_lcd)
+        # hboxA3.addWidget(self.width_sld)
+
+        hboxA4 = QtWidgets.QHBoxLayout()
+        hboxA4.addWidget(slope_lbl)
+        hboxA4.addWidget(self.slope_value)
+
+        vboxA1 = QtWidgets.QVBoxLayout()
+        vboxA1.addWidget(self.scatterWidget)
+        vboxA1.addLayout(hboxA1)
+        vboxA1.addLayout(hboxA2)
+        # vboxA1.addLayout(hboxA3)
+        vboxA1.addLayout(hboxA4)
+
+        ##_____ right block: recon_view _____
+        self.recon_views = QtWidgets.QComboBox()
+        views = ["recon #1", "recon #2", "difference:#2 - #1"]
+        for k in range(len(views)):
+            self.recon_views.addItem(views[k])
+
+        self.recon_method = QtWidgets.QComboBox()
+        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
+        for k in range(len(methodname)):
+            self.recon_method.addItem(methodname[k])
+
+        self.recon_button = QtWidgets.QPushButton("reconstruct")
+        self.recon_button.clicked.connect(self.updateMiniRecon)
+
+        spacer = QtWidgets.QLabel("")
+
+        hboxB1 = QtWidgets.QHBoxLayout()
+        hboxB1.addWidget(self.recon_views)
+        hboxB1.addWidget(self.recon_method)
+        hboxB1.addWidget(self.recon_button)
+
+        vboxB1 = QtWidgets.QVBoxLayout()
+        vboxB1.addWidget(self.miniReconWidget)
+        vboxB1.addLayout(hboxB1)
+        vboxB1.addWidget(spacer)
+        vboxB1.addWidget(spacer)
+        vboxB1.addWidget(spacer)
+
+
+        hboxC1 = QtWidgets.QHBoxLayout()
+        hboxC1.addLayout(vboxA1)
+        hboxC1.addLayout(vboxB1)
+
+        self.scatter_window.setLayout(hboxC1)
+
+        self.elem1_options.currentIndexChanged.connect(self.updateScatter)
+        self.elem2_options.currentIndexChanged.connect(self.updateScatter)
+        self.projection_sld.valueChanged.connect(self.updateScatter)
+        # self.width_sld.valueChanged.connect(self.updateWidth)
+        # self.width_sld.valueChanged.connect(self.updateInnerScatter)
+        self.scatterWidget.mousePressSig.connect(self.updateInnerScatter)
+        self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
+        self.apply_globally.clicked.connect(self.sendData)
+        self.slope_value.returnPressed.connect(self.slopeEntered)
+        self.first_run = True
+
+    def updateScatter(self):
+        if self.first_run:
+            self.scatterWidget.ROI.endpoints[1].setPos(self.data[0,0].max(), self.data[0,0].max())
+            self.first_run = False
+
+        self.projection_sld.setRange(0, self.data.shape[1]-1)
+        self.elem1_options.currentIndexChanged.disconnect(self.updateScatter)
+        self.elem2_options.currentIndexChanged.disconnect(self.updateScatter)
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+        proj_indx = self.projection_sld.value()
+        self.elem1_options.clear()
+        self.elem2_options.clear()
+
+        for i in self.elements:
+            self.elem1_options.addItem(i)
+            self.elem2_options.addItem(i)
+        try:
+            self.elem1_options.setCurrentIndex(e1)
+            self.elem1_options.setCurrentText(self.elements[e1])
+            self.elem2_options.setCurrentIndex(e2)
+            self.elem2_options.setCurrentText(self.elements[e2])
+            self.scatterWidget.p1.setLabel(axis='left', text=self.elements[e1])
+            self.scatterWidget.p1.setLabel(axis='bottom', text=self.elements[e2])
+
+        except:
+            self.elem1_options.setCurrentIndex(0)
+            self.elem2_options.setCurrentIndex(0)
+
+        elem1 = self.data[e1,proj_indx]
+        elem1 = elem1.flatten()
+        elem2 = self.data[e2, proj_indx]
+        elem2 = elem2.flatten()
+
+        #update projection index LCD
+        self.projection_lcd.display(self.projection_sld.value())
+
+        self.elem1_options.currentIndexChanged.connect(self.updateScatter)
+        self.elem2_options.currentIndexChanged.connect(self.updateScatter)
+        # self.elem1_options.currentIndexChanged.connect(self.updateInnerScatter)
+        # self.elem2_options.currentIndexChanged.connect(self.updateInnerScatter)
+
+        self.scatterWidget.plotView.setData(elem2, elem1)
+        self.scatterWidget.p1.setLabel(axis='left', text=self.elements[e1])
+        self.scatterWidget.p1.setLabel(axis='bottom', text=self.elements[e2])
+        self.updateInnerScatter()
+        return
+
+    # def updateWidth(self):
+
+    #     # self.width_lcd.display(self.width_sld.value())
+    #     width_values = np.linspace(0,1,101)
+    #     self.width_sld.setRange(0, len(width_values)-1)
+    #     self.width_lcd.display(width_values[self.width_sld.value()])
+    #     return
+
+    def updateInnerScatter(self,*dummy):
+        self.scatterWidget.mousePressSig.disconnect(self.updateInnerScatter)
+        self.scatterWidget.roiDraggedSig.disconnect(self.updateInnerScatter)
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+
+        #Normalizeself.projection_sld.currentIndex()
+        elem1 = self.data[self.elem1_options.currentIndex(),self.projection_sld.value()]
+        elem1 = elem1.flatten()
+        elem2 = self.data[self.elem2_options.currentIndex(), self.projection_sld.value()]
+        elem2 = elem2.flatten()
+
+        # get slope then calculate new handle pos
+        x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
+        slope = y_pos/x_pos
+        x_pos = 1/slope
+        y_pos = x_pos*slope
+
+        if elem2.max()*slope < elem1.max():
+            x_pos = elem2.max()
+            y_pos = x_pos*slope
+        if elem2.max()*slope > elem1.max():
+            x_pos = elem1.max()/slope
+            y_pos = x_pos*slope
+
+        self.scatterWidget.ROI.endpoints[1].setPos(x_pos,y_pos)
+        self.slope_value.setText(str(round(slope,4)))
+
+        tmp_arr = [(slope*elem2) <= elem1]
+        tmp_elem1 = elem1[tmp_arr[0]]
+        tmp_elem2 = elem2[tmp_arr[0]]
+        self.scatterWidget.plotView2.setData(tmp_elem2, tmp_elem1, brush='r')
+
+        self.scatterWidget.mousePressSig.connect(self.updateInnerScatter)
+        self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
+
+        return
+
+    def slopeEntered(self):
+        slope = eval(self.slope_value.text())
+        if slope < 0 :
+            return
+        self.scatterWidget.mousePressSig.disconnect(self.updateInnerScatter)
+        self.scatterWidget.roiDraggedSig.disconnect(self.updateInnerScatter)
+
+
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+
+        #Normalizeself.projection_sld.currentIndex()
+        elem1 = self.data[self.elem1_options.currentIndex(),self.projection_sld.value()]
+        elem1 = elem1.flatten()
+        elem2 = self.data[self.elem2_options.currentIndex(), self.projection_sld.value()]
+        elem2 = elem2.flatten()
+        x_pos = 1/slope
+        y_pos = x_pos*slope
+
+        if elem2.max()*slope < elem1.max():
+            x_pos = elem2.max()
+            y_pos = x_pos*slope
+        if elem2.max()*slope > elem1.max():
+            x_pos = elem1.max()/slope
+            y_pos = x_pos*slope
+
+        self.scatterWidget.ROI.endpoints[1].setPos(x_pos,y_pos)
+        self.slope_value.setText(str(round(slope,4)))
+
+        tmp_arr = [(slope*elem2) <= elem1]
+        tmp_elem1 = elem1[tmp_arr]
+        tmp_elem2 = elem2[tmp_arr]
+        self.scatterWidget.plotView2.setData(tmp_elem2, tmp_elem1, brush='r')
+
+        self.scatterWidget.mousePressSig.connect(self.updateInnerScatter)
+        self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
+
+
+    def updateMiniRecon(self):
+        
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+
+        data2 = self.data.copy()
+        element= e2
+        original_shape = data2[element,0].shape
+        tmp_data = np.zeros_like(data2[element])
+
+
+        #_____ calculate points within bounded region _____
+        #get handle pos
+        x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
+        slope = y_pos/x_pos
+
+        for i in range(data2.shape[1]):
+            #Normalizeself.projection_sld.currentIndex()
+            elem1 = self.data[e1,i] 
+            elem1 = elem1.flatten()
+
+            elem2 = self.data[e2, i]
+            elem2 = elem2.flatten()
+
+            tmp_arr = [(slope * elem2) < elem1]
+            bounded_index = np.where(tmp_arr)[1]
+
+            tmp = data2[e2, i].flatten()
+            tmp[bounded_index] = 0
+            tmp_data[i] = tmp.reshape(original_shape)
+
+
+        data2[element] = tmp_data
+        center = self.data.shape[3]//2
+        method = self.recon_method.currentIndex()
+        beta = 1
+        delta = 0.01
+        iters = 10
+        thetas = self.thetas
+        mid_indx = data2.shape[2]//2
+        tmp_data2 = data2.copy()
+        tmp_data2[element] = tmp_data
+        tmp_data2 = tmp_data2[:, :, mid_indx:mid_indx + 1, :]
+
+        recon = self.reconstructionWidget.actions.reconstruct(tmp_data2, element, center, method, beta, delta, iters, thetas, 0, show_stats=False)
+
+        self.miniReconWidget.reconView.setImage(recon[0])
+        return
+
+    def sendData(self):
+
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+        proj_indx = self.projection_sld.value()
+
+        data2 = self.data.copy()
+        element= e2
+        original_shape = data2[element,0].shape
+        tmp_data = np.zeros_like(data2[element])
+
+        #get handle pos
+        x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
+        slope = y_pos/x_pos
+
+        for i in range(data2.shape[1]):
+            #Normalizeself.projection_sld.currentIndex()
+            elem1 = self.data[e1,i] 
+            elem1 = elem1.flatten()
+            data1 = self.data[e1,i].flatten()
+
+            elem2 = self.data[e2, i]
+            elem2 = elem2.flatten()
+
+            tmp_arr = [(slope * elem2) < elem1]
+            bounded_index = np.where(tmp_arr)[1]
+
+            tmp = data2[e2, i].flatten()
+            tmp[bounded_index] = 0
+            tmp_data[i] = tmp.reshape(original_shape)
+
+        data2[element] = tmp_data
+
+        self.data = data2.copy()
+        self.update_data(self.data)
+
     def refresh_filetable(self):
         self.fileTableWidget.onLoadDirectory()
         return
 
     def toggleDebugMode(self):
-        if self.params.admin:
+        if self.params.experimental:
             self.debugMode()
-            self.params.admin = False
+            self.params.experimental = False
 
     def toggle_aspect_ratio(self, checkbox_state):
         if checkbox_state:
@@ -410,14 +733,13 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileTableWidget.elementTag_label.setVisible(True)
         self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
         self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(True)
-        self.imageProcessWidget.ViewControl.btn2.setVisible(True)
+        # self.imageProcessWidget.ViewControl.btn2.setVisible(True)
 
         self.sinogramWidget.ViewControl.btn1.setVisible(True)
         self.sinogramWidget.ViewControl.btn3.setVisible(True)
         self.sinogramWidget.ViewControl.btn5.setVisible(True)
         self.sinogramWidget.ViewControl.btn6.setVisible(True)
         return
-
 
     def openFolder(self):
         try:
@@ -611,6 +933,13 @@ class xrftomoGui(QtGui.QMainWindow):
             pass
         self.prevTab = index
 
+    # def saveScatterPlot(self):
+    #     try:
+    #         self.writer.save_scatter_plot(self.figure)
+    #     except AttributeError:
+    #         print("Run correlation analysis first")
+    #     return
+
     def saveCorrAlsys(self):
         try:
             self.writer.save_correlation_analysis(self.elements, self.rMat)
@@ -698,6 +1027,8 @@ class xrftomoGui(QtGui.QMainWindow):
         if not from_open:
             self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
             self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
+            #populate scatter plot combo box windows
+            self.updateScatter()
             self.app.restoreOverrideCursor()
 
             if len(self.data) == 0:
@@ -920,6 +1251,8 @@ class xrftomoGui(QtGui.QMainWindow):
 
                 self.update_alignment(self.x_shifts, self.y_shifts)
                 self.update_slider_range(self.thetas)
+                # self.update_y_slider_range(self.data.shape[2])
+                self.sinogramWidget.ySizeChanged(self.data.shape[2])
                 index = self.imageProcessWidget.sld.value()
                 self.update_theta(index, self.thetas)
                 self.update_filenames(self.fnames, index)
@@ -943,46 +1276,21 @@ class xrftomoGui(QtGui.QMainWindow):
             self.update_history(self.data)
             self.update_slider_range(self.thetas)
 
-            self.imageProcessWidget.ViewControl.ySizeTxt.setText(str(10))
-            self.imageProcessWidget.ViewControl.xSizeTxt.setText(str(10))
-            self.imageProcessWidget.ViewControl.y_sld.setRange(2,self.data.shape[2])
-            self.imageProcessWidget.ViewControl.x_sld.setRange(2,self.data.shape[3])
-
         except AttributeError:
             print("Load dataset first")
             return
 
-    # def corrElem2(self):
-    #     self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
-        
-    #     data = self.data
-    #     corrMat = np.zeros((data.shape[0],data.shape[0]))
-    #     for i in range(data.shape[0]):
-    #         for j in range(data.shape[0]):
-    #             elemA = data[i]
-    #             elemB = data[j]
-    #             corr = np.mean(signal.correlate(elemA, elemB, method='direct', mode='same') / (data.shape[1]*data.shape[2]*data.shape[3]))
-    #             corrMat[i,j] = corr
+    def scatterPlot(self):
+        self.scatter_window.show()
+        self.updateScatter()
 
-    #     sns.set(style="white")
 
-    #     # Generate a mask for the upper triangle
-    #     mask = np.zeros_like(corrMat, dtype=np.bool)
-    #     mask[np.triu_indices_from(mask,1)] = True
+        # self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        #create window, create two drop-down menus (for element selection)
+        #load data[element1], load data2[element2], normalize the two,
+        #assign elem1 to x axis, assign elem2 to y axis
+        #divide data[elem2] by data[elem1], plot this.
 
-    #     # Set up the matplotlib figure
-    #     f, ax = plt.subplots(figsize=(11, 9))
-
-    #     # Generate a custom diverging colormap
-    #     cmap = sns.diverging_palette(220, 10, as_cmap=True)
-
-    #     # Draw the heatmap with the mask and correct aspect ratio
-    #     d = pd.DataFrame(data=corrMat, columns=self.elements, index=self.elements)
-    #     sns.heatmap(d, mask=mask, cmap=cmap, vmax=corrMat.max(), center=0,
-    #                 square=True, linewidths=.5, cbar_kws={"shrink": .5})
-    #     f.show()
-    #     self.app.restoreOverrideCursor()
-    #     return corrMat
 
 
     def corrElem(self):
@@ -1093,7 +1401,8 @@ class xrftomoGui(QtGui.QMainWindow):
         print("here I am")
         try:
             sections = config.TOMO_PARAMS + ('gui', )
-            config.write('xrftomo.conf', args=self.params, sections=sections)
+            home = expanduser("~")
+            config.write('{}/xrftomo.conf'.format(home), args=self.params, sections=sections)
             self.sinogramWidget.ViewControl.iter_parameters.close()
             self.sinogramWidget.ViewControl.center_parameters.close()
             self.sinogramWidget.ViewControl.move2edge.close()

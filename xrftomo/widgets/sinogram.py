@@ -110,17 +110,30 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.run_sino_adjust.clicked.connect(self.adjust_sino_params)
         self.ViewControl.move2center.clicked.connect(self.move2center_params)
         self.ViewControl.find_center_1.clicked.connect(self.center_tomopy_params)
-        self.ViewControl.find_center_2.clicked.connect(self.center_Everett_params)
+        self.ViewControl.find_center_2.clicked.connect(self.center_Vacek_params)
         self.ViewControl.center.clicked.connect(self.ViewControl.center_parameters.show)
         self.ViewControl.center.clicked.connect(self.updateCenterFindParameters)
+        self.ViewControl.rot_axis.clicked.connect(self.rot_axis_params)
         self.sld.valueChanged.connect(self.sinoSliderChanged)
         self.sld2.valueChanged.connect(self.imageSliderChanged)
         self.sld3.valueChanged.connect(self.diffSliderChanged)
         self.sinoView.keyPressSig.connect(self.shiftEvent_params)
+        self.imageView.mousePressSig.connect(self.hotspot_event)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.view_options.currentIndexChanged.connect(self.display)
 
+        self.ViewControl.fit_line.clicked.connect(self.fitLine_params)
+        self.ViewControl.fit_sine.clicked.connect(self.fitSine_params)
+        self.ViewControl.fit_y.clicked.connect(self.fitY_params)
+        self.ViewControl.clear_data.clicked.connect(self.clrHotspot_params)
+
         self.diffView.keyPressSig.connect(self.keyProcess)
+        self.imageView.keyPressSig.connect(self.keyProcess)
+
+        self.ViewControl.fit_line.setEnabled(False)
+        self.ViewControl.fit_sine.setEnabled(False)
+        self.ViewControl.fit_y.setEnabled(False)
+        self.ViewControl.clear_data.setEnabled(False)
 
         self.stack1 = QtWidgets.QWidget()
         self.stack2 = QtWidgets.QWidget()
@@ -203,43 +216,83 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def display(self,i):
         self.Stack.setCurrentIndex(i)
+
+        if i == 1:
+
+            self.ViewControl.hotspot_mode_chbx.setVisible(True)
+            self.ViewControl.hotspot_lbl.setVisible(True)
+            self.ViewControl.combo3.setVisible(True)
+            self.ViewControl.fit_line.setVisible(True)
+            self.ViewControl.fit_y.setVisible(True)
+            self.ViewControl.clear_data.setVisible(True)
+        else:
+            self.ViewControl.hotspot_mode_chbx.setVisible(False)
+            self.ViewControl.hotspot_lbl.setVisible(False)
+            self.ViewControl.combo3.setVisible(False)
+            self.ViewControl.fit_line.setVisible(False)
+            self.ViewControl.fit_y.setVisible(False)
+            self.ViewControl.clear_data.setVisible(False)
         #change slider range and label here depending on i
 
     def keyProcess(self, command):
         index = self.sld3.value()
         data = self.data
 
-        if command == 'A': #previous projection
-            self.sld3.setValue(self.sld3.value() - 1)
-            self.imageSliderChanged()
-        if command == 'D':  #next projection
-            self.sld3.setValue(self.sld3.value() + 1)
-            self.imageSliderChanged()
         if command == 'left':
             self.x_shifts[index] -=1
-            data = self.actions.shiftProjectionX(self.data, index, -1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            data = self.actions.shiftProjection(self.data, -1, 0, index)
             self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
         if command == 'right':
             self.x_shifts[index] +=1
-            data = self.actions.shiftProjectionX(self.data, index, 1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            data = self.actions.shiftProjection(self.data, 1, 0, index)
             self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
         if command == 'up':
             self.y_shifts[index] +=1
-            data = self.actions.shiftProjectionY(self.data, index, -1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            data = self.actions.shiftProjection(self.data, 0, -1, index)
             self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
         if command == 'down':
             self.y_shifts[index] -=1
-            data = self.actions.shiftProjectionY(self.data, index, 1)
-            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            data = self.actions.shiftProjection(self.data, 0, 1, index)
             self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+        if command == 'shiftLeft':
+            self.x_shifts -=1
+            data = self.actions.shiftStack(self.data, -1, 0)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
+        if command == 'shiftRight':
+            self.x_shifts +=1
+            data = self.actions.shiftStack(self.data, 1, 0)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
+        if command == 'shiftUp':
+            self.y_shifts +=1
+            data = self.actions.shiftStack(self.data, 0, -1)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
+        if command == 'shiftDown':
+            self.y_shifts -=1
+            data = self.actions.shiftStack(self.data, 0, 1)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
+            return
+        if command == "Next":
+            self.hotspot_event(1)
+            return
+
 
     def showImgProcess(self):
-        # self.posMat = np.zeros((5,int(self.data.shape[1]),2))
-        # self.imageView.hotSpotNumb = 0
-
+        self.posMat = np.zeros((5,int(self.data.shape[1]),2))
+        self.imageView.hotSpotNumb = 0
         num_projections  = self.data.shape[1]
         self.sld2.setRange(0, num_projections - 1)
 
@@ -261,36 +314,36 @@ class SinogramWidget(QtWidgets.QWidget):
         angle = round(self.thetas[index],3)
         self.lcd3.display(angle)
         self.sld3.setValue(index)
-        self.updateDiffImage(index)
+        # self.updateDiffImage(index)
         
-    def updateDiffImage(self, index):
-        element = self.ViewControl.combo1.currentIndex()
-        x_index = int(self.data.shape[3] * 0.3)
-        y_index = int(self.data.shape[2]* 0.3)
-
-        # position = [0.0, 0.25, 0.4, 0.6, 0.75, 1.0]
-        # colors = [[64, 0, 0, 255], [255, 0, 0, 255], [255, 255, 255, 255], [255, 255, 255, 255], [0, 0, 255, 255], [0, 0, 64, 255]]
-        # bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
-        # lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
-
-
-        # if index < self.data.shape[1]-1:
-        #     img = self.data[element, index] - self.data[element, index+1]
-        #     img = img[y_index:-y_index, x_index:-x_index]
-        # else:
-        #     img = self.data[element, index] - self.data[element, 0]
-        #     img = img[x_index:-x_index, y_index:-y_index]
-
-        if index < self.data.shape[1]-1:
-            img = self.data[element, index]/2 + self.data[element, index+1]/2
-            img = img[y_index:-y_index, x_index:-x_index]
-        else:
-            img = self.data[element, index]/2 + self.data[element, 0]/2
-            img = img[x_index:-x_index, y_index:-y_index]
-
-        self.diffView.projView.setImage(img, border='w')
-        # self.diffView.projView.setLookupTable(lookup_table)
-        
+    # def updateDiffImage(self, index):
+    #     element = self.ViewControl.combo1.currentIndex()
+    #     x_index = int(self.data.shape[3] * 0.3)
+    #     y_index = int(self.data.shape[2]* 0.3)
+    #
+    #     # position = [0.0, 0.25, 0.4, 0.6, 0.75, 1.0]
+    #     # colors = [[64, 0, 0, 255], [255, 0, 0, 255], [255, 255, 255, 255], [255, 255, 255, 255], [0, 0, 255, 255], [0, 0, 64, 255]]
+    #     # bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
+    #     # lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
+    #
+    #
+    #     # if index < self.data.shape[1]-1:
+    #     #     img = self.data[element, index] - self.data[element, index+1]
+    #     #     img = img[y_index:-y_index, x_index:-x_index]
+    #     # else:
+    #     #     img = self.data[element, index] - self.data[element, 0]
+    #     #     img = img[x_index:-x_index, y_index:-y_index]
+    #
+    #     if index < self.data.shape[1]-1:
+    #         img = self.data[element, index]/2 + self.data[element, index+1]/2
+    #         img = img[y_index:-y_index, x_index:-x_index]
+    #     else:
+    #         img = self.data[element, index]/2 + self.data[element, 0]/2
+    #         img = img[x_index:-x_index, y_index:-y_index]
+    #
+    #     self.diffView.projView.setImage(img, border='w')
+    #     # self.diffView.projView.setLookupTable(lookup_table)
+    #
 
     def updateSliderSlot(self, index):
         if len(self.thetas) == 0:
@@ -308,6 +361,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.lcd2.display(thetas[index])
         self.sld2.setValue(index)
         self.imageChanged()
+        self.posMat = np.zeros((5,int(self.data.shape[1]), 2))
 
     def updateDiffSldRange(self, index, thetas):
         element = self.ViewControl.combo1.currentIndex()
@@ -356,9 +410,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinogram(element)
         # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
         self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
-
-
-        self.updateDiffImage(index3)
+        # self.updateDiffImage(index3)
 
     def ySizeChanged(self, ySize):
         self.sld.setRange(1, ySize)
@@ -370,11 +422,99 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.combo1.setCurrentIndex(element)
 
     def updateImgElementSlot(self, element, projection = None):
-        if projection == None:
-           projection =  self.sld.value()
-        # self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
-        self.imageView.projView.setImage(self.data[element, projection, ::-1, :], border='w')
+        try:
+            if projection == None:
+                projection =  self.sld.value()
+            # self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
+            self.imageView.projView.setImage(self.data[element, projection, ::-1, :], border='w')
+        except TypeError:
+            return
 
+    def hotSpotSetChanged(self):
+        self.imageView.hotSpotSetNumb = self.ViewControl.combo3.currentIndex()
+        # self.actions.saveHotSpotPos()
+
+    def fitLine_params(self):
+        element, x_size, y_size, hs_group, posMat, data = self.get_params_imgView()
+        data, x_shifts, y_shifts = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts - y_shifts)
+        self.ViewControl.clear_data.setEnabled(True)
+        return
+
+    def fitSine_params(self):
+        element, x_size, y_size, hs_group, posMat, data = self.get_params_imgView()
+        thetas = self.thetas
+        data, x_shifts, y_shifts = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data, thetas)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts +y_shifts)
+        self.ViewControl.clear_data.setEnabled(True)
+        return
+
+    def fitY_params(self):
+        element, x_size, y_size, hs_group, posMat, data = self.get_params_imgView()
+        data, y_shifts = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts + y_shifts)
+        self.ViewControl.clear_data.setEnabled(True)
+        return
+
+    def hotspot_event(self, mouse_button):
+        if not self.ViewControl.hotspot_mode_chbx.isChecked():
+            return
+        else:
+            pass
+
+        hs_group = self.ViewControl.combo3.currentIndex()
+        hs_number = self.sld2.value()
+        x_pos = self.imageView.x_pos
+        y_pos = self.imageView.y_pos
+
+        if mouse_button == 1:
+            self.posMat[int(hs_group), int(hs_number)-1] = [x_pos, y_pos]
+            if hs_number < self.posMat.shape[1]:
+                print("Total projections", self.posMat.shape[1], "current position", hs_number+1, "group number", hs_group + 1)
+                hs_number += 1
+                if hs_number < self.posMat.shape[1]:
+                    self.sld2.setValue(self.sld2.value() + 1)
+                    self.imageSliderChanged()
+                else:
+                    self.sld2.setValue(self.data.shape[1])
+                    self.imageSliderChanged()
+                    print("This is the last projection")
+        self.ViewControl.clear_data.setEnabled(True)
+        self.ViewControl.fit_y.setEnabled(True)
+        self.ViewControl.fit_sine.setEnabled(True)
+        self.ViewControl.fit_line.setEnabled(True)
+        if mouse_button == 2:
+            self.posMat[int(hs_group), int(hs_number)-1] = [0, 0]
+            if hs_number < self.posMat.shape[1]:
+                hs_number += 1
+                self.sld2.setValue(self.sld2.value() + 1)
+                self.imageSliderChanged()
+
+    def clrHotspot_params(self):
+        self.posMat = self.actions.clrHotspot(self.posMat)
+        self.ViewControl.clear_data.setEnabled(False)
+        self.ViewControl.fit_y.setEnabled(False)
+        self.ViewControl.fit_sine.setEnabled(False)
+        self.ViewControl.fit_line.setEnabled(False)
+
+    def rot_axis_params(self):
+        data = self.data
+        num_projections = data.shape[1]
+        thetas = self.thetas
+        rAxis_pos = self.imageView.cross_pos_x
+        center = data.shape[3]//2
+        theta_pos = self.lcd2.value()
+        shift_arr = self.actions.move_rot_axis(thetas, center, rAxis_pos, theta_pos)
+        shift_arr = np.round(shift_arr)
+
+        for i in range(num_projections):
+            data[:,i] = np.roll(data[:,i],int(shift_arr[i]),axis=2)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + shift_arr, self.y_shifts)
+        return
 
     def center_tomopy_params(self):        
         valid = self.ViewControl.validate_move2center_parameters()
@@ -394,8 +534,9 @@ class SinogramWidget(QtWidgets.QWidget):
         center = self.actions.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
         self.ViewControl.center_1.setText("center: {}".format(center))
         self.ViewControl.center_2.setText("center: {}".format(center))
+        self.ViewControl.rot_axis.setDisabled(False)
 
-    def center_Everett_params(self):
+    def center_Vacek_params(self):
         element, row, data, thetas = self.get_params()
         data = self.data
         thetasum = np.sum(self.data[element], axis=1)
@@ -410,21 +551,18 @@ class SinogramWidget(QtWidgets.QWidget):
         center_int = np.round(center_offset)
         self.ViewControl.center_1.setText("center: {}".format(center))
         self.ViewControl.center_2.setText("center: {}".format(center))
+        self.ViewControl.rot_axis.setDisabled(False)
 
     def move2center_params(self):
         data = self.data
         rot_center = int(np.round(float(self.ViewControl.center_1.text().split()[1])))
         x_shifts = data.shape[3]//2 - rot_center
 
-        if x_shifts<0:
-            data = self.actions.shiftDataX(data, x_shifts)
+        if x_shifts !=0:
+            data = self.actions.shiftStack(data, x_shifts, 0)
             self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
-
-        if x_shifts>0:
-            data = self.actions.shiftDataX(data, x_shifts)
-            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
-            self.dataChangedSig.emit(data)
+        return
 
     def updateCenterFindParameters(self):
         if self.ViewControl.init_textbox.text() == "-1":
@@ -593,7 +731,8 @@ class SinogramWidget(QtWidgets.QWidget):
         pass
 
     def alignFromText2_params(self):
-        fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt)")
+        ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
+        fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt) ;; NPY (*.npy)")
 
         if fileName[0] == "":
             return
@@ -616,3 +755,13 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         row = self.sld.value()
         return element, row, self.data, self.thetas
+
+    def get_params_imgView(self):
+        element = self.ViewControl.combo1.currentIndex()
+        x_size = self.imageView.xSize
+        y_size = self.imageView.ySize
+        data = self.data
+        hs_group = self.ViewControl.combo3.currentIndex()
+        posMat = self.posMat
+
+        return element, x_size, y_size, hs_group, posMat, data

@@ -44,80 +44,115 @@
 # #########################################################################
 
 
-from PyQt5 import QtCore
-import pyqtgraph
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from matplotlib.figure import Figure
+# from matplotlib.figure import Figure
+import pyqtgraph
+import xrftomo
 
+class ScatterView(pyqtgraph.GraphicsLayoutWidget):
+    mouseMoveSig = pyqtSignal(int,int, name= 'mouseMoveSig')
+    mousePressSig =pyqtSignal(name= 'mousePressSig')
+    keyPressSig = pyqtSignal(str, name= 'keyPressSig')
+    roiDraggedSig = pyqtSignal(name= 'roiSizeSig')
 
-class SinogramView(pyqtgraph.GraphicsLayoutWidget):
-    keyPressSig = pyqtSignal(int, int, name= 'keyPressSig')
 
     def __init__(self):
-        super(SinogramView, self).__init__()
+    # def __init__(self, parent):
+        super(ScatterView, self).__init__()
         self.keylist = []
-        self.hotSpotNumb = 0
         self.initUI()
 
     def initUI(self):
-        self.p1 = self.addPlot()
-        self.projView = pyqtgraph.ImageItem()
-        self.projView.rotate(0)
-        self.p1.addItem(self.projView)
-        self.p1.items[0].scene().sigMouseMoved.connect(self.mouseMoved)
-        self.p1.items[0].scene().sigMouseClicked.connect(self.mouseClick)
+        custom_vb = xrftomo.CustomViewBox()
+        # custom_vb.disableAutoRange(axis="xy")
+        # custom_vb.setRange(xRange=(0,1), yRange=(0,1), padding=0)
+        # custom_vb.invertY(True)
+
+        #___________________ scatter view ___________________
+        self.p1 = self.addPlot(viewBox = custom_vb, enableMouse = False)
+        self.p1.setAutoPan(x=None, y=None)
+        # self.p1.setYRange(0,1)
+        # self.p1.setXRange(0,1)
+        self.plotView = pyqtgraph.ScatterPlotItem()
+        self.plotView2 = pyqtgraph.ScatterPlotItem()
+        # self.ROI = pyqtgraph.LineSegmentROI(positions=([0,0],[1,1]), pos=[0,0], movable=False, maxBounds=QtCore.QRectF(0, 0, 1, 1))
+        self.ROI = pyqtgraph.LineSegmentROI(positions=([0,0],[1000,1000]), pos=[0,0], movable=False)
+        self.ROI.sigRegionChangeFinished.connect(self.roi_dragged)
+        self.p1.addItem(self.plotView)
+        self.p1.addItem(self.plotView2)
+        self.p1.addItem(self.ROI)
+        self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
+        self.p1.scene().sigMouseClicked.connect(self.mouseClick)
         self.p1.setMouseEnabled(x=False, y=False)
-        self.show()
-        self.moving_x = 0
-        self.moving_y = 0
+        self.p1.vb = custom_vb
 
+    def roi_dragged(self):
 
-    def mouseMoved(self, evt):
         try:
-            self.moving_x = self.projView.mapFromDevice(evt).x()
-            self.moving_y = self.projView.mapFromDevice(evt).y()
+            x2_pos = self.ROI.getHandles()[1].pos().x()
+            y2_pos = self.ROI.getHandles()[1].pos().y()
+            self.ROI.endpoints[1].setPos(x2_pos, y2_pos)
+            self.ROI.endpoints[0].setPos(0, 0)
+            self.ROI.stateChanged(finish=False)
+            self.roiDraggedSig.emit()
         except:
-            "TODO: error when incorrect PV loaded or when only single angle information is available. "
-            print("WARNING: single column for sinogram. Load more projections with unique angles. ")
+            self.ROI.stateChanged(finish=False)
+            self.roiDraggedSig.emit()
+
+        return
+    def mouseMoved(self, evt):
+        self.moving_x = round(self.p1.vb.mapSceneToView(evt).x(),3)
+        self.moving_y = round(self.p1.vb.mapSceneToView(evt).y(),3)
+        self.mouseMoveSig.emit(self.moving_x, self.moving_y)
 
     def mouseClick(self, evt):
-        self.x_pos = int(round(self.moving_x))
-        self.y_pos = int(round(self.moving_y))
+        print(self.moving_x, self.moving_y)
+        x2_pos = self.moving_x
+        y2_pos = self.moving_y
+        if evt.button() == 1:
+            try:
+                self.ROI.endpoints[1].setPos(x2_pos, y2_pos)
+                self.ROI.endpoints[0].setPos(0, 0)
+                self.ROI.stateChanged(finish=False)
+                self.mousePressSig.emit()
+            except:
+                self.ROI.stateChanged(finish=False)
+                self.mousePressSig.emit()
 
-    def mouseReleaseEvent(self, ev):
-        self.x_pos = int(self.moving_x)
-        self.y_pos = int(self.moving_y)
+        if evt.button() == 2:
+            pass
+
+        return
 
     def wheelEvent(self, ev):
-        '''
-        keep this here. It overrides the built in wheel event in order to keep the mouse wheel disabled.
-        '''
+        #empty function, but leave it as it overrides some other unwanted functionality.
         pass
 
     def keyPressEvent(self, ev):
         self.firstrelease = True
         astr = ev.key()
         self.keylist.append(astr)
-        return
 
     def keyReleaseEvent(self, ev):
         if self.firstrelease == True:
             self.processMultipleKeys(self.keylist)
 
         self.firstrelease = False
-        try:
+
+        try:    #complains about an index error for some reason.
             del self.keylist[-1]
         except:
             pass
+        return
 
     def processMultipleKeys(self, keyspressed):
         if len(keyspressed) ==1:
+            pass
 
-            if keyspressed[0] == QtCore.Qt.Key_Up:
-                col_number = int(self.x_pos/10)
-                self.keyPressSig.emit(1, col_number)
+        if len(keyspressed) == 2:
+            pass
 
-            if keyspressed[0] == QtCore.Qt.Key_Down:
-                col_number = int(self.x_pos/10)
-                self.keyPressSig.emit(-1, col_number)
- 
+        if len(keyspressed) >=3:
+            self.keylist = []
+            return

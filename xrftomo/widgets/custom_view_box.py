@@ -66,7 +66,7 @@ class CustomViewBox(pyqtgraph.ViewBox):
             ev.ignore()
         else:
             pyqtgraph.ViewBox.mouseDragEvent(self, ev)
-            print(ev.buttonDownPos(), 'down')
+            # print(ev.buttonDownPos(), 'down')
             self.autoRange()
 
             

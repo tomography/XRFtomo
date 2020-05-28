@@ -40,7 +40,7 @@ SECTIONS['gui'] = {
         'default': False,
         'help': "Enable pre-proces correction",
         'action': 'store_true'},
-    'admin': {
+    'experimental': {
         'default': False,
         'help': "debug tools and unstable options become available on gui",
         'action': "store_true"}}

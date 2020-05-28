@@ -52,8 +52,10 @@ import xrftomo
 class ImageView(pyqtgraph.GraphicsLayoutWidget):
     # shiftSig = pyqtSignal(str, name='sliderChangedSig')
     mouseMoveSig = pyqtSignal(int,int, name= 'mouseMoveSig')
+    mousePressSig =pyqtSignal(int, name= 'mousePressSig')
     keyPressSig = pyqtSignal(str, name= 'keyPressSig')
     roiSizeSig = pyqtSignal(int, int, name= 'roiSizeSig')
+
 
     def __init__(self):
     # def __init__(self, parent):
@@ -67,6 +69,7 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         self.cross_pos_x = 5
         self.cross_pos_y = 5
         self.keylist = []
+        self.firstrelease = False
         self.initUI()
 
     def initUI(self):
@@ -124,11 +127,14 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         if evt.button() == 1:
             self.x_pos, self.y_pos, self.xSize, self.ySize = self.update_roi(x_pos-xSize//2, y_pos-ySize//2, xSize, ySize, frame_height, frame_width)
             self.ROI.setPos([self.x_pos, self.y_pos], finish=False)
+            self.mousePressSig.emit(1)
 
         if evt.button() == 2:
             self.cross_pos_x, self.cross_pos_y = self.update_crosshair(x_pos, y_pos, frame_height, frame_width)
             self.p1.items[3].setValue(self.cross_pos_x)
             self.p1.items[4].setValue(self.cross_pos_y)
+            self.mousePressSig.emit(2)
+
 
     def update_crosshair(self,x_pos, y_pos, frame_height, frame_width):
         cross_pos_x = x_pos

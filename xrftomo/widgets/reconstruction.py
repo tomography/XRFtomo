@@ -89,6 +89,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.divBtn.clicked.connect(self.call_reconDivide)
         self.ViewControl.end_indx.editingFinished.connect(self.update_y_range)
         self.ViewControl.start_indx.editingFinished.connect(self.update_y_range)
+        self.ViewControl.mid_indx.editingFinished.connect(self.update_middle_index)
+        self.ViewControl.recon_stats.clicked.connect(self.toggle_middle_index)
         self.sld.valueChanged.connect(self.update_recon_image)
 
         self.x_shifts = None
@@ -155,6 +157,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.mulBtn.setEnabled(False)
         self.ViewControl.divBtn.setEnabled(False)
         self.ViewControl.end_indx.setText((str(self.data.shape[2])))
+        self.ViewControl.mid_indx.setText((str(self.data.shape[2]//2)))
 
         self.sld.setRange(0, self.y_range - 1)
         self.lcd.display(0)
@@ -183,19 +186,18 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
     def reconstruct_params(self):
         element = self.ViewControl.combo1.currentIndex()
-        # box_checked = self.ViewControl.cbox.isChecked()
-        #TODO: figure out what center input does with respect to reconstructions. Doesnt seem to change output.
         center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
         delta = float(self.ViewControl.delta.text())
         iters = int(self.ViewControl.iters.text())
         thetas = self.thetas
-        start_indx = int(self.ViewControl.start_indx.text())
-        end_indx = int(self.ViewControl.end_indx.text())
+        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
+        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
+        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
         data = self.data[:,:,start_indx:end_indx,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
-        self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, show_stats)
+        self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
@@ -227,6 +229,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
         self.ViewControl.end_indx.setText(str(ySize))
+        self.ViewControl.mid_indx.setText(str(ySize//2))
         self.sld.setValue(0)
         self.sld.setMaximum(ySize)
         #check for xSize too.
@@ -245,10 +248,30 @@ class ReconstructionWidget(QtWidgets.QWidget):
             self.ViewControl.start_indx.setText(str(end_indx-1))
         if start_indx < 0:
             self.ViewControl.start_indx.setText(str(0))
-    
+        self.update_middle_index()
+
         self.sld.setRange(0, end_indx-start_indx - 1)
         self.sld.setValue(0)
         self.lcd.display(0)
+
+    def update_middle_index(self):
+        start_indx = int(self.ViewControl.start_indx.text())
+        end_indx = int(self.ViewControl.end_indx.text())
+        mid_indx = int(self.ViewControl.mid_indx.text())
+        if mid_indx == -1:
+            mid_indx = end_indx//2
+        if mid_indx > end_indx:
+            mid_indx = end_indx
+            self.ViewControl.mid_indx.setText(str(mid_indx))
+        if mid_indx < start_indx:
+            mid_indx = start_indx
+            self.ViewControl.mid_indx.setText(str(mid_indx))
+
+    def toggle_middle_index(self):
+        if self.ViewControl.recon_stats.isChecked():
+            self.ViewControl.mid_indx.setEnabled(True)
+        else:
+            self.ViewControl.mid_indx.setEnabled(False)
 
     def update_recon_image(self):
         index = self.sld.value()

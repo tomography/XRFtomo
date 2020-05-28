@@ -1,0 +1,26 @@
+{
+    "menu_name": "Xrftomo",
+    "menu_items":
+        [
+            {
+                "script": "${PREFIX}/xrftomo.exe",
+                "scriptarguments": ["gui", "--admin"],
+                // The following options can be applied to any shortcut type:
+                "name": "xrftomo",
+                "workdir": "${PREFIX}",
+                // "icon": "${MENU_DIR}/app.ico",
+                "desktop": true,  // Also create desktop shortcut
+                "quicklaunch": true  // Also create "Quick Launch" bar shortcut
+            },
+            {
+                "pywscript": "${PYTHON_SCRIPTS}/xrftomo-script.py"
+            },
+            {
+                "pyscript": "${PYTHON_SCRIPTS}/xrftomo-script.py"
+            },
+            {
+                "system": "path to executable.  No environment modification is done.",
+                "scriptarguments": ["gui", "--admin", "rec"]
+            }
+        ]
+}

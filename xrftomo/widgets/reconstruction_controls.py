@@ -56,6 +56,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
 
     def initUI(self):
         button1size = 270       #long button (1 column)
+        button12sie = 200       #2/3 column button
         button2size = 142.5     #mid button (2 column)
         button33size = 98.3
         button3size = 93.3      #small button (almost third)
@@ -72,14 +73,19 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setFixedWidth(button3size)
 
-        self.start_lbl = QtWidgets.QLabel("bottom slice index")
-        self.start_lbl.setFixedWidth(button2size)
+        self.start_lbl = QtWidgets.QLabel("bottom cross-section index")
+        self.start_lbl.setFixedWidth(button12sie)
         self.start_indx = QtWidgets.QLineEdit("0")
-        self.start_indx.setFixedWidth(button2size)
-        self.end_lbl = QtWidgets.QLabel("top slice index")
-        self.end_lbl.setFixedWidth(button2size)
+        self.start_indx.setFixedWidth(button4size)
+        self.end_lbl = QtWidgets.QLabel("top cross-section index")
+        self.end_lbl.setFixedWidth(button12sie)
         self.end_indx = QtWidgets.QLineEdit("0")
-        self.end_indx.setFixedWidth(button2size)
+        self.end_indx.setFixedWidth(button4size)
+        self.mid_lbl = QtWidgets.QLabel("middle cross-section index")
+        self.mid_lbl.setFixedWidth(button12sie)
+        self.mid_indx = QtWidgets.QLineEdit("-1")
+        self.mid_indx.setFixedWidth(button4size)
+        self.mid_indx.setDisabled(True)
         self.recon_stats = QtWidgets.QCheckBox("show reconstructions statistics")
         self.recon_stats.setChecked(False)
 
@@ -114,6 +120,9 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         endBox = QtWidgets.QHBoxLayout()
         endBox.addWidget(self.end_lbl)
         endBox.addWidget(self.end_indx)
+        midBox = QtWidgets.QHBoxLayout()
+        midBox.addWidget(self.mid_lbl)
+        midBox.addWidget(self.mid_indx)
 
         mdBox = QtWidgets.QHBoxLayout()
         mdBox.addWidget(self.mulBtn)
@@ -142,6 +151,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addWidget(self.method)
         vb.addLayout(endBox)
         vb.addLayout(startBox)
+        vb.addLayout(midBox)
         vb.addWidget(self.recon_stats)
         vb.addWidget(self.lbl)
         vb.addLayout(mdBox)
