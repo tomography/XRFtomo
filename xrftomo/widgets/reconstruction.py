@@ -239,8 +239,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
         data = self.data[:,:,start_indx:end_indx,:]
 
-        padding_x = int(eval(self.ReconView.padding_x.text()))
-        padding_y = int(eval(self.ReconView.padding_y.text()))
+        padding_x = int(eval(self.ViewControl.padding_x.text()))
+        padding_y = int(eval(self.ViewControl.padding_y.text()))
 
         if padding_x > 0 or padding_y > 0:
             data = self.padData(self.data_original, padding_x, padding_y)

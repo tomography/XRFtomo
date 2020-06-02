@@ -355,6 +355,30 @@ class ImageProcessActions(QtWidgets.QWidget):
 		out_m = np.interp(m, bin_centers, cdf)
 		return out.reshape(image.shape), out_m
 
+	def invert(self, data, element):
+		#set padding equal to max first
+
+		projection_stack = data[element]
+		num_projections = data.shape[1]
+		mean_edge = 0
+		for i in range(num_projections):
+			col_sum = np.sum(projection_stack[0], axis=0)
+			mus_loc = col_sum[::-1]
+			left_end = next((i for i, x in enumerate(col_sum) if x), None)
+			right_end = next((i for i, x in enumerate(mus_loc) if x), None)
+			mean_left = col_sum[left_end]/projection_stack.shape[1]
+			mean_right = col_sum[right_end]/projection_stack.shape[1]
+			if mean_edge < mean_left:
+				mean_edge = mean_left
+			if mean_edge < mean_right:
+				mean_edge = mean_right
+
+		mask = [projection_stack == 0][0]*mean_edge
+		background = projection_stack.max()
+		data[element] = abs(projection_stack+mask-background)
+		# data[element] = projection_stack+mask		
+		return data
+
 	def cumulative_distribution(self, image, nbins=2**16):
 		hist, bin_centers = np.histogram(image, nbins)
 		img_cdf = hist.cumsum()

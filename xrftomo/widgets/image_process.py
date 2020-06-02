@@ -118,6 +118,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.Equalize.clicked.connect(self.histo_params)
+        self.ViewControl.invert.clicked.connect(self.invert_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histogram)
 
         self.imageView.keyPressSig.connect(self.keyProcess)
@@ -354,6 +355,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         data = self.actions.equalize(data, element)
+        self.dataChangedSig.emit(data)
+
+    def invert_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        data = self.actions.invert(data, element)
         self.dataChangedSig.emit(data)
 
     def cut_params(self):

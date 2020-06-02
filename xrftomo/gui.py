@@ -501,6 +501,7 @@ class xrftomoGui(QtGui.QMainWindow):
             self.elem1_options.setCurrentIndex(0)
             self.elem2_options.setCurrentIndex(0)
 
+        #TODO: errors out when loading new dataset without closing program
         elem1 = self.data[e1,proj_indx]
         elem1 = elem1.flatten()
         elem2 = self.data[e2, proj_indx]
@@ -732,6 +733,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileTableWidget.elementTag.setVisible(True)
         self.fileTableWidget.elementTag_label.setVisible(True)
         self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
+        self.imageProcessWidget.ViewControl.invert.setVisible(True)
         self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(True)
         # self.imageProcessWidget.ViewControl.btn2.setVisible(True)
 

@@ -140,7 +140,7 @@ class SaveOptions(object):
 					img = data[j, i, :, :]
 					# temp = Image.fromarray(img.astype(np.float32))
 					# temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tif")
-					io.imsave(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tif", img)
+					io.imsave(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[i].split(".")[0]+".tif", img)
 			return
 		except IOError:
 			print("type the header name")

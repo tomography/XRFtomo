@@ -84,14 +84,20 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.rm_hotspot.setFixedWidth(button2size)
         self.Equalize = QtWidgets.QPushButton("Equalize")
         self.Equalize.setFixedWidth(button33size)
+        self.invert = QtWidgets.QPushButton("invert values")
+        self.invert.setFixedWidth(button33size)
+
+
 
         self.Equalize.setVisible(False)
+        self.invert.setVisible(False)
         self.reshapeBtn.setVisible(False)
 
         hb10 = QtWidgets.QHBoxLayout()
         # hb10.addWidget(self.normalizeBtn)
         # hb10.addWidget(self.hist_equalize)
         hb10.addWidget(self.Equalize)
+        hb10.addWidget(self.invert)
 
 
         hb12 = QtWidgets.QHBoxLayout()
