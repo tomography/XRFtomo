@@ -519,11 +519,8 @@ class FileTableWidget(QtWidgets.QWidget):
         #temporary definition of 'version'
         exchange_bool = list(self.img)
         try:
-            self.version = self.img[list(self.img)[0]]["version"][()]
-            if self.version == 1:
-                self.version = 1
-            else:
-                self.version = 0
+            theta_exists = self.img[list(self.img)[0]]["theta"][()]
+            self.version = 1
         except:
             print("checking file version... No version info available")
             self.version = 0
