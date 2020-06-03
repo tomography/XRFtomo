@@ -518,19 +518,31 @@ class FileTableWidget(QtWidgets.QWidget):
     def checkVersion(self):
         #temporary definition of 'version'
         exchange_bool = list(self.img)
-        self.version = 'exchange_1' in exchange_bool
+        try:
+            self.version = self.img[list(self.img)[0]]["version"][()]
+            if self.version == 1:
+                self.version = 1
+            else:
+                self.version = 0
+        except:
+            print("checking file version... No version info available")
+            self.version = 0
+
         #Temporary hardcode version to 0 (legacy import mode)
         #self.version = 0
-        if self.auto_load_settings[0]:
-            self.version = 0
-        try:
-            if self.parent.legacy_chbx.isChecked():
-                self.version = 0
-            if not self.parent.legacy_chbx.isChecked():
-                self.version = 1
-        except:
-            #checkboxes not yet defined
-            pass
+
+        # TODO: the auto_load_settings line will override non-legacy version, not good.
+        # if self.auto_load_settings[0]:
+        #     self.version = 0
+        # try:
+            # TODO: there may no longer be a legacy checkbox
+            # if self.parent.legacy_chbx.isChecked():
+            #     self.version = 0
+            # if not self.parent.legacy_chbx.isChecked():
+            #     self.version = 1
+        # except:
+        #     #checkboxes not yet defined
+        #     pass
         return self.version
 
     def onThetaUpdate(self):
