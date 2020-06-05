@@ -50,6 +50,8 @@ import tomopy
 import os
 from matplotlib.pyplot import *
 import numpy as np
+from skimage import exposure
+
 
 
 class ReconstructionActions(QtWidgets.QWidget):
@@ -75,7 +77,9 @@ class ReconstructionActions(QtWidgets.QWidget):
 		if method == 0:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
 				algorithm='mlem', center=recCenter, num_iter=iters, accelerated=True, device='cpu')
+
 		elif method == 1:
+			# TODO: gridrec fails and cannot recover, all of python shuts down. consider removing.
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
 				algorithm='gridrec')
 		elif method == 2:
@@ -162,6 +166,28 @@ class ReconstructionActions(QtWidgets.QWidget):
 		if show_plots:
 			show()
 		return err, mse
+
+	def equalize_recon(self,recon):
+		# Equalization
+		global_mean = np.mean(recon)
+		num_recons = recon.shape[0]
+		for i in range(num_recons):
+			local_mean = np.mean(recon[i])
+			coeff = global_mean/local_mean
+			recon[i] = recon[i]*coeff
+			img = recon[i]
+			# data[element,i] = exposure.equalize_hist(img)
+			img *= 1/img.max()
+			recon[i] = exposure.equalize_adapthist(img)
+		return recon
+
+	def remove_hotspots(self, recon):
+		max_val = np.max(recon)
+		for i in range(recon.shape[0]):
+			img = recon[i]
+			img[img > 0.5*max_val] = 0.5*max_val
+			recon[i] = img
+		return recon
 
 	def shiftProjection(self, data, x, y, index):
 		X = int(x//1)

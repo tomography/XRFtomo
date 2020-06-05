@@ -70,6 +70,8 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
 
         self.reshapeBtn = QtWidgets.QPushButton("reshape")
         self.reshapeBtn.setFixedWidth(button33size)
+        self.padBtn = QtWidgets.QPushButton("pad edges")
+        self.padBtn.setFixedWidth(button33size)
         self.cropBtn = QtWidgets.QPushButton("Crop")
         self.cropBtn.setFixedWidth(button33size)
         self.captureBackground = QtWidgets.QPushButton("Copy")
@@ -98,6 +100,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         # hb10.addWidget(self.hist_equalize)
         hb10.addWidget(self.Equalize)
         hb10.addWidget(self.invert)
+        hb10.addWidget(self.padBtn)
 
 
         hb12 = QtWidgets.QHBoxLayout()
@@ -145,7 +148,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
 
         self.xUpsample_text = QtWidgets.QLineEdit("1")
         self.yUpsample_text = QtWidgets.QLineEdit("1")
-        self.run_reshape = QtWidgets.QPushButton("reshape data")
+        self.run_reshape = QtWidgets.QPushButton("reshape")
 
         hb21 = QtWidgets.QHBoxLayout()
         hb21.addWidget(xUpsample_label)
@@ -161,6 +164,40 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb20.addWidget(self.run_reshape)
 
         self.reshape_options.setLayout(vb20)
+
+        #__________Popup window for pading button__________
+        self.padding_options = QtWidgets.QWidget()
+        self.padding_options.resize(275,300)
+        self.padding_options.setWindowTitle('padding options')
+
+        pad_x_label = QtWidgets.QLabel("x padding")
+        pad_y_label = QtWidgets.QLabel("y padding")
+        clip_label =  QtWidgets.QLabel("data edge clip amount")
+
+        self.pad_x = QtWidgets.QLineEdit("0")
+        self.pad_y = QtWidgets.QLineEdit("0")
+        self.clip_x = QtWidgets.QLineEdit("0")
+        self.run_padding = QtWidgets.QPushButton("apply padding")
+
+        hb31 = QtWidgets.QHBoxLayout()
+        hb31.addWidget(pad_x_label)
+        hb31.addWidget(self.pad_x)
+
+        hb32 = QtWidgets.QHBoxLayout()
+        hb32.addWidget(pad_y_label)
+        hb32.addWidget(self.pad_y)
+
+        hb33 = QtWidgets.QHBoxLayout()
+        hb33.addWidget(clip_label)
+        hb33.addWidget(self.clip_x)
+
+        vb30 = QtWidgets.QVBoxLayout()
+        vb30.addLayout(hb31)
+        vb30.addLayout(hb32)
+        vb30.addLayout(hb33)
+        vb30.addWidget(self.run_padding)
+
+        self.padding_options.setLayout(vb30)
 
     def validate_reshape_parameters(self):
         valid = True
@@ -207,3 +244,72 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
             self.yUpsample_text.setStyleSheet('* {background-color: rgb(255,200,200) }')
 
         return valid
+
+
+    def validate_padding_parameters(self):
+        valid = True
+        try: #check value >1 and is int
+            pad_x = self.pad_x.text()
+            if pad_x == "":
+                self.pad_x.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+            else:
+                pad_x = float(self.pad_x.text())
+                if pad_x%1 == 0 and pad_x >= 0:
+                    pad_x = int(pad_x)
+                    self.pad_x.setText(str(pad_x))
+                    self.pad_x.setStyleSheet('* {background-color: }')
+                elif pad_x%1 != 0:
+                    self.pad_x.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    self.pad_x.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+        except ValueError:
+            valid = False
+            self.pad_y.setStyleSheet('* {background-color: rgb(255,200,200) }')
+        try: #check y_pad value
+            pad_y = self.pad_y.text()
+            if pad_y == "":
+                self.pad_y.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+            else:
+                pad_y = float(self.pad_y.text())
+                if pad_y%1 == 0 and pad_y >= 0:
+                    pad_y = int(pad_y)
+                    self.pad_y.setText(str(pad_y))
+                    self.pad_y.setStyleSheet('* {background-color: }')
+                elif pad_y%1 != 0:
+                    self.pad_y.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    self.pad_y.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+        except ValueError:
+            valid = False
+            self.pad_y.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+        try: #check y_pad value
+            clip_x = self.clip_x.text()
+            if pad_y == "":
+                self.clip_x.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                valid = False
+            else:
+                clip_x = float(self.clip_x.text())
+                if clip_x%1 == 0 and clip_x >= 0:
+                    clip_x = int(clip_x)
+                    self.clip_x.setText(str(clip_x))
+                    self.clip_x.setStyleSheet('* {background-color: }')
+                elif clip_x%1 != 0:
+                    self.clip_x.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+                else:
+                    self.pad_y.setStyleSheet('* {background-color: rgb(255,200,200) }')
+                    valid = False
+        except ValueError:
+            valid = False
+            self.clip_x.setStyleSheet('* {background-color: rgb(255,200,200) }')
+
+
+        return valid
+

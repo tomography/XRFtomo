@@ -55,6 +55,8 @@ import numpy as np
 class SinogramActions(QtWidgets.QWidget):
     def __init__(self):
         super(SinogramActions, self).__init__()
+        self.x_shifts = None
+        self.y_shifts = None
     # def runCenterOfMass(self, element, data, thetas):
     #     '''
     #     Center of mass alignment
@@ -558,7 +560,14 @@ class SinogramActions(QtWidgets.QWidget):
 
         '''
         try:
+            #unalign first, y_axis possibly inverted. 
+            num_projections = data.shape[1]
+            x_shifts = self.x_shifts
+            y_shifts = self.y_shifts
+            for i in range(num_projections):
+                data = self.shiftProjection(data,-x_shifts[i],y_shifts[i], i)
 
+            #read alignment data
             file = open(fileName[0], 'r')
             read = file.readlines()
             datacopy = np.zeros(data.shape)
@@ -567,6 +576,7 @@ class SinogramActions(QtWidgets.QWidget):
             num_projections = data.shape[1]
             y_shifts = np.zeros(num_projections)
             x_shifts = np.zeros(num_projections)
+
             for i in range(num_projections):
                 j = i + 1
                 secondcol = read[j].rfind(",")

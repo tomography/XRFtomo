@@ -67,11 +67,15 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.method = QtWidgets.QComboBox(self)
         self.method.setFixedWidth(button1size)
         self.btn = QtWidgets.QPushButton('Reconstruct')
-        self.btn.setFixedWidth(button2size)
+        self.btn.setFixedWidth(button2size)     
         self.btn2 = QtWidgets.QPushButton('recon & save all')
         self.btn2.setFixedWidth(button2size)
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setFixedWidth(button3size)
+        self.equalizeBtn = QtWidgets.QPushButton('equalize')
+        self.equalizeBtn.setFixedWidth(button2size)   
+        self.rmHotspotBtn = QtWidgets.QPushButton('remove hotspot')
+        self.rmHotspotBtn.setFixedWidth(button2size)   
 
         self.start_lbl = QtWidgets.QLabel("bottom cross-section index")
         self.start_lbl.setFixedWidth(button12sie)
@@ -87,14 +91,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.mid_indx.setFixedWidth(button4size)
         self.mid_indx.setDisabled(True)
         self.recon_stats = QtWidgets.QCheckBox("show reconstructions statistics")
-        self.recon_stats.setChecked(False)
-        padding_lbl = QtWidgets.QLabel("pad edges ")
-        padding_x_lbl = QtWidgets.QLabel("pad edges ")
-        padding_y_lbl = QtWidgets.QLabel("pad edges ")
-        self.padding_x = QtWidgets.QLineEdit("0")
-        self.padding_y = QtWidgets.QLineEdit("0")
-
-
         self.recon_stats.setChecked(False)
 
         self.mulBtn = QtWidgets.QPushButton("x 10")
@@ -132,11 +128,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         midBox.addWidget(self.mid_lbl)
         midBox.addWidget(self.mid_indx)
         paddingBox = QtWidgets.QHBoxLayout()
-        paddingBox.addWidget(padding_lbl)
-        paddingBox.addWidget(padding_x_lbl)
-        paddingBox.addWidget(self.padding_x)
-        paddingBox.addWidget(padding_y_lbl)
-        paddingBox.addWidget(self.padding_y)
 
         mdBox = QtWidgets.QHBoxLayout()
         mdBox.addWidget(self.mulBtn)
@@ -159,6 +150,10 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         reconBox = QtWidgets.QHBoxLayout()
         reconBox.addWidget(self.btn)
         reconBox.addWidget(self.btn2)
+        postReconBox = QtWidgets.QHBoxLayout()
+        postReconBox.addWidget(self.equalizeBtn)
+        postReconBox.addWidget(self.rmHotspotBtn)
+
 
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)
@@ -176,5 +171,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addLayout(betaBox)
         vb.addLayout(deltaBox)
         vb.addLayout(reconBox)
+        vb.addLayout(postReconBox)
+
         
         self.setLayout(vb)

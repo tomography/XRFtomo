@@ -109,6 +109,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.reshapeBtn.clicked.connect(self.ViewControl.reshape_options.show)
         self.ViewControl.run_reshape.clicked.connect(self.reshape_params)
+        self.ViewControl.padBtn.clicked.connect(self.ViewControl.padding_options.show)
+        self.ViewControl.run_padding.clicked.connect(self.pad_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
         # self.ViewControl.gaussian55Btn.clicked.connect(self.actions.gauss55)
@@ -399,7 +401,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.actions.bounding_analysis(img)
 
     def reshape_params(self):
-
         valid = self.ViewControl.validate_reshape_parameters()
         if not valid:
             return
@@ -415,6 +416,30 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.dataChangedSig.emit(data)
         self.refreshSig.emit()
         pass
+
+    def pad_params(self):
+        data = self.data
+        padding_x = int(eval(self.ViewControl.pad_x.text()))
+        padding_y = int(eval(self.ViewControl.pad_y.text()))
+        clip_x = int(eval(self.ViewControl.clip_x.text()))
+        x_shifts = self.x_shifts
+        y_shifts = self.y_shifts
+        x_dimension = data.shape[3]
+        y_dimension = data.shape[2]
+        valid = self.ViewControl.validate_padding_parameters()
+
+        if valid:
+            data = self.actions.padData(self.data, padding_x, padding_y, x_shifts, y_shifts, clip_x)
+            for i in range(len(self.x_shifts)):
+                #TODO: if xy_shift exceeds xy dimension, then apply 2xy_padding_xy, else, dont.
+                if x_shifts[i] > x_dimension:
+                    x_shifts[i] = x_shifts[i] - x_dimension
+                if y_shifts[i] > y_dimension:
+                    y_shifts[i] = y_shifts[i] - y_dimension
+                data = self.actions.shiftProjection(data, x_shifts[i], y_shifts[i], i)
+
+        self.dataChangedSig.emit(data)
+        return data
 
     def save_analysis(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()

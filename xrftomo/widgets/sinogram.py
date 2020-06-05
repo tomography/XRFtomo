@@ -736,11 +736,11 @@ class SinogramWidget(QtWidgets.QWidget):
 
         if fileName[0] == "":
             return
-            
-        self.restoreSig.emit()
-        data = self.data
+        data = self.data.copy()
         try:
             data, x_shifts, y_shifts = self.actions.alignFromText2(fileName, data)
+            self.restoreSig.emit()
+                
         except TypeError:
             return
         self.dataChangedSig.emit(data)

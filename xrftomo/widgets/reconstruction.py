@@ -62,6 +62,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl = xrftomo.ReconstructionControlsWidget()
         self.ReconView = xrftomo.ReconView(self)
         self.actions = xrftomo.ReconstructionActions()
+        self.actions2 = xrftomo.ImageProcessActions()
 
         self.file_name_title = QtWidgets.QLabel("_")
         lbl1 = QtWidgets.QLabel("x pos:")
@@ -84,6 +85,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.btn.clicked.connect(self.reconstruct_params)
+        self.ViewControl.equalizeBtn.clicked.connect(self.equalize_params)
+        self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
+
         self.ViewControl.btn2.clicked.connect(self.reconstruct_all_params)
         self.ViewControl.mulBtn.clicked.connect(self.call_reconMultiply)
         self.ViewControl.divBtn.clicked.connect(self.call_reconDivide)
@@ -199,23 +203,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         data = self.data[:,:,start_indx:end_indx,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
 
-        padding_x = int(eval(self.ViewControl.padding_x.text()))
-        padding_y = int(eval(self.ViewControl.padding_y.text()))
-
-        x_shifts = self.x_shifts
-        y_shifts = self.y_shifts
-        x_dimension = data.shape[3]
-        y_dimension = data.shape[2]
-        if padding_x > 0 or padding_y > 0:
-            data = self.padData(self.data_original, padding_x, padding_y)
-            for i in range(len(self.x_shifts)):
-                #TODO: if xy_shift exceeds xy dimension, then apply 2xy_padding_xy, else, dont.
-                if x_shifts[i] > x_dimension:
-                    x_shifts[i] = x_shifts[i] - x_dimension
-                if y_shifts[i] > y_dimension:
-                    y_shifts[i] = y_shifts[i] - y_dimension
-                data = self.actions.shiftProjection(data, self.x_shifts[i], self.y_shifts[i], i)
-
         self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
@@ -239,54 +226,12 @@ class ReconstructionWidget(QtWidgets.QWidget):
         mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
         data = self.data[:,:,start_indx:end_indx,:]
 
-        padding_x = int(eval(self.ViewControl.padding_x.text()))
-        padding_y = int(eval(self.ViewControl.padding_y.text()))
-
-        if padding_x > 0 or padding_y > 0:
-            data = self.padData(self.data_original, padding_x, padding_y)
-            for i in range(len(self.x_shifts)):
-                data = self.actions.shiftProjection(data, self.x_shifts[i], self.y_shifts[i], i)
-
         self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas)
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
         self.reconChangedSig.emit(self.recon)
         return
-
-    def padData(self,data,x,y):
-
-        data_shape = data.shape
-
-        if len(data_shape) == 4:
-            new_data = np.zeros([data_shape[0], data_shape[1], data_shape[2]+y*2, data_shape[3]+x*2])
-            if x == 0:
-                new_data[:,:,y:-y,:] = data
-            elif y == 0:
-                new_data[:,:,:,x:-x] = data
-            else:
-                new_data[:,:,y:-y,x:-x] = data
-
-        elif len(data_shape) == 3:
-            new_data = np.zeros([data_shape[0], data_shape[1]+y*2, data_shape[2]+x*2])
-            if x == 0:
-                new_data[:,y:-y,:] = data
-            elif y == 0:
-                new_data[:,:,x:-x] = data
-            else:
-                new_data[:,y:-y,x:-x] = data
-
-        elif len(data_shape) == 2: 
-            new_data = np.zeros([data_shape[1]+y*2, data_shape[2]+x*2])
-            if x == 0:
-                new_data[y:-y,:] = data
-            elif y == 0:
-                new_data[:,x:-x] = data
-            else:
-                new_data[:,y:-y,x:-x] = data
-        else: 
-            print("incompatible data shape")
-        return new_data
 
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
@@ -334,6 +279,16 @@ class ReconstructionWidget(QtWidgets.QWidget):
             self.ViewControl.mid_indx.setEnabled(True)
         else:
             self.ViewControl.mid_indx.setEnabled(False)
+
+    def equalize_params(self):
+        recon = self.recon 
+        recon = self.actions.equalize_recon(recon)
+        self.update_recon_image()
+        
+    def rm_hotspot_params(self):
+        recon = self.recon 
+        recon = self.actions.remove_hotspots(recon)
+        self.update_recon_image()
 
     def update_recon_image(self):
         index = self.sld.value()
