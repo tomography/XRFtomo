@@ -200,7 +200,7 @@ class xrftomoGui(QtGui.QMainWindow):
         #data dimensions changed
         self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
         self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
-
+        self.imageProcessWidget.padSig.connect(self.update_padding)
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
         self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)
@@ -269,9 +269,38 @@ class xrftomoGui(QtGui.QMainWindow):
         analysis.addAction(scatterPlotAction)
         scatterPlotAction.triggered.connect(self.scatterPlot)
 
+        """ manual sub-pixel shifting did not work as anticipated, but do not want to abamdon the idea yet. 
+        # subPixShift = QtGui.QMenu("Sub pixel shift", self)
+        # ag = QtGui.QActionGroup(subPixShift, exclusive=True)
+        # self.subPix_1 = ag.addAction(QtGui.QAction('1', subPixShift, checkable=True))
+        # subPixShift.addAction(self.subPix_1)
+        # self.subPix_1.setChecked(True)
+        # self.subPix_1.triggered.connect(self.subPixShiftChanged)
+
+        # self.subPix_05 = ag.addAction(QtGui.QAction('0.5', subPixShift, checkable=True))
+        # subPixShift.addAction(self.subPix_05)
+        # self.subPix_05.triggered.connect(self.subPixShiftChanged)
+
+        # self.subPix_025 = ag.addAction(QtGui.QAction('0.25', subPixShift, checkable=True))
+        # subPixShift.addAction(self.subPix_025)
+        # self.subPix_025.triggered.connect(self.subPixShiftChanged)
+
+        # self.subPix_01 = ag.addAction(QtGui.QAction('0.1', subPixShift, checkable=True))
+        # subPixShift.addAction(self.subPix_01)
+        # self.subPix_01.triggered.connect(self.subPixShiftChanged)
+        """
+
+
+        # viewStatAct = QAction('View statusbar', self, checkable=True)
+        # viewStatAct.setStatusTip('View statusbar')
+        # viewStatAct.setChecked(True)
+        # viewStatAct.triggered.connect(self.toggle_sps)
+
         self.toolsMenu = menubar.addMenu("Tools")
         self.toolsMenu.addMenu(analysis)
+        # self.toolsMenu.addMenu(subPixShift)
         self.toolsMenu.setDisabled(True)
+
 
         self.viewMenu = menubar.addMenu("View")
         # self.aspectChkbx= QtWidgets.QCheckBox("Aspect ratio locked")
@@ -472,16 +501,37 @@ class xrftomoGui(QtGui.QMainWindow):
         self.slope_value.returnPressed.connect(self.slopeEntered)
         self.first_run = True
 
+    def update_padding(self, x,y):
+        self.sinogramWidget.x_padding_hist.append(x)
+        self.sinogramWidget.y_padding_hist.append(y)
+
+    # def subPixShiftChanged(self):
+
+    #     shift_size_arr = np.array([1,0.5,0.25,0.1])
+    #     bool_arr = [self.subPix_1.isChecked(), self.subPix_05.isChecked(), self.subPix_025.isChecked(),self.subPix_01.isChecked()]
+    #     shift_size = shift_size_arr[bool_arr.index(True)]
+    #     print(str(shift_size))
+
+    #     self.sinogramWidget.sub_pixel_shift = shift_size
+
+    #     return
+
     def updateScatter(self):
         if self.first_run:
             self.scatterWidget.ROI.endpoints[1].setPos(self.data[0,0].max(), self.data[0,0].max())
+            e1 = 0
+            e2 = 0
+
             self.first_run = False
+
+        else:
+            e1 = self.elem1_options.currentIndex()
+            e2 = self.elem2_options.currentIndex()
 
         self.projection_sld.setRange(0, self.data.shape[1]-1)
         self.elem1_options.currentIndexChanged.disconnect(self.updateScatter)
         self.elem2_options.currentIndexChanged.disconnect(self.updateScatter)
-        e1 = self.elem1_options.currentIndex()
-        e2 = self.elem2_options.currentIndex()
+
         proj_indx = self.projection_sld.value()
         self.elem1_options.clear()
         self.elem2_options.clear()
@@ -501,7 +551,6 @@ class xrftomoGui(QtGui.QMainWindow):
             self.elem1_options.setCurrentIndex(0)
             self.elem2_options.setCurrentIndex(0)
 
-        #TODO: errors out when loading new dataset without closing program
         elem1 = self.data[e1,proj_indx]
         elem1 = elem1.flatten()
         elem2 = self.data[e2, proj_indx]
@@ -1030,6 +1079,7 @@ class xrftomoGui(QtGui.QMainWindow):
             self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
             self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
             #populate scatter plot combo box windows
+            self.first_run = True
             self.updateScatter()
             self.app.restoreOverrideCursor()
 
@@ -1066,7 +1116,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.editMenu.setDisabled(False)
         self.toolsMenu.setDisabled(False)
         self.viewMenu.setDisabled(False)
-        # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_history(self.data)
         self.update_alignment(self.x_shifts, self.y_shifts)
         self.refreshUI()
@@ -1279,6 +1328,8 @@ class xrftomoGui(QtGui.QMainWindow):
             self.x_shifts = np.zeros(self.data.shape[1], dtype=np.int)
             self.y_shifts = np.zeros(self.data.shape[1], dtype=np.int)
             self.centers = [100,100,self.data.shape[3]//2]
+            self.sinogramWidget.x_padding_hist = [0]
+            self.sinogramWidget.y_padding_hist = [0]
             self.update_history(self.data)
             self.update_slider_range(self.thetas)
 
@@ -1298,6 +1349,72 @@ class xrftomoGui(QtGui.QMainWindow):
         #divide data[elem2] by data[elem1], plot this.
 
 
+    def xy_power(self):
+
+        # dc=pylab.average(ti)
+        # dc_img=ti-dc #substract dc value
+        # x_axis=f1['MAPS']['x_axis'] #Get the array of x_axis
+        # n_x=len(x_axis) #get the number of steps in x direction
+        # x_delta_um=abs(x_axis[n_x-1]-x_axis[0])/n_x  #calculate the stepsize in x direction
+
+        # f1=h5py.File(input_path)#read the HDF5 file
+        # a=f1['MAPS']['mca_arr']
+        # ti=a[channel,:,:] # select the channel associated with Ti fluorescence peak from XRF dectector 0
+        # #for i in range(19):
+        #    # ti+=a[channel+i,:,:]
+
+        # fft_img=fft2(dc_img)
+        # Fc_img=fftshift(fft_img)
+        # abs_img=abs(Fc_img)
+        # log_img=pylab.log(1+abs_img)
+        # power_img=(abs_img)**2# power imaging
+
+        # npiy, npix=power_img.shape
+        # x1=np.arange(npix/2)
+        # y1=np.arange(npiy/2)
+        # f_x1=x1*(1./(n_x*x_delta_um))
+        # f_y1=y1*(1./(n_x*x_delta_um))
+
+        # x_power=np.array([0 for i in range(npix/2)], dtype=np.float32)
+        # for i in range(npix/2):
+        #     x_power[i]=power_img[npiy/2][npix/2+i-1]
+        # y_power=np.array([0 for i in range(npiy/2)], dtype=np.float32)
+        # for j in range(npiy/2):
+        #     y_power[j]=power_img[npiy/2+j-1][npix/2]
+            
+        # #display fluorescence imaging
+        # plt.subplot(221)
+        # plt.imshow(ti)
+        # plt.title('Fluorescence Imaging')
+
+        # #display 2D-FFT
+        # plt.subplot(223)
+        # plt.imshow(log_img)
+        # plt.title('2D-FFT')
+
+        # #x direction power spectrum
+        # plt.subplot(222)
+        # plt.loglog(f_x1, x_power)
+        # plt.xlim((1,10))
+        # plt.title('X direction power spectrum')
+        # plt.xlabel('Spatial frequency f(um^-1)')
+        # plt.ylabel('Intensity(arb.units)')
+
+        # #y direction power spectrum
+        # plt.subplot(224)
+        # plt.loglog(f_y1, y_power)
+        # plt.xlim((1,10))
+        # plt.title('Y direction power spectrum')
+        # plt.xlabel('Spatial frequency f(um^-1)')
+        # plt.ylabel('Intensity(arb.units)')
+
+        # output_path= '/pf/esafs/edu/northwestern/k-brister/93940/data_analysed/bnp_power_spec_output/'+ os.path.splitext(filename)[0]+'_xy_directions.png'
+        # print("output_path= "+output_path) 
+        # plt.savefig(output_path)
+        # plt.show()
+
+
+        pass
 
     def corrElem(self):
         self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))

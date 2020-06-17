@@ -57,6 +57,7 @@ class SinogramActions(QtWidgets.QWidget):
         super(SinogramActions, self).__init__()
         self.x_shifts = None
         self.y_shifts = None
+        self.original_data = None
     # def runCenterOfMass(self, element, data, thetas):
     #     '''
     #     Center of mass alignment
@@ -585,6 +586,8 @@ class SinogramActions(QtWidgets.QWidget):
                 x_shifts[i] = round(float(read[j][firstcol + 1:secondcol]),2)
                 # data[:, i] = np.roll(data[:, i], x_shifts[i], axis=2)
                 # data[:, i] = np.roll(data[:, i], y_shifts[i],, axis=1)
+                # TODO:  check padding amount and adjust alignment if necessary 
+
                 data = self.shiftProjection(data,x_shifts[i],-y_shifts[i],i)
 
             file.close()

@@ -62,6 +62,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     ySizeChangedSig = pyqtSignal(int, name='ySizeChangedSig')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
     refreshSig = pyqtSignal(name='refreshSig')
+    padSig = pyqtSignal(int, int, name="padSig")
 
     def __init__(self):
         super(ImageProcessWidget, self).__init__()
@@ -438,6 +439,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
                     y_shifts[i] = y_shifts[i] - y_dimension
                 data = self.actions.shiftProjection(data, x_shifts[i], y_shifts[i], i)
 
+        # self.padSig.emit(x,y)
         self.dataChangedSig.emit(data)
         return data
 

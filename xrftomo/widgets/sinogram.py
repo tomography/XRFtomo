@@ -71,6 +71,9 @@ class SinogramWidget(QtWidgets.QWidget):
         self.imageView = xrftomo.ImageView()
         self.diffView = xrftomo.differenceView()
         self.actions = xrftomo.SinogramActions()
+        self.x_padding_hist = [0]
+        self.y_padding_hist = [0]
+        self.sub_pixel_shift = 1
 
         self.view_options = QtWidgets.QComboBox()
         self.view_options.setFixedWidth(button2size)
@@ -186,7 +189,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.stack1.setLayout(vb)
 
     def stack2UI(self):
-
         lbl = QtWidgets.QLabel('Angle')
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(lbl)
@@ -237,51 +239,51 @@ class SinogramWidget(QtWidgets.QWidget):
     def keyProcess(self, command):
         index = self.sld3.value()
         data = self.data
-
+        sps = self.sub_pixel_shift
         if command == 'left':
-            self.x_shifts[index] -=1
-            data = self.actions.shiftProjection(self.data, -1, 0, index)
+            self.x_shifts[index] -= sps
+            data = self.actions.shiftProjection(self.data, -sps, 0, index)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             return
         if command == 'right':
-            self.x_shifts[index] +=1
-            data = self.actions.shiftProjection(self.data, 1, 0, index)
+            self.x_shifts[index] +=sps
+            data = self.actions.shiftProjection(self.data, sps, 0, index)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             return
         if command == 'up':
-            self.y_shifts[index] +=1
-            data = self.actions.shiftProjection(self.data, 0, -1, index)
+            self.y_shifts[index] +=sps
+            data = self.actions.shiftProjection(self.data, 0, -sps, index)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             return
         if command == 'down':
-            self.y_shifts[index] -=1
-            data = self.actions.shiftProjection(self.data, 0, 1, index)
+            self.y_shifts[index] -=sps
+            data = self.actions.shiftProjection(self.data, 0, sps, index)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
         if command == 'shiftLeft':
-            self.x_shifts -=1
-            data = self.actions.shiftStack(self.data, -1, 0)
+            self.x_shifts -=sps
+            data = self.actions.shiftStack(self.data, -sps, 0)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             return
         if command == 'shiftRight':
-            self.x_shifts +=1
-            data = self.actions.shiftStack(self.data, 1, 0)
+            self.x_shifts +=sps
+            data = self.actions.shiftStack(self.data, sps, 0)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             return
         if command == 'shiftUp':
-            self.y_shifts +=1
-            data = self.actions.shiftStack(self.data, 0, -1)
+            self.y_shifts +=sps
+            data = self.actions.shiftStack(self.data, 0, -sps)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             return
         if command == 'shiftDown':
-            self.y_shifts -=1
-            data = self.actions.shiftStack(self.data, 0, 1)
+            self.y_shifts -=sps
+            data = self.actions.shiftStack(self.data, 0, sps)
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             return

@@ -133,7 +133,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 		return recon
 
 	def assessRecon(self,recon, data, thetas, mid_indx, show_plots=True):
-
+		mid_indx = mid_indx - 1
 		#TODO: make sure cros-section index does not exceed the data height
 		#get index where projection angle is zero
 		zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]
