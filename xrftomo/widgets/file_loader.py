@@ -267,8 +267,13 @@ class FileTableWidget(QtWidgets.QWidget):
 
         if ext == '*.tiff' or ext == ".tiff" or ext == ".tif" or ext == "*.tif":
             # TODO: when loading from filemenu, check only files which were selected
-            self.elementTableModel.arrayData = []
+            for i in range(1,len(self.elementTableModel.arrayData)):
+                self.elementTableModel.arrayData.pop()
+            self.elementTableModel.arrayData[0].element_name = "Channel_1"
+            self.elementTableModel.arrayData[0].use = True
+
             self.imageTag.setEnabled(False)
+            self.elementTag.setEnabled(False)
             self.dataTag.setEnabled(False)
             self.quant_options.setEnabled(False)
             self.message.setText("Load angle information using txt or csv file")

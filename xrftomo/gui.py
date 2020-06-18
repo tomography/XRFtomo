@@ -933,13 +933,17 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.thetas = [float(list(thetas)[i]) for i in range(len(thetas))]
         self.fnames = [str(list(self.fnames)[i]) for i in range(len(self.fnames))]
+        sorted_index = np.argsort(self.thetas)
+        self.thetas = np.asarray(self.thetas)[sorted_index]
+        self.fnames = np.asarray(self.fnames)[sorted_index]
+
         for i in range(len(self.thetas)):
             self.fileTableWidget.fileTableModel.arrayData[i].theta = self.thetas[i]
             self.fileTableWidget.fileTableModel.arrayData[i].filename = self.fnames[i]
 
         #check elementtable if there any elements, if not then manually set a single element
-        if len(self.fileTableWidget.elementTableModel.arrayData) == 0:
-            self.elements = ["Element_1"]
+        if len(self.fileTableWidget.elementTableModel.arrayData) == 0 or len(self.fileTableWidget.elementTableModel.arrayData) == 1:
+            self.elements = ["Channel_1"]
 
         self.thetas = np.asarray(self.thetas)
 
@@ -1080,7 +1084,7 @@ class xrftomoGui(QtGui.QMainWindow):
             self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
             #populate scatter plot combo box windows
             self.first_run = True
-            self.updateScatter()
+
             self.app.restoreOverrideCursor()
 
             if len(self.data) == 0:
@@ -1091,6 +1095,7 @@ class xrftomoGui(QtGui.QMainWindow):
                 return
             if len(self.fnames) == 0:
                 return
+            self.updateScatter()
 
         self.centers = [100,100,self.data.shape[3]//2]
         self.x_shifts = np.zeros(self.data.shape[1], dtype=np.int)

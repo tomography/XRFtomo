@@ -158,7 +158,16 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 
 	def reshape_data(self, data, x_upscale, y_upscale):
-		new_data = data.repeat(y_upscale, axis=2).repeat(x_upscale, axis=3)
+		if x_upscale < 1:
+			pass
+		else: 
+			new_data = data.repeat(x_upscale, axis=3)
+
+		if y_upscale < 1: 
+			pass
+		else:
+			new_data = data.repeat(y_upscale, axis=2)
+
 		return new_data
 
 	def padData(self,data,x,y, x_shifts, y_shifts, clip_edges):
