@@ -92,6 +92,9 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.mid_indx.setDisabled(True)
         self.recon_stats = QtWidgets.QCheckBox("show reconstructions statistics")
         self.recon_stats.setChecked(False)
+        self.recon_save = QtWidgets.QCheckBox("reconstruct & save simultaneously")
+        self.recon_save.setChecked(False)
+
 
         self.mulBtn = QtWidgets.QPushButton("x 10")
         self.mulBtn.setFixedWidth(button2size)
@@ -163,6 +166,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addLayout(midBox)
         vb.addLayout(paddingBox)
         vb.addWidget(self.recon_stats)
+        vb.addWidget(self.recon_save)
         vb.addWidget(self.lbl)
         vb.addLayout(mdBox)
         vb.addLayout(maxBox)

@@ -147,14 +147,20 @@ class SaveOptions(object):
 		except: 
 			print("Something went horribly wrong.")
 
-	def save_reconstruction(self, recon, savedir=None):
+	def save_reconstruction(self, recon, savedir = None, index=-1):
 		try:
 			if savedir == "":
 				raise IOError
 			if savedir == None:
 				savedir = QtGui.QFileDialog.getSaveFileName()[0]
-			recon = tomopy.circ_mask(recon, axis=0)
-			dxchange.writer.write_tiff_stack(recon, fname=savedir)
+			if index == -1:
+				recon = tomopy.circ_mask(recon, axis=0)
+				dxchange.writer.write_tiff_stack(recon, fname=savedir)
+			if index != -1:
+				recon = tomopy.circ_mask(recon, axis=0)
+				indx = "0000"
+				recon_index = indx[:-len(str(index))]+str(index)
+				io.imsave(savedir+"_"+str(recon_index)+".tif", recon[0])
 			return
 		except IOError:
 			print("type the header name")

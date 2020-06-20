@@ -43,7 +43,7 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import pyqtgraph
@@ -63,6 +63,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ReconView = xrftomo.ReconView(self)
         self.actions = xrftomo.ReconstructionActions()
         self.actions2 = xrftomo.ImageProcessActions()
+        self.writer = xrftomo.SaveOptions()
 
         self.file_name_title = QtWidgets.QLabel("_")
         lbl1 = QtWidgets.QLabel("x pos:")
@@ -202,6 +203,32 @@ class ReconstructionWidget(QtWidgets.QWidget):
         mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
         data = self.data[:,:,start_indx:end_indx,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
+        num_xsections = data.shape[2]
+
+        if self.ViewControl.recon_save.isChecked():
+            try:
+                # savedir = QtGui.QFileDialog.getSaveFileName()[0]
+                savedir = '/Users/fabriciomarin/Documents/scans/Lin_XRF_tomo/Lin_3D2/testing/ptycho'
+
+                if savedir == "":
+                    raise IOError
+                if savedir == None:
+                    return
+            except IOError:
+                print("type the header name")
+            except: 
+                print("Something went horribly wrong.")
+
+            #reconstruct one ccross section at a time and save after each loop/completion. 
+            recons = np.zeros((data.shape[2],data.shape[3], data.shape[3]))
+            xsection = np.zeros((1,data.shape[1],1, data.shape[3]))
+            start_idx = int(eval(self.ViewControl.start_indx.text()))
+            for i in range(num_xsections):
+                xsection[:,:,0] = data[:,:,i]
+                recon = self.actions.reconstruct(xsection, element, center, method, beta, delta, iters, thetas, 0, False)
+                recons[i] = recon
+                self.writer.save_reconstruction(recon, savedir, start_idx+i)
+
 
         self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
         self.ViewControl.mulBtn.setEnabled(True)
