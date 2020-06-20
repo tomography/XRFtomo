@@ -228,9 +228,10 @@ class ReconstructionWidget(QtWidgets.QWidget):
                 recon = self.actions.reconstruct(xsection, element, center, method, beta, delta, iters, thetas, 0, False)
                 recons[i] = recon
                 self.writer.save_reconstruction(recon, savedir, start_idx+i)
-
-
-        self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
+            self.recons = recons
+        else:
+            self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
+        
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
