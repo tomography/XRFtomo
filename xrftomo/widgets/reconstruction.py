@@ -224,11 +224,12 @@ class ReconstructionWidget(QtWidgets.QWidget):
             xsection = np.zeros((1,data.shape[1],1, data.shape[3]))
             start_idx = int(eval(self.ViewControl.start_indx.text()))
             for i in range(num_xsections):
-                xsection[:,:,0] = data[:,:,i]
+                j = num_xsections-i-1
+                xsection[:,:,0] = data[:,:,j]
                 recon = self.actions.reconstruct(xsection, element, center, method, beta, delta, iters, thetas, 0, False)
                 recons[i] = recon
                 self.writer.save_reconstruction(recon, savedir, start_idx+i)
-            self.recons = recons
+            self.recon = np.array(recons)
         else:
             self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
         
