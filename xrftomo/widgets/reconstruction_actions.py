@@ -77,7 +77,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 		if method == 0:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
 				algorithm='mlem', center=recCenter, num_iter=iters, accelerated=True, device='cpu')
-			self.recons /= 0.0070430035033585735
+			self.recon /= 0.0070430035033585735
 		elif method == 1:
 			# TODO: gridrec fails and cannot recover, all of python shuts down. consider removing.
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
@@ -108,6 +108,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 				algorithm='tv', center=recCenter,
 				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
 
+		self.recon[self.recon<0] = 0
 		#tomopy.remove_nan() does not remove inf values
 		self.recon = tomopy.remove_nan(self.recon)
 
@@ -137,7 +138,6 @@ class ReconstructionActions(QtWidgets.QWidget):
 		return recon
 
 	def assessRecon(self,recon, data, thetas, mid_indx, show_plots=True):
-		mid_indx = mid_indx - 1
 		#TODO: make sure cros-section index does not exceed the data height
 		#get index where projection angle is zero
 		zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]

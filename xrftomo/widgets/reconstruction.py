@@ -200,7 +200,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         thetas = self.thetas
         end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
         start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
-        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
+        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text())) -start_indx - 1
+
         data = self.data[:,:,start_indx:end_indx,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
         num_xsections = data.shape[2]
