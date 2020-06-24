@@ -55,6 +55,10 @@ import matplotlib.pyplot as plt
 import sys
 import matplotlib
 from os.path import expanduser
+from skimage import measure
+from matplotlib.pyplot import *
+
+
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
@@ -268,6 +272,10 @@ class xrftomoGui(QtGui.QMainWindow):
         scatterPlotAction = QtGui.QAction('Scatter Plot', self)
         analysis.addAction(scatterPlotAction)
         scatterPlotAction.triggered.connect(self.scatterPlot)
+
+        projWinAction = QtGui.QAction('reprojection', self)
+        analysis.addAction(projWinAction)
+        projWinAction.triggered.connect(self.projWindow)
 
         """ manual sub-pixel shifting did not work as anticipated, but do not want to abamdon the idea yet. 
         # subPixShift = QtGui.QMenu("Sub pixel shift", self)
@@ -500,6 +508,231 @@ class xrftomoGui(QtGui.QMainWindow):
         self.apply_globally.clicked.connect(self.sendData)
         self.slope_value.returnPressed.connect(self.slopeEntered)
         self.first_run = True
+
+
+
+
+
+
+
+        #_______________________ projecion compare window ______________________
+        self.projection_window = QtWidgets.QWidget()
+        self.projection_window.resize(1000,500)
+        self.projection_window.setWindowTitle('reprojection tools')
+
+        self.miniProjectionWidget1 = xrftomo.MiniReconView()
+        self.miniProjectionWidget2 = xrftomo.MiniReconView()
+
+        self.elem_options = QtWidgets.QComboBox()
+        self.elem_options.setFixedWidth(100)
+
+        ##_____ left blok: scatter view _____
+        hboxA1 = QtWidgets.QHBoxLayout()
+        hboxA1.addWidget(self.elem_options)
+
+        vboxA1 = QtWidgets.QVBoxLayout()
+        vboxA1.addWidget(self.miniProjectionWidget1)
+        vboxA1.addLayout(hboxA1)
+
+        ##_____ right block: recon_view _____
+        self.proj_views = QtWidgets.QComboBox()
+        views = ["recon #1", "recon #2", "recon #3", "recon #4", "recon #5", "recon #6", "recon #7", "recon #8"]        
+        for k in range(len(views)):
+            self.proj_views.addItem(views[k])
+
+        self.recon_method_a = QtWidgets.QComboBox()
+        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
+        for k in range(len(methodname)):
+            self.recon_method_a.addItem(methodname[k])
+
+        self.compare_metric = QtWidgets.QComboBox()
+        metric = ["MSE", "SSM", "pearson", "adaptive"]
+        for k in range(len(metric)):
+            self.compare_metric.addItem(metric[k])
+
+        self.recon_button_a = QtWidgets.QPushButton("reconstruct")
+        self.recon_button_a.clicked.connect(self.updateMiniReproj)
+
+        self.compare_results = QtWidgets.QLabel("-1")
+        iter_lbl = QtWidgets.QLabel("Iterations")
+        self.iter_txt = QtWidgets.QLineEdit("10")
+
+        sf_lbl = QtWidgets.QLabel("scale factor")
+        self.sf_txt = QtWidgets.QLabel("-1")
+        # [recon#][method][recon]
+        # [start_lbl][start_txt]
+        # [end_lbl][end_txt]
+        # [compare_metric][compare result lbl]
+
+        spacer = QtWidgets.QLabel("")
+
+        hboxB1 = QtWidgets.QHBoxLayout()
+        hboxB1.addWidget(self.proj_views)
+        hboxB1.addWidget(self.recon_method_a)
+        hboxB1.addWidget(self.recon_button_a)
+
+        hboxB3 = QtWidgets.QHBoxLayout()
+        hboxB3.addWidget(iter_lbl)
+        hboxB3.addWidget(self.iter_txt)
+
+        hboxB4 = QtWidgets.QHBoxLayout()
+        hboxB4.addWidget(self.compare_metric)
+        hboxB4.addWidget(self.compare_results)
+
+        hboxB5 = QtWidgets.QHBoxLayout()
+        hboxB5.addWidget(sf_lbl)
+        hboxB5.addWidget(self.sf_txt)
+
+        vboxB1 = QtWidgets.QVBoxLayout()
+        vboxB1.addWidget(self.miniProjectionWidget2)
+        vboxB1.addLayout(hboxB1)
+        vboxB1.addLayout(hboxB3)
+        vboxB1.addLayout(hboxB4)
+        vboxB1.addLayout(hboxB5)
+
+        hboxC1 = QtWidgets.QHBoxLayout()
+        hboxC1.addLayout(vboxA1)
+        hboxC1.addLayout(vboxB1)
+
+        self.projection_window.setLayout(hboxC1)
+
+        self.elem_options.currentIndexChanged.connect(self.updateMiniProj)
+        self.first_run_a = True
+
+    def updateMiniReproj(self):
+
+        e1 = self.elem_options.currentIndex()
+
+        data = self.data
+        element= e1
+
+        center = self.data.shape[3]//2
+        method = self.recon_method_a.currentIndex()
+        beta = 1
+        delta = 0.01
+        iters = self.iter_txt
+        thetas = self.thetas
+
+        try:
+            recon = self.recon
+        except:
+            return 0,0
+        self.reprojection = self.reproject(recon)
+        dummy, sf = self.compare_projections(self.compare_metric.currentIndex(), self.proj, self.reprojection)
+        
+        self.reprojection /= sf
+        results, dummy = self.compare_projections(self.compare_metric.currentIndex(), self.proj, self.reprojection)
+
+        self.compare_results.setText(str(results))
+        self.sf_txt.setText(str(sf))
+
+        self.miniProjectionWidget2.reconView.setImage(self.reprojection)
+        return
+
+
+    def reproject(self, recon):
+        num_slices = recon.shape[0]
+        width = recon.shape[1]
+        reprojection = np.zeros([num_slices, width])
+        tmp = np.zeros([num_slices, width])
+
+        for i in range(num_slices):
+            reprojection[i] = np.sum(recon[i], axis=0)
+
+        return reprojection
+
+    def compare_projections(self, metric, projA, projB):
+        d = len(projA)
+        if d < 2:
+            return 0, 0
+
+        if metric == 0: #MSE
+            err = projA - projB
+            #mean squared error
+            result = (np.square(err)).mean(axis=None)
+            sf = np.sum(projB)/np.sum(projA)
+
+        elif metric == 1: #SSM
+            errMat = np.zeros(projA.shape[0])
+            simMat = np.zeros(projA.shape[0])
+
+            for i in range(projA.shape[0]):
+                err = np.sum((projA[i].astype("float") - projB[i].astype("float")) ** 2)
+                err /= float(projA[i].shape[0] * projA[i].shape[1])
+                sim = measure.compare_ssim(projA[i], projB[i])
+
+                errMat[i] = err
+                simMat[i] = sim
+                errVal = np.sum(errMat)/len(errMat)
+                simVal = np.sum(simMat)/len(simMat)
+            result = simVal
+            sf = np.sum(projB)/np.sum(projA)
+
+
+        elif metric == 2: #pearson
+            result, p = stats.pearsonr(projA.flatten(), projB.flatten())
+
+            sf = np.sum(projB)/np.sum(projA)
+
+
+        elif metric == 3:
+            scaler_arr = np.zeros(projA.shape[0])
+            for i in range(projA.shape[0]):
+
+                if projA[i].max() == 0:
+                    projA[i] = np.zeros(projA.shape[1])
+                else:
+                    scaler_arr[i] = projB[i].max()/projA[i].max()
+            new_reprojection = np.asarray([projB[i]*scaler_arr[i] for i in range(len(scaler_arr))])
+            sf = np.mean(scaler_arr[scaler_arr> scaler_arr.max()*.5])
+            #mean squared error
+            result = (np.square(projA - new_reprojection)).mean(axis=None)
+
+        else:
+            result = -1
+            sf = -1
+
+
+        return result, sf
+        
+
+
+    def updateMiniProj(self):
+        thetas = self.thetas
+        if self.first_run_a:
+            e1 = 0
+            self.first_run_a = False
+
+        else:
+            e1 = self.elem_options.currentIndex()
+
+        self.elem_options.currentIndexChanged.disconnect(self.updateMiniProj)
+        self.elem_options.clear()
+
+        for i in self.elements:
+            self.elem_options.addItem(i)
+        try:
+            self.elem_options.setCurrentIndex(e1)
+            self.elem_options.setCurrentText(self.elements[e1])
+        except:
+            self.elem_options.setCurrentIndex(0)
+
+        #find where proj index angle ==0:
+        zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]
+        self.proj = self.data[e1,zero_index]
+
+        self.elem_options.currentIndexChanged.connect(self.updateMiniProj)
+        self.miniProjectionWidget1.reconView.setImage(self.proj)
+        return
+
+
+
+
+
+
+
+
+
 
     def update_padding(self, x,y):
         self.sinogramWidget.x_padding_hist.append(x)
@@ -1341,6 +1574,10 @@ class xrftomoGui(QtGui.QMainWindow):
         except AttributeError:
             print("Load dataset first")
             return
+
+    def projWindow(self):
+        self.projection_window.show()
+        self.updateMiniProj()
 
     def scatterPlot(self):
         self.scatter_window.show()

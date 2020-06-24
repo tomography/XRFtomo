@@ -150,8 +150,11 @@ class ReconstructionActions(QtWidgets.QWidget):
 				#projection for 0 angle at row i / projection for angle 0 at row i, mximum value / maximum value of recon for row i
 				#projection row / (proj max / reproj max)
 				tmp[i] = data[zero_index, i] / (data[zero_index, i].max() / np.sum(recon[i], axis=0).max())
+		#normalizing projectios against reconstruction side length, so plot appears withing image.
 		projection = tmp*width/tmp.max()
+		#normalizing reprojectios against reconstruction side length, so plot appears withing image.
 		reprojection = reprojection*width/reprojection.max()
+
 		projection_xSection = tmp[mid_indx]*width/tmp[mid_indx].max()
 		reprojection_xSection = reprojection[mid_indx]*width/reprojection[mid_indx].max()
 		#difference between reporjection and original projection at angle == 0
@@ -159,9 +162,17 @@ class ReconstructionActions(QtWidgets.QWidget):
 		err = projection - reprojection
 		#mean squared error
 		mse = (np.square(err)).mean(axis=None)
+		figure()
 		imshow(recon[mid_indx], origin='lower'), plot(projection_xSection), plot(reprojection_xSection)
 		legend(('projection', 'reprojection'), loc=1)
 		title("MSE:{}".format(np.round(mse, 4)))
+		figure()
+		imshow(projection)
+		title("projection")
+		figure()
+		imshow(reprojection)
+		title("reprojection")
+
 		if show_plots:
 			show()
 		return err, mse
