@@ -150,6 +150,11 @@ class xrftomoGui(QtGui.QMainWindow):
         configAction = QtGui.QAction('load configuration settings', self)
         configAction.triggered.connect(self.configSettings)
 
+
+        self.forceLegacy = QtGui.QAction("force legacy mode", self)
+        self.forceLegacy.setCheckable(True)
+
+
         # matcherAction = QtGui.QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
 
@@ -277,7 +282,10 @@ class xrftomoGui(QtGui.QMainWindow):
         analysis.addAction(projWinAction)
         projWinAction.triggered.connect(self.projWindow)
 
-        """ manual sub-pixel shifting did not work as anticipated, but do not want to abamdon the idea yet. 
+
+
+
+        """ manual sub-pixel shifting did not work as anticipated, but do not want to abandone the idea yet. 
         # subPixShift = QtGui.QMenu("Sub pixel shift", self)
         # ag = QtGui.QActionGroup(subPixShift, exclusive=True)
         # self.subPix_1 = ag.addAction(QtGui.QAction('1', subPixShift, checkable=True))
@@ -309,9 +317,10 @@ class xrftomoGui(QtGui.QMainWindow):
         # self.toolsMenu.addMenu(subPixShift)
         self.toolsMenu.setDisabled(True)
 
+        self.settingsMenu = menubar.addMenu("Settings")
+        self.settingsMenu.addAction(self.forceLegacy)
 
         self.viewMenu = menubar.addMenu("View")
-        # self.aspectChkbx= QtWidgets.QCheckBox("Aspect ratio locked")
         self.viewMenu.addAction(setAspectratio)
         self.viewMenu.setDisabled(True)
 
@@ -737,6 +746,7 @@ class xrftomoGui(QtGui.QMainWindow):
     def update_padding(self, x,y):
         self.sinogramWidget.x_padding_hist.append(x)
         self.sinogramWidget.y_padding_hist.append(y)
+
 
     # def subPixShiftChanged(self):
 

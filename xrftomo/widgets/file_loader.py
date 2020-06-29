@@ -221,7 +221,7 @@ class FileTableWidget(QtWidgets.QWidget):
     def onLoadDirectory(self, files = None):
         self.version = 0
 
-        #specify file extension by 'majority rule' for a given directory 
+        #specify file extension by 'majority rule' for a given directory
         if files == None:
             try:
                 filenames = os.listdir(self.dirLineEdit.text())
@@ -237,7 +237,7 @@ class FileTableWidget(QtWidgets.QWidget):
                     tmp_counter += i == j
                 if tmp_counter > counter:
                     dominant_ext = i
-                    counter = tmp_counter 
+                    counter = tmp_counter
                     self.extLineEdit.setText("*"+dominant_ext)
                     ext = dominant_ext
         else:
@@ -245,7 +245,7 @@ class FileTableWidget(QtWidgets.QWidget):
             self.extLineEdit.setText(ext)
 
 
-        #TODO: get filetablemodel to accept only the selected files and not all files in the directory. 
+        #TODO: get filetablemodel to accept only the selected files and not all files in the directory.
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         fpath = self.fileTableModel.getFirstCheckedFilePath()
 
@@ -334,7 +334,7 @@ class FileTableWidget(QtWidgets.QWidget):
             self.dataTag.setEnabled(True)
             # self.elementTag.setEnabled(True)
             self.quant_options.setEnabled(True)
-            
+
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
 
@@ -393,7 +393,7 @@ class FileTableWidget(QtWidgets.QWidget):
                 # for read
                 self.message.clear()
                 self.dataTags = {}
-               
+
 
                 for i in range(len(self.imgTags)):      #get 'data' tags and element tags
                     self.dataTags[i] = list(self.img[self.imgTags[i]])
@@ -442,8 +442,9 @@ class FileTableWidget(QtWidgets.QWidget):
             try:
                 #filtering  drop-down menu to inlcude only relevant entries.
                 self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
-                self.elementTag.currentIndexChanged.disconnect(self.getElementList)
                 self.element_tag = self.elementTag.currentText()
+                # self.elementTag.currentIndexChanged.disconnect(self.getElementList)
+                self.elementTag.disconnect()
                 self.elementTag.clear()
 
                 for i in range(len(self.elementTags[indx])):
@@ -470,7 +471,7 @@ class FileTableWidget(QtWidgets.QWidget):
             image_tag = self.imgTags[self.imageTag.currentIndex()]
             if self.dataTag.currentText() == 'scalers':
                 self.element_tag = 'scaler_names'
-            else: 
+            else:
                 self.element_tag = 'data_names'
             # element_tag = self.elementTag.currentText()
 
@@ -527,12 +528,16 @@ class FileTableWidget(QtWidgets.QWidget):
     def checkVersion(self):
         #temporary definition of 'version'
         exchange_bool = list(self.img)
+
         try:
             theta_exists = self.img[list(self.img)[0]]["theta"][()]
             self.version = 1
         except:
             print("checking file version... No version info available")
             self.version = 0
+
+        if self.parent.forceLegacy.isChecked():
+            self.version=0
 
         #Temporary hardcode version to 0 (legacy import mode)
         #self.version = 0
@@ -556,8 +561,8 @@ class FileTableWidget(QtWidgets.QWidget):
         path_files = self.fileTableModel.getAllFiles()
         #get path_files list
         thetaPV = self.thetaLineEdit.text()
-        #TODO: check to see if thetas is available under exchange tag, if not, load in 
-        #legacy mode or just check under MAPS, or throw a warning (prompt user to enable 
+        #TODO: check to see if thetas is available under exchange tag, if not, load in
+        #legacy mode or just check under MAPS, or throw a warning (prompt user to enable
         #debug tools and enter PV otherweise load thetas file.
         try:
             thetas = load_thetas(path_files, self.imgTags[self.imageTag.currentIndex()], self.version, thetaPV)
@@ -611,7 +616,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.reconstructionWidget.sld.setValue(0)
         self.parent.reconstructionWidget.recon = []
         self.parent.sinogramWidget.sld.setValue(0)
-        
+
     def onSaveDataInMemory(self):
         files = [i.filename for i in self.fileTableModel.arrayData]
         if len(files) == 0:
