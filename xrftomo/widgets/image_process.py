@@ -74,6 +74,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.imageView = xrftomo.ImageView(self)
         self.imageView = xrftomo.ImageView()
         self.actions = xrftomo.ImageProcessActions()
+        self.sub_pixel_shift = 1
 
         self.file_name_title = QtWidgets.QLabel("_")
         lbl1 = QtWidgets.QLabel("x pos:")
@@ -272,7 +273,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         index = self.sld.value()
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
-
+        sps = self.sub_pixel_shift
         # hs_group = self.ViewControl.combo3.currentIndex()
         # hs_number = self.sld.value()
         if command == 'A': #previous projection
@@ -282,43 +283,43 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.sld.setValue(self.sld.value() + 1)
             self.imageSliderChanged()
         if command == 'left':
-            self.x_shifts[index] -=1
-            data = self.actions.shiftProjection(self.data, -1, 0, index)
+            self.x_shifts[index] -=sps
+            data = self.actions.shiftProjection(self.data, -sps, 0, index)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'right':
-            self.x_shifts[index] +=1
-            data = self.actions.shiftProjection(self.data, 1, 0, index)
+            self.x_shifts[index] +=sps
+            data = self.actions.shiftProjection(self.data, sps, 0, index)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'up':
-            self.y_shifts[index] +=1
-            data = self.actions.shiftProjection(self.data, 0, -1, index)
+            self.y_shifts[index] +=sps
+            data = self.actions.shiftProjection(self.data, 0, -sps, index)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'down':
-            self.y_shifts[index] -=1
-            data = self.actions.shiftProjection(self.data, 0, 1, index) #image axis flipped
+            self.y_shifts[index] -=sps
+            data = self.actions.shiftProjection(self.data, 0, sps, index) #image axis flipped
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftLeft':
-            self.x_shifts -=1
-            data = self.actions.shiftStack(self.data, -1, 0)
+            self.x_shifts -=sps
+            data = self.actions.shiftStack(self.data, -sps, 0)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftRight':
-            self.x_shifts +=1
-            data = self.actions.shiftStack(self.data, 1, 0)
+            self.x_shifts +=sps
+            data = self.actions.shiftStack(self.data, sps, 0)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftUp':
-            self.y_shifts +=1
-            data = self.actions.shiftStack(self.data, 0, -1)
+            self.y_shifts +=sps
+            data = self.actions.shiftStack(self.data, 0, -sps)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftDown':
-            self.y_shifts -=1
-            data = self.actions.shiftStack(self.data, 0, 1)
+            self.y_shifts -=sps
+            data = self.actions.shiftStack(self.data, 0, sps)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'Delete':

@@ -285,28 +285,26 @@ class xrftomoGui(QtGui.QMainWindow):
 
 
 
-        """ manual sub-pixel shifting did not work as anticipated, but do not want to abandone the idea yet. 
-        # subPixShift = QtGui.QMenu("Sub pixel shift", self)
-        # ag = QtGui.QActionGroup(subPixShift, exclusive=True)
-        # self.subPix_1 = ag.addAction(QtGui.QAction('1', subPixShift, checkable=True))
-        # subPixShift.addAction(self.subPix_1)
-        # self.subPix_1.setChecked(True)
-        # self.subPix_1.triggered.connect(self.subPixShiftChanged)
+        subPixShift = QtGui.QMenu("Sub pixel shift", self)
+        ag = QtGui.QActionGroup(subPixShift, exclusive=True)
+        self.subPix_1 = ag.addAction(QtGui.QAction('1', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_1)
+        self.subPix_1.setChecked(True)
+        self.subPix_1.triggered.connect(self.subPixShiftChanged)
 
-        # self.subPix_05 = ag.addAction(QtGui.QAction('0.5', subPixShift, checkable=True))
-        # subPixShift.addAction(self.subPix_05)
-        # self.subPix_05.triggered.connect(self.subPixShiftChanged)
+        self.subPix_05 = ag.addAction(QtGui.QAction('2', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_05)
+        self.subPix_05.triggered.connect(self.subPixShiftChanged)
 
-        # self.subPix_025 = ag.addAction(QtGui.QAction('0.25', subPixShift, checkable=True))
-        # subPixShift.addAction(self.subPix_025)
-        # self.subPix_025.triggered.connect(self.subPixShiftChanged)
+        self.subPix_025 = ag.addAction(QtGui.QAction('5', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_025)
+        self.subPix_025.triggered.connect(self.subPixShiftChanged)
 
-        # self.subPix_01 = ag.addAction(QtGui.QAction('0.1', subPixShift, checkable=True))
-        # subPixShift.addAction(self.subPix_01)
-        # self.subPix_01.triggered.connect(self.subPixShiftChanged)
-        """
+        self.subPix_01 = ag.addAction(QtGui.QAction('10', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_01)
+        self.subPix_01.triggered.connect(self.subPixShiftChanged)
 
-
+        #
         # viewStatAct = QAction('View statusbar', self, checkable=True)
         # viewStatAct.setStatusTip('View statusbar')
         # viewStatAct.setChecked(True)
@@ -314,7 +312,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.toolsMenu = menubar.addMenu("Tools")
         self.toolsMenu.addMenu(analysis)
-        # self.toolsMenu.addMenu(subPixShift)
+        self.toolsMenu.addMenu(subPixShift)
         self.toolsMenu.setDisabled(True)
 
         self.settingsMenu = menubar.addMenu("Settings")
@@ -534,6 +532,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.elem_options = QtWidgets.QComboBox()
         self.elem_options.setFixedWidth(100)
+        spacer = QtWidgets.QLabel("")
 
         ##_____ left blok: scatter view _____
         hboxA1 = QtWidgets.QHBoxLayout()
@@ -542,29 +541,19 @@ class xrftomoGui(QtGui.QMainWindow):
         vboxA1 = QtWidgets.QVBoxLayout()
         vboxA1.addWidget(self.miniProjectionWidget1)
         vboxA1.addLayout(hboxA1)
+        vboxA1.addWidget(spacer)
+        
 
         ##_____ right block: recon_view _____
-        self.proj_views = QtWidgets.QComboBox()
-        views = ["recon #1", "recon #2", "recon #3", "recon #4", "recon #5", "recon #6", "recon #7", "recon #8"]        
-        for k in range(len(views)):
-            self.proj_views.addItem(views[k])
-
-        self.recon_method_a = QtWidgets.QComboBox()
-        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
-        for k in range(len(methodname)):
-            self.recon_method_a.addItem(methodname[k])
-
         self.compare_metric = QtWidgets.QComboBox()
         metric = ["MSE", "SSM", "pearson", "adaptive"]
         for k in range(len(metric)):
             self.compare_metric.addItem(metric[k])
 
-        self.recon_button_a = QtWidgets.QPushButton("reconstruct")
-        self.recon_button_a.clicked.connect(self.updateMiniReproj)
+        self.compare_button = QtWidgets.QPushButton("compare")
+        self.compare_button.clicked.connect(self.updateMiniReproj)
 
         self.compare_results = QtWidgets.QLabel("-1")
-        iter_lbl = QtWidgets.QLabel("Iterations")
-        self.iter_txt = QtWidgets.QLineEdit("10")
 
         sf_lbl = QtWidgets.QLabel("scale factor")
         self.sf_txt = QtWidgets.QLabel("-1")
@@ -575,18 +564,10 @@ class xrftomoGui(QtGui.QMainWindow):
 
         spacer = QtWidgets.QLabel("")
 
-        hboxB1 = QtWidgets.QHBoxLayout()
-        hboxB1.addWidget(self.proj_views)
-        hboxB1.addWidget(self.recon_method_a)
-        hboxB1.addWidget(self.recon_button_a)
-
-        hboxB3 = QtWidgets.QHBoxLayout()
-        hboxB3.addWidget(iter_lbl)
-        hboxB3.addWidget(self.iter_txt)
-
         hboxB4 = QtWidgets.QHBoxLayout()
         hboxB4.addWidget(self.compare_metric)
         hboxB4.addWidget(self.compare_results)
+        hboxB4.addWidget(self.compare_button)
 
         hboxB5 = QtWidgets.QHBoxLayout()
         hboxB5.addWidget(sf_lbl)
@@ -594,8 +575,6 @@ class xrftomoGui(QtGui.QMainWindow):
 
         vboxB1 = QtWidgets.QVBoxLayout()
         vboxB1.addWidget(self.miniProjectionWidget2)
-        vboxB1.addLayout(hboxB1)
-        vboxB1.addLayout(hboxB3)
         vboxB1.addLayout(hboxB4)
         vboxB1.addLayout(hboxB5)
 
@@ -615,13 +594,6 @@ class xrftomoGui(QtGui.QMainWindow):
         data = self.data
         element= e1
 
-        center = self.data.shape[3]//2
-        method = self.recon_method_a.currentIndex()
-        beta = 1
-        delta = 0.01
-        iters = self.iter_txt
-        thetas = self.thetas
-
         try:
             recon = self.recon
         except:
@@ -640,7 +612,11 @@ class xrftomoGui(QtGui.QMainWindow):
 
 
     def reproject(self, recon):
-        num_slices = recon.shape[0]
+        try:
+            num_slices = recon.shape[0]
+        except:
+            return
+
         width = recon.shape[1]
         reprojection = np.zeros([num_slices, width])
         tmp = np.zeros([num_slices, width])
@@ -735,29 +711,22 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
 
-
-
-
-
-
-
-
-
     def update_padding(self, x,y):
         self.sinogramWidget.x_padding_hist.append(x)
         self.sinogramWidget.y_padding_hist.append(y)
 
 
-    # def subPixShiftChanged(self):
+    def subPixShiftChanged(self):
 
-    #     shift_size_arr = np.array([1,0.5,0.25,0.1])
-    #     bool_arr = [self.subPix_1.isChecked(), self.subPix_05.isChecked(), self.subPix_025.isChecked(),self.subPix_01.isChecked()]
-    #     shift_size = shift_size_arr[bool_arr.index(True)]
-    #     print(str(shift_size))
+        shift_size_arr = np.array([1,2,5,10])
+        bool_arr = [self.subPix_1.isChecked(), self.subPix_05.isChecked(), self.subPix_025.isChecked(),self.subPix_01.isChecked()]
+        shift_size = shift_size_arr[bool_arr.index(True)]
+        print(str(shift_size))
 
-    #     self.sinogramWidget.sub_pixel_shift = shift_size
+        self.sinogramWidget.sub_pixel_shift = shift_size
+        self.imageProcessWidget.sub_pixel_shift = shift_size
 
-    #     return
+        return
 
     def updateScatter(self):
         if self.first_run:
@@ -836,7 +805,12 @@ class xrftomoGui(QtGui.QMainWindow):
         # get slope then calculate new handle pos
         x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
         y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
-        slope = y_pos/x_pos
+        try:
+            slope = y_pos/x_pos
+        except ZeroDivisionError:
+            slope = 1
+
+
         x_pos = 1/slope
         y_pos = x_pos*slope
 

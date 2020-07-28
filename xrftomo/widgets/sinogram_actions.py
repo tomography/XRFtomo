@@ -580,10 +580,10 @@ class SinogramActions(QtWidgets.QWidget):
 
             for i in range(num_projections):
                 j = i + 1
-                secondcol = read[j].rfind(",")
-                firstcol = read[j][:secondcol].rfind(",")
-                y_shifts[i] = round(float(read[j][secondcol + 1:-1]),2)
-                x_shifts[i] = round(float(read[j][firstcol + 1:secondcol]),2)
+                secondcol = round(float(read[j].split(",")[2]))
+                firstcol = round(float(read[j].split(",")[1]))
+                y_shifts[i] = secondcol
+                x_shifts[i] = firstcol
                 # data[:, i] = np.roll(data[:, i], x_shifts[i], axis=2)
                 # data[:, i] = np.roll(data[:, i], y_shifts[i],, axis=1)
                 # TODO:  check padding amount and adjust alignment if necessary 
