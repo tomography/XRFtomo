@@ -50,6 +50,8 @@ requirements:
     - dxchange
 
 test:
+  source_files:
+    - ../Menu/menu_installer.py
   imports:
     - xrftomo
 

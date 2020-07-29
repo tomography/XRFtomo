@@ -59,7 +59,6 @@ from xrftomo.widgets.difference_view import *
 from xrftomo.widgets.scatter_view import *
 from xrftomo.widgets.mini_recon_view import *
 
-
 from xrftomo.models.element_table import *
 from xrftomo.models.file_table import *
 from xrftomo.widgets.file_loader import *
@@ -79,6 +78,7 @@ from xrftomo.widgets.sinogram_controls import *
 from xrftomo.widgets.sinogram_view import *
 from xrftomo.widgets.sinogram_actions import *
 
+from xrftomo.menu_installer import *
 
 try:
     import pkg_resources
