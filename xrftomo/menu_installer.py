@@ -194,7 +194,14 @@ def install_menu():
 				activate = 'call '+ activate + '\n'
 			print('adding activate to .bat file ({})'.format(activate))
 		else:
-			AnacondaPathIndx = os.path.split(pythonexe)[0].split("\\").index("Anaconda3")
+			try:
+				AnacondaPathIndx = os.path.split(pythonexe)[0].split("\\").index("Anaconda3")
+			except ValueError:
+				try:
+					AnacondaPathIndx = os.path.split(pythonexe)[0].split("\\").index("anaconda3")
+				except ValueError:
+					print("could not find Anaconda activate script")
+
 			activate = "\\".join(os.path.split(pythonexe)[0].split("\\")[:AnacondaPathIndx+1])+"\\Scripts\\activate py36"
 			print("set activate path to {}".format(activate))
 		pexe = pythonexe
@@ -208,13 +215,6 @@ def install_menu():
 		fp.write(Script.format(activate,pexe,XRFs,args))
 		fp.close()
 		print('\nCreated xrftomo batch file xrftomo.bat in '+scriptpath)
-
-		new = False
-		oldBat = ''
-		try:
-			FileNotFoundError
-		except NameError:
-			FileNotFoundError = Exception
 
 		try:
 			import win32com.shell.shell, win32com.shell.shellcon, win32com.client

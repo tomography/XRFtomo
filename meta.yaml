@@ -48,6 +48,7 @@ requirements:
     - scikit-image
     - tomopy
     - dxchange
+    - pywin32
 
 test:
   source_files:

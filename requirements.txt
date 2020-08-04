@@ -11,3 +11,4 @@ setuptools
 scikit-image
 tomopy
 dxchange
+pywin32
