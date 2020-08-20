@@ -1,0 +1,67 @@
+
+{% set name = "XRFtomo" %}
+{% set version = "1.0.6" %}
+{% set repo = "fabricioSMarin" %}
+#tomography
+#fabricioSMarin
+
+package:
+  name: {{ name|lower }} 
+  version: {{ version }}
+
+source:
+  url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
+  sha256: 8c28dfbbadb4081e533c998931265e509ee0564696c4717d81fa840911871a80
+
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install ."
+  entry_points: 
+    - xrftomo = xrftomo.__main__:main
+  # ignore_prefix_files:
+  #   - xrftomo
+
+requirements:
+  host:
+    - python =3.6
+    - pip
+  run:
+    - python =3.6
+    - dxfile
+    - h5py
+    - matplotlib
+    - numpy
+    - pandas
+    - pyqt >=5
+    - pyqtgraph
+    - scipy
+    - seaborn
+    - setuptools
+    - scikit-image
+    - tomopy
+    - dxchange
+    - pywin32
+
+test:
+  imports:
+    - xrftomo
+
+about:
+  home: https://github.com/{{ repo }}/XRFtomo
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE.txt
+  summary: 'Tomography software for APS beamlines'
+  description: |
+    XRFtomo brings together a variety of image processing tools used for preparing, 
+    processing and reconstructing 3D renditions of samples imaged using a 
+    synchrotron-based x-ray fluorescence (XRF) microprobe or nanoprobe at the 
+    Advanced Photon Source (APS).
+  dev_url: https://github.com/{{ repo }}/XRFtomo
+
+extra:
+  recipe-maintainers:
+    - FabricioSMarin
+
+

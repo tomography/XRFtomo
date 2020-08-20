@@ -123,12 +123,10 @@ class FileTableWidget(QtWidgets.QWidget):
 
         self.elementTag_label = QtWidgets.QLabel('Elements:')
         self.elementTag_label.setFixedWidth(90)
-        self.elementTag_label.setVisible(False)
 
         self.elementTag = QtWidgets.QComboBox()
         self.elementTag.currentIndexChanged.connect(self.getElementList)
         self.elementTag.setFixedWidth(122.5)
-        self.elementTag.setVisible(False)
 
         quant_label = QtWidgets.QLabel('Normalize by:')
         quant_label.setFixedWidth(90)
@@ -277,7 +275,6 @@ class FileTableWidget(QtWidgets.QWidget):
                 pass
 
             self.imageTag.setEnabled(False)
-            self.elementTag.setEnabled(False)
             self.dataTag.setEnabled(False)
             self.quant_options.setEnabled(False)
             self.message.setText("Load angle information using txt or csv file")
@@ -309,7 +306,6 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.message.setText("no description available")
             self.thetaLineEdit.setEnabled(False)
             self.dataTag.setEnabled(False)
-            # self.elementTag.setEnabled(False)
 
             if 'MAPS' in self.imgTags:
                 self.imgTags.remove('MAPS')
@@ -332,7 +328,6 @@ class FileTableWidget(QtWidgets.QWidget):
             self.message.clear()
             self.thetaLineEdit.setEnabled(True)
             self.dataTag.setEnabled(True)
-            # self.elementTag.setEnabled(True)
             self.quant_options.setEnabled(True)
 
             for i in range(len(self.imgTags)):
@@ -422,7 +417,6 @@ class FileTableWidget(QtWidgets.QWidget):
 
                 self.thetaLineEdit.setEnabled(True)
                 self.dataTag.setEnabled(True)
-                self.elementTag.setEnabled(True)
                 self.quant_options.setEnabled(True)
 
     def getElementList(self):
