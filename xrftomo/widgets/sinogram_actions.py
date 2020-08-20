@@ -55,6 +55,9 @@ import numpy as np
 class SinogramActions(QtWidgets.QWidget):
     def __init__(self):
         super(SinogramActions, self).__init__()
+        self.x_shifts = None
+        self.y_shifts = None
+        self.original_data = None
     # def runCenterOfMass(self, element, data, thetas):
     #     '''
     #     Center of mass alignment
@@ -558,7 +561,14 @@ class SinogramActions(QtWidgets.QWidget):
 
         '''
         try:
+            #unalign first, y_axis possibly inverted. 
+            num_projections = data.shape[1]
+            x_shifts = self.x_shifts
+            y_shifts = self.y_shifts
+            for i in range(num_projections):
+                data = self.shiftProjection(data,-x_shifts[i],y_shifts[i], i)
 
+            #read alignment data
             file = open(fileName[0], 'r')
             read = file.readlines()
             datacopy = np.zeros(data.shape)
@@ -567,14 +577,19 @@ class SinogramActions(QtWidgets.QWidget):
             num_projections = data.shape[1]
             y_shifts = np.zeros(num_projections)
             x_shifts = np.zeros(num_projections)
+
             for i in range(num_projections):
                 j = i + 1
-                secondcol = read[j].rfind(",")
-                firstcol = read[j][:secondcol].rfind(",")
-                y_shifts[i] = round(float(read[j][secondcol + 1:-1]),2)
-                x_shifts[i] = round(float(read[j][firstcol + 1:secondcol]),2)
+                secondcol = round(float(read[j].split(",")[2]))
+                firstcol = round(float(read[j].split(",")[1]))
+                y_shifts[i] = secondcol
+                x_shifts[i] = firstcol
                 # data[:, i] = np.roll(data[:, i], x_shifts[i], axis=2)
                 # data[:, i] = np.roll(data[:, i], y_shifts[i],, axis=1)
+                # TODO:  check padding amount and adjust alignment if necessary 
+
+                x_shifts[i] = self.unwind(x_shifts[i], data.shape[3])
+
                 data = self.shiftProjection(data,x_shifts[i],-y_shifts[i],i)
 
             file.close()
@@ -587,6 +602,13 @@ class SinogramActions(QtWidgets.QWidget):
         except TypeError: 
             print("choose file please")
         return
+    def unwind(self, x_shift, x_range):
+        if x_shift >= x_range/2:
+            x_shift = x_shift - x_range
+        elif x_shift <= -x_range/2:
+            x_shift = x_shift + x_range
+
+        return x_shift
 
     def alignmentDone(self):
         '''send message that alignment has been done'''

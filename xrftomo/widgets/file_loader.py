@@ -123,12 +123,10 @@ class FileTableWidget(QtWidgets.QWidget):
 
         self.elementTag_label = QtWidgets.QLabel('Elements:')
         self.elementTag_label.setFixedWidth(90)
-        self.elementTag_label.setVisible(False)
 
         self.elementTag = QtWidgets.QComboBox()
         self.elementTag.currentIndexChanged.connect(self.getElementList)
         self.elementTag.setFixedWidth(122.5)
-        self.elementTag.setVisible(False)
 
         quant_label = QtWidgets.QLabel('Normalize by:')
         quant_label.setFixedWidth(90)
@@ -221,7 +219,7 @@ class FileTableWidget(QtWidgets.QWidget):
     def onLoadDirectory(self, files = None):
         self.version = 0
 
-        #specify file extension by 'majority rule' for a given directory 
+        #specify file extension by 'majority rule' for a given directory
         if files == None:
             try:
                 filenames = os.listdir(self.dirLineEdit.text())
@@ -237,7 +235,7 @@ class FileTableWidget(QtWidgets.QWidget):
                     tmp_counter += i == j
                 if tmp_counter > counter:
                     dominant_ext = i
-                    counter = tmp_counter 
+                    counter = tmp_counter
                     self.extLineEdit.setText("*"+dominant_ext)
                     ext = dominant_ext
         else:
@@ -245,7 +243,7 @@ class FileTableWidget(QtWidgets.QWidget):
             self.extLineEdit.setText(ext)
 
 
-        #TODO: get filetablemodel to accept only the selected files and not all files in the directory. 
+        #TODO: get filetablemodel to accept only the selected files and not all files in the directory.
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         fpath = self.fileTableModel.getFirstCheckedFilePath()
 
@@ -267,7 +265,15 @@ class FileTableWidget(QtWidgets.QWidget):
 
         if ext == '*.tiff' or ext == ".tiff" or ext == ".tif" or ext == "*.tif":
             # TODO: when loading from filemenu, check only files which were selected
-            self.elementTableModel.arrayData = []
+            if not self.elementTableModel.arrayData == []:
+
+                for i in range(1,len(self.elementTableModel.arrayData)):
+                    self.elementTableModel.arrayData.pop()
+                self.elementTableModel.arrayData[0].element_name = "Channel_1"
+                self.elementTableModel.arrayData[0].use = True
+            else:
+                pass
+
             self.imageTag.setEnabled(False)
             self.dataTag.setEnabled(False)
             self.quant_options.setEnabled(False)
@@ -300,7 +306,6 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.message.setText("no description available")
             self.thetaLineEdit.setEnabled(False)
             self.dataTag.setEnabled(False)
-            # self.elementTag.setEnabled(False)
 
             if 'MAPS' in self.imgTags:
                 self.imgTags.remove('MAPS')
@@ -323,9 +328,8 @@ class FileTableWidget(QtWidgets.QWidget):
             self.message.clear()
             self.thetaLineEdit.setEnabled(True)
             self.dataTag.setEnabled(True)
-            # self.elementTag.setEnabled(True)
             self.quant_options.setEnabled(True)
-            
+
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
 
@@ -384,7 +388,7 @@ class FileTableWidget(QtWidgets.QWidget):
                 # for read
                 self.message.clear()
                 self.dataTags = {}
-               
+
 
                 for i in range(len(self.imgTags)):      #get 'data' tags and element tags
                     self.dataTags[i] = list(self.img[self.imgTags[i]])
@@ -413,7 +417,6 @@ class FileTableWidget(QtWidgets.QWidget):
 
                 self.thetaLineEdit.setEnabled(True)
                 self.dataTag.setEnabled(True)
-                self.elementTag.setEnabled(True)
                 self.quant_options.setEnabled(True)
 
     def getElementList(self):
@@ -433,8 +436,9 @@ class FileTableWidget(QtWidgets.QWidget):
             try:
                 #filtering  drop-down menu to inlcude only relevant entries.
                 self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
-                self.elementTag.currentIndexChanged.disconnect(self.getElementList)
                 self.element_tag = self.elementTag.currentText()
+                # self.elementTag.currentIndexChanged.disconnect(self.getElementList)
+                self.elementTag.disconnect()
                 self.elementTag.clear()
 
                 for i in range(len(self.elementTags[indx])):
@@ -461,7 +465,7 @@ class FileTableWidget(QtWidgets.QWidget):
             image_tag = self.imgTags[self.imageTag.currentIndex()]
             if self.dataTag.currentText() == 'scalers':
                 self.element_tag = 'scaler_names'
-            else: 
+            else:
                 self.element_tag = 'data_names'
             # element_tag = self.elementTag.currentText()
 
@@ -518,19 +522,32 @@ class FileTableWidget(QtWidgets.QWidget):
     def checkVersion(self):
         #temporary definition of 'version'
         exchange_bool = list(self.img)
-        self.version = 'exchange_1' in exchange_bool
+
+        try:
+            theta_exists = self.img[list(self.img)[0]]["theta"][()]
+            self.version = 1
+        except:
+            print("checking file version... No version info available")
+            self.version = 0
+
+        if self.parent.forceLegacy.isChecked():
+            self.version=0
+
         #Temporary hardcode version to 0 (legacy import mode)
         #self.version = 0
-        if self.auto_load_settings[0]:
-            self.version = 0
-        try:
-            if self.parent.legacy_chbx.isChecked():
-                self.version = 0
-            if not self.parent.legacy_chbx.isChecked():
-                self.version = 1
-        except:
-            #checkboxes not yet defined
-            pass
+
+        # TODO: the auto_load_settings line will override non-legacy version, not good.
+        # if self.auto_load_settings[0]:
+        #     self.version = 0
+        # try:
+            # TODO: there may no longer be a legacy checkbox
+            # if self.parent.legacy_chbx.isChecked():
+            #     self.version = 0
+            # if not self.parent.legacy_chbx.isChecked():
+            #     self.version = 1
+        # except:
+        #     #checkboxes not yet defined
+        #     pass
         return self.version
 
     def onThetaUpdate(self):
@@ -538,8 +555,8 @@ class FileTableWidget(QtWidgets.QWidget):
         path_files = self.fileTableModel.getAllFiles()
         #get path_files list
         thetaPV = self.thetaLineEdit.text()
-        #TODO: check to see if thetas is available under exchange tag, if not, load in 
-        #legacy mode or just check under MAPS, or throw a warning (prompt user to enable 
+        #TODO: check to see if thetas is available under exchange tag, if not, load in
+        #legacy mode or just check under MAPS, or throw a warning (prompt user to enable
         #debug tools and enter PV otherweise load thetas file.
         try:
             thetas = load_thetas(path_files, self.imgTags[self.imageTag.currentIndex()], self.version, thetaPV)
@@ -593,7 +610,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.reconstructionWidget.sld.setValue(0)
         self.parent.reconstructionWidget.recon = []
         self.parent.sinogramWidget.sld.setValue(0)
-        
+
     def onSaveDataInMemory(self):
         files = [i.filename for i in self.fileTableModel.arrayData]
         if len(files) == 0:

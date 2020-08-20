@@ -1,6 +1,6 @@
 
 {% set name = "XRFtomo" %}
-{% set version = "1.0.1" %}
+{% set version = "1.0.6" %}
 {% set repo = "fabricioSMarin" %}
 #tomography
 #fabricioSMarin
@@ -10,22 +10,15 @@ package:
   version: {{ version }}
 
 source:
-  # path: /home/MARINF/Downloads/XRFtomo-1.0.0.tar.gz
   url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
-  # sha256: b1c7a9655e76a86ab555fb1360adcd61ae14bcd8e5397bb38c76d8750b2c84f2
-  # url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
-  # sha256: 986c4ea85c7fe8bcef274b7085209b74e8a93acd444ad1f9b947fb3f1352cbbb
-# extra:
-#   channels:
-#     - conda-forge
+  sha256: 8c28dfbbadb4081e533c998931265e509ee0564696c4717d81fa840911871a80
 
 build:
   noarch: python
   number: 0
   script: "{{ PYTHON }} -m pip install ."
-  # script: "{{ python }} setup.py install"
-  # entry_points: 
-  #   - xrftomo = xrftomo.xrftomo:main
+  entry_points: 
+    - xrftomo = xrftomo.__main__:main
   # ignore_prefix_files:
   #   - xrftomo
 
@@ -51,8 +44,6 @@ requirements:
     - pywin32
 
 test:
-  source_files:
-    - ../Menu/menu_installer.py
   imports:
     - xrftomo
 

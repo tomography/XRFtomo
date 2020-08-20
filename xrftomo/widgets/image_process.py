@@ -62,6 +62,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     ySizeChangedSig = pyqtSignal(int, name='ySizeChangedSig')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
     refreshSig = pyqtSignal(name='refreshSig')
+    padSig = pyqtSignal(int, int, name="padSig")
 
     def __init__(self):
         super(ImageProcessWidget, self).__init__()
@@ -73,6 +74,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.imageView = xrftomo.ImageView(self)
         self.imageView = xrftomo.ImageView()
         self.actions = xrftomo.ImageProcessActions()
+        self.sub_pixel_shift = 1
 
         self.file_name_title = QtWidgets.QLabel("_")
         lbl1 = QtWidgets.QLabel("x pos:")
@@ -109,6 +111,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.reshapeBtn.clicked.connect(self.ViewControl.reshape_options.show)
         self.ViewControl.run_reshape.clicked.connect(self.reshape_params)
+        self.ViewControl.padBtn.clicked.connect(self.ViewControl.padding_options.show)
+        self.ViewControl.run_padding.clicked.connect(self.pad_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
         # self.ViewControl.gaussian55Btn.clicked.connect(self.actions.gauss55)
@@ -118,6 +122,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.Equalize.clicked.connect(self.histo_params)
+        self.ViewControl.invert.clicked.connect(self.invert_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histogram)
 
         self.imageView.keyPressSig.connect(self.keyProcess)
@@ -268,7 +273,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         index = self.sld.value()
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
-
+        sps = self.sub_pixel_shift
         # hs_group = self.ViewControl.combo3.currentIndex()
         # hs_number = self.sld.value()
         if command == 'A': #previous projection
@@ -278,43 +283,43 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.sld.setValue(self.sld.value() + 1)
             self.imageSliderChanged()
         if command == 'left':
-            self.x_shifts[index] -=1
-            data = self.actions.shiftProjection(self.data, -1, 0, index)
+            self.x_shifts[index] -=sps
+            data = self.actions.shiftProjection(self.data, -sps, 0, index)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'right':
-            self.x_shifts[index] +=1
-            data = self.actions.shiftProjection(self.data, 1, 0, index)
+            self.x_shifts[index] +=sps
+            data = self.actions.shiftProjection(self.data, sps, 0, index)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'up':
-            self.y_shifts[index] +=1
-            data = self.actions.shiftProjection(self.data, 0, -1, index)
+            self.y_shifts[index] +=sps
+            data = self.actions.shiftProjection(self.data, 0, -sps, index)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'down':
-            self.y_shifts[index] -=1
-            data = self.actions.shiftProjection(self.data, 0, 1, index) #image axis flipped
+            self.y_shifts[index] -=sps
+            data = self.actions.shiftProjection(self.data, 0, sps, index) #image axis flipped
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftLeft':
-            self.x_shifts -=1
-            data = self.actions.shiftStack(self.data, -1, 0)
+            self.x_shifts -=sps
+            data = self.actions.shiftStack(self.data, -sps, 0)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftRight':
-            self.x_shifts +=1
-            data = self.actions.shiftStack(self.data, 1, 0)
+            self.x_shifts +=sps
+            data = self.actions.shiftStack(self.data, sps, 0)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftUp':
-            self.y_shifts +=1
-            data = self.actions.shiftStack(self.data, 0, -1)
+            self.y_shifts +=sps
+            data = self.actions.shiftStack(self.data, 0, -sps)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'shiftDown':
-            self.y_shifts -=1
-            data = self.actions.shiftStack(self.data, 0, 1)
+            self.y_shifts -=sps
+            data = self.actions.shiftStack(self.data, 0, sps)
             self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts)
             self.dataChangedSig.emit(data)
         if command == 'Delete':
@@ -356,6 +361,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.actions.equalize(data, element)
         self.dataChangedSig.emit(data)
 
+    def invert_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        data = self.actions.invert(data, element)
+        self.dataChangedSig.emit(data)
+
     def cut_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.actions.cut(self.data, x_pos, y_pos, x_size, y_size)
@@ -392,7 +403,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.actions.bounding_analysis(img)
 
     def reshape_params(self):
-
         valid = self.ViewControl.validate_reshape_parameters()
         if not valid:
             return
@@ -408,6 +418,31 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.dataChangedSig.emit(data)
         self.refreshSig.emit()
         pass
+
+    def pad_params(self):
+        data = self.data
+        padding_x = int(eval(self.ViewControl.pad_x.text()))
+        padding_y = int(eval(self.ViewControl.pad_y.text()))
+        clip_x = int(eval(self.ViewControl.clip_x.text()))
+        x_shifts = self.x_shifts
+        y_shifts = self.y_shifts
+        x_dimension = data.shape[3]
+        y_dimension = data.shape[2]
+        valid = self.ViewControl.validate_padding_parameters()
+
+        if valid:
+            data = self.actions.padData(self.data, padding_x, padding_y, x_shifts, y_shifts, clip_x)
+            for i in range(len(self.x_shifts)):
+                #TODO: if xy_shift exceeds xy dimension, then apply 2xy_padding_xy, else, dont.
+                if x_shifts[i] > x_dimension:
+                    x_shifts[i] = x_shifts[i] - x_dimension
+                if y_shifts[i] > y_dimension:
+                    y_shifts[i] = y_shifts[i] - y_dimension
+                data = self.actions.shiftProjection(data, x_shifts[i], y_shifts[i], i)
+
+        # self.padSig.emit(x,y)
+        self.dataChangedSig.emit(data)
+        return data
 
     def save_analysis(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()

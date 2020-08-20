@@ -72,8 +72,7 @@ __all__ = ['find_elements',
            'read_mic_xrf',
            'load_thetas',
            'load_thetas_legacy',
-           'load_thetas_9idb',
-           'load_thetas_2ide',
+           'load_thetas_new',
            'read_exchange_file',
            'read_tiffs',
            'load_thetas_file']
@@ -212,11 +211,7 @@ def load_thetas(path_files, data_tag, version, *thetaPV):
         return load_thetas_legacy(path_files, thetaPV[0])
 
     if version == 1:
-        return load_thetas_9idb(path_files, data_tag)
-
-    if version == 2:
-        return load_thetas_2ide(path_files, data_tag)
-
+        return load_thetas_new(path_files, data_tag)
 
 def load_thetas_legacy( path_files, thetaPV):
     thetaBytes = thetaPV.encode('ascii')
@@ -228,29 +223,23 @@ def load_thetas_legacy( path_files, thetaPV):
             idx = np.where(extra_pvs[0] == thetaBytes)
             if len(idx[0]) > 0:
                 thetas.append(float(extra_pvs[1][idx[0][0]]))
+            else:
+                print("warning: multiple instances of the same theta PV name.")
+        except:
+            print("error reading thetas positiong for file: {}".format(path_files[i]))
+    return thetas
+
+def load_thetas_new(path_files, data_tag):
+    thetas = []
+    for i in range(len(path_files)):
+        try:
+            hFile = h5py.File(path_files[i], "r+")
+            thetas.append(float(hFile[data_tag]['theta'][()]))
         except:
             pass
     return thetas
 
-def load_thetas_9idb(path_files, data_tag):
-    thetas = []
-    for i in range(len(path_files)):
-        try:
-            hFile = h5py.File(path_files[i], "r")
-            thetas.append(float(hFile[data_tag]['theta'][0]))
-        except:
-            pass
-    return thetas
 
-def load_thetas_2ide(path_files, data_tag):
-    thetas = []
-    for i in range(len(path_files)):
-        try:
-            hFile = h5py.File(path_files[i])
-            thetas.append(float(hFile[data_tag]['theta'][0]))
-        except:
-            pass
-    return thetas
 
 def load_thetas_file(path_file):
 
@@ -437,9 +426,9 @@ def read_exchange_file(fname):
     #misc parameters:
     data, elements, thetas = [],[],[]
     hFile = h5py.File(fname[0])
-    tmp_elements = hFile['exchange']['elements'].value
+    tmp_elements = hFile['exchange']['elements'][()]
     elements = [x.decode('utf-8') for x in tmp_elements]
-    thetas = hFile['exchange']['theta'].value
-    data = hFile['exchange']['data'].value
+    thetas = hFile['exchange']['theta'][()]
+    data = hFile['exchange']['data'][()]
     
     return data, elements, thetas

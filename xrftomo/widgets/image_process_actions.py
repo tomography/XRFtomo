@@ -136,12 +136,12 @@ class ImageProcessActions(QtWidgets.QWidget):
 		else:
 			data_a = data*x
 			data_b = data*(1-x)
-			data_b = shiftStack(data_b,x_dir,0)
+			data_b = self.shiftStack(data_b,x_dir,0)
 			data_c = data_a+data_b
 
 			data_a = data_c*y
 			data_b = data_c*(1-y)
-			data_b = shiftStack(data_b,0,y_dir)
+			data_b = self.shiftStack(data_b,0,y_dir)
 			data = data_a+data_b
 
 			return data
@@ -158,7 +158,73 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 
 	def reshape_data(self, data, x_upscale, y_upscale):
-		new_data = data.repeat(y_upscale, axis=2).repeat(x_upscale, axis=3)
+		if x_upscale < 1:
+			pass
+		else: 
+			new_data = data.repeat(x_upscale, axis=3)
+
+		if y_upscale < 1: 
+			pass
+		else:
+			new_data = data.repeat(y_upscale, axis=2)
+
+		return new_data
+
+	def padData(self,data,x,y, x_shifts, y_shifts, clip_edges):
+		data_shape = data.shape
+
+		if len(data_shape) == 4 and clip_edges>=1:
+			new_data = np.zeros([data_shape[0], data_shape[1], data_shape[2]+y*2, data_shape[3]+x*2])
+			for i in range(data.shape[1]):
+				data = self.shiftProjection(data,-x_shifts[i],-y_shifts[i], i)
+
+			if x == 0:
+				new_data[:,:,y:-y,:] = data
+			elif y == 0:
+				new_data[:,:,:,x+clip_edges:-x-clip_edges] = data[:,:,:,clip_edges:-clip_edges]
+			else:
+				new_data[:,:,y:-y,x+clip_edges:-x-clip_edges] = data[:,:,:,clip_edges:-clip_edges]
+
+			for i in range(data.shape[1]):
+				data = self.shiftProjection(data,x_shifts[i],y_shifts[i], i)
+
+		elif len(data_shape) == 4 and clip_edges==0:
+			new_data = np.zeros([data_shape[0], data_shape[1], data_shape[2]+y*2, data_shape[3]+x*2])
+			for i in range(data.shape[1]):
+				data = self.shiftProjection(data,-x_shifts[i],-y_shifts[i], i)
+
+			if x == 0:
+				new_data[:,:,y:-y,:] = data
+			elif y == 0:
+				new_data[:,:,:,x:-x] = data
+			else:
+				new_data[:,:,y:-y,x:-x] = data
+
+			for i in range(data.shape[1]):
+				data = self.shiftProjection(data,x_shifts[i],y_shifts[i], i)
+
+		else: 
+			print("data not in [elment,projection,y,x] format")
+			return
+		# elif len(data_shape) == 3:
+		#     new_data = np.zeros([data_shape[0], data_shape[1]+y*2, data_shape[2]+x*2])
+		#     if x == 0:
+		#         new_data[:,y:-y,:] = data
+		#     elif y == 0:
+		#         new_data[:,:,x:-x] = data
+		#     else:
+		#         new_data[:,y:-y,x:-x] = data
+
+		# elif len(data_shape) == 2: 
+		#     new_data = np.zeros([data_shape[1]+y*2, data_shape[2]+x*2])
+		#     if x == 0:
+		#         new_data[y:-y,:] = data
+		#     elif y == 0:
+		#         new_data[:,x:-x] = data
+		#     else:
+		#         new_data[:,y:-y,x:-x] = data
+		# else: 
+		#     print("incompatible data shape")
 		return new_data
 
 	def remove_hotspots(self, data, element):
@@ -354,6 +420,31 @@ class ImageProcessActions(QtWidgets.QWidget):
 		out = np.interp(image.flat, bin_centers, cdf)
 		out_m = np.interp(m, bin_centers, cdf)
 		return out.reshape(image.shape), out_m
+
+	def invert(self, data, element):
+		#set padding equal to max first
+
+		projection_stack = data[element]
+		num_projections = data.shape[1]
+		mean_edge = 0
+		for i in range(num_projections):
+			col_sum = np.sum(projection_stack[0], axis=0)
+			mus_loc = col_sum[::-1]
+			left_end = next((i for i, x in enumerate(col_sum) if x), None)
+			right_end = next((i for i, x in enumerate(mus_loc) if x), None)
+			mean_left = col_sum[left_end]/projection_stack.shape[1]
+			mean_right = col_sum[right_end]/projection_stack.shape[1]
+			if mean_edge < mean_left:
+				mean_edge = mean_left
+			if mean_edge < mean_right:
+				mean_edge = mean_right
+
+		# mask = [projection_stack == 0][0]*mean_edge
+		max_val = projection_stack.max()
+		mask = [projection_stack == 0][0]*max_val
+		data[element] = abs(projection_stack+mask-max_val)
+		# data[element] = projection_stack+mask		
+		return data
 
 	def cumulative_distribution(self, image, nbins=2**16):
 		hist, bin_centers = np.histogram(image, nbins)

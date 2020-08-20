@@ -43,7 +43,7 @@
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # #########################################################################
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import pyqtgraph
@@ -62,6 +62,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl = xrftomo.ReconstructionControlsWidget()
         self.ReconView = xrftomo.ReconView(self)
         self.actions = xrftomo.ReconstructionActions()
+        self.actions2 = xrftomo.ImageProcessActions()
+        self.writer = xrftomo.SaveOptions()
 
         self.file_name_title = QtWidgets.QLabel("_")
         lbl1 = QtWidgets.QLabel("x pos:")
@@ -84,6 +86,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.btn.clicked.connect(self.reconstruct_params)
+        self.ViewControl.equalizeBtn.clicked.connect(self.equalize_params)
+        self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
+
         self.ViewControl.btn2.clicked.connect(self.reconstruct_all_params)
         self.ViewControl.mulBtn.clicked.connect(self.call_reconMultiply)
         self.ViewControl.divBtn.clicked.connect(self.call_reconDivide)
@@ -98,6 +103,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.centers = None
         self.recon = None
         self.data = None
+        self.data_original = None
 
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(lbl1)
@@ -194,10 +200,40 @@ class ReconstructionWidget(QtWidgets.QWidget):
         thetas = self.thetas
         end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
         start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
-        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
+        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text())) -start_indx - 1
+
         data = self.data[:,:,start_indx:end_indx,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
-        self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
+        num_xsections = data.shape[2]
+
+        if self.ViewControl.recon_save.isChecked():
+            try:
+                savedir = QtGui.QFileDialog.getSaveFileName()[0]
+                # savedir = '/Users/fabriciomarin/Documents/scans/Lin_XRF_tomo/Lin_3D2/testing/ptycho'
+
+                if savedir == "":
+                    raise IOError
+                if savedir == None:
+                    return
+            except IOError:
+                print("type the header name")
+            except: 
+                print("Something went horribly wrong.")
+
+            #reconstruct one ccross section at a time and save after each loop/completion. 
+            recons = np.zeros((data.shape[2],data.shape[3], data.shape[3]))
+            xsection = np.zeros((1,data.shape[1],1, data.shape[3]))
+            start_idx = int(eval(self.ViewControl.start_indx.text()))
+            for i in range(num_xsections):
+                j = num_xsections-i-1
+                xsection[0,:,0] = data[element,:,j]
+                recon = self.actions.reconstruct(xsection, 0, center, method, beta, delta, iters, thetas, 0, False)
+                recons[i] = recon
+                self.writer.save_reconstruction(recon, savedir, start_idx+i)
+            self.recon = np.array(recons)
+        else:
+            self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
+        
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
@@ -209,14 +245,15 @@ class ReconstructionWidget(QtWidgets.QWidget):
         num_elements = self.ViewControl.combo1.count()
         element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
         # box_checked = self.ViewControl.cbox.isChecked()
-        center = np.array(float(self.data.shape[3]), dtype=np.float32)
+        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
         delta = float(self.ViewControl.delta.text())
         iters = int(self.ViewControl.iters.text())
         thetas = self.thetas
-        start_indx = int(self.ViewControl.start_indx.text())
-        end_indx = int(self.ViewControl.end_indx.text())
+        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
+        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
+        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
         data = self.data[:,:,start_indx:end_indx,:]
 
         self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas)
@@ -272,6 +309,16 @@ class ReconstructionWidget(QtWidgets.QWidget):
             self.ViewControl.mid_indx.setEnabled(True)
         else:
             self.ViewControl.mid_indx.setEnabled(False)
+
+    def equalize_params(self):
+        recon = self.recon 
+        recon = self.actions.equalize_recon(recon)
+        self.update_recon_image()
+        
+    def rm_hotspot_params(self):
+        recon = self.recon 
+        recon = self.actions.remove_hotspots(recon)
+        self.update_recon_image()
 
     def update_recon_image(self):
         index = self.sld.value()

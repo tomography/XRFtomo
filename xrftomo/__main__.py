@@ -28,17 +28,24 @@ def gui(args):
     except ImportError as e:
         LOG.error(str(e))
 
+def instMenu(args):
+    from xrftomo import menu_installer
+    try:
+        menu_installer.install_menu()
+    except:
+        print("Error installing menu")
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', **config.SECTIONS['general']['config'])
-    tomo_params = config.TOMO_PARAMS
+    tomo_params = config.TOMO_PARAMS 
     gui_params = tomo_params + ('gui', )
 
     cmd_parsers = [
         ('init',        init,           (),                             "Create configuration file"),
         ('rec',         rec,            tomo_params,                    "Run tomographic reconstruction using the parameters selected with the GUI"),
         ('gui',         gui,            gui_params,                     "GUI for xrftomo tomographic reconstruction"),
+        ('menu',        instMenu,       (),                             "installs desktop shortcut for XRFtomo software")
     ]
 
     subparsers = parser.add_subparsers(title="Commands", metavar='')
@@ -50,7 +57,6 @@ def main():
         cmd_parser.set_defaults(_func=func)
 
     args = config.parse_known_args(parser, subparser=True)
-
     log_level = logging.DEBUG if args.verbose else logging.INFO
     LOG.setLevel(log_level)
 

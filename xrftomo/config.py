@@ -26,7 +26,6 @@ SECTIONS['general'] = {
         'help': "File name of optional log",
         'metavar': 'FILE'}}
 
-
 SECTIONS['gui'] = {
     'show-2d': {
         'default': False,

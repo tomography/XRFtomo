@@ -55,6 +55,10 @@ import matplotlib.pyplot as plt
 import sys
 import matplotlib
 from os.path import expanduser
+from skimage import measure
+from matplotlib.pyplot import *
+
+
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
@@ -106,6 +110,9 @@ class xrftomoGui(QtGui.QMainWindow):
         saveReconstructionAction = QtGui.QAction('Reconstruction', self)
         saveReconstructionAction.triggered.connect(self.saveReconstruction)
 
+        saveRecon2npyAction = QtGui.QAction("recon as npy", self)
+        saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
+
         saveToHDFAction = QtGui.QAction('as HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
 
@@ -145,6 +152,11 @@ class xrftomoGui(QtGui.QMainWindow):
 
         configAction = QtGui.QAction('load configuration settings', self)
         configAction.triggered.connect(self.configSettings)
+
+
+        self.forceLegacy = QtGui.QAction("force legacy mode", self)
+        self.forceLegacy.setCheckable(True)
+
 
         # matcherAction = QtGui.QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
@@ -200,7 +212,7 @@ class xrftomoGui(QtGui.QMainWindow):
         #data dimensions changed
         self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
         self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
-
+        self.imageProcessWidget.padSig.connect(self.update_padding)
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
         self.sinogramWidget.alignmentChangedSig.connect(self.update_alignment)
@@ -269,12 +281,47 @@ class xrftomoGui(QtGui.QMainWindow):
         analysis.addAction(scatterPlotAction)
         scatterPlotAction.triggered.connect(self.scatterPlot)
 
+        projWinAction = QtGui.QAction('reprojection', self)
+        analysis.addAction(projWinAction)
+        projWinAction.triggered.connect(self.projWindow)
+
+
+
+
+        subPixShift = QtGui.QMenu("Sub pixel shift", self)
+        ag = QtGui.QActionGroup(subPixShift, exclusive=True)
+        self.subPix_1 = ag.addAction(QtGui.QAction('1', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_1)
+        self.subPix_1.setChecked(True)
+        self.subPix_1.triggered.connect(self.subPixShiftChanged)
+
+        self.subPix_05 = ag.addAction(QtGui.QAction('2', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_05)
+        self.subPix_05.triggered.connect(self.subPixShiftChanged)
+
+        self.subPix_025 = ag.addAction(QtGui.QAction('5', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_025)
+        self.subPix_025.triggered.connect(self.subPixShiftChanged)
+
+        self.subPix_01 = ag.addAction(QtGui.QAction('10', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_01)
+        self.subPix_01.triggered.connect(self.subPixShiftChanged)
+
+        #
+        # viewStatAct = QAction('View statusbar', self, checkable=True)
+        # viewStatAct.setStatusTip('View statusbar')
+        # viewStatAct.setChecked(True)
+        # viewStatAct.triggered.connect(self.toggle_sps)
+
         self.toolsMenu = menubar.addMenu("Tools")
         self.toolsMenu.addMenu(analysis)
+        self.toolsMenu.addMenu(subPixShift)
         self.toolsMenu.setDisabled(True)
 
+        self.settingsMenu = menubar.addMenu("Settings")
+        self.settingsMenu.addAction(self.forceLegacy)
+
         self.viewMenu = menubar.addMenu("View")
-        # self.aspectChkbx= QtWidgets.QCheckBox("Aspect ratio locked")
         self.viewMenu.addAction(setAspectratio)
         self.viewMenu.setDisabled(True)
 
@@ -282,6 +329,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveProjectionAction)
         # self.afterConversionMenu.addAction(saveHotSpotPosAction)
         self.afterConversionMenu.addAction(saveReconstructionAction)
+        self.afterConversionMenu.addAction(saveRecon2npyAction)
         self.afterConversionMenu.addAction(saveAlignemtInfoAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(saveSinogram2Action)
@@ -472,16 +520,234 @@ class xrftomoGui(QtGui.QMainWindow):
         self.slope_value.returnPressed.connect(self.slopeEntered)
         self.first_run = True
 
+
+
+
+
+
+
+        #_______________________ projecion compare window ______________________
+        self.projection_window = QtWidgets.QWidget()
+        self.projection_window.resize(1000,500)
+        self.projection_window.setWindowTitle('reprojection tools')
+
+        self.miniProjectionWidget1 = xrftomo.MiniReconView()
+        self.miniProjectionWidget2 = xrftomo.MiniReconView()
+
+        self.elem_options = QtWidgets.QComboBox()
+        self.elem_options.setFixedWidth(100)
+        spacer = QtWidgets.QLabel("")
+
+        ##_____ left blok: scatter view _____
+        hboxA1 = QtWidgets.QHBoxLayout()
+        hboxA1.addWidget(self.elem_options)
+
+        vboxA1 = QtWidgets.QVBoxLayout()
+        vboxA1.addWidget(self.miniProjectionWidget1)
+        vboxA1.addLayout(hboxA1)
+        vboxA1.addWidget(spacer)
+        
+
+        ##_____ right block: recon_view _____
+        self.compare_metric = QtWidgets.QComboBox()
+        metric = ["MSE", "SSM", "pearson", "adaptive"]
+        for k in range(len(metric)):
+            self.compare_metric.addItem(metric[k])
+
+        self.compare_button = QtWidgets.QPushButton("compare")
+        self.compare_button.clicked.connect(self.updateMiniReproj)
+
+        self.compare_results = QtWidgets.QLabel("-1")
+
+        sf_lbl = QtWidgets.QLabel("scale factor")
+        self.sf_txt = QtWidgets.QLabel("-1")
+        # [recon#][method][recon]
+        # [start_lbl][start_txt]
+        # [end_lbl][end_txt]
+        # [compare_metric][compare result lbl]
+
+        spacer = QtWidgets.QLabel("")
+
+        hboxB4 = QtWidgets.QHBoxLayout()
+        hboxB4.addWidget(self.compare_metric)
+        hboxB4.addWidget(self.compare_results)
+        hboxB4.addWidget(self.compare_button)
+
+        hboxB5 = QtWidgets.QHBoxLayout()
+        hboxB5.addWidget(sf_lbl)
+        hboxB5.addWidget(self.sf_txt)
+
+        vboxB1 = QtWidgets.QVBoxLayout()
+        vboxB1.addWidget(self.miniProjectionWidget2)
+        vboxB1.addLayout(hboxB4)
+        vboxB1.addLayout(hboxB5)
+
+        hboxC1 = QtWidgets.QHBoxLayout()
+        hboxC1.addLayout(vboxA1)
+        hboxC1.addLayout(vboxB1)
+
+        self.projection_window.setLayout(hboxC1)
+
+        self.elem_options.currentIndexChanged.connect(self.updateMiniProj)
+        self.first_run_a = True
+
+    def updateMiniReproj(self):
+
+        e1 = self.elem_options.currentIndex()
+
+        data = self.data
+        element= e1
+
+        try:
+            recon = self.recon
+        except:
+            return 0,0
+        self.reprojection = self.reproject(recon)
+        dummy, sf = self.compare_projections(self.compare_metric.currentIndex(), self.proj, self.reprojection)
+        
+        self.reprojection /= sf
+        results, dummy = self.compare_projections(self.compare_metric.currentIndex(), self.proj, self.reprojection)
+
+        self.compare_results.setText(str(results))
+        self.sf_txt.setText(str(sf))
+
+        self.miniProjectionWidget2.reconView.setImage(self.reprojection)
+        return
+
+
+    def reproject(self, recon):
+        try:
+            num_slices = recon.shape[0]
+        except:
+            return
+
+        width = recon.shape[1]
+        reprojection = np.zeros([num_slices, width])
+        tmp = np.zeros([num_slices, width])
+
+        for i in range(num_slices):
+            reprojection[i] = np.sum(recon[i], axis=0)
+
+        return reprojection
+
+    def compare_projections(self, metric, projA, projB):
+        d = len(projA)
+        if d < 2:
+            return 0, 0
+
+        if metric == 0: #MSE
+            err = projA - projB
+            #mean squared error
+            result = (np.square(err)).mean(axis=None)
+            sf = np.sum(projB)/np.sum(projA)
+
+        elif metric == 1: #SSM
+            errMat = np.zeros(projA.shape[0])
+            simMat = np.zeros(projA.shape[0])
+
+            for i in range(projA.shape[0]):
+                err = np.sum((projA[i].astype("float") - projB[i].astype("float")) ** 2)
+                err /= float(projA[i].shape[0] * projA[i].shape[1])
+                sim = measure.compare_ssim(projA[i], projB[i])
+
+                errMat[i] = err
+                simMat[i] = sim
+                errVal = np.sum(errMat)/len(errMat)
+                simVal = np.sum(simMat)/len(simMat)
+            result = simVal
+            sf = np.sum(projB)/np.sum(projA)
+
+
+        elif metric == 2: #pearson
+            result, p = stats.pearsonr(projA.flatten(), projB.flatten())
+
+            sf = np.sum(projB)/np.sum(projA)
+
+
+        elif metric == 3:
+            scaler_arr = np.zeros(projA.shape[0])
+            for i in range(projA.shape[0]):
+
+                if projA[i].max() == 0:
+                    projA[i] = np.zeros(projA.shape[1])
+                else:
+                    scaler_arr[i] = projB[i].max()/projA[i].max()
+            new_reprojection = np.asarray([projB[i]*scaler_arr[i] for i in range(len(scaler_arr))])
+            sf = np.mean(scaler_arr[scaler_arr> scaler_arr.max()*.5])
+            #mean squared error
+            result = (np.square(projA - new_reprojection)).mean(axis=None)
+
+        else:
+            result = -1
+            sf = -1
+
+
+        return result, sf
+        
+
+
+    def updateMiniProj(self):
+        thetas = self.thetas
+        if self.first_run_a:
+            e1 = 0
+            self.first_run_a = False
+
+        else:
+            e1 = self.elem_options.currentIndex()
+
+        self.elem_options.currentIndexChanged.disconnect(self.updateMiniProj)
+        self.elem_options.clear()
+
+        for i in self.elements:
+            self.elem_options.addItem(i)
+        try:
+            self.elem_options.setCurrentIndex(e1)
+            self.elem_options.setCurrentText(self.elements[e1])
+        except:
+            self.elem_options.setCurrentIndex(0)
+
+        #find where proj index angle ==0:
+        zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]
+        self.proj = self.data[e1,zero_index]
+
+        self.elem_options.currentIndexChanged.connect(self.updateMiniProj)
+        self.miniProjectionWidget1.reconView.setImage(self.proj)
+        return
+
+
+    def update_padding(self, x,y):
+        self.sinogramWidget.x_padding_hist.append(x)
+        self.sinogramWidget.y_padding_hist.append(y)
+
+
+    def subPixShiftChanged(self):
+
+        shift_size_arr = np.array([1,2,5,10])
+        bool_arr = [self.subPix_1.isChecked(), self.subPix_05.isChecked(), self.subPix_025.isChecked(),self.subPix_01.isChecked()]
+        shift_size = shift_size_arr[bool_arr.index(True)]
+        print(str(shift_size))
+
+        self.sinogramWidget.sub_pixel_shift = shift_size
+        self.imageProcessWidget.sub_pixel_shift = shift_size
+
+        return
+
     def updateScatter(self):
         if self.first_run:
             self.scatterWidget.ROI.endpoints[1].setPos(self.data[0,0].max(), self.data[0,0].max())
+            e1 = 0
+            e2 = 0
+
             self.first_run = False
+
+        else:
+            e1 = self.elem1_options.currentIndex()
+            e2 = self.elem2_options.currentIndex()
 
         self.projection_sld.setRange(0, self.data.shape[1]-1)
         self.elem1_options.currentIndexChanged.disconnect(self.updateScatter)
         self.elem2_options.currentIndexChanged.disconnect(self.updateScatter)
-        e1 = self.elem1_options.currentIndex()
-        e2 = self.elem2_options.currentIndex()
+
         proj_indx = self.projection_sld.value()
         self.elem1_options.clear()
         self.elem2_options.clear()
@@ -543,7 +809,12 @@ class xrftomoGui(QtGui.QMainWindow):
         # get slope then calculate new handle pos
         x_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().x()
         y_pos = self.scatterWidget.p1.items[3].getHandles()[1].pos().y()
-        slope = y_pos/x_pos
+        try:
+            slope = y_pos/x_pos
+        except ZeroDivisionError:
+            slope = 1
+
+
         x_pos = 1/slope
         y_pos = x_pos*slope
 
@@ -732,6 +1003,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileTableWidget.elementTag.setVisible(True)
         self.fileTableWidget.elementTag_label.setVisible(True)
         self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
+        self.imageProcessWidget.ViewControl.invert.setVisible(True)
         self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(True)
         # self.imageProcessWidget.ViewControl.btn2.setVisible(True)
 
@@ -882,13 +1154,17 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.thetas = [float(list(thetas)[i]) for i in range(len(thetas))]
         self.fnames = [str(list(self.fnames)[i]) for i in range(len(self.fnames))]
+        sorted_index = np.argsort(self.thetas)
+        self.thetas = np.asarray(self.thetas)[sorted_index]
+        self.fnames = np.asarray(self.fnames)[sorted_index]
+
         for i in range(len(self.thetas)):
             self.fileTableWidget.fileTableModel.arrayData[i].theta = self.thetas[i]
             self.fileTableWidget.fileTableModel.arrayData[i].filename = self.fnames[i]
 
         #check elementtable if there any elements, if not then manually set a single element
-        if len(self.fileTableWidget.elementTableModel.arrayData) == 0:
-            self.elements = ["Element_1"]
+        if len(self.fileTableWidget.elementTableModel.arrayData) == 0 or len(self.fileTableWidget.elementTableModel.arrayData) == 1:
+            self.elements = ["Channel_1"]
 
         self.thetas = np.asarray(self.thetas)
 
@@ -981,6 +1257,12 @@ class xrftomoGui(QtGui.QMainWindow):
         except AttributeError:
             print("reconstructed data do not exist")
         return
+    def saveRecon2npy(self, recon):
+        try:
+            self.writer.save_recon_2npy(self.recon)
+        except AttributeError:
+            print("reconstructed data does not exist")
+        return
 
     def saveToHDF(self):
         try:
@@ -1028,7 +1310,8 @@ class xrftomoGui(QtGui.QMainWindow):
             self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
             self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
             #populate scatter plot combo box windows
-            self.updateScatter()
+            self.first_run = True
+
             self.app.restoreOverrideCursor()
 
             if len(self.data) == 0:
@@ -1039,6 +1322,7 @@ class xrftomoGui(QtGui.QMainWindow):
                 return
             if len(self.fnames) == 0:
                 return
+            self.updateScatter()
 
         self.centers = [100,100,self.data.shape[3]//2]
         self.x_shifts = np.zeros(self.data.shape[1], dtype=np.int)
@@ -1064,7 +1348,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.editMenu.setDisabled(False)
         self.toolsMenu.setDisabled(False)
         self.viewMenu.setDisabled(False)
-        # self.update_alignment(self.x_shifts, self.y_shifts, self.centers)
         self.update_history(self.data)
         self.update_alignment(self.x_shifts, self.y_shifts)
         self.refreshUI()
@@ -1098,6 +1381,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.ViewControl.combo1.setCurrentIndex(0)
         self.sinogramWidget.sld.setValue(0)
 
+        self.reconstructionWidget.data_original = self.original_data
         self.reconstructionWidget.data = self.data 
         self.reconstructionWidget.elements = self.elements 
         self.reconstructionWidget.thetas = self.thetas 
@@ -1172,6 +1456,9 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.y_shifts = self.y_shifts
         self.sinogramWidget.actions.x_shifts = self.x_shifts
         self.sinogramWidget.actions.y_shifts = self.y_shifts
+        self.reconstructionWidget.x_shifts = self.x_shifts
+        self.reconstructionWidget.y_shifts = self.y_shifts
+
         # self.sinogramWidget.actions.centers = self.centers
         return
         
@@ -1273,12 +1560,18 @@ class xrftomoGui(QtGui.QMainWindow):
             self.x_shifts = np.zeros(self.data.shape[1], dtype=np.int)
             self.y_shifts = np.zeros(self.data.shape[1], dtype=np.int)
             self.centers = [100,100,self.data.shape[3]//2]
+            self.sinogramWidget.x_padding_hist = [0]
+            self.sinogramWidget.y_padding_hist = [0]
             self.update_history(self.data)
             self.update_slider_range(self.thetas)
 
         except AttributeError:
             print("Load dataset first")
             return
+
+    def projWindow(self):
+        self.projection_window.show()
+        self.updateMiniProj()
 
     def scatterPlot(self):
         self.scatter_window.show()
@@ -1292,6 +1585,72 @@ class xrftomoGui(QtGui.QMainWindow):
         #divide data[elem2] by data[elem1], plot this.
 
 
+    def xy_power(self):
+
+        # dc=pylab.average(ti)
+        # dc_img=ti-dc #substract dc value
+        # x_axis=f1['MAPS']['x_axis'] #Get the array of x_axis
+        # n_x=len(x_axis) #get the number of steps in x direction
+        # x_delta_um=abs(x_axis[n_x-1]-x_axis[0])/n_x  #calculate the stepsize in x direction
+
+        # f1=h5py.File(input_path)#read the HDF5 file
+        # a=f1['MAPS']['mca_arr']
+        # ti=a[channel,:,:] # select the channel associated with Ti fluorescence peak from XRF dectector 0
+        # #for i in range(19):
+        #    # ti+=a[channel+i,:,:]
+
+        # fft_img=fft2(dc_img)
+        # Fc_img=fftshift(fft_img)
+        # abs_img=abs(Fc_img)
+        # log_img=pylab.log(1+abs_img)
+        # power_img=(abs_img)**2# power imaging
+
+        # npiy, npix=power_img.shape
+        # x1=np.arange(npix/2)
+        # y1=np.arange(npiy/2)
+        # f_x1=x1*(1./(n_x*x_delta_um))
+        # f_y1=y1*(1./(n_x*x_delta_um))
+
+        # x_power=np.array([0 for i in range(npix/2)], dtype=np.float32)
+        # for i in range(npix/2):
+        #     x_power[i]=power_img[npiy/2][npix/2+i-1]
+        # y_power=np.array([0 for i in range(npiy/2)], dtype=np.float32)
+        # for j in range(npiy/2):
+        #     y_power[j]=power_img[npiy/2+j-1][npix/2]
+            
+        # #display fluorescence imaging
+        # plt.subplot(221)
+        # plt.imshow(ti)
+        # plt.title('Fluorescence Imaging')
+
+        # #display 2D-FFT
+        # plt.subplot(223)
+        # plt.imshow(log_img)
+        # plt.title('2D-FFT')
+
+        # #x direction power spectrum
+        # plt.subplot(222)
+        # plt.loglog(f_x1, x_power)
+        # plt.xlim((1,10))
+        # plt.title('X direction power spectrum')
+        # plt.xlabel('Spatial frequency f(um^-1)')
+        # plt.ylabel('Intensity(arb.units)')
+
+        # #y direction power spectrum
+        # plt.subplot(224)
+        # plt.loglog(f_y1, y_power)
+        # plt.xlim((1,10))
+        # plt.title('Y direction power spectrum')
+        # plt.xlabel('Spatial frequency f(um^-1)')
+        # plt.ylabel('Intensity(arb.units)')
+
+        # output_path= '/pf/esafs/edu/northwestern/k-brister/93940/data_analysed/bnp_power_spec_output/'+ os.path.splitext(filename)[0]+'_xy_directions.png'
+        # print("output_path= "+output_path) 
+        # plt.savefig(output_path)
+        # plt.show()
+
+
+        pass
 
     def corrElem(self):
         self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
