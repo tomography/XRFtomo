@@ -167,6 +167,21 @@ class SaveOptions(object):
 		except: 
 			print("Something went horribly wrong.")
 
+	def save_recon_2npy(self,recon, savedir=None, index=-1):
+		try:
+			if savedir == "":
+				raise IOError
+			if savedir == None:
+				savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			if index == -1:
+				recon = tomopy.circ_mask(recon, axis=0)
+				np.save(savedir, recon)
+			return
+		except IOError:
+			print("type the header name")
+		except:
+			print("Something went horribly wrong.")
+
 	def save_sinogram(self, sinodata):
 		'''
 		saves sinogram or array of sinograms for each row

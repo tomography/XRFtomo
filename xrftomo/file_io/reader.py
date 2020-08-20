@@ -223,8 +223,10 @@ def load_thetas_legacy( path_files, thetaPV):
             idx = np.where(extra_pvs[0] == thetaBytes)
             if len(idx[0]) > 0:
                 thetas.append(float(extra_pvs[1][idx[0][0]]))
+            else:
+                print("warning: multiple instances of the same theta PV name.")
         except:
-            pass
+            print("error reading thetas positiong for file: {}".format(path_files[i]))
     return thetas
 
 def load_thetas_new(path_files, data_tag):

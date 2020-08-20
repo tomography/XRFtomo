@@ -110,6 +110,9 @@ class xrftomoGui(QtGui.QMainWindow):
         saveReconstructionAction = QtGui.QAction('Reconstruction', self)
         saveReconstructionAction.triggered.connect(self.saveReconstruction)
 
+        saveRecon2npyAction = QtGui.QAction("recon as npy", self)
+        saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
+
         saveToHDFAction = QtGui.QAction('as HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
 
@@ -326,6 +329,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveProjectionAction)
         # self.afterConversionMenu.addAction(saveHotSpotPosAction)
         self.afterConversionMenu.addAction(saveReconstructionAction)
+        self.afterConversionMenu.addAction(saveRecon2npyAction)
         self.afterConversionMenu.addAction(saveAlignemtInfoAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(saveSinogram2Action)
@@ -1252,6 +1256,12 @@ class xrftomoGui(QtGui.QMainWindow):
             self.writer.save_reconstruction(self.recon)
         except AttributeError:
             print("reconstructed data do not exist")
+        return
+    def saveRecon2npy(self, recon):
+        try:
+            self.writer.save_recon_2npy(self.recon)
+        except AttributeError:
+            print("reconstructed data does not exist")
         return
 
     def saveToHDF(self):

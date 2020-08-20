@@ -588,6 +588,8 @@ class SinogramActions(QtWidgets.QWidget):
                 # data[:, i] = np.roll(data[:, i], y_shifts[i],, axis=1)
                 # TODO:  check padding amount and adjust alignment if necessary 
 
+                x_shifts[i] = self.unwind(x_shifts[i], data.shape[3])
+
                 data = self.shiftProjection(data,x_shifts[i],-y_shifts[i],i)
 
             file.close()
@@ -600,6 +602,13 @@ class SinogramActions(QtWidgets.QWidget):
         except TypeError: 
             print("choose file please")
         return
+    def unwind(self, x_shift, x_range):
+        if x_shift >= x_range/2:
+            x_shift = x_shift - x_range
+        elif x_shift <= -x_range/2:
+            x_shift = x_shift + x_range
+
+        return x_shift
 
     def alignmentDone(self):
         '''send message that alignment has been done'''
