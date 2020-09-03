@@ -74,6 +74,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.x_padding_hist = [0]
         self.y_padding_hist = [0]
         self.sub_pixel_shift = 1
+        self.fnames = None
 
         self.view_options = QtWidgets.QComboBox()
         self.view_options.setFixedWidth(button2size)
@@ -310,6 +311,9 @@ class SinogramWidget(QtWidgets.QWidget):
         index = self.sld3.value()
         self.updateDiffSliderSlot(index)
 
+    def update_filenames(self, fnames):
+        self.fnames = fnames
+
     def updateDiffSliderSlot(self, index):
         if len(self.thetas) == 0:
             return
@@ -428,6 +432,7 @@ class SinogramWidget(QtWidgets.QWidget):
             if projection == None:
                 projection =  self.sld.value()
             # self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
+            #TODO: line below errors out when loading another dataset, somethin is not getting cleared and reinitialized properly.
             self.imageView.projView.setImage(self.data[element, projection, ::-1, :], border='w')
         except TypeError:
             return
@@ -739,8 +744,10 @@ class SinogramWidget(QtWidgets.QWidget):
         if fileName[0] == "":
             return
         data = self.data.copy()
+        data_fnames = self.fnames
+        x_padding = self.x_padding_hist[-1]
         try:
-            data, x_shifts, y_shifts = self.actions.alignFromText2(fileName, data)
+            data, x_shifts, y_shifts = self.actions.alignFromText2(fileName, data, data_fnames, x_padding)
             self.restoreSig.emit()
                 
         except TypeError:

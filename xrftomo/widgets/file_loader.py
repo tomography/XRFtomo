@@ -223,6 +223,8 @@ class FileTableWidget(QtWidgets.QWidget):
         if files == None:
             try:
                 filenames = os.listdir(self.dirLineEdit.text())
+
+
             except FileNotFoundError:
                 self.message.setText("directory probably not mounted")
                 return
@@ -279,12 +281,6 @@ class FileTableWidget(QtWidgets.QWidget):
             self.quant_options.setEnabled(False)
             self.message.setText("Load angle information using txt or csv file")
             pass
-
-
-
-
-
-
 
 
     def getImgTags(self):
@@ -630,7 +626,12 @@ class FileTableWidget(QtWidgets.QWidget):
         l = np.arange(len(elements))
 
         files = [files[j] for j in k if files_bool[j]==True]
+
+
+        
         path_files = [self.fileTableModel.directory + '/' + s for s in files]
+
+
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
 

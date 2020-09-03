@@ -440,7 +440,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
                     y_shifts[i] = y_shifts[i] - y_dimension
                 data = self.actions.shiftProjection(data, x_shifts[i], y_shifts[i], i)
 
-        # self.padSig.emit(x,y)
+        self.padSig.emit(padding_x,padding_y)
         self.dataChangedSig.emit(data)
         return data
 

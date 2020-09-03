@@ -143,6 +143,11 @@ class FileTableModel(QtCore.QAbstractTableModel):
         all_files = [x for x in os.listdir(directoryName)]
         fileNames = [x for x in all_files if x.split(".")[-1] == ext.split(".")[-1]]
 
+        # TODO: filter files begining with "._"
+        with_ = [x for x in fileNames if x.startswith(".")]
+        without_ = [x for x in fileNames if x not in with_]
+        fileNames = without_
+
         # fileNames = [os.path.basename(x) for x in glob(directoryName+'/'+ext)]
         fileNames = sorted(fileNames)
         self.arrayData = []

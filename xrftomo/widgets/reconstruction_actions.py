@@ -196,6 +196,13 @@ class ReconstructionActions(QtWidgets.QWidget):
 			recon[i] = exposure.equalize_adapthist(img)
 		return recon
 
+	def setThreshold(self,threshold,recon):
+		for i in range(recon.shape[0]):
+			img = recon[i]
+			img[img <= threshold] = 0
+			recon[i] = img
+		return recon
+
 	def remove_hotspots(self, recon):
 		max_val = np.max(recon)
 		for i in range(recon.shape[0]):

@@ -546,7 +546,7 @@ class SinogramActions(QtWidgets.QWidget):
         
         return x_shifts, y_shifts, data
 
-    def alignFromText2(self, fileName, data):
+    def alignFromText2(self, fileName, data, data_fnames, x_padding=0):
         '''
         align by reading text file that saved prior image registration
         alignment info is saved in following format: name of the file, xshift, yshift
@@ -565,6 +565,7 @@ class SinogramActions(QtWidgets.QWidget):
             num_projections = data.shape[1]
             x_shifts = self.x_shifts
             y_shifts = self.y_shifts
+            fnames = []
             for i in range(num_projections):
                 data = self.shiftProjection(data,-x_shifts[i],y_shifts[i], i)
 
@@ -578,18 +579,46 @@ class SinogramActions(QtWidgets.QWidget):
             y_shifts = np.zeros(num_projections)
             x_shifts = np.zeros(num_projections)
 
-            for i in range(num_projections):
+            #If alignment contains more shifts than there are projections, only align entries with matching fnmaes
+
+            alignment_mask = []
+            tmp_y = []
+            tmp_x = []
+
+            for i in range(len(read)-1):
                 j = i + 1
-                secondcol = round(float(read[j].split(",")[2]))
-                firstcol = round(float(read[j].split(",")[1]))
-                y_shifts[i] = secondcol
-                x_shifts[i] = firstcol
-                # data[:, i] = np.roll(data[:, i], x_shifts[i], axis=2)
-                # data[:, i] = np.roll(data[:, i], y_shifts[i],, axis=1)
-                # TODO:  check padding amount and adjust alignment if necessary 
+                print(str(j))
+                fnames.append(read[j].split(",")[0])
+                tmp_y.append(round(float(read[j].split(",")[2])))
+                tmp_x.append(round(float(read[j].split(",")[1])))
+                if fnames[i] in data_fnames:
+                    alignment_mask.append(1)
+                else:
+                    alignment_mask.append(0)
+            tmp_x = np.asarray(tmp_x)
+            tmp_y = np.asarray(tmp_y)
+            fnames = np.asarray(fnames)
+            alignment_mask = np.asarray(alignment_mask)
 
-                x_shifts[i] = self.unwind(x_shifts[i], data.shape[3])
+            tmp_x = tmp_x[alignment_mask==1]
+            tmp_y = tmp_y[alignment_mask==1]
+            num_projections = len(tmp_y)
 
+
+            for i in range(num_projections):
+                # j = i + 1
+                # secondcol = round(float(read[j].split(",")[2]))
+                # firstcol = round(float(read[j].split(",")[1]))
+                # y_shifts[i] = secondcol
+                # x_shifts[i] = firstcol
+                #
+                y_shifts[i] = tmp_y[i]
+                x_shifts[i] = tmp_x[i]
+
+                x_shifts = list(x_shifts)
+                y_shifts = list(y_shifts)
+                x_shifts[i] = self.unwind(x_shifts[i], data.shape[3]-x_padding*2)
+                print(i)
                 data = self.shiftProjection(data,x_shifts[i],-y_shifts[i],i)
 
             file.close()
@@ -602,7 +631,12 @@ class SinogramActions(QtWidgets.QWidget):
         except TypeError: 
             print("choose file please")
         return
+
     def unwind(self, x_shift, x_range):
+        # TODO: x_range for unwind() must take into account the x padding, simply using data.shape wont work.
+        # need to add padding if it exists
+        # see which one works: original data.shape[3] or original data.shape[3] AND padding
+        #
         if x_shift >= x_range/2:
             x_shift = x_shift - x_range
         elif x_shift <= -x_range/2:

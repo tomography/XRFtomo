@@ -88,8 +88,11 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.btn.clicked.connect(self.reconstruct_params)
         self.ViewControl.equalizeBtn.clicked.connect(self.equalize_params)
         self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
+        self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
+
 
         self.ViewControl.btn2.clicked.connect(self.reconstruct_all_params)
+        self.ViewControl.btn3.clicked.connect(self.reconstruct_all_npy_params)
         self.ViewControl.mulBtn.clicked.connect(self.call_reconMultiply)
         self.ViewControl.divBtn.clicked.connect(self.call_reconDivide)
         self.ViewControl.end_indx.editingFinished.connect(self.update_y_range)
@@ -102,6 +105,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.y_shifts = None
         self.centers = None
         self.recon = None
+        self.recon_array = None
         self.data = None
         self.data_original = None
 
@@ -263,6 +267,36 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.reconChangedSig.emit(self.recon)
         return
 
+    def reconstruct_all_npy_params(self):
+        #figure out how to get a list of all selected elements
+        num_elements = self.ViewControl.combo1.count()
+        element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
+        # box_checked = self.ViewControl.cbox.isChecked()
+        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
+        method = self.ViewControl.method.currentIndex()
+        beta = float(self.ViewControl.beta.text())
+        delta = float(self.ViewControl.delta.text())
+        iters = int(self.ViewControl.iters.text())
+        thetas = self.thetas
+        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
+        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
+        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
+        data = self.data[:,:,start_indx:end_indx,:]
+
+        #reconArray [element,stack,y,x]
+        num_elements = data.shape[0]
+        num_slices = data.shape[2]
+        slice_dim = data.shape[3]
+
+        self.recon_array = np.zeros((num_elements,num_slices,slice_dim,slice_dim))
+        for i in range(num_elements):
+            self.recon = self.actions.reconstruct(data, i, center, method, beta, delta, iters, thetas, mid_indx, False)
+            self.recon_array[i] = self.recon
+            self.update_recon_image()
+            self.reconChangedSig.emit(self.recon)
+        self.writer.save_recon_array_2npy(self.recon_array, savedir=None, index=-1)
+        return
+
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
         self.ViewControl.end_indx.setText(str(ySize))
@@ -318,6 +352,12 @@ class ReconstructionWidget(QtWidgets.QWidget):
     def rm_hotspot_params(self):
         recon = self.recon 
         recon = self.actions.remove_hotspots(recon)
+        self.update_recon_image()
+
+    def set_thresh_params(self):
+        recon = self.recon 
+        threshold = float(self.ViewControl.lThresh.text())
+        recon = self.actions.setThreshold(threshold,recon)
         self.update_recon_image()
 
     def update_recon_image(self):

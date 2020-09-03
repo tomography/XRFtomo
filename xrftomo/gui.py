@@ -113,6 +113,9 @@ class xrftomoGui(QtGui.QMainWindow):
         saveRecon2npyAction = QtGui.QAction("recon as npy", self)
         saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
 
+        saveReconArray2npyAction = QtGui.QAction("reconArr as npy", self)
+        saveReconArray2npyAction.triggered.connect(self.saveReconArray2npy)
+
         saveToHDFAction = QtGui.QAction('as HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
 
@@ -220,6 +223,8 @@ class xrftomoGui(QtGui.QMainWindow):
 
         #fnames changed 
         self.imageProcessWidget.fnamesChanged.connect(self.update_filenames)
+        self.imageProcessWidget.fnamesChanged.connect(self.sinogramWidget.update_filenames)
+
 
         #update_reconstructed_data
         self.reconstructionWidget.reconChangedSig.connect(self.update_recon)
@@ -330,6 +335,7 @@ class xrftomoGui(QtGui.QMainWindow):
         # self.afterConversionMenu.addAction(saveHotSpotPosAction)
         self.afterConversionMenu.addAction(saveReconstructionAction)
         self.afterConversionMenu.addAction(saveRecon2npyAction)
+        self.afterConversionMenu.addAction(saveReconArray2npyAction)
         self.afterConversionMenu.addAction(saveAlignemtInfoAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(saveSinogram2Action)
@@ -1260,6 +1266,13 @@ class xrftomoGui(QtGui.QMainWindow):
     def saveRecon2npy(self, recon):
         try:
             self.writer.save_recon_2npy(self.recon)
+        except AttributeError:
+            print("reconstructed data does not exist")
+        return
+
+    def saveReconArray2npy(self, recon):
+        try:
+            self.writer.save_recon_array_2npy(self.recon_array)
         except AttributeError:
             print("reconstructed data does not exist")
         return
