@@ -186,6 +186,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget = xrftomo.SinogramWidget()
         self.reconstructionWidget = xrftomo.ReconstructionWidget()
         self.scatterWidget = xrftomo.ScatterView()
+        self.scatterWidgetRecon = xrftomo.ScatterView()
         self.miniReconWidget = xrftomo.MiniReconView()
 
         self.writer = xrftomo.SaveOptions()
@@ -285,6 +286,10 @@ class xrftomoGui(QtGui.QMainWindow):
         scatterPlotAction = QtGui.QAction('Scatter Plot', self)
         analysis.addAction(scatterPlotAction)
         scatterPlotAction.triggered.connect(self.scatterPlot)
+
+        scatterPlotReconAction = QtGui.QAction('Scatter Plot Recon', self)
+        analysis.addAction(scatterPlotReconAction)
+        scatterPlotReconAction.triggered.connect(self.scatterPlotRecon)
 
         projWinAction = QtGui.QAction('reprojection', self)
         analysis.addAction(projWinAction)
@@ -523,11 +528,79 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatterWidget.mousePressSig.connect(self.updateInnerScatter)
         self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
         self.apply_globally.clicked.connect(self.sendData)
+        # self.apply_globally_recon.clicked.connect(self.sendRecon)
         self.slope_value.returnPressed.connect(self.slopeEntered)
         self.first_run = True
 
 
+        #_______________________ scatter plot window Recon ______________________
+        self.scatter_window_recon = QtWidgets.QWidget()
+        self.scatter_window_recon.resize(1000,500)
+        self.scatter_window_recon.setWindowTitle('scatter')
 
+        self.elem1_options_recon = QtWidgets.QComboBox()
+        self.elem1_options_recon.setFixedWidth(100)
+        self.elem2_options_recon = QtWidgets.QComboBox()
+        self.elem2_options_recon.setFixedWidth(100)
+
+        self.recon_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.recon_lcd = QtWidgets.QLCDNumber(self)
+        recon_lbl = QtWidgets.QLabel("Projection index")
+        # self.width_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        # self.width_lcd = QtWidgets.QLCDNumber(self)
+        width_lbl_recon = QtWidgets.QLabel("curve width")
+        slope_lbl_recon = QtWidgets.QLabel("Slope: ")
+        self.slope_value_recon = QtWidgets.QLineEdit("")
+
+
+
+        self.apply_globally_recon = QtWidgets.QPushButton("set red region to zero")
+
+        ##_____ left blok: scatter view _____
+        hboxA1_recon = QtWidgets.QHBoxLayout()
+        hboxA1_recon.addWidget(self.elem1_options_recon)
+        hboxA1_recon.addWidget(self.elem2_options_recon)
+        hboxA1_recon.addWidget(self.apply_globally_recon)
+
+        hboxA2_recon = QtWidgets.QHBoxLayout()
+        hboxA2_recon.addWidget(recon_lbl)
+        hboxA2_recon.addWidget(self.recon_lcd)
+        hboxA2_recon.addWidget(self.recon_sld)
+
+        # hboxA3 = QtWidgets.QHBoxLayout()
+        # hboxA3.addWidget(width_lbl)
+        # hboxA3.addWidget(self.width_lcd)
+        # hboxA3.addWidget(self.width_sld)
+
+        hboxA4_recon = QtWidgets.QHBoxLayout()
+        hboxA4_recon.addWidget(slope_lbl_recon)
+        hboxA4_recon.addWidget(self.slope_value_recon)
+
+        vboxA1_recon = QtWidgets.QVBoxLayout()
+        vboxA1_recon.addWidget(self.scatterWidgetRecon)
+        vboxA1_recon.addLayout(hboxA1_recon)
+        vboxA1_recon.addLayout(hboxA2_recon)
+        # vboxA1.addLayout(hboxA3)
+        vboxA1_recon.addLayout(hboxA4_recon)
+
+
+
+        hboxC1_recon = QtWidgets.QHBoxLayout()
+        hboxC1_recon.addLayout(vboxA1_recon)
+
+        self.scatter_window_recon.setLayout(hboxC1_recon)
+
+        self.elem1_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
+        self.elem2_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
+        self.recon_sld.valueChanged.connect(self.updateScatterRecon)
+        # self.width_sld.valueChanged.connect(self.updateWidth)
+        # self.width_sld.valueChanged.connect(self.updateInnerScatter)
+        self.scatterWidgetRecon.mousePressSig.connect(self.updateInnerScatterRecon)
+        self.scatterWidgetRecon.roiDraggedSig.connect(self.updateInnerScatterRecon)
+        self.apply_globally_recon.clicked.connect(self.sendRecon)
+        # self.apply_globally_recon.clicked.connect(self.sendRecon)
+        self.slope_value_recon.returnPressed.connect(self.slopeEnteredRecon)
+        self.first_run_recon = True
 
 
 
@@ -792,6 +865,9 @@ class xrftomoGui(QtGui.QMainWindow):
         self.updateInnerScatter()
         return
 
+
+
+
     # def updateWidth(self):
 
     #     # self.width_lcd.display(self.width_sld.value())
@@ -882,6 +958,142 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
 
 
+    def updateScatterRecon(self):
+        if self.first_run_recon:
+            self.scatterWidget.ROI.endpoints[1].setPos(self.recon[0].max(), self.recon[0].max())
+            e1 = 0
+            e2 = 0
+
+            self.first_run_recon = False
+
+        else:
+            e1 = self.elem1_options_recon.currentIndex()
+            e2 = self.elem2_options_recon.currentIndex()
+
+        self.recon_sld.setRange(0, self.recon.shape[0]-1)
+        self.elem1_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
+        self.elem2_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
+        recon_indx = self.recon_sld.value()
+        self.elem1_options_recon.clear()
+        self.elem2_options_recon.clear()
+
+        for i in self.elements:
+            self.elem1_options_recon.addItem(i)
+            self.elem2_options_recon.addItem(i)
+        try:
+            self.elem1_options_recon.setCurrentIndex(e1)
+            self.elem1_options_recon.setCurrentText(self.elements[e1])
+            self.elem2_options_recon.setCurrentIndex(e2)
+            self.elem2_options_recon.setCurrentText(self.elements[e2])
+            self.scatterWidgetRecon.p1.setLabel(axis='left', text=self.elements[e1])
+            self.scatterWidgetRecon.p1.setLabel(axis='bottom', text=self.elements[e2])
+
+        except:
+            self.elem1_options_recon.setCurrentIndex(0)
+            self.elem2_options_recon.setCurrentIndex(0)
+
+        elem1 = self.recon[recon_indx]
+        elem1 = elem1.flatten()
+        elem2 = self.recon[recon_indx]
+        elem2 = elem2.flatten()
+
+        #update projection index LCD
+        self.recon_lcd.display(self.recon_sld.value())
+
+        self.elem1_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
+        self.elem2_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
+        # self.elem1_options.currentIndexChanged.connect(self.updateInnerScatter)
+        # self.elem2_options.currentIndexChanged.connect(self.updateInnerScatter)
+
+        self.scatterWidgetRecon.plotView.setData(elem2, elem1)
+        self.scatterWidgetRecon.p1.setLabel(axis='left', text=self.elements[e1])
+        self.scatterWidgetRecon.p1.setLabel(axis='bottom', text=self.elements[e2])
+        self.updateInnerScatterRecon()
+        return
+
+
+    def updateInnerScatterRecon(self,*dummy):
+        self.scatterWidgetRecon.mousePressSig.disconnect(self.updateInnerScatterRecon)
+        self.scatterWidgetRecon.roiDraggedSig.disconnect(self.updateInnerScatterRecon)
+        e1 = self.elem1_options_recon.currentIndex()
+        e2 = self.elem2_options_recon.currentIndex()
+
+        #Normalizeself.projection_sld.currentIndex()
+        elem1 = self.recon[self.elem1_options_recon.currentIndex(),self.recon_sld.value()]
+        elem1 = elem1.flatten()
+        elem2 = self.recon[self.elem2_options_recon.currentIndex(), self.recon_sld.value()]
+        elem2 = elem2.flatten()
+
+        # get slope then calculate new handle pos
+        x_pos = self.scatterWidgetRecon.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidgetRecon.p1.items[3].getHandles()[1].pos().y()
+        try:
+            slope = y_pos/x_pos
+        except ZeroDivisionError:
+            slope = 1
+
+
+        x_pos = 1/slope
+        y_pos = x_pos*slope
+
+        if elem2.max()*slope < elem1.max():
+            x_pos = elem2.max()
+            y_pos = x_pos*slope
+        if elem2.max()*slope > elem1.max():
+            x_pos = elem1.max()/slope
+            y_pos = x_pos*slope
+
+        self.scatterWidgetRecon.ROI.endpoints[1].setPos(x_pos,y_pos)
+        self.slope_value_recon.setText(str(round(slope,4)))
+
+        tmp_arr = [(slope*elem2) <= elem1]
+        tmp_elem1 = elem1[tmp_arr[0]]
+        tmp_elem2 = elem2[tmp_arr[0]]
+        self.scatterWidgetRecon.plotView2.setData(tmp_elem2, tmp_elem1, brush='r')
+
+        self.scatterWidgetRecon.mousePressSig.connect(self.updateInnerScatterRecon)
+        self.scatterWidgetRecon.roiDraggedSig.connect(self.updateInnerScatterRecon)
+
+        return
+
+    def slopeEnteredRecon(self):
+        slope = eval(self.slope_value_recon.text())
+        if slope < 0 :
+            return
+        self.scatterWidgetRecon.mousePressSig.disconnect(self.updateInnerScatterRecon)
+        self.scatterWidgetRecon.roiDraggedSig.disconnect(self.updateInnerScatterRecon)
+
+
+        e1 = self.elem1_options_recon.currentIndex()
+        e2 = self.elem2_options_recon.currentIndex()
+
+        #Normalizeself.projection_sld.currentIndex()
+        elem1 = self.recon[self.elem1_options_recon.currentIndex(),self.recon_sld.value()]
+        elem1 = elem1.flatten()
+        elem2 = self.recon[self.elem2_options_recon.currentIndex(), self.recon_sld.value()]
+        elem2 = elem2.flatten()
+        x_pos = 1/slope
+        y_pos = x_pos*slope
+
+        if elem2.max()*slope < elem1.max():
+            x_pos = elem2.max()
+            y_pos = x_pos*slope
+        if elem2.max()*slope > elem1.max():
+            x_pos = elem1.max()/slope
+            y_pos = x_pos*slope
+
+        self.scatterWidgetRecon.ROI.endpoints[1].setPos(x_pos,y_pos)
+        self.slope_value_recon.setText(str(round(slope,4)))
+
+        tmp_arr = [(slope*elem2) <= elem1]
+        tmp_elem1 = elem1[tmp_arr]
+        tmp_elem2 = elem2[tmp_arr]
+        self.scatterWidgetRecon.plotView2.setData(tmp_elem2, tmp_elem1, brush='r')
+
+        self.scatterWidgetRecon.mousePressSig.connect(self.updateInnerScatterRecon)
+        self.scatterWidgetRecon.roiDraggedSig.connect(self.updateInnerScatterRecon)
+
+
     def updateMiniRecon(self):
         
         e1 = self.elem1_options.currentIndex()
@@ -917,7 +1129,6 @@ class xrftomoGui(QtGui.QMainWindow):
 
         data2[element] = tmp_data
         center = self.data.shape[3]//2
-        method = self.recon_method.currentIndex()
         beta = 1
         delta = 0.01
         iters = 10
@@ -968,6 +1179,47 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.data = data2.copy()
         self.update_data(self.data)
+
+
+    def sendRecon(self):
+
+        e1 = self.elem1_options.currentIndex()
+        e2 = self.elem2_options.currentIndex()
+
+
+        recon_indx = self.recon_sld.value()
+
+        recon2 = self.recon.copy()
+        element= e2
+        original_shape = recon2[0].shape
+        tmp_data = np.zeros_like(recon2)
+
+        #get handle pos
+        x_pos = self.scatterWidgetRecon.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidgetRecon.p1.items[3].getHandles()[1].pos().y()
+        slope = y_pos/x_pos
+
+        for i in range(recon2.shape[0]):
+            #Normalizeself.projection_sld.currentIndex()
+            elem1 = self.recon[i] 
+            elem1 = elem1.flatten()
+            data1 = self.recon[i].flatten()
+
+            elem2 = self.recon[i]
+            elem2 = elem2.flatten()
+
+            tmp_arr = [(slope * elem2) < elem1]
+            bounded_index = np.where(tmp_arr)[1]
+
+            tmp = recon2[i].flatten()
+            tmp[bounded_index] = 0
+            tmp_data[i] = tmp.reshape(original_shape)
+
+        recon2= tmp_data
+
+        self.recon = recon2.copy()
+        self.update_recon(self.recon)
+
 
     def refresh_filetable(self):
         self.fileTableWidget.onLoadDirectory()
@@ -1589,6 +1841,11 @@ class xrftomoGui(QtGui.QMainWindow):
     def scatterPlot(self):
         self.scatter_window.show()
         self.updateScatter()
+
+    def scatterPlotRecon(self):
+        self.scatter_window_recon.show()
+        self.updateScatterRecon()
+
 
 
         # self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
