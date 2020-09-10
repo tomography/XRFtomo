@@ -60,6 +60,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
     alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, name="alignmentChangedSig")
     ySizeChangedSig = pyqtSignal(int, name='ySizeChangedSig')
+    xSizeChangedSig = pyqtSignal(int, name='xSizeChangedSig')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
     refreshSig = pyqtSignal(name='refreshSig')
     padSig = pyqtSignal(int, int, name="padSig")
@@ -414,7 +415,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.actions.reshape_data(self.data, x_multiplier, y_multiplier)
         new_ySize = int(datasize_y*y_multiplier)
         self.ySizeChangedSig.emit(new_ySize)
-        # self.xSizeChangedSig.emit(new_xSize)
+        self.xSizeChangedSig.emit(new_xSize)
         self.dataChangedSig.emit(data)
         self.refreshSig.emit()
         pass
@@ -442,6 +443,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.padSig.emit(padding_x,padding_y)
         self.dataChangedSig.emit(data)
+        self.ySizeChangedSig.emit(self.data.shape[2])
+        self.xSizeChangedSig.emit(self.data.shape[3])
         return data
 
     def save_analysis(self):

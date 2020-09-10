@@ -216,6 +216,7 @@ class xrftomoGui(QtGui.QMainWindow):
         #data dimensions changed
         self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
         self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
+        self.imageProcessWidget.xSizeChangedSig.connect(self.reconstructionWidget.xSizeChanged)
         self.imageProcessWidget.padSig.connect(self.update_padding)
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
@@ -229,6 +230,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         #update_reconstructed_data
         self.reconstructionWidget.reconChangedSig.connect(self.update_recon)
+        self.reconstructionWidget.reconArrChangedSig.connect(self.update_recon_array)
 
         self.prevTab = 0
         self.TAB_FILE = 0
@@ -528,7 +530,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatterWidget.mousePressSig.connect(self.updateInnerScatter)
         self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
         self.apply_globally.clicked.connect(self.sendData)
-        # self.apply_globally_recon.clicked.connect(self.sendRecon)
         self.slope_value.returnPressed.connect(self.slopeEntered)
         self.first_run = True
 
@@ -598,7 +599,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatterWidgetRecon.mousePressSig.connect(self.updateInnerScatterRecon)
         self.scatterWidgetRecon.roiDraggedSig.connect(self.updateInnerScatterRecon)
         self.apply_globally_recon.clicked.connect(self.sendRecon)
-        # self.apply_globally_recon.clicked.connect(self.sendRecon)
         self.slope_value_recon.returnPressed.connect(self.slopeEnteredRecon)
         self.first_run_recon = True
 
@@ -960,7 +960,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
     def updateScatterRecon(self):
         if self.first_run_recon:
-            self.scatterWidget.ROI.endpoints[1].setPos(self.recon[0].max(), self.recon[0].max())
+            self.scatterWidget.ROI.endpoints[1].setPos(self.recon[0,0].max(), self.recon[0,0].max())
             e1 = 0
             e2 = 0
 
@@ -970,7 +970,7 @@ class xrftomoGui(QtGui.QMainWindow):
             e1 = self.elem1_options_recon.currentIndex()
             e2 = self.elem2_options_recon.currentIndex()
 
-        self.recon_sld.setRange(0, self.recon.shape[0]-1)
+        self.recon_sld.setRange(0, self.recon_array.shape[1]-1)
         self.elem1_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
         self.elem2_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
         recon_indx = self.recon_sld.value()
@@ -992,9 +992,9 @@ class xrftomoGui(QtGui.QMainWindow):
             self.elem1_options_recon.setCurrentIndex(0)
             self.elem2_options_recon.setCurrentIndex(0)
 
-        elem1 = self.recon[recon_indx]
+        elem1 = self.recon_array[e1, recon_indx]
         elem1 = elem1.flatten()
-        elem2 = self.recon[recon_indx]
+        elem2 = self.recon_array[e2,recon_indx]
         elem2 = elem2.flatten()
 
         #update projection index LCD
@@ -1019,9 +1019,10 @@ class xrftomoGui(QtGui.QMainWindow):
         e2 = self.elem2_options_recon.currentIndex()
 
         #Normalizeself.projection_sld.currentIndex()
-        elem1 = self.recon[self.elem1_options_recon.currentIndex(),self.recon_sld.value()]
+
+        elem1 = self.reconstructionWidget.recon_array[e1,self.recon_sld.value()]
         elem1 = elem1.flatten()
-        elem2 = self.recon[self.elem2_options_recon.currentIndex(), self.recon_sld.value()]
+        elem2 = self.reconstructionWidget.recon_array[e2, self.recon_sld.value()]
         elem2 = elem2.flatten()
 
         # get slope then calculate new handle pos
@@ -1066,12 +1067,11 @@ class xrftomoGui(QtGui.QMainWindow):
 
         e1 = self.elem1_options_recon.currentIndex()
         e2 = self.elem2_options_recon.currentIndex()
-
-        #Normalizeself.projection_sld.currentIndex()
-        elem1 = self.recon[self.elem1_options_recon.currentIndex(),self.recon_sld.value()]
+        elem1 = self.reconstructionWidget.recon_array[e1,self.recon_sld.value()]
         elem1 = elem1.flatten()
-        elem2 = self.recon[self.elem2_options_recon.currentIndex(), self.recon_sld.value()]
+        elem2 = self.reconstructionWidget.recon_array[e2, self.recon_sld.value()]
         elem2 = elem2.flatten()
+
         x_pos = 1/slope
         y_pos = x_pos*slope
 
@@ -1183,13 +1183,11 @@ class xrftomoGui(QtGui.QMainWindow):
 
     def sendRecon(self):
 
-        e1 = self.elem1_options.currentIndex()
-        e2 = self.elem2_options.currentIndex()
+        e1 = self.elem1_options_recon.currentIndex()
+        e2 = self.elem2_options_recon.currentIndex()
+        # recon_indx = self.recon_sld.value()
 
-
-        recon_indx = self.recon_sld.value()
-
-        recon2 = self.recon.copy()
+        recon2 = self.recon_array[e2].copy()
         element= e2
         original_shape = recon2[0].shape
         tmp_data = np.zeros_like(recon2)
@@ -1199,14 +1197,10 @@ class xrftomoGui(QtGui.QMainWindow):
         y_pos = self.scatterWidgetRecon.p1.items[3].getHandles()[1].pos().y()
         slope = y_pos/x_pos
 
-        for i in range(recon2.shape[0]):
+        for i in range(recon2.shape[0]-1):
             #Normalizeself.projection_sld.currentIndex()
-            elem1 = self.recon[i] 
-            elem1 = elem1.flatten()
-            data1 = self.recon[i].flatten()
-
-            elem2 = self.recon[i]
-            elem2 = elem2.flatten()
+            elem1 = self.recon_array[e1,i].flatten()
+            elem2 = self.recon_array[e2,i].flatten()
 
             tmp_arr = [(slope * elem2) < elem1]
             bounded_index = np.where(tmp_arr)[1]
@@ -1215,11 +1209,12 @@ class xrftomoGui(QtGui.QMainWindow):
             tmp[bounded_index] = 0
             tmp_data[i] = tmp.reshape(original_shape)
 
-        recon2= tmp_data
+        recon2 = tmp_data
 
         self.recon = recon2.copy()
+        self.recon_array[e2] = recon2.copy()
         self.update_recon(self.recon)
-
+        self.update_recon_array(self.recon_array)
 
     def refresh_filetable(self):
         self.fileTableWidget.onLoadDirectory()
@@ -1687,7 +1682,16 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def update_recon(self, recon):
-        self.recon = recon.copy()
+        self.recon = recon
+        self.reconstructionWidget.recon = recon
+        self.reconstructionWidget.update_recon_image()
+        return
+
+
+    def update_recon_array(self, recon_array):
+        self.recon_array = recon_array
+        self.reconstructionWidget.recon_array = recon_array
+        self.reconstructionWidget.update_recon_image()
         return
 
     def update_sino(self, sino):
@@ -1766,6 +1770,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.data = None
         self.recon = None
+        self.recon_array = None
         self.imageProcessWidget.data = None
         self.sinogramWidget.data = None
         self.sinogramWidget.sinogramData = None

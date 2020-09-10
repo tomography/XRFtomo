@@ -56,7 +56,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
 
     def initUI(self):
         button1size = 270       #long button (1 column)
-        button12sie = 200       #2/3 column button
+        button12size = 200       #2/3 column button
         button2size = 142.5     #mid button (2 column)
         button33size = 98.3
         button3size = 93.3      #small button (almost third)
@@ -66,12 +66,19 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.combo1.setFixedWidth(button1size)
         self.method = QtWidgets.QComboBox(self)
         self.method.setFixedWidth(button1size)
+        self.reconGroup = QtWidgets.QComboBox(self)
+        self.reconGroup.setFixedWidth(button2size)
+        self.reconGroup.setToolTip("reconstruction group")
+        reconGroup_lbl = QtWidgets.QLabel("reconstruction set")
+        reconGroup_lbl.setFixedWidth(button2size)
+
+
         self.btn = QtWidgets.QPushButton('Reconstruct')
         self.btn.setFixedWidth(button3size)     
         self.btn2 = QtWidgets.QPushButton('recon & save all')
         self.btn2.setFixedWidth(button3size)
-        self.btn3 = QtWidgets.QPushButton('recon all to npy')
-        self.btn3.setFixedWidth(button3size)
+        self.recon2npy = QtWidgets.QPushButton('recon all to npy')
+        self.recon2npy.setFixedWidth(button3size)
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setFixedWidth(button3size)
         self.equalizeBtn = QtWidgets.QPushButton('equalize')
@@ -81,17 +88,16 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.setThreshBtn = QtWidgets.QPushButton('set L-threshold')
         self.setThreshBtn.setFixedWidth(button3size)   
 
-
         self.start_lbl = QtWidgets.QLabel("bottom cross-section index")
-        self.start_lbl.setFixedWidth(button12sie)
+        self.start_lbl.setFixedWidth(button12size)
         self.start_indx = QtWidgets.QLineEdit("0")
         self.start_indx.setFixedWidth(button4size)
         self.end_lbl = QtWidgets.QLabel("top cross-section index")
-        self.end_lbl.setFixedWidth(button12sie)
+        self.end_lbl.setFixedWidth(button12size)
         self.end_indx = QtWidgets.QLineEdit("0")
         self.end_indx.setFixedWidth(button4size)
         self.mid_lbl = QtWidgets.QLabel("middle cross-section index")
-        self.mid_lbl.setFixedWidth(button12sie)
+        self.mid_lbl.setFixedWidth(button12size)
         self.mid_indx = QtWidgets.QLineEdit("-1")
         self.mid_indx.setFixedWidth(button4size)
         self.mid_indx.setDisabled(True)
@@ -132,6 +138,11 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.minText = QtWidgets.QLineEdit()
         self.minText.setFixedWidth(button2size)
        
+        reconGroupBox = QtWidgets.QHBoxLayout()
+        reconGroupBox.addWidget(reconGroup_lbl)
+        reconGroupBox.addWidget(self.reconGroup)
+
+
         startBox = QtWidgets.QHBoxLayout()
         startBox.addWidget(self.start_lbl)
         startBox.addWidget(self.start_indx)
@@ -167,7 +178,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         reconBox = QtWidgets.QHBoxLayout()
         reconBox.addWidget(self.btn)
         reconBox.addWidget(self.btn2)
-        reconBox.addWidget(self.btn3)
+        reconBox.addWidget(self.recon2npy)
 
         postReconBox = QtWidgets.QHBoxLayout()
         postReconBox.addWidget(self.equalizeBtn)
@@ -178,6 +189,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)
         vb.addWidget(self.method)
+        vb.addLayout(reconGroupBox)
         vb.addLayout(endBox)
         vb.addLayout(startBox)
         vb.addLayout(midBox)
