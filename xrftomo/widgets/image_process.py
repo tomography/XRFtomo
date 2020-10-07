@@ -122,6 +122,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
         # self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
+        self.ViewControl.rm_empty_cols.clicked.connect(self.rm_cols_params)
+        self.ViewControl.rm_empty_rows.clicked.connect(self.rm_rows_params)
         self.ViewControl.Equalize.clicked.connect(self.histo_params)
         self.ViewControl.invert.clicked.connect(self.invert_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histogram)
@@ -475,6 +477,18 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         data = self.actions.remove_hotspots(data, element)
+        self.dataChangedSig.emit(data)
+
+    def rm_cols_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        data = self.actions.remove_empty_columns(data, element)
+        self.dataChangedSig.emit(data)
+
+    def rm_rows_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        data = self.actions.remove_empty_rows(data, element)
         self.dataChangedSig.emit(data)
 
 

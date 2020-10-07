@@ -232,9 +232,30 @@ class ImageProcessActions(QtWidgets.QWidget):
 		max_val = np.max(imgs)
 		for i in range(imgs.shape[0]):
 			img = imgs[i]
-			img[img > 0.5*max_val] = 0.5*max_val
+			img[img > 0.9*max_val] = 0.9*max_val
 			data[element,i] = img
 		return data
+
+	def remove_empty_columns(self,data, element):
+		imgs = data[element]
+		num_projections = imgs.shape[0]
+		num_cols = imgs.shape[2]
+		for i in range(num_projections):
+			for j in range(num_cols):
+				if len(np.unique(imgs[i,:,j])) <= 2:
+					data[:,i,:,j] = np.zeros_like(data[:,i,:,j])
+		return data
+
+	def remove_empty_rows(self,data, element):
+		imgs = data[element]
+		num_projections = imgs.shape[0]
+		num_rows = imgs.shape[1]
+		for i in range(num_projections):
+			for j in range(num_rows):
+				if len(np.unique(imgs[i,j])) <= 2:
+					data[:,i,j] = np.zeros_like(data[:,i,j])
+		return data
+
 
 	def equalize(self, data, element):
 		# Equalization
