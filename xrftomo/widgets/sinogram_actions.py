@@ -585,16 +585,26 @@ class SinogramActions(QtWidgets.QWidget):
             tmp_y = []
             tmp_x = []
 
-            for i in range(len(read)-1):
-                j = i + 1
-                print(str(j))
-                fnames.append(read[j].split(",")[0])
-                tmp_y.append(round(float(read[j].split(",")[2])))
-                tmp_x.append(round(float(read[j].split(",")[1])))
-                if fnames[i] in data_fnames:
+            if len(read[1].split(',')) == 2:
+                for i in range(len(read)-1):
+                    j = i + 1
+                    print(str(j))
+                    fnames.append(str(i))
+                    tmp_y.append(round(float(read[j].split(",")[1])))
+                    tmp_x.append(round(float(read[j].split(",")[0])))
                     alignment_mask.append(1)
-                else:
-                    alignment_mask.append(0)
+
+            if len(read[1].split(',')) == 3:
+                for i in range(len(read)-1):
+                    j = i + 1
+                    print(str(j))
+                    fnames.append(read[j].split(",")[0])
+                    tmp_y.append(round(float(read[j].split(",")[2])))
+                    tmp_x.append(round(float(read[j].split(",")[1])))
+                    if fnames[i] in data_fnames:
+                        alignment_mask.append(1)
+                    else:
+                        alignment_mask.append(0)
             tmp_x = np.asarray(tmp_x)
             tmp_y = np.asarray(tmp_y)
             fnames = np.asarray(fnames)
