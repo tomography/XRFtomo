@@ -168,19 +168,22 @@ class ReconstructionActions(QtWidgets.QWidget):
 		err = projection - reprojection
 		#mean squared error
 		mse = (np.square(err)).mean(axis=None)
-		figure()
+		figA = figure()
 		imshow(recon[mid_indx], origin='lower'), plot(projection_xSection), plot(reprojection_xSection)
 		legend(('projection', 'reprojection'), loc=1)
 		title("MSE:{}".format(np.round(mse, 4)))
-		figure()
+		figB = figure()
 		imshow(projection)
 		title("projection")
-		figure()
+		figC = figure()
 		imshow(reprojection)
 		title("reprojection")
 
 		if show_plots:
-			show()
+			figA.show()
+			figB.show()
+			figC.show()
+
 		return err, mse
 
 	def equalize_recon(self,recon):

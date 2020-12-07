@@ -297,11 +297,14 @@ class xrftomoGui(QtGui.QMainWindow):
         analysis.addAction(projWinAction)
         projWinAction.triggered.connect(self.projWindow)
 
-
+        pixelDistanceAction = QtGui.QAction('spatial analysis', self)
+        analysis.addAction(pixelDistanceAction)
+        pixelDistanceAction.triggered.connect(self.pixDistanceWindow)
 
 
         subPixShift = QtGui.QMenu("Sub pixel shift", self)
-        ag = QtGui.QActionGroup(subPixShift, exclusive=True)
+        ag = QtGui.QActionGroup(subPixShift)
+        ag.setExclusive(True)
         self.subPix_1 = ag.addAction(QtGui.QAction('1', subPixShift, checkable=True))
         subPixShift.addAction(self.subPix_1)
         self.subPix_1.setChecked(True)
@@ -437,7 +440,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.keymap_options.setLayout(vbox)
 
 
-        #_______________________ scatter plot window ______________________
+        #_______________________ scatter plot window ______________________ win 1
         self.scatter_window = QtWidgets.QWidget()
         self.scatter_window.resize(1000,500)
         self.scatter_window.setWindowTitle('scatter')
@@ -534,7 +537,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.first_run = True
 
 
-        #_______________________ scatter plot window Recon ______________________
+        #_______________________ scatter plot window Recon ______________________ win 2
         self.scatter_window_recon = QtWidgets.QWidget()
         self.scatter_window_recon.resize(1000,500)
         self.scatter_window_recon.setWindowTitle('scatter')
@@ -605,7 +608,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
 
 
-        #_______________________ projecion compare window ______________________
+        #_______________________ projecion compare window ______________________ win 3
         self.projection_window = QtWidgets.QWidget()
         self.projection_window.resize(1000,500)
         self.projection_window.setWindowTitle('reprojection tools')
@@ -669,6 +672,82 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.elem_options.currentIndexChanged.connect(self.updateMiniProj)
         self.first_run_a = True
+
+
+
+
+
+
+
+
+  #_______________________ pixel distance window ______________________ win4
+        self.pixel_distance_window = QtWidgets.QWidget()
+        self.pixel_distance_window.resize(1000,500)
+        self.pixel_distance_window.setWindowTitle('spatial analysis')
+
+        self.miniReconWidget_w4 = xrftomo.MiniReconView()
+        self.miniHisto_w4 = xrftomo.MiniReconView()
+
+        self.recon_sld_w4 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+
+        recons_list_lbl = QtWidgets.QLabel("recons list")
+        self.recons_list_w4 = QtWidgets.QComboBox()
+        self.recons_list_w4.setFixedWidth(100)
+
+        numbins_lbl_w4 = QtWidgets.QLabel("number of bins")
+        self.numbins_box_w4 = QtWidgets.QLineEdit("100")
+
+        stack_range1_lbl_w4 = QtWidgets.QLabel("lower slice index")
+        stack_range2_lbl_w4 = QtWidgets.QLabel("upper slice index")
+        self.stack_range1_w4 = QtWidgets.QLineEdit("0")
+        self.stack_range2_w4 = QtWidgets.QLineEdit("1")
+
+
+        ##_____ left blok: recon view _____
+        hboxA_w4 = QtWidgets.QHBoxLayout()
+        hboxA_w4.addWidget(recons_list_lbl)
+        hboxA_w4.addWidget(self.recons_list_w4)
+
+        hboxB_w4 = QtWidgets.QHBoxLayout()
+        hboxB_w4.addWidget(numbins_lbl_w4)
+        hboxB_w4.addWidget(self.numbins_box_w4)
+
+        hboxC_w4 = QtWidgets.QHBoxLayout()
+        hboxC_w4.addWidget(stack_range1_lbl_w4)
+        hboxC_w4.addWidget(self.stack_range1_w4)
+
+        hboxD_w4 = QtWidgets.QHBoxLayout()
+        hboxD_w4.addWidget(stack_range2_lbl_w4)
+        hboxD_w4.addWidget(self.stack_range2_w4) 
+
+        hboxA1 = QtWidgets.QHBoxLayout()
+        hboxA1.addWidget(recons_list_lbl)
+        hboxA1.addWidget(self.recons_list_w4)
+
+
+        vboxA1 = QtWidgets.QVBoxLayout()
+        vboxA1.addWidget(self.miniReconWidget_w4)
+        vboxA1.addLayout(hboxA1)
+        vboxA1.addWidget(spacer)
+        
+
+        ##_____ right block: pixel distance analysis _____
+        vboxB1 = QtWidgets.QVBoxLayout()
+        vboxB1.addWidget(self.miniHisto_w4)
+
+        hboxC1 = QtWidgets.QHBoxLayout()
+        hboxC1.addLayout(hboxA_w4)
+        hboxC1.addLayout(vboxB1)
+
+        self.pixel_distance_window.setLayout(hboxC1)
+
+        self.recons_list_w4.currentIndexChanged.connect(self.updateDistanceHisto)
+        # self.recon_sld_w4.valueChanged.connect(self.updateDistanceHisto)
+        self.first_run_w4 = True
+
+
+
+
 
     def updateMiniReproj(self):
 
@@ -793,6 +872,109 @@ class xrftomoGui(QtGui.QMainWindow):
         self.miniProjectionWidget1.reconView.setImage(self.proj)
         return
 
+    def updateDistanceHisto(self):
+        if self.first_run_w4:
+            e1 = 0
+            self.first_run_w4 = False
+
+        else:
+            e1 = self.recons_list_w4.currentIndex()
+
+        self.recons_list_w4.currentIndexChanged.disconnect(self.updateDistanceHisto)
+        self.recons_list_w4.clear()
+        try:
+            self.recon_sld_w4.setRange(0, len(self.recon_array[0])-1)
+        except TypeError:
+            print("run reconstruction first")
+            return
+
+        elem_indx_w4 = self.recons_list_w4.currentIndex()
+        recon_indx_w4 = self.recon_sld_w4.value()
+
+        for i in self.elements:
+            self.recons_list_w4.addItem(i)
+        try:
+            self.recons_list_w4.setCurrentIndex(e1)
+            self.recons_list_w4.setCurrentText(self.elements[e1])
+        except:
+            self.recons_list_w4.setCurrentIndex(0)
+
+        self.recons_list_w4.currentIndexChanged.connect(self.updateDistanceHisto)
+
+        ##calculate distance_array
+        recon_element = self.recons_list_w4.currentIndex()
+        recon_indx = self.recon_sld_w4.value()
+
+        # distance_array = self.calculate_pixel_distance(self.recon_array[recon_element,recon_indx])
+        distance_array = self.calculate_all_distances(self.recon_array[recon_element])
+        
+        #generate histogram
+        # Creating histogram 
+        fig, axs = plt.subplots(1, 1, figsize =(10, 7), tight_layout = True)
+        #whole numbers
+        distance_array = distance_array.round()
+        #cutoff max distance
+        # distance_array[distance_array < 100]
+        #calculate number of bins based on max value
+        num_bins = int(distance_array.max())
+
+        axs.hist(distance_array, bins = num_bins,  density = True)
+        axs.set_title(self.fileTableWidget.dirLineEdit.text())
+        axs.set_xlabel("distance (micron)")
+        #    Show plot
+        plt.show()
+
+        return
+
+
+    def calculate_pixel_distance(self,img):
+
+        point_arr = []
+
+
+        #filter image so there arent so many points to calculate distances for,
+        img[img<img.max()*0.05] = 0
+        #then downsample the image to 50% or variable.
+
+        #find non-zero pixels in image
+        for i in range(img.shape[0]):
+            for j in range(img.shape[1]):
+                if img[i,j]>0:
+                    point_arr.append([i,j])
+
+        #find pixel distances using permutations of points array
+        point_arr = np.asanyarray(point_arr)
+        num_points = len(point_arr)
+        sub_points = list(np.arange(1, num_points))
+        distance_arr = []
+        for i in range(num_points-1):
+            if len(sub_points)==0:
+                break
+            for j in sub_points:
+                distance_arr.append(np.sqrt( (point_arr[i,0]-point_arr[j,0])**2 +
+                                             (point_arr[i,1]-point_arr[j,1])**2  ))
+            del sub_points[0]
+
+        print(distance_arr)
+        return distance_arr
+
+    def calculate_all_distances(self,img_stack):
+        #remove slices in stack where values all zero
+        num_slices = img_stack.shape[0]
+        non_zero_slices = []
+        for i in range(num_slices):
+            if img_stack[i].max()>0:
+                non_zero_slices.append(i)
+
+        slice_arr = [img_stack[i] for i in non_zero_slices]
+        num_images = len(slice_arr)
+        distance_arr = np.asarray(self.calculate_pixel_distance(slice_arr[0]))
+
+
+        for i in range(1, num_images):
+            distance_arr = np.append(distance_arr, np.asarray(self.calculate_pixel_distance(slice_arr[i])))
+
+        return distance_arr
 
     def update_padding(self, x,y):
         self.sinogramWidget.x_padding_hist.append(x)
@@ -1138,6 +1320,7 @@ class xrftomoGui(QtGui.QMainWindow):
         tmp_data2[element] = tmp_data
         tmp_data2 = tmp_data2[:, :, mid_indx:mid_indx + 1, :]
 
+        #TODO: unresolved method
         recon = self.reconstructionWidget.actions.reconstruct(tmp_data2, element, center, method, beta, delta, iters, thetas, 0, show_stats=False)
 
         self.miniReconWidget.reconView.setImage(recon[0])
@@ -1851,7 +2034,9 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatter_window_recon.show()
         self.updateScatterRecon()
 
-
+    def pixDistanceWindow(self):
+        self.pixel_distance_window.show()
+        self.updateDistanceHisto()
 
         # self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         #create window, create two drop-down menus (for element selection)

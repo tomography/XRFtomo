@@ -3,7 +3,7 @@ h5py
 matplotlib
 numpy
 pandas
-pyqt >=5
+PyQt5 == 5.15.2
 pyqtgraph
 scipy
 seaborn
