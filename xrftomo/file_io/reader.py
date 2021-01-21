@@ -168,6 +168,7 @@ def read_projection(fname, element, hdf_tag, roi_tag, channel_tag):
     if elements == []:
         return
     print(fname)
+
     projections = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, roi_tag))
 
     return projections[find_index(elements, element)]

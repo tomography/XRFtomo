@@ -58,6 +58,7 @@ class SinogramActions(QtWidgets.QWidget):
         self.x_shifts = None
         self.y_shifts = None
         self.original_data = None
+        self.padding = None
     # def runCenterOfMass(self, element, data, thetas):
     #     '''
     #     Center of mass alignment
@@ -291,7 +292,6 @@ class SinogramActions(QtWidgets.QWidget):
             data, sinogramData = self.shift(sinogramData, data, lin_shift[i], i)
             # data[:,i] = np.roll(data[:,i],shift,axis=1)
             # data = self.shiftProjection(data,shift,0,i)
-
         return lin_shift, data, sinogramData
         
     def crossCorrelate(self, element, data):
@@ -627,7 +627,7 @@ class SinogramActions(QtWidgets.QWidget):
 
                 x_shifts = list(x_shifts)
                 y_shifts = list(y_shifts)
-                x_shifts[i] = self.unwind(x_shifts[i], data.shape[3]-x_padding*2)
+                # x_shifts[i] = self.unwind(x_shifts[i], data.shape[3]-x_padding*2)
                 print(i)
                 data = self.shiftProjection(data,x_shifts[i],-y_shifts[i],i)
 
@@ -653,6 +653,45 @@ class SinogramActions(QtWidgets.QWidget):
             x_shift = x_shift + x_range
 
         return x_shift
+
+    def discontinuity_check(self, data, x_shifts, max_diff):
+        x_size = data.shape[3]
+        idx_x = [idx+1 for idx, val in enumerate(np.diff(x_shifts)) if val > max_diff or val < -max_diff]
+        idx_x = np.asarray(idx_x)
+        mask = np.zeros_like(x_shifts)
+        toggle = 0
+
+        for i in range(len(x_shifts)-1):
+            if i in idx_x:
+                toggle +=1
+                toggle = toggle%2
+            mask[i] = toggle
+
+        if x_shifts[0] >= 0:
+            x_shifts = x_shifts+mask*x_size
+        if x_shifts[0] < 0:
+            x_shifts = x_shifts-mask*x_size
+
+        return x_shifts
+
+
+    def validate_alignment(self,data,x_shifts,y_shifts):
+        x_size = data.shape[3]
+        y_size = data.shape[2]
+        num_shifts = len(x_shifts)
+        for i in range(num_shifts):
+            if abs(x_shifts[i]) > x_size:
+                x_shifts[i] = int(x_shifts[i]%x_size*np.sign(x_shifts[i]))
+            if abs(y_shifts[i]) > y_size:
+                y_shifts[i] = int(y_shifts[i]%y_size*np.sign(y_shifts[i]))
+
+        return x_shifts, y_shifts
+
+
+
+
+        pass
+
 
     def alignmentDone(self):
         '''send message that alignment has been done'''
@@ -732,7 +771,7 @@ class SinogramActions(QtWidgets.QWidget):
         data: ndarray
             4D xrf dataset ndarray [elements, theta, y,x]
         '''
-        #TODO: onsider having posMat as part of the history state and have it update one level up.
+        #TODO: consider having posMat as part of the history state and have it update one level up.
         self.posMat = posMat
         self.posMat[0] = posMat[0] + x_size//2
         self.posMat[1] = posMat[1] + y_size//2
@@ -954,6 +993,7 @@ class SinogramActions(QtWidgets.QWidget):
             self.x_shifts[i] += int(self.centerOfMassDiff[j])
 
             # data[:, i] = np.roll(data[:, i], int(round(self.x_shifts[i])), axis=2)
+
             data = self.shiftProjection(data, self.x_shifts[i],0,i)
             j += 1
 

@@ -57,6 +57,8 @@ import matplotlib
 from os.path import expanduser
 from skimage import measure
 from matplotlib.pyplot import *
+from scipy import ndimage as ndi
+from skimage.morphology import remove_small_objects
 
 
 
@@ -130,6 +132,8 @@ class xrftomoGui(QtGui.QMainWindow):
 
         saveCorrAnalysisAction = QtGui.QAction("Corelation Analysis", self)
         saveCorrAnalysisAction.triggered.connect(self.saveCorrAlsys)
+
+
 
         runTransRecAction = QtGui.QAction("Transmission Recon", self)
         #runTransRecAction.triggered.connect(self.runTransReconstruct)
@@ -301,6 +305,9 @@ class xrftomoGui(QtGui.QMainWindow):
         analysis.addAction(pixelDistanceAction)
         pixelDistanceAction.triggered.connect(self.pixDistanceWindow)
 
+        layerDensityAction = QtGui.QAction('onion analysis', self)
+        analysis.addAction(layerDensityAction)
+        layerDensityAction.triggered.connect(self.onionWindow)
 
         subPixShift = QtGui.QMenu("Sub pixel shift", self)
         ag = QtGui.QActionGroup(subPixShift)
@@ -745,6 +752,208 @@ class xrftomoGui(QtGui.QMainWindow):
         # self.recon_sld_w4.valueChanged.connect(self.updateDistanceHisto)
         self.first_run_w4 = True
 
+  #_______________________ onion window ______________________ win5
+
+        self.onion_window = QtWidgets.QWidget()
+        self.onion_window.resize(1000,500)
+        self.onion_window.setWindowTitle('onion analysis')
+
+        self.miniReconWidget_w5 = xrftomo.MiniReconView()
+        self.miniHisto_w5 = xrftomo.MiniReconView()
+
+        elem1_list_lbl = QtWidgets.QLabel("recons list")
+        self.elem1_list_w5 = QtWidgets.QComboBox()
+        self.elem1_list_w5.setFixedWidth(100)
+
+        elem2_list_lbl = QtWidgets.QLabel("recons list")
+        self.elem2_list_w5 = QtWidgets.QComboBox()
+        self.elem2_list_w5.setFixedWidth(100)
+
+        self.recon_sld_w5 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.recon_lcd_w5 = QtWidgets.QLCDNumber(self)
+        recon_lbl_w5 = QtWidgets.QLabel("recon index")
+
+        layer_depth_lbl_w5 = QtWidgets.QLabel("layer depth (micron)")
+        elem1_thresh_lbl_w5 = QtWidgets.QLabel("element1 threshold 0-1")
+        self.layer_depth_w5 = QtWidgets.QLineEdit("50")
+        self.elem1_thresh_w5 = QtWidgets.QLineEdit("0.25")
+
+        self.create_onion_button = QtWidgets.QPushButton("create onion")
+        self.create_onion_button.clicked.connect(self.createOnion)
+
+        self.run_layer_analysis = QtWidgets.QPushButton("run analysis")
+        self.run_layer_analysis.clicked.connect(self.updateOnionHisto)
+
+        ##_____ left blok: recon view _____
+        hboxA_w5 = QtWidgets.QHBoxLayout()
+        hboxA_w5.addWidget(elem1_list_lbl)
+        hboxA_w5.addWidget(self.elem1_list_w5)
+        hboxA_w5.addWidget(self.create_onion_button)
+
+        hboxB_w5 = QtWidgets.QHBoxLayout()
+        hboxB_w5.addWidget(layer_depth_lbl_w5)
+        hboxB_w5.addWidget(self.layer_depth_w5)
+
+        hboxC_w5 = QtWidgets.QHBoxLayout()
+        hboxC_w5.addWidget(elem1_thresh_lbl_w5)
+        hboxC_w5.addWidget(self.elem1_thresh_w5)
+
+        hboxD_w5 = QtWidgets.QHBoxLayout()
+        hboxD_w5.addWidget(recon_lbl_w5)
+        hboxD_w5.addWidget(self.recon_lcd_w5)
+        hboxD_w5.addWidget(self.recon_sld_w5)
+
+        vboxA1 = QtWidgets.QVBoxLayout()
+        vboxA1.addWidget(self.miniReconWidget_w5)
+        vboxA1.addLayout(hboxA_w5)
+        vboxA1.addLayout(hboxD_w5)
+        vboxA1.addLayout(hboxB_w5)
+        vboxA1.addLayout(hboxC_w5)
+
+        ##_____ right block: pixel distance analysis _____
+        hboxE_w5 = QtWidgets.QHBoxLayout()
+        hboxE_w5.addWidget(elem2_list_lbl)
+        hboxE_w5.addWidget(self.elem2_list_w5)
+        hboxE_w5.addWidget(self.run_layer_analysis)
+
+        vboxB1 = QtWidgets.QVBoxLayout()
+        vboxB1.addWidget(self.miniHisto_w5)
+        vboxB1.addLayout(hboxE_w5)
+
+        hboxC1 = QtWidgets.QHBoxLayout()
+        hboxC1.addLayout(vboxA1)
+        hboxC1.addLayout(vboxB1)
+
+        self.onion_window.setLayout(hboxC1)
+
+        self.first_run_w5 = True
+        self.onion_layers = None
+
+
+
+
+
+    def updateOnion(self):
+        if self.first_run_w5:
+            e1 = 0
+            self.first_run_w5 = False
+
+        else:
+            e1 = self.elem1_list_w5.currentIndex()
+
+        self.elem1_list_w5.clear()
+        self.elem2_list_w5.clear()
+        try:
+            self.recon_sld_w5.setRange(0, len(self.recon_array[0])-1)
+        except TypeError:
+            print("run reconstruction first")
+            return
+
+
+        for i in self.elements:
+            self.elem1_list_w5.addItem(i)
+            self.elem2_list_w5.addItem(i)
+        try:
+            self.elem1_list_w5.setCurrentIndex(e1)
+            self.elem2_list_w5.setCurrentIndex(e1)
+            self.elem1_list_w5.setCurrentText(self.elements[e1])
+            self.elem2_list_w5.setCurrentText(self.elements[e1])
+        except:
+            self.elem1_list_w5.setCurrentIndex(0)
+            self.elem2_list_w5.setCurrentIndex(0)
+
+        recon_indx_w5 = self.recon_sld_w5.value()
+        self.recon_lcd_w5.display(recon_indx_w5)
+        return
+
+    def updateOnionHisto(self):
+
+        if self.onion_layers.any() == None:
+            print('create onion first')
+            return
+
+        num_layers = self.onion_layers.max()
+        total_signal = np.zeros(num_layers)
+        img = self.recon_array[self.elem2_list_w5.currentIndex(), self.recon_sld_w5.value()]
+
+        for i in range(num_layers):
+            depth_mask = self.onion_layers == (i+1)
+            total_signal[i] = np.sum(img*depth_mask)
+
+
+        #generate histogram
+        # Creating histogram 
+        # fig, axs = plt.subplots(1, 1, figsize =(10, 7), tight_layout = True)
+        # #calculate number of bins based on max value
+        x = (np.arange(num_layers)+1)*eval(self.layer_depth_w5.text())
+        # axs.bar(x, total_signal,width=10)
+        # axs.set_title("Desnity as a function of depth")
+        # axs.set_xlabel("distance (micron)")
+        # axs.set_ylabel("total signal ug/cm^3")
+        #    Show plot
+        # fig.show()
+        self.miniHisto_w5.barView.setOpts(x=x,height=total_signal, width=9)
+
+        return
+
+    def createOnion(self):
+
+        layer_depth = eval(self.layer_depth_w5.text())
+        threshold = eval(self.elem1_thresh_w5.text())
+        img = self.recon_array[self.elem1_list_w5.currentIndex(), self.recon_sld_w5.value()]
+        self.onion_slice, self.onion_layers = self.peel_onion(img,threshold,layer_depth)
+
+        self.miniReconWidget_w5.reconView.setImage(self.onion_slice)
+
+        pass
+
+    def peel_onion(self, data, data_thresh, layer_depth):
+        reached_core = False
+        #establish surface aka first layer
+        layer_0 = self.create_mask(data, data_thresh)      #bool array xy
+        msk = np.ones_like(layer_0)*layer_0*1     #uint8 array xy
+        msks = msk.copy()
+        i = 0
+        #peel away layers find out how many layers there are first
+        while not reached_core:
+            print("current layer: {}".format(i))
+            i+=1
+            try:
+                msk = ndi.binary_erosion(msk, structure=np.ones((layer_depth*2, layer_depth*2)))
+                msks = msk+msks
+                if msk.max()==0:
+                    reached_core = True
+
+            except: 
+                reached_core = True
+        mask_incremental = msks.copy()
+        msks = msks*255//i
+        superimposed = (msks + data/np.max(data)*layer_0*255*0.6)
+        superimposed_img = superimposed//(superimposed.max()/255)
+        
+        return superimposed_img, mask_incremental, 
+
+
+    def create_mask(self, data, mask_thresh=None, scale=.8):
+        # Remove nan values
+        mask_nan = np.isfinite(data)
+        data[~np.isfinite(data)] = 0
+        #     data /= data.max()
+        # Median filter with disk structuring element to preserve cell edges.
+        data = ndi.median_filter(data, size=int(data.size ** .5 * .05), mode='nearest')
+        #     data = rank.median(data, disk(int(size**.5*.05)))
+        # Threshold
+        if mask_thresh == None:
+            mask_thresh = np.nanmean(data) * scale / np.nanmax(data)
+        mask = np.isfinite(data)
+        mask[data / np.nanmax(data) < mask_thresh] = False
+        # Remove small spots
+        mask = remove_small_objects(mask, data.size // 100)
+        # Remove small holes
+        mask = ndi.binary_fill_holes(mask)
+        return mask * mask_nan
+
+
 
 
 
@@ -839,7 +1048,6 @@ class xrftomoGui(QtGui.QMainWindow):
             result = -1
             sf = -1
 
-
         return result, sf
         
 
@@ -925,7 +1133,6 @@ class xrftomoGui(QtGui.QMainWindow):
         plt.show()
 
         return
-
 
     def calculate_pixel_distance(self,img):
 
@@ -1142,12 +1349,15 @@ class xrftomoGui(QtGui.QMainWindow):
 
     def updateScatterRecon(self):
         if self.first_run_recon:
-            self.scatterWidget.ROI.endpoints[1].setPos(self.recon[0,0].max(), self.recon[0,0].max())
-            e1 = 0
-            e2 = 0
+            try:
+                self.scatterWidget.ROI.endpoints[1].setPos(self.recon[0,0].max(), self.recon[0,0].max())
+                e1 = 0
+                e2 = 0
 
-            self.first_run_recon = False
-
+                self.first_run_recon = False
+            except TypeError:
+                print("run reconstruction first")
+                return
         else:
             e1 = self.elem1_options_recon.currentIndex()
             e2 = self.elem2_options_recon.currentIndex()
@@ -1321,7 +1531,7 @@ class xrftomoGui(QtGui.QMainWindow):
         tmp_data2 = tmp_data2[:, :, mid_indx:mid_indx + 1, :]
 
         #TODO: unresolved method
-        recon = self.reconstructionWidget.actions.reconstruct(tmp_data2, element, center, method, beta, delta, iters, thetas, 0, show_stats=False)
+        recon = self.reconstructionWidget.actions.reconstruct(tmp_data2, element, center, beta, delta, iters, thetas, 0, show_stats=False)
 
         self.miniReconWidget.reconView.setImage(recon[0])
         return
@@ -2044,6 +2254,12 @@ class xrftomoGui(QtGui.QMainWindow):
         #assign elem1 to x axis, assign elem2 to y axis
         #divide data[elem2] by data[elem1], plot this.
 
+    def onionWindow(self):
+        self.onion_window.show()
+        self.updateOnion()
+
+
+
 
     def xy_power(self):
 
@@ -2199,10 +2415,6 @@ class xrftomoGui(QtGui.QMainWindow):
             r, p = stats.pearsonr(imageA.flatten(), imageB.flatten())
 
             rVal = r
-
-
-
-
 
         # return the MSE, the lower the error, the more "similar"
         return rVal

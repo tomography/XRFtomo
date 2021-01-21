@@ -68,6 +68,8 @@ class MiniReconView(pyqtgraph.GraphicsLayoutWidget):
         self.p2 = self.addPlot(viewBox = custom_vb, enableMouse = False)
         self.p2.setAutoPan(x=None, y=None)
         self.reconView = pyqtgraph.ImageItem(axisOrder = "row-major")
+        self.barView = pyqtgraph.BarGraphItem(x=[0], height=[1], width=9)
         self.p2.addItem(self.reconView)
+        self.p2.addItem(self.barView)
         self.p2.setMouseEnabled(x=False, y=False)
         self.p2.vb = custom_vb

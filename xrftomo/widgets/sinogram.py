@@ -620,6 +620,9 @@ class SinogramWidget(QtWidgets.QWidget):
         wcom = self.ViewControl.weighted_com_checkbox.isChecked()
         shiftXY = self.ViewControl.shiftXY_checkbox.isChecked()
         data, x_shifts, y_shifts = self.actions.runCenterOfMass(element, data, thetas, wcom, shiftXY)
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
@@ -639,6 +642,11 @@ class SinogramWidget(QtWidgets.QWidget):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
         data, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
+        #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
+        #TODO: add a post-alignment function to validate shifts based on image size
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
@@ -684,6 +692,7 @@ class SinogramWidget(QtWidgets.QWidget):
         slope = int(self.ViewControl.slope_adjust_textbox.text())
             
         x_shifts, data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, shift, slope)
+        x_shifts, dummy = self.actions.validate_alignment(data,x_shifts,self.y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts+x_shifts, self.y_shifts)
         return

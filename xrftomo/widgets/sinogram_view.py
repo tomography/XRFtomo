@@ -101,9 +101,11 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
         return
 
     def keyReleaseEvent(self, ev):
-        if self.firstrelease == True:
-            self.processMultipleKeys(self.keylist)
-
+        try:
+            if self.firstrelease == True:
+                self.processMultipleKeys(self.keylist)
+        except:
+            pass
         self.firstrelease = False
         try:
             del self.keylist[-1]
