@@ -1,47 +1,43 @@
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.        	  #
+#    																	  #
+#						Software Name: XRFtomo							  #
+#																		  #
+#					By: Argonne National Laboratory						  #
+#																		  #
+#						OPEN SOURCE LICENSE                               #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
+# Redistribution and use in source and binary forms, with or without      #
+# modification, are permitted provided that the following conditions      #
+# are met:                                                                #
 #                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
-#                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
-#                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
-#                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
-#                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENTn SHALL UChicago    #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+# 1. Redistributions of source code must retain the above copyright       #
+#    notice, this list of conditions and the following disclaimer.        #
+#																		  #
+# 2. Redistributions in binary form must reproduce the above copyright    #
+#    notice, this list of conditions and the following disclaimer in      #
+#    the documentation and/or other materials provided with the 		  #
+#    distribution.														  #
+# 									                                      #
+# 3. Neither the name of the copyright holder nor the names of its 		  #
+#    contributors may be used to endorse or promote products derived 	  #
+#    from this software without specific prior written permission.		  #
+#																		  #
+#								DISCLAIMER								  #
+#							  											  #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 	  #
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 	  #
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR   #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 	  #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 		  #
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   #
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY   #
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 	  #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.	  #
+###########################################################################
+
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from scipy import ndimage, optimize, signal
@@ -236,6 +232,15 @@ class ImageProcessActions(QtWidgets.QWidget):
 			data[element,i] = img
 		return data
 
+	def remove_hotpixels(self, data, element):
+		imgs = data[element]
+		max_val = np.max(imgs)
+		for i in range(imgs.shape[0]):
+			img = imgs[i]
+			img[img > 0.95*max_val] = 0
+			data[element,i] = img
+		return data
+
 	def remove_empty_columns(self,data, element):
 		imgs = data[element]
 		num_projections = imgs.shape[0]
@@ -301,30 +306,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		print("done")
 		data = temp_data
 		return data
-
-	# def gauss33(self):
-	# 	result = self.gauss2D(shape=(3, 3), sigma=1.3)
-	# 	print(result)
-	# 	return result
-
-	# def gauss55(self):
-	# 	result = self.gauss2D(shape=(5, 5), sigma=1.3)
-	# 	print(result)
-	# 	return result
-
-	# def gauss2D(self, shape=(3, 3), sigma=0.5):
-	# 	"""s
-	# 	2D gaussian mask - should give the same result as MATLAB's
-	# 	fspecial('gaussian',[shape],[sigma])
-	# 	"""
-	# 	m, n = [(ss - 1.) / 2. for ss in shape]
-	# 	y, x = np.ogrid[-m:m + 1, -n:n + 1]
-	# 	h = np.exp(-(x * x + y * y) / (2. * sigma * sigma))
-	# 	h[h < np.finfo(h.dtype).eps * h.max()] = 0
-	# 	sumh = h.sum()
-	# 	if sumh != 0:
-	# 		h /= sumh
-	# 	return h
 
 	def copy_background(self, img):
 		'''
