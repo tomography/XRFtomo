@@ -163,9 +163,13 @@ def install_menu():
 		except ImportError:
 			import winreg
 		app = None # delay starting wx until we need it. Likely not needed.
-		scriptpath = os.path.split(sys.argv[0])[0]
-		if not scriptpath: scriptpath = "/".join(os.path.abspath("xrftomo.__file__").split("/")[:-1])+"/"
-                      #if no path specified: "", scriptpath="."
+		#scriptpath = os.path.split(sys.argv[0])[0]
+		current_path = os.path.abspath(os.path.expanduser("menu_installer.py"))
+		print("this is the path", current_path)
+		scriptpath = "\\".join(current_path.split("\\")[:-1])+"\\"
+		print("this is the scrpt path", scriptpath)
+
+		#if no path specified: "", scriptpath="."
 		scriptpath = os.path.abspath(os.path.expanduser(scriptpath))        #scriptpath = =current path
 		XRFscript = os.path.join(scriptpath,'__main__.py')                   #assuming path is where script is
 		XRFbat = os.path.join(scriptpath,'RunXRFtomo.bat')                   #place bat alongside xrftomo ?
@@ -202,7 +206,7 @@ def install_menu():
 				except ValueError:
 					print("could not find Anaconda activate script")
 
-			activate = "\\".join(os.path.split(pythonexe)[0].split("\\")[:AnacondaPathIndx+1])+"\\Scripts\\activate py36"
+			activate = "\\".join(os.path.split(pythonexe)[0].split("\\")[:AnacondaPathIndx+1])+"\\Scripts\\activate py39"
 			print("set activate path to {}".format(activate))
 		pexe = pythonexe
 		if ' ' in pythonexe:
