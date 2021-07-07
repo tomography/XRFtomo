@@ -278,7 +278,7 @@ def load_thetas_file(path_file):
 def load_thetas_13(path_files, data_tag):
     pass
 
-def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_name):
+def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_name=None):
     """
     Converts hdf files to numpy arrays for plotting and manipulation
 
@@ -339,12 +339,13 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_nam
                     data[i, j] = np.zeros([max_y,max_x])
 
     #get scalers
-    if scaler_name == 'None':
+    if scaler_name == None:
         scalers = np.ones([num_files, max_y, max_x])
         quants = np.ones([num_elements, num_files])
         data[np.isnan(data)] = 0.0001
         data[data == np.inf] = 0.0001
-        return data, quants, scalers
+        # return data, quants, scalers
+        return data, scalers
 
     for j in range(num_files):
         scaler = read_scaler(path_files[j], hdf_tag, scaler_name)

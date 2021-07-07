@@ -106,7 +106,7 @@ class FileTableWidget(QtWidgets.QWidget):
         imageTag_label.setFixedWidth(90)
         self.imageTag = QtWidgets.QComboBox()
         self.imageTag.activated.connect(self.getDataTag)
-        self.imageTag.activated.connect(self.getQuantOptions)
+        # self.imageTag.activated.connect(self.getQuantOptions)
         self.imageTag.activated.connect(self.getElementList)
         self.imageTag.setFixedWidth(122.5)
 
@@ -124,11 +124,11 @@ class FileTableWidget(QtWidgets.QWidget):
         self.elementTag.currentIndexChanged.connect(self.getElementList)
         self.elementTag.setFixedWidth(122.5)
 
-        quant_label = QtWidgets.QLabel('Normalize by:')
-        quant_label.setFixedWidth(90)
-        self.quant_options = QtWidgets.QComboBox()
-        # self.quant_options.currentIndexChanged.connect(self.getQuantOptions)
-        self.quant_options.setFixedWidth(122.5)
+        # quant_label = QtWidgets.QLabel('Normalize by:')
+        # quant_label.setFixedWidth(90)
+        # self.quant_options = QtWidgets.QComboBox()
+        # # self.quant_options.currentIndexChanged.connect(self.getQuantOptions)
+        # self.quant_options.setFixedWidth(122.5)
 
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
@@ -161,10 +161,10 @@ class FileTableWidget(QtWidgets.QWidget):
         hBox4.addWidget(self.elementTag)
         hBox4.setAlignment(QtCore.Qt.AlignLeft)
 
-        hBox5 = QtWidgets.QHBoxLayout()
-        hBox5.addWidget(quant_label)
-        hBox5.addWidget(self.quant_options)
-        hBox5.setAlignment(QtCore.Qt.AlignLeft)
+        # hBox5 = QtWidgets.QHBoxLayout()
+        # hBox5.addWidget(quant_label)
+        # hBox5.addWidget(self.quant_options)
+        # hBox5.setAlignment(QtCore.Qt.AlignLeft)
 
         hBox7 = QtWidgets.QHBoxLayout()
         hBox7.addWidget(self.saveDataBtn)
@@ -175,7 +175,7 @@ class FileTableWidget(QtWidgets.QWidget):
         vBox1.addLayout(hBox2)
         vBox1.addLayout(hBox3)
         vBox1.addLayout(hBox4)
-        vBox1.addLayout(hBox5)
+        # vBox1.addLayout(hBox5)
         # vBox1.addLayout(hBox6)
         vBox1.addLayout(hBox7)
         # vBox1.setFixedWidth(275)
@@ -256,7 +256,7 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.getImgTags()
                 self.getDataTag()
                 self.getElementList()
-                self.getQuantOptions()
+                # self.getQuantOptions()
                 self.onThetaUpdate()
             except KeyError:
                 pass
@@ -318,9 +318,9 @@ class FileTableWidget(QtWidgets.QWidget):
 
         if self.version == 0:
             self.message.clear()
-            self.thetaLineEdit.setEnabled(True)
+            # self.thetaLineEdit.setEnabled(True)
             self.dataTag.setEnabled(True)
-            self.quant_options.setEnabled(True)
+            # self.quant_options.setEnabled(True)
 
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
@@ -391,6 +391,7 @@ class FileTableWidget(QtWidgets.QWidget):
                     # #filtering  drop-down menu to inlcude only relevant entries.
                     temp_tags1 = list(filter(lambda k: not 'names' in k, self.dataTags[indx]))
                     temp_tags1 = list(filter(lambda k: not 'units' in k, temp_tags1))
+                    temp_tags1 = list(filter(lambda k: not 'axis' in k, temp_tags1))
                     # temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
                     self.dataTags[indx] = temp_tags1
                     self.dataTag.clear()
@@ -407,9 +408,9 @@ class FileTableWidget(QtWidgets.QWidget):
                 except ValueError:
                     pass
 
-                self.thetaLineEdit.setEnabled(True)
+                # self.thetaLineEdit.setEnabled(True)
                 self.dataTag.setEnabled(True)
-                self.quant_options.setEnabled(True)
+                # self.quant_options.setEnabled(True)
 
     def getElementList(self):
         if self.version == 0:   #legacy data
@@ -467,38 +468,38 @@ class FileTableWidget(QtWidgets.QWidget):
         self.elementTag.currentIndexChanged.connect(self.getElementList)
 
         # if self.version == 2:   #2ide data
-    def getQuantOptions(self):
-        self.quant_options.clear()
-        img_tag = self.imgTags[self.imageTag.currentIndex()]
-        try:
-            if self.version == 0:   #legacy data
-                quant_names = ['None', 'SRcurrent', 'us_ic', 'ds_ic']
-                for i in range(len(quant_names)):
-                    self.quant_options.addItem(quant_names[i])
+    # def getQuantOptions(self):
+    #     self.quant_options.clear()
+    #     img_tag = self.imgTags[self.imageTag.currentIndex()]
+    #     try:
+    #         if self.version == 0:   #legacy data
+    #             quant_names = ['None', 'SRcurrent', 'us_ic', 'ds_ic']
+    #             for i in range(len(quant_names)):
+    #                 self.quant_options.addItem(quant_names[i])
+    #
+    #         if self.version == 1:   #9idbdata
+    #             quant_names = list(self.img[img_tag]['quant_names'])
+    #             quant_names = [quant_names[i].decode() for i in range(len(quant_names))]
+    #             self.quant_options.addItem('None')
+    #             for i in range(len(quant_names)):
+    #                 self.quant_options.addItem(quant_names[i])
+    #             # default_idx = quant_names.index("DS_IC")
+    #             # self.quant_options.setCurrentIndex(default_idx)
+    #         # self.quant_options.setEnabled(True)
+    #         # self.quant_exists = True
+    #     except:
+    #         # default_idx = quant_names.index("None")
+    #         # self.quant_exists = False
+    #         self.quant_options.addItem('None')
+    #     return
 
-            if self.version == 1:   #9idbdata
-                quant_names = list(self.img[img_tag]['quant_names'])
-                quant_names = [quant_names[i].decode() for i in range(len(quant_names))]
-                self.quant_options.addItem('None')
-                for i in range(len(quant_names)):
-                    self.quant_options.addItem(quant_names[i])
-                # default_idx = quant_names.index("DS_IC")
-                # self.quant_options.setCurrentIndex(default_idx)
-            # self.quant_options.setEnabled(True)
-            # self.quant_exists = True
-        except:
-            # default_idx = quant_names.index("None")
-            # self.quant_exists = False
-            self.quant_options.addItem('None')
-        return
-
-    def normalizeData(self, data, quants, scalers):
-        quants[quants <= 0] = 1
+    def normalizeData(self, data, scalers):
+        # quants[quants <= 0] = 1
         scalers[scalers <= 0] = 1
         num_elements = data.shape[0]
         num_files = data.shape[1]
         #normalize
-        data = data / quants[:, :, None, None] / scalers
+        # data = data / quants[:, :, None, None] / scalers
         for i in range(num_elements):
             norm_median = np.median(data[i, :, :, :])
             norm_mean = np.mean(data[i, :, :, :])
@@ -616,7 +617,7 @@ class FileTableWidget(QtWidgets.QWidget):
         hdf_tag = self.imgTags[self.imageTag.currentIndex()]
         data_tag = self.dataTag.currentText()
         element_tag = self.element_tag
-        scaler_name = self.quant_options.currentText()
+        # scaler_name = self.quant_options.currentText()
 
         k = np.arange(len(files))
         l = np.arange(len(elements))
@@ -651,15 +652,16 @@ class FileTableWidget(QtWidgets.QWidget):
 
         self.parent.clear_all()
         try:
-            data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
+            # data, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
+            data, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag)
         except:
             self.message.setText('Loading failed')
             return [], [], [], []
 
-        if data is None or quants is None or scalers is None:
+        if data is None or scalers is None:
             return [], [], [], []
         # if self.quant_options.currentText() != 'None':
-        self.data = self.normalizeData(data, quants, scalers)
+        self.data = self.normalizeData(data, scalers)
         self.message.setText('finished loading')
 
         data[np.isnan(data)] = 0.0001
