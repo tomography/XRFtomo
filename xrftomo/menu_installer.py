@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from __future__ import division, print_function
 import sys, os, os.path, stat, shutil, subprocess, plistlib
 from os.path import expanduser
