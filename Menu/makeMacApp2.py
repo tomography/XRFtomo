@@ -75,10 +75,11 @@ if __name__ == '__main__':
     #     Usage()
 
 # where the app will be created
+    py_env = os.environ['CONDA_DEFAULT_ENV']
     scriptdir = os.path.split(script)[0]
     appPath = os.path.abspath(os.path.join(scriptdir,project+".app"))
     iconfile = "/Users/fabriciomarin/conda/XRFtomo/xrftomo/xrftomo.icns"
-    env  = "source activate py36; "
+    env  = "source activate {}; ".format(py_env)
     # iconfile = os.path.join(scriptdir,'tmp.icns') # optional icon file
     
     AppleScript = '''(*   xrftomo AppleScript by Fabricio S.Marin (marinf@anl.gov)
@@ -136,7 +137,7 @@ end run
     shell = os.path.join("/tmp/","appscrpt.script")
     f = open(shell, "w")
     # f.write(AppleScript.format(newpython,script,env))
-    f.write(AppleScript.format("source activate py36; xrftomo gui","",""))
+    f.write(AppleScript.format("source activate {}; xrftomo gui".format(py_env),"",""))
     f.close()
 
     try:

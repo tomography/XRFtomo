@@ -9,7 +9,7 @@ package:
   name: {{ name|lower }} 
   version: {{ version }}
 
-#source:
+source:
   url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
 #    path:  /Users/fabriciomarin/Downloads/xrftomo-1.0.7-py_0.tar.bz2
   # sha256: b1c7a9655e76a86ab555fb1360adcd61ae14bcd8e5397bb38c76d8750b2c84f2
