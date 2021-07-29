@@ -59,7 +59,8 @@ def install_menu():
 
 		# where the app will be created
 		appPath = os.path.abspath(os.path.join(scriptdir,project+".app"))
-		env = "source activate py36; "
+		py_env = os.environ['CONDA_DEFAULT_ENV']
+		env = "source activate {}; ".format(py_env)
 
 		AppleScript = '''(*   xrftomo AppleScript by Fabricio S.Marin (marinf@anl.gov)
 		It can launch xrftomo by double clicking 
