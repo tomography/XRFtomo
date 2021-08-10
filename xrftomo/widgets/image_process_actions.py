@@ -39,7 +39,7 @@
 ###########################################################################
 
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtWidgets
 from scipy import ndimage, optimize, signal
 import numpy as np
 

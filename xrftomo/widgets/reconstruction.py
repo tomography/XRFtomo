@@ -39,7 +39,7 @@
 ###########################################################################
 
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import pyqtgraph
@@ -218,7 +218,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
         if self.ViewControl.recon_save.isChecked():
             try:
-                savedir = QtGui.QFileDialog.getSaveFileName()[0]
+                savedir = QtWidgets.QFileDialog.getSaveFileName()[0]
                 # savedir = '/Users/fabriciomarin/Documents/scans/Lin_XRF_tomo/Lin_3D2/testing/ptycho'
 
                 if savedir == "":

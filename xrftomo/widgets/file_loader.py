@@ -39,7 +39,7 @@
 ###########################################################################
 
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtWidgets
 import xrftomo
 import h5py
 import numpy as np
@@ -579,7 +579,7 @@ class FileTableWidget(QtWidgets.QWidget):
             rows = []
             for i in self.fileTableView.selectionModel().selection().indexes():
                 rows += [i.row()]
-            menu = QtGui.QMenu()
+            menu = QtWidgets.QMenu()
             check_action = menu.addAction("Check")
             uncheck_action = menu.addAction("Uncheck")
             action = menu.exec_(self.fileTableView.mapToGlobal(pos))
@@ -591,7 +591,7 @@ class FileTableWidget(QtWidgets.QWidget):
             rows = []
             for i in self.elementTableView.selectionModel().selection().indexes():
                 rows += [i.row()]
-            menu = QtGui.QMenu()
+            menu = QtWidgets.QMenu()
             check_action = menu.addAction("Check")
             uncheck_action = menu.addAction("Uncheck")
             action = menu.exec_(self.elementTableView.mapToGlobal(pos))

@@ -39,7 +39,7 @@
 ###########################################################################
 
 import xrftomo
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore, QtWidgets, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 import pyqtgraph
 import numpy as np
@@ -161,13 +161,13 @@ class SinogramWidget(QtWidgets.QWidget):
 
         palette = self.lcd.palette()
         # foreground color
-        palette.setColor(palette.WindowText, QtGui.QColor(85, 85, 255))
+        palette.setColor(palette.WindowText, QtWidgets.QColor(85, 85, 255))
         # background color
-        palette.setColor(palette.Background, QtGui.QColor(0, 170, 255))
+        palette.setColor(palette.Background, QtWidgets.QColor(0, 170, 255))
         # "light" border
-        palette.setColor(palette.Light, QtGui.QColor(255, 255, 0))
+        palette.setColor(palette.Light, QtWidgets.QColor(255, 255, 0))
         # "dark" border
-        palette.setColor(palette.Dark, QtGui.QColor(0, 0, 0))
+        palette.setColor(palette.Dark, QtWidgets.QColor(0, 0, 0))
         # set the palette
         self.lcd.setPalette(palette)
 
@@ -743,7 +743,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def alignFromText2_params(self):
         ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
-        fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt) ;; NPY (*.npy)")
+        fileName = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt) ;; NPY (*.npy)")
 
         if fileName[0] == "":
             return
