@@ -38,7 +38,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
 ###########################################################################
 
-from PyQt5 import QtWidgets, QtWidgets, QtCore
+from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import pyqtgraph
@@ -138,13 +138,13 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         palette = self.lcd.palette()
         # foreground color
-        palette.setColor(palette.WindowText, QtWidgets.QColor(85, 85, 255))
+        palette.setColor(palette.WindowText, QtGui.QColor(85, 85, 255))
         # background color
-        palette.setColor(palette.Background, QtWidgets.QColor(0, 170, 255))
+        palette.setColor(palette.Background, QtGui.QColor(0, 170, 255))
         # "light" border
-        palette.setColor(palette.Light, QtWidgets.QColor(255, 255, 0))
+        palette.setColor(palette.Light, QtGui.QColor(255, 255, 0))
         # "dark" border
-        palette.setColor(palette.Dark, QtWidgets.QColor(0, 0, 0))
+        palette.setColor(palette.Dark, QtGui.QColor(0, 0, 0))
         # set the palette
         self.lcd.setPalette(palette)
         self.imageView.projView.setScaledMode()

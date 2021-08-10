@@ -39,7 +39,7 @@
 ###########################################################################
 
 
-from PyQt5 import QtWidgets, QtWidgets, QtCore
+from PyQt5 import QtGui, QtWidgets, QtCore
 # from matplotlib.figure import Figure
 import xrftomo
 import xrftomo.config as config
