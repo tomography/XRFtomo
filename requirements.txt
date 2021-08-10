@@ -1,14 +1,16 @@
+python
+dxchange
+tomopy
 dxfile
 h5py
 matplotlib
 numpy
 pandas
-PyQt5 == 5.15.2
 pyqtgraph
 scipy
 seaborn
 setuptools
 scikit-image
-tomopy
-dxchange
-pywin32
+pywin32 # [win]
+astropy
+pyqt

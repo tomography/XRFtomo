@@ -8,7 +8,7 @@
                 // The following options can be applied to any shortcut type:
                 "name": "xrftomo",
                 "workdir": "${PREFIX}",
-                // "icon": "${MENU_DIR}/app.ico",
+                "icon": "${MENU_DIR}/app.ico",
                 "desktop": true,  // Also create desktop shortcut
                 "quicklaunch": true  // Also create "Quick Launch" bar shortcut
             },

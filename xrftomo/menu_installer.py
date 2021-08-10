@@ -112,7 +112,8 @@ def install_menu():
 		newpython = os.path.join(appPath,"Contents","MacOS",project)
 		if pythonExe.split("/")[-1] == "python3.6":
 			pythonExe = "/".join(pythonExe.split("/")[:-1])+"/python"
-
+		if pythonExe.split("/")[-1] == "python3.9":
+			pythonExe = "/".join(pythonExe.split("/")[:-1])+"/python"
 		# create a link to the python inside the app, if named to match the project
 		if pythonExe != newpython:
 			os.symlink(pythonExe,newpython)
@@ -174,8 +175,6 @@ def install_menu():
 		XRFbat = os.path.join(scriptpath,'RunXRFtomo.bat')                   #place bat alongside xrftomo ?
 		XRFicon = os.path.join(scriptpath,'xrftomo.ico')                     #place xrftomo.ico alongisde xrftomo.py ?
 		pythonexe = os.path.realpath(sys.executable)                        #python path, automatically detects python path
-		# if pythonExe.split("/")[-1] == "python3.6":
-		# 	pythonExe = "/".join(pythonExe.split("/")[:-1])+"/python"
 		print('Python installed at',pythonexe)
 		print('xrftomo installed at',scriptpath)
 		# Bob reports a problem using pythonw.exe w/Canopy on Windows, so change that if used
@@ -184,7 +183,7 @@ def install_menu():
 			pythonexe = os.path.join(os.path.split(pythonexe)[0],'python.exe')
 			print("  now pythonexe="+pythonexe)
 
-		# create a GSAS-II script
+		# create a xrftomo script
 		fp = open(os.path.join(XRFbat),'w')
 		fp.write("@REM created by run of bootstrap.py on {:%d %b %Y %H:%M}\n".format(datetime.datetime.now()))
 		activate = os.path.join(os.path.split(pythonexe)[0],'Scripts','activate')
@@ -204,8 +203,8 @@ def install_menu():
 					AnacondaPathIndx = os.path.split(pythonexe)[0].split("\\").index("anaconda3")
 				except ValueError:
 					print("could not find Anaconda activate script")
-
-			activate = "\\".join(os.path.split(pythonexe)[0].split("\\")[:AnacondaPathIndx+1])+"\\Scripts\\activate py39"
+			py_env = os.environ['CONDA_DEFAULT_ENV']
+			activate = "\\".join(os.path.split(pythonexe)[0].split("\\")[:AnacondaPathIndx+1])+"\\Scripts\\activate {}".format(py_env)
 			print("set activate path to {}".format(activate))
 		pexe = pythonexe
 		if ' ' in pythonexe:

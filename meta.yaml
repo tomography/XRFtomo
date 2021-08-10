@@ -10,34 +10,24 @@ package:
   version: {{ version }}
 
 source:
-  path: ../xrftomo-1.0.07.tar.gz
+  path: ../XRFtomo
   # url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
-  # path:  /Users/fabriciomarin/Downloads/xrftomo-1.0.7-py_0.tar.bz2
-  # sha256: b1c7a9655e76a86ab555fb1360adcd61ae14bcd8e5397bb38c76d8750b2c84f2
-  # url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
-  # sha256: 986c4ea85c7fe8bcef274b7085209b74e8a93acd444ad1f9b947fb3f1352cbbb
-  extra:
-    channels:
-      - conda-forge
+
+# channels:
+#   - conda-forge
 
 build:
-  noarch: python
+  skip: false # [win]
   number: 0
-  # script: "{{ PYTHON }} -m pip install ."
-  # script: "{{ python }} setup.py install"
-  # entry_points: 
-    # - xrftomo = xrftomo.xrftomo:main
   entry_points:
     - xrftomo = xrftomo.__main__:main
-  # ignore_prefix_files:
-  #   - xrftomo
 
 requirements:
   host:
-    - python =3.9
+    - python
     - pip
   run:
-    - python =3.9
+    - python
     - dxchange
     - tomopy
     - dxfile
@@ -45,18 +35,19 @@ requirements:
     - matplotlib
     - numpy
     - pandas
-    - pyqt >=5
     - pyqtgraph
     - scipy
     - seaborn
     - setuptools
     - scikit-image
-    - pywin32   [win]
+    - pywin32
     - astropy
+    - pyqt
+    - pywin32 [win]
 
 test:
   source_files:
-    - menu_installer.py
+    - xrftomo/menu_installer.py
   imports:
     - xrftomo
 
