@@ -175,7 +175,7 @@ def install_menu():
 		if "egg" in xrftomo_path:
 			pkg_name = xrftomo_path.split(".egg")[0].split("\\")[-1].replace(".","_")
 			src_dir = xrftomo_path.split("envs")[0]+"pkgs\\"+pkg_name+"\\info\\recipe"
-			menu_dir = src_dir+"\\Menu\\"
+			menu_dir = os.path.join(src_dir,"Menu")
 			entry_point = os.popen("where xrftomo")
 			entry_point = entry_point.read().split("\n")[0]
 
@@ -189,13 +189,13 @@ def install_menu():
 
 			if len(src_files)>1:
 				print("number of possible source directories are greater than 1. Selecting the first one, hope for the best.")
-			else: 
-				pkg_name = src_files[0]
-				src_dir = xrftomo_path.split("envs")[0]+"pkgs\\"+pkg_name+"\\info\\recipe"
-				menu_dir = src_dir+"\\Menu\\"
-				entry_point = os.popen("where xrftomo")
-				entry_point = entry_point.read().split("\n")[0]
-				print(entry_point)
+ 
+			pkg_name = src_files[0]
+			src_dir = xrftomo_path.split("envs")[0]+"pkgs\\"+pkg_name+"\\info\\recipe"
+			menu_dir = os.path.join(src_dir,"Menu")
+			entry_point = os.popen("where xrftomo")
+			entry_point = entry_point.read().split("\n")[0]
+			print(entry_point)
 
 		app = None # delay starting wx until we need it. Likely not needed.
 		#scriptpath = os.path.split(sys.argv[0])[0]
@@ -203,15 +203,14 @@ def install_menu():
 		# print("this is the path", current_path)
 		print("this is the path", src_dir)
 		# scriptpath = "\\".join(current_path.split("\\")[:-1])+"\\"
-		scriptpath = src_dir+"\\xrftomo\\"
+		scriptpath = os.path.join(src_dir,"xrftomo")
 		print("this is the script path", scriptpath)
 
 		#if no path specified: "", scriptpath="."
 		# scriptpath = os.path.abspath(os.path.expanduser(scriptpath))        #scriptpath = =current path
-		XRFscript = scriptpath+"\\__main__.py"                 #assuming path is where script is
-		XRFbat = scriptpath+"\\RunXRFtomo.bat"                   #place bat alongside xrftomo ?
-		# XRFicon = os.path.join(scriptpath,'xrftomo.ico')                     #place xrftomo.ico alongisde xrftomo.py ?
-		XRFicon = menu_dir+"\\xrftomo.ico"                     #place xrftomo.ico alongisde xrftomo.py ?
+		XRFscript = os.path.join(scriptpath,"__main__.py")                #assuming path is where script is
+		XRFbat = os.path.join(scriptpath,"RunXRFtomo.bat")
+		XRFicon = os.path.join(menu_dir,'xrftomo.ico')                     #place xrftomo.ico alongisde xrftomo.py ?
 		pythonexe = os.path.realpath(sys.executable)                        #python path, automatically detects python path
 		print('Python installed at',pythonexe)
 		# print('xrftomo installed at',scriptpath)
@@ -266,7 +265,7 @@ def install_menu():
 			save = True
 
 			if save:
-				shell = win32com.client.Dispatch('WScripwt.Shell')
+				shell = win32com.client.Dispatch('WScript.Shell')
 				shobj = shell.CreateShortCut(shortcut)
 				shobj.Targetpath = XRFbat
 				#shobj.WorkingDirectory = wDir # could specify a default project location here
