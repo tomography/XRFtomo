@@ -112,6 +112,8 @@ def install_menu():
 		newpython = os.path.join(appPath,"Contents","MacOS",project)
 		if pythonExe.split("/")[-1] == "python3.6":
 			pythonExe = "/".join(pythonExe.split("/")[:-1])+"/python"
+		if pythonExe.split("/")[-1] == "python3.7":
+			pythonExe = "/".join(pythonExe.split("/")[:-1])+"/python"
 		if pythonExe.split("/")[-1] == "python3.9":
 			pythonExe = "/".join(pythonExe.split("/")[:-1])+"/python"
 		# create a link to the python inside the app, if named to match the project
@@ -163,13 +165,37 @@ def install_menu():
 		except ImportError:
 			import winreg
 		import xrftomo 
+		import platform
+		py_version = ("").join(platform.python_version().split(".")[:2])
+		package_version = xrftomo.__version__
 		xrftomo_path = xrftomo.__file__
-		pkg_name = xrftomo_path.split(".egg")[0].split("\\")[-1].replace(".","_")
-		src_dir = xrftomo_path.split("envs")[0]+"pkgs"+pkg_name+"\\info\\recipe"
-		menu_dir = src_dir+"\\Menu\\"
-		entry_point = os.popen("which xrftomo")
-		entry_point = entry_point.read().split("\n")[0]
+		home_dir = os.path.expanduser('~')
+		go_home = os.system("cd {}".format(home_dir))
 
+		if "egg" in xrftomo_path:
+			pkg_name = xrftomo_path.split(".egg")[0].split("\\")[-1].replace(".","_")
+			src_dir = xrftomo_path.split("envs")[0]+"pkgs\\"+pkg_name+"\\info\\recipe"
+			menu_dir = src_dir+"\\Menu\\"
+			entry_point = os.popen("where xrftomo")
+			entry_point = entry_point.read().split("\n")[0]
+
+		else:
+			src_files = xrftomo_path.split("envs")[0]+"pkgs\\"
+			src_files = os.listdir(src_files)
+			src_files = list(filter(lambda k: 'xrftomo' in k, src_files))
+			src_files = list(filter(lambda k: 'tar' not in k, src_files))
+			src_files = list(filter(lambda k: py_version in k, src_files))
+			src_files = list(filter(lambda k: package_version in k, src_files))
+
+			if len(src_files)>1:
+				print("number of possible source directories are greater than 1. Selecting the first one, hope for the best.")
+			else: 
+				pkg_name = src_files[0]
+				src_dir = xrftomo_path.split("envs")[0]+"pkgs\\"+pkg_name+"\\info\\recipe"
+				menu_dir = src_dir+"\\Menu\\"
+				entry_point = os.popen("where xrftomo")
+				entry_point = entry_point.read().split("\n")[0]
+				print(entry_point)
 
 		app = None # delay starting wx until we need it. Likely not needed.
 		#scriptpath = os.path.split(sys.argv[0])[0]
@@ -178,14 +204,14 @@ def install_menu():
 		print("this is the path", src_dir)
 		# scriptpath = "\\".join(current_path.split("\\")[:-1])+"\\"
 		scriptpath = src_dir+"\\xrftomo\\"
-		print("this is the scrpt path", scriptpath)
+		print("this is the script path", scriptpath)
 
 		#if no path specified: "", scriptpath="."
 		# scriptpath = os.path.abspath(os.path.expanduser(scriptpath))        #scriptpath = =current path
-		XRFscript = os.path.join(scriptpath,'__main__.py')                   #assuming path is where script is
-		XRFbat = os.path.join(scriptpath,'RunXRFtomo.bat')                   #place bat alongside xrftomo ?
+		XRFscript = scriptpath+"\\__main__.py"                 #assuming path is where script is
+		XRFbat = scriptpath+"\\RunXRFtomo.bat"                   #place bat alongside xrftomo ?
 		# XRFicon = os.path.join(scriptpath,'xrftomo.ico')                     #place xrftomo.ico alongisde xrftomo.py ?
-		XRFicon = os.path.join(menu_dir,'xrftomo.ico')                     #place xrftomo.ico alongisde xrftomo.py ?
+		XRFicon = menu_dir+"\\xrftomo.ico"                     #place xrftomo.ico alongisde xrftomo.py ?
 		pythonexe = os.path.realpath(sys.executable)                        #python path, automatically detects python path
 		print('Python installed at',pythonexe)
 		# print('xrftomo installed at',scriptpath)
@@ -240,7 +266,7 @@ def install_menu():
 			save = True
 
 			if save:
-				shell = win32com.client.Dispatch('WScript.Shell')
+				shell = win32com.client.Dispatch('WScripwt.Shell')
 				shobj = shell.CreateShortCut(shortcut)
 				shobj.Targetpath = XRFbat
 				#shobj.WorkingDirectory = wDir # could specify a default project location here
