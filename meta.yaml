@@ -40,10 +40,9 @@ requirements:
     - seaborn
     - setuptools
     - scikit-image
-    - pywin32
     - astropy
-    - pyqt
-    - pywin32 [win]
+    - pyqt =5.9.2
+    - pywin32 # [win]
 
 test:
   source_files:

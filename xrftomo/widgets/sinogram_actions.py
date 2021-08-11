@@ -38,7 +38,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
 ###########################################################################
 
-from PyQt5 import QtWidgets, QtCore, QtWidgets
+from PyQt5 import QtGui, QtCore, QtWidgets
 import scipy.fftpack as spf
 from scipy import ndimage, optimize, signal
 import tomopy

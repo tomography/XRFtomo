@@ -13,4 +13,4 @@ setuptools
 scikit-image
 pywin32 # [win]
 astropy
-pyqt
+pyqt =5.9.2

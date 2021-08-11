@@ -39,7 +39,7 @@
 ###########################################################################
 
 import xrftomo
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
 import pyqtgraph
 import numpy as np
@@ -743,7 +743,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def alignFromText2_params(self):
         ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
-        fileName = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt) ;; NPY (*.npy)")
+        fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt) ;; NPY (*.npy)")
 
         if fileName[0] == "":
             return

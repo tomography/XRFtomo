@@ -60,9 +60,9 @@ from skimage.morphology import remove_small_objects
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
-class xrftomoGui(QtWidgets.QMainWindow):
+class xrftomoGui(QtGui.QMainWindow):
     def __init__(self, app, params):
-        super(QtWidgets.QMainWindow, self).__init__()
+        super(QtGui.QMainWindow, self).__init__()
         self.params = params
         self.param_list = {}
         self.app = app
@@ -70,107 +70,107 @@ class xrftomoGui(QtWidgets.QMainWindow):
         self.initUI()
 
     def initUI(self):
-        exitAction = QtWidgets.QAction('Exit', self)
+        exitAction = QtGui.QAction('Exit', self)
         exitAction.triggered.connect(self.close)
         exitAction.setShortcut('Ctrl+Q')
 
-        closeAction = QtWidgets.QAction('Quit', self)
+        closeAction = QtGui.QAction('Quit', self)
         closeAction.triggered.connect(sys.exit)
         closeAction.setShortcut('Ctrl+X')
 
-        openH5Action = QtWidgets.QAction('open h5 file', self)
+        openH5Action = QtGui.QAction('open h5 file', self)
         openH5Action.triggered.connect(self.openH5)
 
-        openExchangeAction = QtWidgets.QAction('open exchange file', self)
+        openExchangeAction = QtGui.QAction('open exchange file', self)
         openExchangeAction.triggered.connect(self.openExchange)
 
-        openTiffAction = QtWidgets.QAction('open tiff files', self)
+        openTiffAction = QtGui.QAction('open tiff files', self)
         openTiffAction.triggered.connect(self.openTiffs)
 
-        openThetaAction = QtWidgets.QAction('open thetas file', self)
+        openThetaAction = QtGui.QAction('open thetas file', self)
         openThetaAction.triggered.connect(self.openThetas)
 
-        #openTiffFolderAction = QtWidgets.QAction("Open Tiff Folder", self)
+        #openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
         #openTiffFolderAction.triggered.connect(self.openTiffFolder)
 
-        saveProjectionAction = QtWidgets.QAction('Projections', self)
+        saveProjectionAction = QtGui.QAction('Projections', self)
         saveProjectionAction.triggered.connect(self.saveProjections)
 
-        # saveHotSpotPosAction = QtWidgets.QAction('save hotspot positions',self)
+        # saveHotSpotPosAction = QtGui.QAction('save hotspot positions',self)
         # saveHotSpotPosAction.triggered.connect(self.save_hotspot_positions)
 
-        saveSinogramAction = QtWidgets.QAction('Sinogram', self)
+        saveSinogramAction = QtGui.QAction('Sinogram', self)
         saveSinogramAction.triggered.connect(self.saveSinogram)
 
-        saveSinogram2Action = QtWidgets.QAction('Sinogram stack', self)
+        saveSinogram2Action = QtGui.QAction('Sinogram stack', self)
         saveSinogram2Action.triggered.connect(self.saveSinogram2)
 
-        saveReconstructionAction = QtWidgets.QAction('Reconstruction', self)
+        saveReconstructionAction = QtGui.QAction('Reconstruction', self)
         saveReconstructionAction.triggered.connect(self.saveReconstruction)
 
-        saveRecon2npyAction = QtWidgets.QAction("recon as npy", self)
+        saveRecon2npyAction = QtGui.QAction("recon as npy", self)
         saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
 
-        saveReconArray2npyAction = QtWidgets.QAction("reconArr as npy", self)
+        saveReconArray2npyAction = QtGui.QAction("reconArr as npy", self)
         saveReconArray2npyAction.triggered.connect(self.saveReconArray2npy)
 
-        saveToHDFAction = QtWidgets.QAction('as HDF file', self)
+        saveToHDFAction = QtGui.QAction('as HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
 
-        saveThetasAction = QtWidgets.QAction('Angle information to .txt', self)
+        saveThetasAction = QtGui.QAction('Angle information to .txt', self)
         saveThetasAction.triggered.connect(self.saveThetas)
 
-        saveToNumpyAction = QtWidgets.QAction("as Numpy file", self)
+        saveToNumpyAction = QtGui.QAction("as Numpy file", self)
         saveToNumpyAction.triggered.connect(self.saveToNumpy)
 
-        saveAlignemtInfoAction = QtWidgets.QAction("Alignment", self)
+        saveAlignemtInfoAction = QtGui.QAction("Alignment", self)
         saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
 
-        saveCorrAnalysisAction = QtWidgets.QAction("Corelation Analysis", self)
+        saveCorrAnalysisAction = QtGui.QAction("Corelation Analysis", self)
         saveCorrAnalysisAction.triggered.connect(self.saveCorrAlsys)
 
 
 
-        runTransRecAction = QtWidgets.QAction("Transmission Recon", self)
+        runTransRecAction = QtGui.QAction("Transmission Recon", self)
         #runTransRecAction.triggered.connect(self.runTransReconstruct)
 
-        # selectImageTagAction = QtWidgets.QAction("Select Image Tag", self)
+        # selectImageTagAction = QtGui.QAction("Select Image Tag", self)
         #selectImageTagAction.triggered.connect(self.selectImageTag)
 
-        undoAction = QtWidgets.QAction('Undo (Ctrl+Z)', self)
+        undoAction = QtGui.QAction('Undo (Ctrl+Z)', self)
         undoAction.triggered.connect(self.undo)
         undoAction.setShortcut('Ctrl+Z')
 
-        preferencesAction = QtWidgets.QAction("exit preferences")
+        preferencesAction = QtGui.QAction("exit preferences")
 
-        setAspectratio = QtWidgets.QAction("lock aspect ratio",self)
+        setAspectratio = QtGui.QAction("lock aspect ratio",self)
         setAspectratio.setCheckable(True)
         setAspectratio.triggered.connect(self.toggle_aspect_ratio)
 
-        restoreAction = QtWidgets.QAction("Restore", self)
+        restoreAction = QtGui.QAction("Restore", self)
         restoreAction.triggered.connect(self.restore)
 
-        keyMapAction = QtWidgets.QAction('key map settings', self)
+        keyMapAction = QtGui.QAction('key map settings', self)
         keyMapAction.triggered.connect(self.keyMapSettings)
 
-        configAction = QtWidgets.QAction('load configuration settings', self)
+        configAction = QtGui.QAction('load configuration settings', self)
         configAction.triggered.connect(self.configSettings)
 
 
-        self.forceLegacy = QtWidgets.QAction("force legacy mode", self)
+        self.forceLegacy = QtGui.QAction("force legacy mode", self)
         self.forceLegacy.setCheckable(True)
 
 
-        # matcherAction = QtWidgets.QAction("match template", self)
+        # matcherAction = QtGui.QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
 
-        # saveHotSpotPosAction = QtWidgets.QAction("Save Hot Spot Pos", self)
+        # saveHotSpotPosAction = QtGui.QAction("Save Hot Spot Pos", self)
         #saveHotSpotPosAction.triggered.connect(self.saveHotSpotPos)
 
-        wienerAction = QtWidgets.QAction("Wiener", self)
+        wienerAction = QtGui.QAction("Wiener", self)
         #wienerAction.triggered.connect(self.ipWiener)
 
-        # externalImageRegAction = QtWidgets.QAction("External Image Registaration", self)
+        # externalImageRegAction = QtGui.QAction("External Image Registaration", self)
         #externalImageRegAction.triggered.connect(self.externalImageReg)
 
         ###
@@ -280,48 +280,48 @@ class xrftomoGui(QtWidgets.QMainWindow):
         self.editMenu.addAction(restoreAction)
         self.editMenu.setDisabled(True)
 
-        analysis = QtWidgets.QMenu('Analysis', self)
-        corrElemAction = QtWidgets.QAction('Correlate Elements', self)
+        analysis = QtGui.QMenu('Analysis', self)
+        corrElemAction = QtGui.QAction('Correlate Elements', self)
         analysis.addAction(corrElemAction)
         corrElemAction.triggered.connect(self.corrElem)
 
-        scatterPlotAction = QtWidgets.QAction('Scatter Plot', self)
+        scatterPlotAction = QtGui.QAction('Scatter Plot', self)
         analysis.addAction(scatterPlotAction)
         scatterPlotAction.triggered.connect(self.scatterPlot)
 
-        scatterPlotReconAction = QtWidgets.QAction('Scatter Plot Recon', self)
+        scatterPlotReconAction = QtGui.QAction('Scatter Plot Recon', self)
         analysis.addAction(scatterPlotReconAction)
         scatterPlotReconAction.triggered.connect(self.scatterPlotRecon)
 
-        projWinAction = QtWidgets.QAction('reprojection', self)
+        projWinAction = QtGui.QAction('reprojection', self)
         analysis.addAction(projWinAction)
         projWinAction.triggered.connect(self.projWindow)
 
-        pixelDistanceAction = QtWidgets.QAction('spatial analysis', self)
+        pixelDistanceAction = QtGui.QAction('spatial analysis', self)
         analysis.addAction(pixelDistanceAction)
         pixelDistanceAction.triggered.connect(self.pixDistanceWindow)
 
-        layerDensityAction = QtWidgets.QAction('onion analysis', self)
+        layerDensityAction = QtGui.QAction('onion analysis', self)
         analysis.addAction(layerDensityAction)
         layerDensityAction.triggered.connect(self.onionWindow)
 
-        subPixShift = QtWidgets.QMenu("Sub pixel shift", self)
-        ag = QtWidgets.QActionGroup(subPixShift)
+        subPixShift = QtGui.QMenu("Sub pixel shift", self)
+        ag = QtGui.QActionGroup(subPixShift)
         ag.setExclusive(True)
-        self.subPix_1 = ag.addAction(QtWidgets.QAction('1', subPixShift, checkable=True))
+        self.subPix_1 = ag.addAction(QtGui.QAction('1', subPixShift, checkable=True))
         subPixShift.addAction(self.subPix_1)
         self.subPix_1.setChecked(True)
         self.subPix_1.triggered.connect(self.subPixShiftChanged)
 
-        self.subPix_05 = ag.addAction(QtWidgets.QAction('2', subPixShift, checkable=True))
+        self.subPix_05 = ag.addAction(QtGui.QAction('2', subPixShift, checkable=True))
         subPixShift.addAction(self.subPix_05)
         self.subPix_05.triggered.connect(self.subPixShiftChanged)
 
-        self.subPix_025 = ag.addAction(QtWidgets.QAction('5', subPixShift, checkable=True))
+        self.subPix_025 = ag.addAction(QtGui.QAction('5', subPixShift, checkable=True))
         subPixShift.addAction(self.subPix_025)
         self.subPix_025.triggered.connect(self.subPixShiftChanged)
 
-        self.subPix_01 = ag.addAction(QtWidgets.QAction('10', subPixShift, checkable=True))
+        self.subPix_01 = ag.addAction(QtGui.QAction('10', subPixShift, checkable=True))
         subPixShift.addAction(self.subPix_01)
         self.subPix_01.triggered.connect(self.subPixShiftChanged)
 
@@ -1657,7 +1657,7 @@ class xrftomoGui(QtWidgets.QMainWindow):
 
     def openFolder(self):
         try:
-            folderName = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+            folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
         except IndexError:
             print("no folder has been selected")
         except OSError:
@@ -1666,7 +1666,7 @@ class xrftomoGui(QtWidgets.QMainWindow):
 
     def openH5(self):
         currentDir = self.fileTableWidget.dirLineEdit.text()
-        files = QtWidgets.QFileDialog.getOpenFileNames(self, "Open h5", QtCore.QDir.currentPath(), "h5 (*.h5)" )
+        files = QtGui.QFileDialog.getOpenFileNames(self, "Open h5", QtCore.QDir.currentPath(), "h5 (*.h5)" )
         if files[0] == '' or files[0] == []:
             return
 
@@ -1689,7 +1689,7 @@ class xrftomoGui(QtWidgets.QMainWindow):
         self.toolsMenu.setDisabled(True)
 
     def openExchange(self):
-        fname = QtWidgets.QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
+        fname = QtGui.QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
         if fname[0] == '':
             return
         data, self.elements, thetas = xrftomo.read_exchange_file(fname)
@@ -1702,7 +1702,7 @@ class xrftomoGui(QtWidgets.QMainWindow):
         return
 
     def openTiffs(self):
-        files = QtWidgets.QFileDialog.getOpenFileNames(self, "Open Tiffs", QtCore.QDir.currentPath(), "TIFF (*.tiff *.tif)" )
+        files = QtGui.QFileDialog.getOpenFileNames(self, "Open Tiffs", QtCore.QDir.currentPath(), "TIFF (*.tiff *.tif)" )
         if files[0] == '' or files[0] == []:
             return
 
@@ -1729,7 +1729,7 @@ class xrftomoGui(QtWidgets.QMainWindow):
         return
 
     def openThetas(self):
-        file = QtWidgets.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "text (*.txt)" )
+        file = QtGui.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "text (*.txt)" )
         if file[0] == '':
             return
 
@@ -1956,7 +1956,7 @@ class xrftomoGui(QtWidgets.QMainWindow):
         # self.centers_history = []
 
         if not from_open:
-            self.app.setOverrideCursor(QtWidgets.QCursor(QtCore.Qt.WaitCursor))
+            self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
             self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
             #populate scatter plot combo box windows
             self.first_run = True
@@ -2244,7 +2244,7 @@ class xrftomoGui(QtWidgets.QMainWindow):
         self.pixel_distance_window.show()
         self.updateDistanceHisto()
 
-        # self.app.setOverrideCursor(QtWidgets.QCursor(QtCore.Qt.WaitCursor))
+        # self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         #create window, create two drop-down menus (for element selection)
         #load data[element1], load data2[element2], normalize the two,
         #assign elem1 to x axis, assign elem2 to y axis
@@ -2325,7 +2325,7 @@ class xrftomoGui(QtWidgets.QMainWindow):
         pass
 
     def corrElem(self):
-        self.app.setOverrideCursor(QtWidgets.QCursor(QtCore.Qt.WaitCursor))
+        self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         
         data = self.data
         #normalize data
@@ -2444,6 +2444,6 @@ class xrftomoGui(QtWidgets.QMainWindow):
             self.on_save_as()
 
 def main(params):
-    app = QtWidgets.QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     mainWindow = xrftomoGui(app, params)
     sys.exit(app.exec_())
