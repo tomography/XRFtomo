@@ -72,27 +72,23 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 		if method == 0:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
-				algorithm='mlem', center=recCenter, num_iter=iters, accelerated=True, device='cpu')
+				algorithm='mlem', center=recCenter, num_iter=iters, accelerated=False, device='cpu')
 			self.recon /= 0.0070430035033585735
 		elif method == 1:
 			# TODO: gridrec fails and cannot recover, all of python shuts down. consider removing.
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
 				algorithm='gridrec')
-			self.recon /= 0.9080359350734858
 		elif method == 2:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
 				algorithm='art', num_iter=iters)
-			self.recon /= 0.9998318282790742
 		elif method == 3:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
 				algorithm='pml_hybrid', center=recCenter, 
 				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
-			self.recon /= 0.9998791750170672
 		elif method == 4:
 			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
 				algorithm='pml_quad', center=recCenter,
 				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
-			self.recon /= 0.9997819558282253
 		elif method == 5:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
 				algorithm='fbp')

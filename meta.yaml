@@ -13,11 +13,7 @@ source:
   path: ../XRFtomo
   # url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
 
-# channels:
-#   - conda-forge
-
 build:
-  skip: false # [win]
   number: 0
   entry_points:
     - xrftomo = xrftomo.__main__:main
@@ -29,24 +25,18 @@ requirements:
   run:
     - python=3.7
     - dxchange
-    - tomopy
     - dxfile
     - h5py
     - matplotlib
-    - numpy
-    - pandas
     - pyqtgraph
-    - scipy
     - seaborn
     - setuptools
-    - scikit-image
     - astropy
     - pyqt =5.9.2
     - pywin32 # [win]
+    - tomopy
 
 test:
-  source_files:
-    - xrftomo/menu_installer.py
   imports:
     - xrftomo
 

@@ -1,16 +1,12 @@
-python
+python=3.7
 dxchange
-tomopy
 dxfile
 h5py
 matplotlib
-numpy
-pandas
 pyqtgraph
-scipy
 seaborn
 setuptools
-scikit-image
-pywin32 # [win]
 astropy
 pyqt =5.9.2
+pywin32 # [win]
+tomopy
