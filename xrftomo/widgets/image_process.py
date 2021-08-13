@@ -108,6 +108,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.reshapeBtn.clicked.connect(self.ViewControl.reshape_options.show)
         self.ViewControl.run_reshape.clicked.connect(self.reshape_params)
         self.ViewControl.padBtn.clicked.connect(self.ViewControl.padding_options.show)
+        self.ViewControl.fillBtn.clicked.connect(self.fill_params)
         self.ViewControl.run_padding.clicked.connect(self.pad_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
@@ -347,6 +348,12 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def background_value_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         self.actions.background_value(img)
+
+    def fill_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        data = self.actions.fill_void(data, element)
+        self.dataChangedSig.emit(data)
 
     def normalize_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()

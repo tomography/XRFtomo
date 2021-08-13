@@ -67,6 +67,8 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.reshapeBtn.setFixedWidth(button33size)
         self.padBtn = QtWidgets.QPushButton("pad edges")
         self.padBtn.setFixedWidth(button33size)
+        self.fillBtn = QtWidgets.QPushButton("fill void")
+        self.fillBtn.setFixedWidth(button33size)
         self.cropBtn = QtWidgets.QPushButton("Crop")
         self.cropBtn.setFixedWidth(button33size)
         self.captureBackground = QtWidgets.QPushButton("Copy")
@@ -100,6 +102,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb10.addWidget(self.Equalize)
         hb10.addWidget(self.invert)
         hb10.addWidget(self.padBtn)
+        hb10.addWidget(self.fillBtn)
 
         hb12 = QtWidgets.QHBoxLayout()
         hb12.addWidget(self.cropBtn)
