@@ -661,7 +661,8 @@ class FileTableWidget(QtWidgets.QWidget):
         if data is None or scalers is None:
             return [], [], [], []
         # if self.quant_options.currentText() != 'None':
-        self.data = self.normalizeData(data, scalers)
+        # TODO: work on nromalizeData function, it removes real data. or put in a conditional statment to use it only when normalization is necessary.
+        # self.data = self.normalizeData(data, scalers)
         self.message.setText('finished loading')
 
         data[np.isnan(data)] = 0.0001

@@ -132,9 +132,9 @@ class SaveOptions(object):
 				os.makedirs(path)
 				for i in range(data.shape[1]):		#angle index
 					img = data[j, i, :, :]
-					# temp = Image.fromarray(img.astype(np.float32))
-					# temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tif")
-					io.imsave(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[i].split(".")[0]+".tif", img)
+					img = img.astype(np.float32)
+					# temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tiff")
+					io.imsave(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[i].split(".")[0]+".tiff", img)
 			return
 		except IOError:
 			print("type the header name")
@@ -154,7 +154,7 @@ class SaveOptions(object):
 				recon = tomopy.circ_mask(recon, axis=0)
 				indx = "0000"
 				recon_index = indx[:-len(str(index))]+str(index)
-				io.imsave(savedir+"_"+str(recon_index)+".tif", recon[0])
+				io.imsave(savedir+"_"+str(recon_index)+".tiff", recon[0])
 			return
 		except IOError:
 			print("type the header name")
@@ -201,8 +201,8 @@ class SaveOptions(object):
 
 			os.makedirs(savedir)
 			# temp_img = Image.fromarray(sinodata.astype(np.float32))
-			# temp_img.save(savedir + "/" + "sinogram.tif")
-			io.imsave(savedir + "/" + "sinogram.tif", sinodata)
+			# temp_img.save(savedir + "/" + "sinogram.tiff")
+			io.imsave(savedir + "/" + "sinogram.tiff", sinodata)
 			return
 			
 		except IOError:
@@ -228,8 +228,8 @@ class SaveOptions(object):
 			for i in range(num_elements):
 				element = element_names[i]
 				# temp_img = Image.fromarray(sinogramData[i].astype(np.float32))
-				# temp_img.save(savedir + "/"+element+"_sinogram.tif")
-				io.imsave(savedir + "/"+element+"_sinogram.tif", sinogramData[i])
+				# temp_img.save(savedir + "/"+element+"_sinogram.tiff")
+				io.imsave(savedir + "/"+element+"_sinogram.tiff", sinogramData[i])
 			return
 
 		except IOError:
