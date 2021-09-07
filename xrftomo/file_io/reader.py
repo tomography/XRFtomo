@@ -278,7 +278,7 @@ def load_thetas_file(path_file):
 def load_thetas_13(path_files, data_tag):
     pass
 
-def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_name=None):
+def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, quant_tag=None, scaler_name=None, scaler_idx=-1):
     """
     Converts hdf files to numpy arrays for plotting and manipulation
 
@@ -338,33 +338,31 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_nam
                     print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
                     data[i, j] = np.zeros([max_y,max_x])
 
-    #get scalers
+
     if scaler_name == None:
         scalers = np.ones([num_files, max_y, max_x])
         quants = np.ones([num_elements, num_files])
-        data[np.isnan(data)] = 0.0001
-        data[data == np.inf] = 0.0001
-        # return data, quants, scalers
-        return data, scalers
 
-    for j in range(num_files):
-        scaler = read_scaler(path_files[j], hdf_tag, scaler_name)
-        scaler_x = scaler.shape[1]
-        scaler_y = scaler.shape[0]
-        dx = (max_x-scaler_x)//2
-        dy = (max_y-scaler_y)//2
-        scalers[j,dy:scaler_y+dy, dx:scaler_x+dx] = scaler
-    #get quants
-    for i in range(num_elements):
+    else:
         for j in range(num_files):
-            quant_name = scaler_name
-            quant = read_quant(path_files[j], elements[i], hdf_tag, quant_name, channel_tag)
-            quants[i,j] = quant
+            scaler = read_scaler(path_files[j], hdf_tag, scaler_name)[0][scaler_idx]
+            scaler_x = scaler.shape[1]
+            scaler_y = scaler.shape[0]
+            dx = (max_x-scaler_x)//2
+            dy = (max_y-scaler_y)//2
+            scalers[j,dy:scaler_y+dy, dx:scaler_x+dx] = scaler
+
+        #get quants
+        for i in range(num_elements):
+            for j in range(num_files):
+                element_tag = channel_tag
+                quant = read_quant(path_files[j], elements[i], hdf_tag, quant_tag, element_tag, scaler_idx)
+                quants[i,j] = quant
 
     data[np.isnan(data)] = 0.0001
     data[data == np.inf] = 0.0001
-    scalers[np.isnan(scalers)] = 0.0001
-    scalers[scalers == np.inf] = 0.0001
+    scalers[np.isnan(scalers)] = 1
+    scalers[scalers == np.inf] = 1
     quants[np.isnan(quants)] = 0.0001
     quants[quants == np.inf] = 0.0001
 
@@ -380,19 +378,16 @@ def read_scaler(fname, hdf_tag, scaler_name):
         
     return all_scaler[find_index(scaler_names, scaler_name)]
 
-def read_quant(fname, element, hdf_tag, quant_name, channel_tag):
-    elements = read_channel_names(fname, hdf_tag, channel_tag)
+def read_quant(fname, element, hdf_tag, quant_tag, element_tag, scaler_idx):
+    elements = read_channel_names(fname, hdf_tag, element_tag)
     elem_idx = find_index(elements,element)
 
     try:
-        quant_names = read_channel_names(fname, hdf_tag, 'quant_names')
-        all_quants = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, 'quant'))
+        all_quants = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, quant_tag))
     except:
-        quant_names = ['SRcurrent','us_ic','ds_ic']
-        all_quants = dxchange.read_hdf5(fname, "{}/{}".format('MAPS', 'XRF_roi_quant'))
+        return
 
-    quant_idx = find_index(quant_names,quant_name)
-    return all_quants[quant_idx][0][elem_idx]
+    return all_quants[scaler_idx][0][elem_idx]
 
 def read_tiffs(fnames):
 

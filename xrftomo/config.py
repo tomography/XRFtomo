@@ -92,7 +92,7 @@ SECTIONS['file-io'] = {
         'default': '[0,1]',
         'type': str,
         'help': "list of selected elements indexes"},
-    'quant-name': {
+    'scaler-names': {
         'default': 'SRcurrent',
         'type': str,
         'help': "normalize by this detector",
