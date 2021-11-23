@@ -215,6 +215,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
         data = self.data[:,:,start_indx:end_indx,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
         num_xsections = data.shape[2]
+        recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
+        xsection = np.zeros((1, data.shape[1], 1, data.shape[3]))  # empty array size [1(element), frames, 1(y), x]
+
 
         if self.ViewControl.recon_save.isChecked():
             try:
@@ -230,9 +233,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
             except: 
                 print("Something went horribly wrong.")
 
-            #reconstruct one ccross section at a time and save after each loop/completion. 
-            recons = np.zeros((data.shape[2],data.shape[3], data.shape[3]))
-            xsection = np.zeros((1,data.shape[1],1, data.shape[3]))
+            #reconstruct one ccross section at a time and save after each loop/completion.
+
             start_idx = int(eval(self.ViewControl.start_indx.text()))
             for i in range(num_xsections):
                 j = num_xsections-i-1
@@ -242,8 +244,24 @@ class ReconstructionWidget(QtWidgets.QWidget):
                 self.writer.save_reconstruction(recon, savedir, start_idx+i)
             self.recon = np.array(recons)
         else:
-            self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
-        
+            print("working fine")
+
+            for i in range(num_xsections):
+                j = num_xsections-i-1
+                xsection[0,:,0] = data[element,:,j]
+                if j-1 == mid_indx and show_stats:
+                    recon = self.actions.reconstruct(xsection, 0, center, method, beta, delta, iters, thetas, 0, False)
+                    recData = xsection[element, :, :, :]
+                    recData[recData == np.inf] = True
+                    recData[np.isnan(recData)] = True
+                    err, mse = self.actions.assessRecon(recon, recData, thetas, 0, False)
+                    print(mse)
+                else:
+                    recon = self.actions.reconstruct(xsection, 0, center, method, beta, delta, iters, thetas, 0, False)
+                recons[i] = recon
+            self.recon = np.array(recons)
+            # self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
+
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()

@@ -46,6 +46,15 @@ from skimage import filters
 from skimage.measure import regionprops
 from skimage.feature import register_translation
 import numpy as np
+from matplotlib import pyplot as plt
+from skimage.color import rgb2gray
+# from skimage.data import stereo_motorcycle, vortex
+from skimage.transform import warp
+from skimage.registration import optical_flow_tvl1, optical_flow_ilk
+import scipy.ndimage
+from skimage.registration import phase_cross_correlation
+from skimage.registration._phase_cross_correlation import _upsampled_dft
+from scipy.signal import find_peaks
 
 class SinogramActions(QtWidgets.QWidget):
     def __init__(self):
@@ -54,6 +63,84 @@ class SinogramActions(QtWidgets.QWidget):
         self.y_shifts = None
         self.original_data = None
         self.padding = None
+
+    def runFitPeaks(self,element,data):
+        stack = data[element]
+        num_proj = stack.shape[0]
+        y_midpt = data[element].shape[1]//2
+        x_midpt = data[element].shape[2]//2
+
+        x_shifts = np.zeros(num_proj)
+        y_shifts = np.zeros(num_proj)
+
+        # shifts  = center_pos_y - max_y, center_pos_x - max_x
+        for i in range(num_proj):
+            img=stack[i]
+            row = np.sum(img, axis=0)
+            col = np.sum(img, axis=1)
+            maxx_index = np.argmax(row)
+            maxy_index = np.argmax(col)
+            x_shifts[i] = x_midpt - maxx_index
+            y_shifts[i] = y_midpt - maxy_index
+            data = self.shiftProjection(data,x_shifts[i],y_shifts[i],i)
+            # data[:,i] = scipy.ndimage.shift(data[element,i], x_shifts[i], output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
+        print("pause")
+        return data, x_shifts, y_shifts
+
+
+    def runOpFlow(self, element,data):
+        # --- Load the sequence
+        imgs = data[element]
+        # num_proj = imgs.shape[0]//2
+        # new_imgs = np.zeros_like(imgs)
+        # new_imgs[0] = imgs[0]
+        # for i in range(1, num_proj):
+        #     image0 = imgs[i-1]
+        #     image1 = np.fliplr(imgs[-i])
+        #
+        #     img0_max = image0.max()
+        #     img1_max = image1.max()
+        #     #need to normalize to 1
+        #     image0 = image0 / image0.max()
+        #     image1 = image1 / image1.max()
+        #
+        #     # --- Compute the optical flow
+        #     v, u = optical_flow_tvl1(image0, image1)
+        #
+        #     # --- Use the estimated optical flow for registration
+        #     nr, nc = image0.shape
+        #     row_coords, col_coords = np.meshgrid(np.arange(nr), np.arange(nc),indexing='ij')
+        #     image1_warp = warp(image1, np.array([row_coords + v, col_coords + u]),mode='nearest')
+        #
+        #     #convert to original scale
+        #     image1_warp = np.fliplr(image1_warp*img1_max)
+        #     # imgs[-i] = image1_warp
+        #     new_imgs[i] = image0*img0_max
+        #     new_imgs[-i] = image1_warp
+
+        image0 = imgs[0]
+        image1 = np.fliplr(imgs[-1])
+
+        img1_max = image1.max()
+        #need to normalize to 1
+        image0 = image0 / image0.max()
+        image1 = image1 / image1.max()
+
+        # --- Compute the optical flow
+        v, u = optical_flow_tvl1(image0, image1)
+
+        # --- Use the estimated optical flow for registration
+        nr, nc = image0.shape
+        row_coords, col_coords = np.meshgrid(np.arange(nr), np.arange(nc),indexing='ij')
+        image1_warp = warp(image1, np.array([row_coords + v, col_coords + u]),mode='nearest')
+
+        #convert to original scale
+        image1_warp = np.fliplr(image1_warp*img1_max)
+        data[element,-1] = image1_warp
+        return data
+
+
+
     # def runCenterOfMass(self, element, data, thetas):
     #     '''
     #     Center of mass alignment
@@ -132,6 +219,7 @@ class SinogramActions(QtWidgets.QWidget):
                 threshold_value = filters.threshold_otsu(image)
                 labeled_foreground = (image > threshold_value).astype(int)
                 properties = regionprops(labeled_foreground, image)
+                #TODO: if input image is blank, WCoM will fail, create an exception case. 
                 weighted_center_of_mass = properties[0].weighted_centroid
                 w_x_shifts.append(int(round(view_center_x - weighted_center_of_mass[1])))
                 w_y_shifts.append(int(round(view_center_y - weighted_center_of_mass[0])))
@@ -288,7 +376,10 @@ class SinogramActions(QtWidgets.QWidget):
             # data[:,i] = np.roll(data[:,i],shift,axis=1)
             # data = self.shiftProjection(data,shift,0,i)
         return lin_shift, data, sinogramData
-        
+
+
+
+
     def crossCorrelate(self, element, data):
         '''
         cross correlate image registration
@@ -332,6 +423,27 @@ class SinogramActions(QtWidgets.QWidget):
         cross correlate image registration aplies to all loaded elements.
         Variables
         -----------
+        element: index of 0th  element in data.
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
+        num_projections = data.shape[1]
+        x_shifts = np.zeros(num_projections)
+        y_shifts = np.zeros(num_projections)
+        for i in range(1, num_projections):
+            shift, error, diffphase = phase_cross_correlation(data[element,i-1], data[element,i],upsample_factor=100)
+            x_shifts[i] += round(shift[1],2)
+            y_shifts[i] += round(shift[0],2)
+            data[:,i] = scipy.ndimage.shift(data[element,i], (y_shifts[i],x_shifts[i]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
+        self.alignmentDone()
+        return data, x_shifts, -y_shifts
+
+    def xcor_ysum(self, element, data):
+        '''
+        cross correlate row sum of 3D data
+        Variables
+        -----------
+        element: index of 0th  element in data.
         data: ndarray
             4D xrf dataset ndarray [elements, theta, y,x]
         '''
@@ -339,20 +451,274 @@ class SinogramActions(QtWidgets.QWidget):
         x_shifts = np.zeros(num_projections)
         y_shifts = np.zeros(num_projections)
 
+        # row_sums = np.zeros((data.shape[1], data.shape[2]))
+        # tail_head = int(row_sums.shape[1] * 0.25)
+        # row_sums = np.array([np.sum(data[element, i],axis=1) for i in range(data.shape[1])])
+        # row_sums = np.asarray([row[tail_head:-tail_head] for row in row_sums])
+        #
+        # for i in range(1, num_projections):
+        #     shift, error, diffphase = phase_cross_correlation(row_sums[0], row_sums[i],upsample_factor=100)
+        #     y_shifts[i] += round(shift[0],2)
+        #     row_sums[i] = scipy.ndimage.shift(row_sums[i], y_shifts[i])
+        #     data[:,i] = scipy.ndimage.shift(data[element,i], (y_shifts[i],0), output=None, order=3, mode='constant', cval=0.0, prefilter=True)
+
+
+        row_sums = np.zeros((data.shape[1], data.shape[2]))
+        # tail_head = int(row_sums.shape[1] * 0.15)
+        row_sums = np.array([np.sum(data[element, i],axis=1) for i in range(data.shape[1])])
+        # row_sums = np.asarray([row[tail_head:-tail_head] for row in row_sums])**2
+
+        row_sums_squd = np.sum(row_sums**2, axis=0)
+        peaks, dummy = find_peaks(row_sums_squd, prominence=(row_sums_squd.max() / 5, row_sums_squd.max()))
+        peak_locs = np.flip(peaks[np.argsort(row_sums_squd[peaks])])
+        num_peaks = len(peaks)
+
+        plt.figure()
+        #downsample to only 20 projections or less
+        inc = row_sums.shape[0]//20
+        for i in range(20):
+            plt.plot(row_sums[i*inc]/row_sums[i*inc].max()+inc)
+
+        if num_peaks>=1:
+            # select 1 of 4 peaks
+            tail = int(peak_locs[0] - 10)
+            head = int(peak_locs[0] + 10)
+            # dy_arr = np.fliplr(dy_arr)
+            new_row_sums = row_sums[:,tail:head]
+            # row_sums = np.asarray([row[tail:head] for row in row_sums])
+        else:
+            #trim off ends of array
+            # row_sums = row_sums**2
+            # find avg argmax peak
+            arg_arr = np.zeros(len(row_sums))
+            for i in range(len(row_sums)):
+                arg_arr[i] = np.argmax(row_sums[i])
+            peak_arg = int(np.mean(arg_arr))
+            width = int(row_sums.shape[1]*0.2)
+            new_row_sums = row_sums[:,peak_arg-width:peak_arg+width]**2
+
         for i in range(1, num_projections):
-
-            shift, error, diffphase = register_translation(data[element,i-1], data[element,i])
-            # shift, error, diffphase = register_translation(data[element,i-1], data[element,i], 100)
-
-            x_shifts[i] += round(shift[1],2)
+            shift, error, diffphase = phase_cross_correlation(new_row_sums[0], new_row_sums[i],upsample_factor=100)
             y_shifts[i] += round(shift[0],2)
-            # data[:, i] = np.roll(data[:, i], y_shifts[i], axis=1)
-            # data[:, i] = np.roll(data[:, i], x_shifts[i], axis=2)
-            data = self.shiftProjection(data,x_shifts[i],y_shifts[i],i)
 
+        y_shifts= self.tweak_shifts(y_shifts, new_row_sums)
+
+        for i in range(len(y_shifts)):
+            new_row_sums[i] = scipy.ndimage.shift(new_row_sums[i], y_shifts[i])
+            #TODO: Check that the shift function does not distort the sum array.
+            row_sums[i] = scipy.ndimage.shift(row_sums[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            data[:,i] = scipy.ndimage.shift(data[element,i], (y_shifts[i],0), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+
+        plt.figure()
+        #downsample to only 20 projections or less
+        inc = row_sums.shape[0]//20
+        for i in range(20):
+            plt.plot(row_sums[i*inc]/row_sums[i*inc].max()+inc)
 
         self.alignmentDone()
-        return data, x_shifts, -y_shifts
+        return data, x_shifts, y_shifts
+
+    def relax_edge(self, arr, N):
+        # tail_head = int(len(arr)*0.1)
+        # new_arr = arr[tail_head:-tail_head]
+
+        if len(arr.shape) >=2:
+            new_arr = np.zeros_like(arr)
+            for i in range(new_arr.shape[0]):
+                for j in range(N):
+                    new_arr[i] = self.trim_edge(arr[i])
+                new_arr[i][-1]=0
+                new_arr[i][0]=0
+
+            return new_arr
+        else:
+            #TODO: check array size, if tail_head exceeds bounds, raise exception.
+            for i in range(N):
+                new_arr = self.trim_edge(arr)
+            return new_arr
+
+    def trim_edge(self, arr):
+        arr_max = abs(arr.max())
+        arr_length = arr.shape[0]
+        for i in range(1, arr_length):
+            l_diff = abs(arr[i]-arr[i-1])
+            r_diff = abs(arr[-i-1] - arr[-i])
+            if l_diff > arr_max*0.50:
+                arr[i] = 0
+                break
+            if r_diff >= arr_max*0.50:
+                arr[-i-1] = 0
+                break
+        return arr
+
+    def xcor_dysum(self, element, data):
+        '''
+        cross correlate row sum of 3D data
+        Variables
+        -----------
+        element: index of 0th  element in data.
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        '''
+        num_projections = data.shape[1]
+        x_shifts = np.zeros(num_projections)
+        y_shifts = np.zeros(num_projections)
+
+        yrange = data.shape[2]
+        xrange = data.shape[3]
+        dy = 0.1
+        dx = 0.1
+
+        dy_arr = np.zeros((data.shape[1], data.shape[2]))
+        tail_head = int(dy_arr.shape[1] * 0.15)
+
+        stack = data[element]
+        for i in range(num_projections):
+            plotv = np.sum(data[element, i], axis=1) * yrange * 0.2 / (np.sum(stack, axis=2).max())
+            plot_dy = np.gradient(plotv, dy)
+
+            ploty_dy = plot_dy * xrange * 0.1 / plot_dy.max()
+            dy_arr[i]= ploty_dy
+        dy_arr = dy_arr
+        dy_arr = self.relax_edge(dy_arr,3)      #LEAVE THIS
+
+        plt.figure()
+        #downsample to only 20 projections or less
+        inc = dy_arr.shape[0]//20
+        for i in range(20):
+            plt.plot(dy_arr[i*inc]/dy_arr[i*inc].max()+inc)
+
+        peak_list = []
+        for i in range(len(dy_arr)):
+            pks, dummy = find_peaks(dy_arr[i], prominence=(dy_arr[i].max() / 3, dy_arr[i].max()))
+            peak_list.append(list(pks))
+        flat_list = [item for sublist in peak_list for item in sublist]
+
+        sum_dy_sqrd = np.sum(dy_arr, axis=0)**2
+        peaks, dummy = find_peaks(sum_dy_sqrd, prominence=(sum_dy_sqrd.max() / 5, sum_dy_sqrd.max()))
+        peak_locs = np.flip(peaks[np.argsort(sum_dy_sqrd[peaks])])
+        # plt.figure()
+        # plt.plot(sum_dy_sqrd)
+        # plt.plot(peaks, sum_dy_sqrd[peaks], "x")
+        num_peaks = len(peak_locs)
+
+        if num_peaks>1:
+            # select 1 of 4 peaks
+            #TODO: add option to select peak, 0th peak if none selected.
+            tail = int(peak_locs[0] - 10)
+            head = int(peak_locs[0] + 10)
+            if tail <0:
+                tail = 0
+            if head >dy_arr.shape[1]:
+                head = dy_arr.shape[1]-1
+            dy_arr = dy_arr[:,tail:head]
+        else:
+            #trim off ends of array
+            dy_arr = np.asarray([row[tail_head:-tail_head] for row in dy_arr])
+            # find avg argmax peak
+            arg_arr = np.zeros(len(dy_arr))
+            for i in range(len(dy_arr)):
+                arg_arr[i] = np.argmax(dy_arr[i])
+            peak_arg = int(np.mean(arg_arr))
+            width = int(dy_arr.shape[1]*0.2)
+            tail = peak_arg-width
+            head = peak_arg+width
+            if tail <0:
+                tail = 0
+            if head >arg_arr.shape[0]:
+                head = arg_arr.shape[0-1]
+            dy_arr = np.asarray([row[tail:head] for row in dy_arr])
+
+        for i in range(1, num_projections):
+            shift, error, diffphase = phase_cross_correlation(dy_arr[0], dy_arr[i],upsample_factor=100)
+            y_shifts[i] += round(shift[0],2)
+
+
+        y_shifts = self.tweak_shifts(y_shifts,dy_arr)
+
+        for i in range(num_projections):
+            dy_arr[i] = scipy.ndimage.shift(dy_arr[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            dy_arr[i] = self.relax_edge(dy_arr[i],5)
+            data[:,i] = scipy.ndimage.shift(data[element,i], (y_shifts[i],0), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+
+        plt.figure()
+        #downsample to only 20 projections or less
+        inc = dy_arr.shape[0]//20
+        for i in range(20):
+            plt.plot(dy_arr[i*inc]/dy_arr[i*inc].max()+inc)
+
+        plt.show()
+        self.alignmentDone()
+        return data, x_shifts, y_shifts
+
+    def tweak_shifts(self,shifts, arr):
+        #look at derivative, find peaks
+        dx = np.gradient(shifts, 0.1) ** 2
+        arr_width = arr.shape[1]        #ssuming stack of 1 d arrays
+
+        #create difference array
+        sd = np.array([shifts[i]-shifts[i-1] for i in range(1,len(shifts))])
+        sd = np.insert(sd, 0, 0, axis=0)
+        peak_locs = np.where(sd**2>arr_width*5)[0]
+        # peak_locs = np.where(sd**2>3*np.mean(sd**2))[0]
+        num_peaks = len(peak_locs)
+        plt.figure()
+        plt.plot(abs(sd))
+        plt.plot(peak_locs, abs(sd)[peak_locs], "x")
+        plt.plot(shifts)
+
+        if num_peaks>0:
+            pass
+        else:
+            return shifts
+
+        #check difference_array:
+        mean_shift = abs(shifts[np.where(sd**2<3*np.mean(sd**2))[0]]).mean()
+        high = False
+        low = False
+        new_shifts = shifts.copy()
+        for i in range(1,len(sd)):
+            if i in peak_locs:
+                if sd[i]>0 and not low:                         ## mid to high -▔
+                    high=True
+                    low=False
+                    new_shifts[i] = new_shifts[i] - arr_width
+                elif sd[i]<0 and high:                          ## high to mid ▔-
+                    high=False
+                    low = False
+                elif sd[i]>0 and low:                           ## low to mid _-
+                    low=False
+                    high=False
+                elif sd[i]<0 and not low:                        ## mid to low -_
+                    high=False
+                    low=True
+                    new_shifts[i] = new_shifts[i] + arr_width
+            elif high:
+                new_shifts[i] = new_shifts[i] - arr_width
+            elif low:
+                new_shifts[i] = new_shifts[i] + arr_width
+            else:
+                pass
+        plt.plot(shifts)
+        return new_shifts
+
+    def xcor_sino(self, element, layer, data):
+        #sino is 2d array)
+        #TODO: iterate through layers and select layer with single feature (i.e. line sinogram)
+        if layer==None:
+            for i in range(data.shape[2]):
+                sino = data[element, :, i, :]
+
+        sino = data[element,:,layer,:]
+        x_shifts = np.zeros(data.shape[1])
+        for i in range(1,sino.shape[0]):
+            shift, error, diffphase = phase_cross_correlation(sino[0], sino[i], upsample_factor=100)
+            x_shifts[i] = shift[0]
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                data[i,j] = scipy.ndimage.shift(data[i,j], (0, x_shifts[j]), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+
+        return data, x_shifts
 
     def phaseCorrelate(self, element, data):
         '''
@@ -526,6 +892,7 @@ class SinogramActions(QtWidgets.QWidget):
         prj = tomopy.remove_nan(prj, val=0.0)
         prj[np.where(prj == np.inf)] = 0.0
 
+        thetas = thetas*np.pi/180
         # self.get_iter_paraeters()
 
         prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=pad,
@@ -610,21 +977,26 @@ class SinogramActions(QtWidgets.QWidget):
             num_projections = len(tmp_y)
 
 
-            for i in range(num_projections):
+            # for i in range(num_projections):
                 # j = i + 1
                 # secondcol = round(float(read[j].split(",")[2]))
                 # firstcol = round(float(read[j].split(",")[1]))
                 # y_shifts[i] = secondcol
                 # x_shifts[i] = firstcol
                 #
-                y_shifts[i] = tmp_y[i]
-                x_shifts[i] = tmp_x[i]
-
-                x_shifts = list(x_shifts)
-                y_shifts = list(y_shifts)
+                # y_shifts[i] = tmp_y[i]
+                # x_shifts[i] = tmp_x[i]
+                #
+                # x_shifts = list(x_shifts)
+                # y_shifts = list(y_shifts)
                 # x_shifts[i] = self.unwind(x_shifts[i], data.shape[3]-x_padding*2)
-                print(i)
-                data = self.shiftProjection(data,x_shifts[i],-y_shifts[i],i)
+                # print(i)
+                # data = self.shiftProjection(data,x_shifts[i],-y_shifts[i],i)
+                # data = self.shiftProjection(data,x_shifts[i],y_shifts[i],i)
+            y_shifts = list(tmp_y)
+            x_shifts = list(tmp_x)
+            data = self.subpixshift_data(data, x_shifts, y_shifts)
+            # data= scipy.ndimage.shift(data, y_shifts[i], x_shifts[i], output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
 
             file.close()
             self.alignmentDone()
@@ -636,6 +1008,18 @@ class SinogramActions(QtWidgets.QWidget):
         except TypeError: 
             print("choose file please")
         return
+
+
+    def subpixshift_data(self,data,x_shifts,y_shifts):
+        dim = len(data.shape)
+        if dim > 4:
+            print("ERR: array dimensions too big, expected dim <=4")
+        if dim == 4:
+            for i in range(data.shape[0]):
+                for j in range(data.shape[1]):
+                    data[i,j] = scipy.ndimage.shift(data[i,j], (y_shifts[j], x_shifts[j]), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+        return data
+
 
     def unwind(self, x_shift, x_range):
         # TODO: x_range for unwind() must take into account the x padding, simply using data.shape wont work.

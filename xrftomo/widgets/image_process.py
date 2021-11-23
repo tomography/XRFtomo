@@ -38,12 +38,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
 ###########################################################################
 
+import numpy as np
+import pyqtgraph
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
-import xrftomo
-import pyqtgraph
-import numpy as np
 from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
+
+import xrftomo
 
 
 class ImageProcessWidget(QtWidgets.QWidget):
@@ -237,12 +238,77 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.lcd.display(angle)
         self.sld.setValue(index)
         # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        self.updatePlot(self.data[element, index, ::-1, :], self.data[element])
         self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
+
+
+    def updatePlot(self,img,stack):
+        yrange = img.shape[0]
+        xrange = img.shape[1]
+
+        ploth = np.sum(img, axis=0)*xrange*0.2/(np.sum(stack,axis=1).max())
+        plotv = np.sum(img, axis=1)*yrange*0.2/(np.sum(stack,axis=2).max())
+        dy = 0.1
+        plot_dx = np.gradient(ploth, dy)
+        ploty_dx = plot_dx*yrange*0.1/plot_dx.max()
+
+        dx = 0.1
+        plot_dy = np.gradient(plotv, dx)**2
+        plot_dy = self.relax_edge(plot_dy,10)
+
+        ploty_dy = plot_dy*xrange*0.1/plot_dy.max()
+
+
+        self.imageView.p1.clearPlots()
+        self.imageView.p1.plot(ploth, pen=pyqtgraph.mkPen(color='b'))
+        self.imageView.p1.plot(ploty_dx, pen=pyqtgraph.mkPen(color='c'))
+
+        self.imageView.p1.plot(plotv, np.arange(len(plotv)), pen=pyqtgraph.mkPen(color='r'))
+        self.imageView.p1.plot(ploty_dy, np.arange(len(plot_dy)), pen=pyqtgraph.mkPen(color='y'))
+
+        self.imageView.p1.setXRange(int(-xrange*0.1), xrange, padding=0)
+        self.imageView.p1.setYRange(int(-yrange*0.1), yrange, padding=0)
+
+    def relax_edge(self, arr, N):
+        # tail_head = int(len(arr)*0.1)
+        # new_arr = arr[tail_head:-tail_head]
+
+        if len(arr.shape) >=2:
+            new_arr = np.zeros_like(arr)
+            for i in range(new_arr.shape[0]):
+                for j in range(N):
+                    new_arr[i] = self.trim_edge(arr[i])
+                new_arr[i][-1]=0
+                new_arr[i][0]=0
+
+            return new_arr
+        else:
+            #TODO: check array size, if tail_head exceeds bounds, raise exception.
+            for i in range(N):
+                new_arr = self.trim_edge(arr)
+            return new_arr
+
+    def trim_edge(self, arr):
+        arr_max = abs(arr.max())
+        arr_length = arr.shape[0]
+        for i in range(1, arr_length):
+            l_diff = abs(arr[i]-arr[i-1])
+            r_diff = abs(arr[-i-1] - arr[-i])
+            arr[-1] = 0
+            arr[0] = 0
+            if l_diff > arr_max*0.50:
+                arr[i] = 0
+                break
+            if r_diff >= arr_max*0.50:
+                arr[-i-1] = 0
+                break
+        return arr
 
     def updateElementSlot(self, element, projection = None):
         if projection == None:
            projection =  self.sld.value()
         # self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
+        self.updatePlot(self.data[element, projection, ::-1, :], self.data[element])
         self.imageView.projView.setImage(self.data[element, projection, ::-1, :], border='w')
 
         self.ViewControl.combo1.setCurrentIndex(element)
@@ -256,6 +322,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
         # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        self.updatePlot(self.data[element, index, ::-1, :], self.data[element])
         self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
 
     # def ySizeChanged(self, ySize):
@@ -379,8 +446,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ySizeChangedSig.emit(y_size)
         self.dataChangedSig.emit(data)
         #TODO: move crosshairs an ROI to crop region after crop
+        self.imageView.p1.items[2].setValue(0)
         self.imageView.p1.items[3].setValue(0)
-        self.imageView.p1.items[4].setValue(0)
         self.imageView.ROI.setPos([0, 0], finish=False)
         self.refreshSig.emit()
 

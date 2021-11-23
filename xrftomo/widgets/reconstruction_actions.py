@@ -68,8 +68,6 @@ class ReconstructionActions(QtWidgets.QWidget):
 		recData[np.isnan(recData)] = True
 		recCenter = np.array(center, dtype=np.float32)
 
-		print("working fine")
-
 		if method == 0:
 			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
 				algorithm='mlem', center=recCenter, num_iter=iters, accelerated=False, device='cpu')
@@ -119,8 +117,20 @@ class ReconstructionActions(QtWidgets.QWidget):
 		num_elements = data.shape[0]
 		for i in range(num_elements):
 			print("running reconstruction for:", element_names[i])
+
+			num_xsections = data.shape[2]
+			recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
+			xsection = np.zeros((1, data.shape[1], 1, data.shape[3]))  # empty array size [1(element), frames, 1(y), x]
+			for l in range(num_xsections):
+				j = num_xsections - l - 1
+				xsection[0, :, 0] = data[i, :, j]
+				recon = self.reconstruct(xsection, 0, center, method, beta, delta, iters, thetas, 0, False)
+				recons[l] = recon
+			recon = np.array(recons)
+
+
 			#data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False
-			recon = self.reconstruct(data, i, center, method, beta, delta, iters, thetas, 0, show_stats=False)
+			# recon = self.reconstruct(data, i, center, method, beta, delta, iters, thetas, 0, show_stats=False)
 			#TODO: update recon_array with every new recon result. 
 			savepath = save_path+'/'+element_names[i]
 			savedir = savepath+'/'+element_names[i]
@@ -174,7 +184,8 @@ class ReconstructionActions(QtWidgets.QWidget):
 			figA.show()
 			figB.show()
 			figC.show()
-
+		else:
+			close("all")
 		return err, mse
 
 	def equalize_recon(self,recon):

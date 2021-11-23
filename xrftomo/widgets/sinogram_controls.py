@@ -64,8 +64,14 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.combo3 = QtWidgets.QComboBox(self)
         self.combo3.setFixedWidth(button2size)
 
+        self.xcorsino = QtWidgets.QPushButton('xcor sino')
+        self.xcorsino.setFixedWidth(button2size)
+        self.xcorry = QtWidgets.QPushButton('xcor y row.')
+        self.xcorry.setFixedWidth(button2size)
         self.btn1 = QtWidgets.QPushButton('center of mass')
         self.btn1.setFixedWidth(button2size)
+        self.xcorrdy = QtWidgets.QPushButton('xcor dy row.')
+        self.xcorrdy.setFixedWidth(button2size)
         self.btn2 = QtWidgets.QPushButton('cross corr.')
         self.btn2.setFixedWidth(button2size)
         self.btn3 = QtWidgets.QPushButton('phase corr.')
@@ -80,9 +86,13 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.btn9.setFixedWidth(button2size)
         self.center = QtWidgets.QPushButton("Find center")
         self.center.setFixedWidth(button2size)
+        self.opflow = QtWidgets.QPushButton("optical flow")
+        self.opflow.setFixedWidth(button2size)
         self.rot_axis = QtWidgets.QPushButton("Set rot. axis")
         self.rot_axis.setFixedWidth(button2size)
         self.rot_axis.setDisabled(True)
+        self.fitPeaks = QtWidgets.QPushButton("fit peaks")
+        self.fitPeaks.setFixedWidth(button2size)
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setFixedWidth(button2size)
         # self.combo2.setVisible(False)
@@ -114,10 +124,13 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.clear_data.setVisible(False)
         self.fit_sine.setVisible(False)
 
-
+        hb0 = QtWidgets.QHBoxLayout()
+        hb0.addWidget(self.xcorsino)
+        hb0.addWidget(self.xcorrdy)
 
         hb1 = QtWidgets.QHBoxLayout()
         hb1.addWidget(self.btn1)
+        hb1.addWidget(self.xcorry)
 
         hb2 = QtWidgets.QHBoxLayout()
         hb2.addWidget(self.btn2)
@@ -133,9 +146,12 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
         hb5 = QtWidgets.QHBoxLayout()
         hb5.addWidget(self.center)
+        hb5.addWidget(self.opflow)
 
         hb6 = QtWidgets.QHBoxLayout()
         hb6.addWidget(self.rot_axis)
+        hb6.addWidget(self.fitPeaks)
+
 
         hb65 = QtWidgets.QHBoxLayout()
         hb65.addWidget(self.hotspot_mode_chbx)
@@ -150,6 +166,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         hb9.addWidget(self.clear_data)
 
         vb1 = QtWidgets.QVBoxLayout()
+        vb1.addLayout(hb0)
         vb1.addLayout(hb1)
         vb1.addLayout(hb2)
         vb1.addLayout(hb3)

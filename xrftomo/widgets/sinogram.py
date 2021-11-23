@@ -98,7 +98,12 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.ViewControl.btn1.clicked.connect(self.ViewControl.com_options.show)
         self.ViewControl.run_com.clicked.connect(self.centerOfMass_params)
+        self.ViewControl.xcorsino.clicked.connect(self.xcorsino_params)
+        self.ViewControl.opflow.clicked.connect(self.opFlow_params)
+        self.ViewControl.fitPeaks.clicked.connect(self.fitPeaks_params)
         self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
+        self.ViewControl.xcorry.clicked.connect(self.xcorry_params)
+        self.ViewControl.xcorrdy.clicked.connect(self.xcorrdy_params)
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
         self.ViewControl.btn6.clicked.connect(self.ViewControl.iter_parameters.show)
         self.ViewControl.run_iter_align.clicked.connect(self.iter_align_params)
@@ -621,7 +626,29 @@ class SinogramWidget(QtWidgets.QWidget):
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
- 
+
+    def opFlow_params(self):
+        element, row, data, thetas = self.get_params()
+        data = self.actions.runOpFlow(element, data)
+        self.dataChangedSig.emit(data)
+        return
+
+    def fitPeaks_params(self):
+        element, row, data, thetas = self.get_params()
+        data, x_shifts, y_shifts = self.actions.runFitPeaks(element, data)
+
+
+        #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
+        #TODO: add a post-alignment function to validate shifts based on image size
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+
+        pass
+
+
     def shiftEvent_params(self, shift_dir, col_number):
         sinoData = self.sinogramData
         data = self.data
@@ -645,6 +672,43 @@ class SinogramWidget(QtWidgets.QWidget):
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
+
+
+    def xcorrdy_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        data, x_shifts, y_shifts = self.actions.xcor_dysum(element, data)
+        #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
+        #TODO: add a post-alignment function to validate shifts based on image size
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+        return
+
+    def xcorry_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        data, x_shifts, y_shifts = self.actions.xcor_ysum(element, data)
+        #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
+        #TODO: add a post-alignment function to validate shifts based on image size
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+        return
+
+    def xcorsino_params(self):
+        layer = self.sld.value()-1
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        self.data, x_shifts = self.actions.xcor_sino(element,layer, data)
+
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
+        pass
 
     def phaseCorrelate_params(self):
         data = self.data
@@ -699,6 +763,7 @@ class SinogramWidget(QtWidgets.QWidget):
     def iter_align_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
+        #TODO: Thetas must be in radians
         thetas = self.thetas
         valid = self.ViewControl.validate_parameters()
         if not valid:
