@@ -44,6 +44,10 @@ from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import pyqtgraph
 import numpy as np
+from matplotlib import pyplot as plt
+# from matplotlib.pyplot import figure, draw, pause, close
+import time
+
 
 class ReconstructionWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, name='elementChangedSig')
@@ -249,18 +253,14 @@ class ReconstructionWidget(QtWidgets.QWidget):
             for i in range(num_xsections):
                 j = num_xsections-i-1
                 xsection[0,:,0] = data[element,:,j]
-                if j-1 == mid_indx and show_stats:
-                    recon = self.actions.reconstruct(xsection, 0, center, method, beta, delta, iters, thetas, 0, False)
-                    recData = xsection[element, :, :, :]
-                    recData[recData == np.inf] = True
-                    recData[np.isnan(recData)] = True
-                    err, mse = self.actions.assessRecon(recon, recData, thetas, 0, False)
-                    print(mse)
-                else:
-                    recon = self.actions.reconstruct(xsection, 0, center, method, beta, delta, iters, thetas, 0, False)
-                recons[i] = recon
+                guess = self.actions.reconstruct(xsection, 0, center, method, beta, delta, 5, thetas, 0, False, None)
+                for k in range(5, iters):
+                    #data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False, guess=None
+                    guess = self.actions.reconstruct(xsection, 0, center, method, beta, delta, 1, thetas, 0, False, guess)
+                    recons[i] = guess[0]
+                    print("reconstructing row {} on iteration{}".format(i,k))
+
             self.recon = np.array(recons)
-            # self.recon = self.actions.reconstruct(data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats)
 
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
@@ -286,7 +286,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
         data = self.data[:,:,start_indx:end_indx,:]
 
-        self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas)
+        self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas,start_indx)
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()

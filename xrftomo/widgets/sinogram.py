@@ -320,36 +320,36 @@ class SinogramWidget(QtWidgets.QWidget):
         angle = round(self.thetas[index],3)
         self.lcd3.display(angle)
         self.sld3.setValue(index)
-        # self.updateDiffImage(index)
+        self.updateDiffImage(index)
         
-    # def updateDiffImage(self, index):
-    #     element = self.ViewControl.combo1.currentIndex()
-    #     x_index = int(self.data.shape[3] * 0.3)
-    #     y_index = int(self.data.shape[2]* 0.3)
-    #
-    #     # position = [0.0, 0.25, 0.4, 0.6, 0.75, 1.0]
-    #     # colors = [[64, 0, 0, 255], [255, 0, 0, 255], [255, 255, 255, 255], [255, 255, 255, 255], [0, 0, 255, 255], [0, 0, 64, 255]]
-    #     # bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
-    #     # lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
-    #
-    #
-    #     # if index < self.data.shape[1]-1:
-    #     #     img = self.data[element, index] - self.data[element, index+1]
-    #     #     img = img[y_index:-y_index, x_index:-x_index]
-    #     # else:
-    #     #     img = self.data[element, index] - self.data[element, 0]
-    #     #     img = img[x_index:-x_index, y_index:-y_index]
-    #
-    #     if index < self.data.shape[1]-1:
-    #         img = self.data[element, index]/2 + self.data[element, index+1]/2
-    #         img = img[y_index:-y_index, x_index:-x_index]
-    #     else:
-    #         img = self.data[element, index]/2 + self.data[element, 0]/2
-    #         img = img[x_index:-x_index, y_index:-y_index]
-    #
-    #     self.diffView.projView.setImage(img, border='w')
-    #     # self.diffView.projView.setLookupTable(lookup_table)
-    #
+    def updateDiffImage(self, index):
+        element = self.ViewControl.combo1.currentIndex()
+        x_index = int(self.data.shape[3] * 0.1)
+        y_index = int(self.data.shape[2]* 0.1)
+
+        position = [0.0, 0.25, 0.4, 0.6, 0.75, 1.0]
+        colors = [[64, 0, 0, 255], [255, 0, 0, 255], [255, 255, 255, 255], [255, 255, 255, 255], [0, 0, 255, 255], [0, 0, 64, 255]]
+        bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
+        lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
+
+
+        # if index < self.data.shape[1]-1:
+        #     img = self.data[element, index] - self.data[element, index+1]
+        #     img = img[y_index:-y_index, x_index:-x_index]
+        # else:
+        #     img = self.data[element, index] - self.data[element, 0]
+        #     img = img[x_index:-x_index, y_index:-y_index]
+
+        if index < self.data.shape[1]-1:
+            img = self.data[element, index]/2 + self.data[element, index+1]/2
+            img = img[y_index:-y_index, x_index:-x_index]
+        else:
+            img = self.data[element, index]/2 + self.data[element, 0]/2
+            img = img[x_index:-x_index, y_index:-y_index]
+
+        self.diffView.projView.setImage(img, border='w')
+        self.diffView.projView.setLookupTable(lookup_table)
+
 
     def updateSliderSlot(self, index):
         if len(self.thetas) == 0:
@@ -416,7 +416,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinogram(element)
         # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
         self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
-        # self.updateDiffImage(index3)
+        self.updateDiffImage(index3)
 
     def ySizeChanged(self, ySize):
         self.sld.setRange(1, ySize)

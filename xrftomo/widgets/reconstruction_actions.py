@@ -50,14 +50,69 @@ from skimage import exposure
 
 
 
+
 class ReconstructionActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
 	fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
 
 	def __init__(self):
 		super(ReconstructionActions, self).__init__()
+		self.writer = xrftomo.SaveOptions()
 
-	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False):
+	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False, guess=None):
+		'''
+		load data for reconstruction and load variables for reconstruction
+		make it sure that data doesn't have infinity or nan as one of
+		entries
+		'''
+		recData = data[element, :, :, :]
+		recData[recData == np.inf] = True
+		recData[np.isnan(recData)] = True
+		recCenter = np.array(center, dtype=np.float32)
+
+		if method == 0:
+			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='mlem', center=recCenter, num_iter=1, init_recon=guess, accelerated=False, device='cpu')
+		elif method == 1:
+			# TODO: gridrec fails and cannot recover, all of python shuts down. consider removing.
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='gridrec')
+		elif method == 2:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='art', num_iter=iters)
+		elif method == 3:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='pml_hybrid', center=recCenter,
+				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
+		elif method == 4:
+			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='pml_quad', center=recCenter,
+				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
+		elif method == 5:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='fbp')
+		elif method == 6:
+			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='sirt', num_iter=iters)
+		elif method == 7:
+			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
+				algorithm='tv', center=recCenter,
+				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
+
+		self.recon[self.recon<0] = 0
+		#tomopy.remove_nan() does not remove inf values
+		self.recon = tomopy.remove_nan(self.recon)
+
+		if np.isinf(self.recon).max():
+			print("WARNING: inf values found in reconstruction, consider reconstructing with less iterations")
+			print("inf values replaced with 0.001")
+			self.recon[self.recon == np.inf] = 0.001
+
+		if show_stats:
+			err, mse  = self.assessRecon(self.recon, recData, thetas, mid_indx, show_stats)
+			print(mse)
+		return self.recon
+	def reconstruct_bak(self, data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False):
 		'''
 		load data for reconstruction and load variables for reconstruction
 		make it sure that data doesn't have infinity or nan as one of
@@ -111,33 +166,29 @@ class ReconstructionActions(QtWidgets.QWidget):
 			print(mse)
 		return self.recon
 
-	def reconstructAll(self, data, element_names, center, method, beta, delta, iters, thetas):
+	def reconstructAll(self, data, element_names, center, method, beta, delta, iters, thetas,start_idx):
 		print("This will take a while")
 		save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
 		num_elements = data.shape[0]
 		for i in range(num_elements):
 			print("running reconstruction for:", element_names[i])
-
+			savepath = save_path+'/'+element_names[i]
+			savedir = savepath+'/'+element_names[i]
+			os.makedirs(savepath)
 			num_xsections = data.shape[2]
 			recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
 			xsection = np.zeros((1, data.shape[1], 1, data.shape[3]))  # empty array size [1(element), frames, 1(y), x]
 			for l in range(num_xsections):
 				j = num_xsections - l - 1
 				xsection[0, :, 0] = data[i, :, j]
-				recon = self.reconstruct(xsection, 0, center, method, beta, delta, iters, thetas, 0, False)
-				recons[l] = recon
-			recon = np.array(recons)
+				guess = self.reconstruct(xsection, 0, center, method, beta, delta, 5, thetas, 0, False, None)
+				for k in range(5, iters):
+					guess = self.reconstruct(xsection, 0, center, method, beta, delta, 1, thetas, 0, False,guess)
+					recons[i] = guess[0]
+					print("reconstructing row {} on iteration{}".format(l, k))
+				self.writer.save_reconstruction(guess, savedir, start_idx + l)
 
-
-			#data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False
-			# recon = self.reconstruct(data, i, center, method, beta, delta, iters, thetas, 0, show_stats=False)
-			#TODO: update recon_array with every new recon result. 
-			savepath = save_path+'/'+element_names[i]
-			savedir = savepath+'/'+element_names[i]
-			os.makedirs(savepath)
-			xrftomo.SaveOptions.save_reconstruction(self, recon, savedir)
-
-		return recon
+		return np.array(recons)
 
 	def assessRecon(self,recon, data, thetas, mid_indx, show_plots=True):
 		#TODO: make sure cros-section index does not exceed the data height
