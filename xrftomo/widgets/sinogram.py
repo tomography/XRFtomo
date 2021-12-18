@@ -43,6 +43,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
 import pyqtgraph
 import numpy as np
+import scipy.ndimage
 
 class SinogramWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
@@ -118,6 +119,10 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.center.clicked.connect(self.ViewControl.center_parameters.show)
         self.ViewControl.center.clicked.connect(self.updateCenterFindParameters)
         self.ViewControl.rot_axis.clicked.connect(self.rot_axis_params)
+        self.ViewControl.freq_sld.sliderReleased.connect(self.sinoCurvesldChanged)
+        self.ViewControl.amp_sld.sliderReleased.connect(self.sinoCurvesldChanged)
+        self.ViewControl.phase_sld.sliderReleased.connect(self.sinoCurvesldChanged)
+        self.ViewControl.offst_sld.sliderReleased.connect(self.sinoCurvesldChanged)
         self.sld.valueChanged.connect(self.sinoSliderChanged)
         self.sld2.valueChanged.connect(self.imageSliderChanged)
         self.sld3.valueChanged.connect(self.diffSliderChanged)
@@ -125,6 +130,11 @@ class SinogramWidget(QtWidgets.QWidget):
         self.imageView.mousePressSig.connect(self.hotspot_event)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.view_options.currentIndexChanged.connect(self.display)
+        self.ViewControl.amp.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.freq.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.phase.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.offst.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.set2line.clicked.connect(self.fit_curve)
 
         self.ViewControl.fit_line.clicked.connect(self.fitLine_params)
         self.ViewControl.fit_sine.clicked.connect(self.fitSine_params)
@@ -175,6 +185,8 @@ class SinogramWidget(QtWidgets.QWidget):
         palette.setColor(palette.Dark, QtGui.QColor(0, 0, 0))
         # set the palette
         self.lcd.setPalette(palette)
+
+        self.updateSinoPlot()
 
     def stack1UI(self):
         lbl = QtWidgets.QLabel('Row y')
@@ -299,6 +311,12 @@ class SinogramWidget(QtWidgets.QWidget):
         num_projections  = self.data.shape[1]
         self.sld2.setRange(0, num_projections - 1)
 
+    def showSinoCurve(self):
+        self.ViewControl.freq_sld.setRange(0, 100)
+        self.ViewControl.amp_sld.setRange(0, 100)
+        self.ViewControl.phase_sld.setRange(0, 100)
+        self.ViewControl.offst_sld.setRange(0,100)
+
     def showDiffProcess(self):
         num_projections  = self.data.shape[1]
         self.sld3.setRange(0, num_projections - 1)
@@ -306,6 +324,26 @@ class SinogramWidget(QtWidgets.QWidget):
     def imageSliderChanged(self):
         index = self.sld2.value()
         self.updateSliderSlot(index)
+
+    def sinoCurvesldChanged(self):
+        #sld current index
+        freq_idx = self.ViewControl.freq_sld.value()
+        amp_idx = self.ViewControl.amp_sld.value()
+        freq_idx = self.ViewControl.phase_sld.value()
+        freq_idx = self.ViewControl.offst_sld.value()
+
+        #array values
+        #TODO: create array of values for each slider, set each QlineEdit to the indexed value.
+
+        #set Qlineedit to value[index]
+        # self.freq_idx.setValue(freq_idx)
+
+
+        #updateSinoCurve
+
+
+        return
+
 
     def diffSliderChanged(self):
         index = self.sld3.value()
@@ -320,8 +358,58 @@ class SinogramWidget(QtWidgets.QWidget):
         angle = round(self.thetas[index],3)
         self.lcd3.display(angle)
         self.sld3.setValue(index)
-        self.updateDiffImage(index)
-        
+        # self.updateDiffImage(index)
+
+
+    def updateSinoPlot(self, thetas= None):
+
+        try:
+            thetas = self.thetas
+        except:
+            thetas = np.linspace(-np.pi, np.pi, 10)
+            middl = 0
+        else:
+            thetas = self.thetas
+            middl = self.sinogramData.shape[1] // 2
+
+        try:
+            amp = eval(self.ViewControl.amp.text())
+            phase = eval(self.ViewControl.phase.text())
+            freq = eval(self.ViewControl.freq.text())
+            offst = eval(self.ViewControl.offst.text())
+        except:
+            print("eval enter int or float")
+
+
+        self.curve = amp*np.sin((freq*np.array(thetas) * np.pi / 180) - phase ) + middl + offst
+        self.sinoView.p1.clearPlots()
+        self.sinoView.p1.plot(thetas,self.curve, pen=pyqtgraph.mkPen(color='c'))
+    def fit_curve(self):
+        try:
+            data = self.data.copy()
+            thetas = self.thetas
+            curve = self.curve
+            middl = self.sinogramData.shape[1] // 2
+            shifts = middl - curve
+            x_shifts, y_shifts = self.actions.validate_alignment(data, shifts, self.y_shifts)
+
+            for i in range(data.shape[0]):
+                for j in range(len(x_shifts)):
+                    data[i,j] = scipy.ndimage.shift(data[i,j], (0,x_shifts[j]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
+            self.alignmentChangedSig.emit(self.x_shifts + shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
+            return
+        except:
+            return
+
+
+
+
+
+
+        pass
+
+
     def updateDiffImage(self, index):
         element = self.ViewControl.combo1.currentIndex()
         x_index = int(self.data.shape[3] * 0.1)
@@ -347,8 +435,8 @@ class SinogramWidget(QtWidgets.QWidget):
             img = self.data[element, index]/2 + self.data[element, 0]/2
             img = img[x_index:-x_index, y_index:-y_index]
 
-        self.diffView.projView.setImage(img, border='w')
-        self.diffView.projView.setLookupTable(lookup_table)
+        # self.diffView.projView.setImage(img, border='w')
+        # self.diffView.projView.setLookupTable(lookup_table)
 
 
     def updateSliderSlot(self, index):
@@ -416,7 +504,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sinogram(element)
         # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
         self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
-        self.updateDiffImage(index3)
+        # self.updateDiffImage(index3)
 
     def ySizeChanged(self, ySize):
         self.sld.setRange(1, ySize)

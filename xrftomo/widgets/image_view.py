@@ -126,8 +126,18 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
 
         if evt.button() == 2:
             self.cross_pos_x, self.cross_pos_y = self.update_crosshair(x_pos, y_pos, frame_height, frame_width)
-            self.p1.items[2].setValue(self.cross_pos_x)
-            self.p1.items[3].setValue(self.cross_pos_y)
+            try:
+
+                self.p1.items[2].setValue(self.cross_pos_x)
+                self.p1.items[3].setValue(self.cross_pos_y)
+            except:
+                try:
+                    self.p1.items[3].setValue(self.cross_pos_x)
+                    self.p1.items[4].setValue(self.cross_pos_y)
+                except:
+                    print("cant plot crosshair")
+
+
             self.mousePressSig.emit(2)
 
 

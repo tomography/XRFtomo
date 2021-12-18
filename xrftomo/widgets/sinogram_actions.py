@@ -532,11 +532,11 @@ class SinogramActions(QtWidgets.QWidget):
         # dummy = self.multiplot(row_sums_orig)
 
         ##push edges
-        y_shifts = self.push_edge(row_sums)
+        y_shifts = self.push_edge(row_sums,0,0.3)
 
         for i in range(len(y_shifts)):
-            row_sums[i] = scipy.ndimage.shift(row_sums[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-            data[:,i] = scipy.ndimage.shift(data[element,i], (y_shifts[i],0), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            row_sums[i] = scipy.ndimage.shift(row_sums[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            data[:,i] = scipy.ndimage.shift(data[element,i], (-y_shifts[i],0), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
 
         # dummy = self.multiplot(row_sums)
         plt.show()
@@ -545,9 +545,8 @@ class SinogramActions(QtWidgets.QWidget):
         return data, x_shifts, y_shifts
 
 
-    def push_edge(self, arr):
+    def push_edge(self, arr, side=0,threshold=0.5):
 
-        threshold = 0.5
         num_rows = arr.shape[0]
         Lindx = []
         Rindx = []
@@ -561,12 +560,17 @@ class SinogramActions(QtWidgets.QWidget):
             Lindx.append(idx[0][0])
             Rindx.append(idx[0][-1])
 
-        l_shifts = [Lindx[0]-Lindx[i] for i in range(1,len(Lindx))]
-        r_shifts = [Rindx[0]-Rindx[i] for i in range(1,len(Rindx))]
+        l_shifts = [Lindx[i] - Lindx[0] for i in range(1,len(Lindx))]
+        r_shifts = [Rindx[i] - Rindx[0] for i in range(1,len(Rindx))]
         l_shifts.insert(0,0)
         r_shifts.insert(0,0)
-
-        return l_shifts
+        if side==0:
+            return l_shifts
+        elif side ==1:
+            return r_shifts
+        else:
+            print("problem")
+            return l_shifts
 
 
 
@@ -634,10 +638,9 @@ class SinogramActions(QtWidgets.QWidget):
             dy_arr[i]= ploty_dy
         dy_arr = self.remove_false_peak(dy_arr,4)
         dy_arr_orig = np.copy(dy_arr)
-        # dy_arr = self.relax_edge(dy_arr,5)      #LEAVE THIS
-        # dummy = self.multiplot(dy_arr_orig)
+
         #plot staggered row sums
-        # self.multiplot(dy_arr)
+        # dummy = self.multiplot(dy_arr)
 
         peak_list = []
         for i in range(len(dy_arr)):
@@ -648,9 +651,6 @@ class SinogramActions(QtWidgets.QWidget):
         sum_dy_sqrd = np.sum(dy_arr, axis=0)**2
         peaks, dummy = find_peaks(sum_dy_sqrd, prominence=(sum_dy_sqrd.max() / 5, sum_dy_sqrd.max()))
         peak_locs = np.flip(peaks[np.argsort(sum_dy_sqrd[peaks])])
-        # plt.figure()
-        # plt.plot(sum_dy_sqrd)
-        # plt.plot(peaks, sum_dy_sqrd[peaks], "x")
         num_peaks = len(peak_locs)
 
         if num_peaks>1:
@@ -672,23 +672,25 @@ class SinogramActions(QtWidgets.QWidget):
             if head >dy_arr.shape[1]:
                 head = dy_arr.shape[1]-1
             new_dy_arr = np.copy(dy_arr[:,tail:head])
+        # dummy = self.multiplot(dy_arr)
+        new_dy_arr = np.copy(dy_arr)
 
         #xcor adjacent arrays to remove jitter__________________
         for i in range(1, num_projections):
             shift, error, diffphase = phase_cross_correlation(new_dy_arr[i-1], new_dy_arr[i],upsample_factor=100)
-            y_shifts[i:]+= round(shift[0],2)
+            y_shifts[i:]-= round(shift[0],2)
         #adjust for discontinuities
         y_shifts = self.tweak_shifts(y_shifts,new_dy_arr)
 
         #shift complete array
         for i in range(num_projections):
-            new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
         #create new shifts array
         y_shifts_2 = np.zeros_like(y_shifts)
         #xcor arrays with respect to first array ________________
         for i in range(1, num_projections):
             shift, error, diffphase = phase_cross_correlation(new_dy_arr[i-1], new_dy_arr[i],upsample_factor=100)
-            y_shifts_2[i] += round(shift[0],2)
+            y_shifts_2[i] -= round(shift[0],2)
 
         #adjust for discontinuities
         y_shifts_2 = self.tweak_shifts(y_shifts_2,new_dy_arr)
@@ -697,31 +699,36 @@ class SinogramActions(QtWidgets.QWidget):
         y_shifts = y_shifts+y_shifts_2
 
         for i in range(num_projections):
-            new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], y_shifts_2[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts_2[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
 
-        #run peakfinding once again, this time align top peaks.______________________
-        num_pks = new_dy_arr.shape[0]
-        pks = []
-        for i in range(num_pks):
-            sum_dy_sqrd = new_dy_arr[i]** 2
-            norm_arr = sum_dy_sqrd/ sum_dy_sqrd.max() + i * 0.2
-            peaks, dummy = find_peaks(sum_dy_sqrd, prominence=(sum_dy_sqrd.max() / 5, sum_dy_sqrd.max()))
-            max_peak = np.where(norm_arr[peaks] == (max(norm_arr[peaks])))[0][0]
-            #peaks = list of peak index locations
-            pks.append(peaks[max_peak])
+        y_shifts_3 = self.push_edge(new_dy_arr,1,0.60)
 
-        #get relative shifts for y_shifts_3
-        y_shifts_3 = [pks[0]-pks[i] for i in range(1,len(pks))]
-        y_shifts_3.insert(0,0)
+        #run peakfinding once again, this time align top peaks.___
+        # TODO: TOP peaks occasiaonly shift between two locations. consider aligning to first peak edge like xcor_sum___________________
+        # num_pks = new_dy_arr.shape[0]
+        # pks = []
+        # for i in range(num_pks):
+        #     sum_dy_sqrd = new_dy_arr[i]** 2
+        #     norm_arr = sum_dy_sqrd/ sum_dy_sqrd.max() + i * 0.2
+        #     peaks, dummy = find_peaks(sum_dy_sqrd, prominence=(sum_dy_sqrd.max() / 5, sum_dy_sqrd.max()))
+        #     max_peak = np.where(norm_arr[peaks] == (max(norm_arr[peaks])))[0][0]
+        #     #peaks = list of peak index locations
+        #     pks.append(peaks[max_peak])
+        #
+        # #get relative shifts for y_shifts_3
+        # y_shifts_3 = [pks[0]-pks[i] for i in range(1,len(pks))]
+        # y_shifts_3.insert(0,0)
         y_shifts = y_shifts+y_shifts_3
-
+        #plot staggered row sums
+        # dummy = self.multiplot(dy_arr)
         #shift complete array
         for i in range(num_projections):
-            new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], y_shifts_3[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-            dy_arr[i] = scipy.ndimage.shift(dy_arr[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-            data[:,i] = scipy.ndimage.shift(data[element,i], (y_shifts[i],0), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts_3[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            # new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            dy_arr[i] = scipy.ndimage.shift(dy_arr[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            data[:,i] = scipy.ndimage.shift(data[element,i], (-y_shifts[i],0), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
 
-        # pks = self.multiplot(dy_arr)
+        # dummy = self.multiplot(dy_arr)
         plt.show()
 
         self.alignmentDone()
@@ -730,9 +737,12 @@ class SinogramActions(QtWidgets.QWidget):
 
     def remove_false_peak(self,arr, N):
         num_rows = arr.shape[0]
+        arr_orig = arr.copy()
         arr = arr**2
         canvas = np.zeros((arr.shape[0], arr.shape[1]+4)) #pad each edge with two zeros
+        canvas2 = np.zeros((arr.shape[0], arr.shape[1]+4)) #pad each edge with two zeros
         canvas[:,2:-2]=arr
+        canvas2[:,2:-2]=arr_orig
         for n in range(N):
             # self.multiplot(canvas)
             for i in range(num_rows):
@@ -750,7 +760,9 @@ class SinogramActions(QtWidgets.QWidget):
                         if head > canvas.shape[1]:
                             head = canvas.shape[1] - 1
                         canvas[i,tail:head]=0
-        new_arr = canvas[:,2:-2]
+                        canvas2[i,tail:head]=0
+
+        new_arr = canvas2[:,2:-2]
         return new_arr
 
 
@@ -1137,7 +1149,7 @@ class SinogramActions(QtWidgets.QWidget):
         if dim == 4:
             for i in range(data.shape[0]):
                 for j in range(data.shape[1]):
-                    data[i,j] = scipy.ndimage.shift(data[i,j], (y_shifts[j], x_shifts[j]), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+                    data[i,j] = scipy.ndimage.shift(data[i,j], (-y_shifts[j], x_shifts[j]), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
         return data
 
 

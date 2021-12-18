@@ -97,6 +97,24 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.lbl.setFixedWidth(button2size)
         # self.combo2.setVisible(False)
 
+        self.freq = QtWidgets.QLineEdit("1")
+        self.freq.setFixedWidth(button4size)
+        self.amp = QtWidgets.QLineEdit("10")
+        self.amp.setFixedWidth(button4size)
+        self.phase = QtWidgets.QLineEdit("0")
+        self.phase.setFixedWidth(button4size)
+        self.offst = QtWidgets.QLineEdit("0")
+        self.offst.setFixedWidth(button4size)
+
+        self.freq_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.amp_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.phase_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.offst_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        freq_lbl = QtWidgets.QLabel("frequency")
+        amp_lbl = QtWidgets.QLabel("amplitude")
+        phase_lbl = QtWidgets.QLabel("phase")
+        offst_lbl = QtWidgets.QLabel("DC offset")
+        self.set2line = QtWidgets.QPushButton("set2line")
 
         for i in range(5):
             self.combo3.addItem(str(i + 1))
@@ -165,6 +183,29 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         hb9.addWidget(self.fit_sine)
         hb9.addWidget(self.clear_data)
 
+        hb10 = QtWidgets.QHBoxLayout()
+        hb10.addWidget(freq_lbl)
+        hb10.addWidget(self.freq)
+        hb10.addWidget(self.freq_sld)
+
+        hb11 = QtWidgets.QHBoxLayout()
+        hb11.addWidget(amp_lbl)
+        hb11.addWidget(self.amp)
+        hb11.addWidget(self.amp_sld)
+
+        hb12 = QtWidgets.QHBoxLayout()
+        hb12.addWidget(phase_lbl)
+        hb12.addWidget(self.phase)
+        hb12.addWidget(self.phase_sld)
+
+        hb13 = QtWidgets.QHBoxLayout()
+        hb13.addWidget(offst_lbl)
+        hb13.addWidget(self.offst)
+        hb13.addWidget(self.offst_sld)
+
+        hb14 = QtWidgets.QHBoxLayout()
+        hb14.addWidget(self.set2line)
+
         vb1 = QtWidgets.QVBoxLayout()
         vb1.addLayout(hb0)
         vb1.addLayout(hb1)
@@ -180,12 +221,19 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb2.addLayout(hb8)
         vb2.addLayout(hb9)
 
+        sinoctrls = QtWidgets.QVBoxLayout()
+        sinoctrls.addLayout(hb10)
+        sinoctrls.addLayout(hb11)
+        sinoctrls.addLayout(hb12)
+        sinoctrls.addLayout(hb13)
+        sinoctrls.addLayout(hb14)
 
         vb3 = QtWidgets.QVBoxLayout()
         vb3.addWidget(self.combo1)
         # vb3.addWidget(self.combo2)
         vb3.addLayout(vb1)
         vb3.addLayout(vb2)
+        vb3.addLayout(sinoctrls)
         # self.setFixedWidth(button1size)
         self.setLayout(vb3)
 

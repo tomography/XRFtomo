@@ -1987,6 +1987,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.showSinogram()
         self.sinogramWidget.showImgProcess()
         self.sinogramWidget.showDiffProcess()
+        self.sinogramWidget.showSinoCurve()
         self.reconstructionWidget.showReconstruct()
         # self.reset_widgets()
 
