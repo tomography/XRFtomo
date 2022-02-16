@@ -44,7 +44,8 @@ from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import tomopy
 import os
-from matplotlib.pyplot import *
+# from matplotlib.pyplot import *
+import matplotlib.pyplot as plt
 import numpy as np
 from skimage import exposure
 
@@ -59,7 +60,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 		super(ReconstructionActions, self).__init__()
 		self.writer = xrftomo.SaveOptions()
 
-	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False, guess=None):
+	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas, guess=None):
 		'''
 		load data for reconstruction and load variables for reconstruction
 		make it sure that data doesn't have infinity or nan as one of
@@ -70,101 +71,35 @@ class ReconstructionActions(QtWidgets.QWidget):
 		recData[np.isnan(recData)] = True
 		recCenter = np.array(center, dtype=np.float32)
 
-		if method == 0:
-			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='mlem', center=recCenter, num_iter=1, init_recon=guess, accelerated=False, device='cpu')
-		elif method == 1:
-			# TODO: gridrec fails and cannot recover, all of python shuts down. consider removing.
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='gridrec')
-		elif method == 2:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='art', num_iter=iters)
-		elif method == 3:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='pml_hybrid', center=recCenter,
-				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
-		elif method == 4:
-			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='pml_quad', center=recCenter,
-				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
-		elif method == 5:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='fbp')
-		elif method == 6:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='sirt', num_iter=iters)
-		elif method == 7:
-			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='tv', center=recCenter,
-				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
-
-		self.recon[self.recon<0] = 0
-		#tomopy.remove_nan() does not remove inf values
-		self.recon = tomopy.remove_nan(self.recon)
-
-		if np.isinf(self.recon).max():
-			print("WARNING: inf values found in reconstruction, consider reconstructing with less iterations")
-			print("inf values replaced with 0.001")
-			self.recon[self.recon == np.inf] = 0.001
-
-		if show_stats:
-			err, mse  = self.assessRecon(self.recon, recData, thetas, mid_indx, show_stats)
-			print(mse)
-		return self.recon
-	def reconstruct_bak(self, data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False):
-		'''
-		load data for reconstruction and load variables for reconstruction
-		make it sure that data doesn't have infinity or nan as one of
-		entries
-		'''
-		recData = data[element, :, :, :]
-		recData[recData == np.inf] = True
-		recData[np.isnan(recData)] = True
-		recCenter = np.array(center, dtype=np.float32)
 
 		if method == 0:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
-				algorithm='mlem', center=recCenter, num_iter=iters, accelerated=False, device='cpu')
+			recon = tomopy.recon(recData, thetas * np.pi / 180, algorithm='mlem', center=recCenter, num_iter=1, init_recon=guess, accelerated=False, device='cpu')
 		elif method == 1:
-			# TODO: gridrec fails and cannot recover, all of python shuts down. consider removing.
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='gridrec')
+			recon= tomopy.recon(recData, thetas * np.pi / 180, algorithm='gridrec',center=recCenter, init_recon=guess)
+			recon= recon/1.49
 		elif method == 2:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
-				algorithm='art', num_iter=iters)
+			recon= tomopy.recon(recData, thetas * np.pi / 180, algorithm='art', num_iter=iters)
+			recon= recon/1.49
 		elif method == 3:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
-				algorithm='pml_hybrid', center=recCenter, 
-				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
+			recon= tomopy.recon(recData, thetas * np.pi / 180, algorithm='pml_hybrid', center=recCenter, reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
 		elif method == 4:
-			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='pml_quad', center=recCenter,
-				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
+			recon = tomopy.recon(recData, thetas * np.pi / 180, algorithm='pml_quad', center=recCenter, reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
 		elif method == 5:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='fbp')
+			recon= tomopy.recon(recData, thetas * np.pi / 180, algorithm='fbp')
 		elif method == 6:
-			self.recon= tomopy.recon(recData, thetas * np.pi / 180, 
-				algorithm='sirt', num_iter=iters)
+			recon= tomopy.recon(recData, thetas * np.pi / 180, algorithm='sirt', num_iter=iters)
 		elif method == 7:
-			self.recon = tomopy.recon(recData, thetas * np.pi / 180,
-				algorithm='tv', center=recCenter,
-				reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
-
-		self.recon[self.recon<0] = 0
+			recon = tomopy.recon(recData, thetas * np.pi / 180, algorithm='tv', center=recCenter, reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
+		recon[recon<0] = 0
 		#tomopy.remove_nan() does not remove inf values
-		self.recon = tomopy.remove_nan(self.recon)
+		recon = tomopy.remove_nan(recon)
 
-		if np.isinf(self.recon).max():
+		if np.isinf(recon).max():
 			print("WARNING: inf values found in reconstruction, consider reconstructing with less iterations")
 			print("inf values replaced with 0.001")
-			self.recon[self.recon == np.inf] = 0.001
+			recon[recon == np.inf] = 0.001
 
-		if show_stats:
-			err, mse  = self.assessRecon(self.recon, recData, thetas, mid_indx, show_stats)
-			print(mse)
-		return self.recon
+		return recon
 
 	def reconstructAll(self, data, element_names, center, method, beta, delta, iters, thetas,start_idx):
 		print("This will take a while")
@@ -190,53 +125,43 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 		return np.array(recons)
 
-	def assessRecon(self,recon, data, thetas, mid_indx, show_plots=True):
+	def assessRecon(self,recon, data, thetas,show_plots):
 		#TODO: make sure cros-section index does not exceed the data height
 		#get index where projection angle is zero
 		zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]
 		num_slices = recon.shape[0]
-		width = self.recon.shape[1]
+		width = recon.shape[1]
 		reprojection = np.zeros([num_slices, width])
-		tmp = np.zeros([num_slices, width])
 
 		# get recon reporjection for slice i and take the difference with data projection (at angle ~=0).
 		for i in range(num_slices):
 			reprojection[i] = np.sum(recon[i], axis=0)
-			if data[zero_index, i].max() == 0:
-				tmp[i] = np.zeros(width)
+			#if data is empty at angle zero, disregard set tmp to zero array
+			if data[zero_index].max() == 0:
+				#TODO: local porjection referenced before assignment
+				projection[i] = np.zeros(width)
 			else:
-				#projection for 0 angle at row i / projection for angle 0 at row i, mximum value / maximum value of recon for row i
-				#projection row / (proj max / reproj max)
-				tmp[i] = data[zero_index, i] / (data[zero_index, i].max() / np.sum(recon[i], axis=0).max())
-		#normalizing projectios against reconstruction side length, so plot appears withing image.
-		projection = tmp*width/tmp.max()
-		#normalizing reprojectios against reconstruction side length, so plot appears withing image.
-		reprojection = reprojection*width/reprojection.max()
+				projection = data[zero_index]
+				reprojection = np.sum(recon[0], axis=0)
 
-		projection_xSection = tmp[mid_indx]*width/tmp[mid_indx].max()
-		reprojection_xSection = reprojection[mid_indx]*width/reprojection[mid_indx].max()
+		#normslize projections against corss section height so plot fits, only used for plotting puposess.
+
+		norm_proj = projection/projection.max()*recon.shape[1]
+		norm_repr = reprojection/projection.max()*recon.shape[1]
+		sf = np.round(norm_repr.max()/norm_proj.max(),4)
 		#difference between reporjection and original projection at angle == 0
-		# err = tmp - reprojection/reprojection
-		err = projection - reprojection
+		# err = projection - reprojection
+		err = norm_proj - norm_repr
 		#mean squared error
 		mse = (np.square(err)).mean(axis=None)
-		figA = figure()
-		imshow(recon[mid_indx], origin='lower'), plot(projection_xSection), plot(reprojection_xSection)
-		legend(('projection', 'reprojection'), loc=1)
-		title("MSE:{}".format(np.round(mse, 4)))
-		figB = figure()
-		imshow(projection)
-		title("projection")
-		figC = figure()
-		imshow(reprojection)
-		title("reprojection")
-
 		if show_plots:
+
+			figA = plt.figure()
+			plt.imshow(recon[0], origin='lower'), plt.plot(norm_proj), plt.plot(norm_repr)
+			plt.legend(('projection', 'reprojection'), loc=1)
+			plt.title("MSE:{}\nScale Factor: {}".format(np.round(mse, 4),sf))
 			figA.show()
-			figB.show()
-			figC.show()
-		else:
-			close("all")
+
 		return err, mse
 
 	def equalize_recon(self,recon):

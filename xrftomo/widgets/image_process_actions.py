@@ -228,7 +228,7 @@ class ImageProcessActions(QtWidgets.QWidget):
 		max_val = np.max(imgs)
 		for i in range(imgs.shape[0]):
 			img = imgs[i]
-			img[img > 0.9*max_val] = 0.9*max_val
+			img[img > 0.98*max_val] = 0.98*max_val
 			data[element,i] = img
 		return data
 
@@ -269,15 +269,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		# Remove small holes
 		mask = ndi.binary_fill_holes(mask)
 		return mask * mask_nan
-
-	def remove_hotpixels(self, data, element):
-		imgs = data[element]
-		max_val = np.max(imgs)
-		for i in range(imgs.shape[0]):
-			img = imgs[i]
-			img[img > 0.95*max_val] = 0
-			data[element,i] = img
-		return data
 
 	def remove_empty_columns(self,data, element):
 		imgs = data[element]

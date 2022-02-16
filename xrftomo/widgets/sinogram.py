@@ -312,10 +312,10 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sld2.setRange(0, num_projections - 1)
 
     def showSinoCurve(self):
-        self.ViewControl.freq_sld.setRange(0, 100)
-        self.ViewControl.amp_sld.setRange(0, 100)
-        self.ViewControl.phase_sld.setRange(0, 100)
-        self.ViewControl.offst_sld.setRange(0,100)
+        self.ViewControl.freq_sld.setRange(0, 200)
+        self.ViewControl.amp_sld.setRange(0, 200)
+        self.ViewControl.phase_sld.setRange(0, 200)
+        self.ViewControl.offst_sld.setRange(0,200)
 
     def showDiffProcess(self):
         num_projections  = self.data.shape[1]
@@ -329,21 +329,27 @@ class SinogramWidget(QtWidgets.QWidget):
         #sld current index
         freq_idx = self.ViewControl.freq_sld.value()
         amp_idx = self.ViewControl.amp_sld.value()
-        freq_idx = self.ViewControl.phase_sld.value()
-        freq_idx = self.ViewControl.offst_sld.value()
+        phase_idx = self.ViewControl.phase_sld.value()
+        offst_idx = self.ViewControl.offst_sld.value()
 
         #array values
         #TODO: create array of values for each slider, set each QlineEdit to the indexed value.
+        freq_arr = np.linspace(0, 2, 201)
+        amp_arr = np.linspace(0, self.data.shape[3], self.data.shape[3]+1)
+        self.ViewControl.amp_sld.setRange(0, self.data.shape[3]+1)
 
-        #set Qlineedit to value[index]
-        # self.freq_idx.setValue(freq_idx)
+        phase_arr = np.linspace(-np.pi, np.pi, 201)
+        offst_arr = np.linspace(-self.data.shape[3], self.data.shape[3], 201)
 
+        #TODO: set Qlineedit to value[index]
 
-        #updateSinoCurve
-
+        self.ViewControl.freq.setText(str(round(freq_arr[freq_idx],3)))
+        self.ViewControl.amp.setText(str(round(amp_arr[amp_idx],3)))
+        self.ViewControl.phase.setText(str(round(phase_arr[phase_idx],3)))
+        self.ViewControl.offst.setText(str(round(offst_arr[offst_idx],3)))
+        self.updateSinoPlot()
 
         return
-
 
     def diffSliderChanged(self):
         index = self.sld3.value()
@@ -401,12 +407,6 @@ class SinogramWidget(QtWidgets.QWidget):
             return
         except:
             return
-
-
-
-
-
-
         pass
 
 
@@ -481,6 +481,10 @@ class SinogramWidget(QtWidgets.QWidget):
         self.elementChanged()
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
+
+
+
+
 
     def sinoSliderChanged(self):
         index = self.sld.value()

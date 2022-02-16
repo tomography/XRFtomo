@@ -356,8 +356,11 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, quant_tag=
         for i in range(num_elements):
             for j in range(num_files):
                 element_tag = channel_tag
-                quant = read_quant(path_files[j], elements[i], hdf_tag, quant_tag, element_tag, scaler_idx)
-                quants[i,j] = quant
+                try:
+                    quant = read_quant(path_files[j], elements[i], hdf_tag, quant_tag, element_tag, scaler_idx)
+                    quants[i, j] = quant
+                except:
+                    print("problem reading quant")
 
     data[np.isnan(data)] = 0.0001
     data[data == np.inf] = 0.0001
@@ -384,10 +387,11 @@ def read_quant(fname, element, hdf_tag, quant_tag, element_tag, scaler_idx):
 
     try:
         all_quants = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, quant_tag))
+        result = all_quants[scaler_idx][0][elem_idx]
     except:
         return
 
-    return all_quants[scaler_idx][0][elem_idx]
+    return result
 
 def read_tiffs(fnames):
 

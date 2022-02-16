@@ -96,6 +96,16 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.mid_indx = QtWidgets.QLineEdit("-1")
         self.mid_indx.setFixedWidth(button4size)
         self.mid_indx.setDisabled(True)
+
+        offst_top_lbl = QtWidgets.QLabel("centers offset top")
+        offst_top_lbl.setFixedWidth(button12size)
+        offst_bottom_lbl = QtWidgets.QLabel("centers offset top")
+        offst_bottom_lbl.setFixedWidth(button12size)
+        self.offst_top = QtWidgets.QLineEdit("0")
+        self.offst_top.setFixedWidth(button4size)
+        self.offst_bottom = QtWidgets.QLineEdit("0")
+        self.offst_bottom.setFixedWidth(button4size)
+
         self.recon_stats = QtWidgets.QCheckBox("show reconstructions statistics")
         self.recon_stats.setChecked(False)
         self.recon_save = QtWidgets.QCheckBox("reconstruct & save simultaneously")
@@ -147,7 +157,14 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         midBox = QtWidgets.QHBoxLayout()
         midBox.addWidget(self.mid_lbl)
         midBox.addWidget(self.mid_indx)
-        paddingBox = QtWidgets.QHBoxLayout()
+        offst_top_box = QtWidgets.QHBoxLayout()
+        offst_top_box.addWidget(offst_top_lbl)
+        offst_top_box.addWidget(self.offst_top)
+        offst_bottom_box = QtWidgets.QHBoxLayout()
+        offst_bottom_box.addWidget(offst_bottom_lbl)
+        offst_bottom_box.addWidget(self.offst_bottom)
+
+
 
         mdBox = QtWidgets.QHBoxLayout()
         mdBox.addWidget(self.mulBtn)
@@ -188,7 +205,8 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addLayout(endBox)
         vb.addLayout(startBox)
         vb.addLayout(midBox)
-        vb.addLayout(paddingBox)
+        vb.addLayout(offst_top_box)
+        vb.addLayout(offst_bottom_box)
         vb.addWidget(self.recon_stats)
         vb.addWidget(self.recon_save)
         vb.addWidget(self.lbl)

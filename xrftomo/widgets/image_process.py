@@ -119,7 +119,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
         # self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
-        self.ViewControl.rm_hotpix.clicked.connect(self.rm_hotpix_params)
         self.ViewControl.rm_empty_cols.clicked.connect(self.rm_cols_params)
         self.ViewControl.rm_empty_rows.clicked.connect(self.rm_rows_params)
         self.ViewControl.Equalize.clicked.connect(self.histo_params)
@@ -444,6 +443,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.actions.cut(self.data, x_pos, y_pos, x_size, y_size)
         self.ySizeChangedSig.emit(y_size)
+        self.xSizeChangedSig.emit(x_size)
         self.dataChangedSig.emit(data)
         #TODO: move crosshairs an ROI to crop region after crop
         self.imageView.p1.items[2].setValue(0)
@@ -547,12 +547,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         data = self.actions.remove_hotspots(data, element)
-        self.dataChangedSig.emit(data)
-
-    def rm_hotpix_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        data = self.actions.remove_hotpixels(data, element)
         self.dataChangedSig.emit(data)
 
     def rm_cols_params(self):

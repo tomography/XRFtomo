@@ -1070,7 +1070,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         #find where proj index angle ==0:
         zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]
-        self.proj = self.data[e1,zero_index]
+        self.proj = np.flipud(self.data[e1,zero_index])
 
         self.elem_options.currentIndexChanged.connect(self.updateMiniProj)
         self.miniProjectionWidget1.reconView.setImage(self.proj)
@@ -2101,6 +2101,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.thetas = thetas
         self.imageProcessWidget.thetas = self.thetas
         self.sinogramWidget.thetas = self.thetas
+        self.reconstructionWidget.thetas = self.thetas
         return
 
     def update_alignment(self, x_shifts, y_shifts):

@@ -81,8 +81,6 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         # self.hist_equalize.setFixedWidth(button33size)
         self.rm_hotspot = QtWidgets.QPushButton("Remove hotspot")
         self.rm_hotspot.setFixedWidth(button4size)
-        self.rm_hotpix = QtWidgets.QPushButton("Remove hotpix")
-        self.rm_hotpix.setFixedWidth(button4size)
         self.Equalize = QtWidgets.QPushButton("Equalize")
         self.Equalize.setFixedWidth(button33size)
         self.invert = QtWidgets.QPushButton("invert values")
@@ -112,7 +110,6 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb13 = QtWidgets.QHBoxLayout()
         hb13.addWidget(self.deleteProjection)
         hb13.addWidget(self.rm_hotspot)
-        hb13.addWidget(self.rm_hotpix)
         hb13.addWidget(self.reshapeBtn)
 
         hb14 = QtWidgets.QHBoxLayout()

@@ -44,6 +44,8 @@ from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import pyqtgraph
 import numpy as np
+import scipy.ndimage
+
 from matplotlib import pyplot as plt
 # from matplotlib.pyplot import figure, draw, pause, close
 import time
@@ -215,14 +217,18 @@ class ReconstructionWidget(QtWidgets.QWidget):
         end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
         start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
         mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text())) -start_indx - 1
+        offst_top = int(self.ViewControl.offst_top.text())
+        offst_bottom = int(self.ViewControl.offst_bottom.text())
+
 
         data = self.data[:,:,start_indx:end_indx,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
         num_xsections = data.shape[2]
         recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
         xsection = np.zeros((1, data.shape[1], 1, data.shape[3]))  # empty array size [1(element), frames, 1(y), x]
-
-
+        if offst_top !=0 or offst_bottom !=0:
+            center = center + np.linspace(offst_top, offst_bottom, data.shape[2])
+            shifts = np.linspace(offst_top, offst_bottom, data.shape[2])
         if self.ViewControl.recon_save.isChecked():
             try:
                 savedir = QtGui.QFileDialog.getSaveFileName()[0]
@@ -238,27 +244,66 @@ class ReconstructionWidget(QtWidgets.QWidget):
                 print("Something went horribly wrong.")
 
             #reconstruct one ccross section at a time and save after each loop/completion.
-
             start_idx = int(eval(self.ViewControl.start_indx.text()))
             for i in range(num_xsections):
                 j = num_xsections-i-1
                 xsection[0,:,0] = data[element,:,j]
-                recon = self.actions.reconstruct(xsection, 0, center, method, beta, delta, iters, thetas, 0, False)
+                recon = self.actions.reconstruct(xsection, 0, center, method, beta, delta, iters, thetas, 0)
                 recons[i] = recon
                 self.writer.save_reconstruction(recon, savedir, start_idx+i)
             self.recon = np.array(recons)
         else:
             print("working fine")
+            if method== 0 or method==2:
+                for i in range(num_xsections):
+                    j = num_xsections-i-1
+                    xsection[0,:,0] = data[element,:,j]
+                    if offst_top != 0 or offst_bottom != 0:
+                        cent = center[i]
+                    else:
+                        cent = center
+                    guess = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 5, thetas, None)
+                    for k in range(5, iters):
+                        #  data, element, center, method, beta, delta, iters, thetas, guess=None):
+                        guess = self.actions.reconstruct(xsection, 0, center, method, beta, delta, 1, thetas, guess)
+                        recons[i] = guess[0]
+                        print("reconstructing row {} on iteration{}".format(i,k))
 
-            for i in range(num_xsections):
-                j = num_xsections-i-1
-                xsection[0,:,0] = data[element,:,j]
-                guess = self.actions.reconstruct(xsection, 0, center, method, beta, delta, 5, thetas, 0, False, None)
-                for k in range(5, iters):
-                    #data, element, center, method, beta, delta, iters, thetas, mid_indx, show_stats=False, guess=None
-                    guess = self.actions.reconstruct(xsection, 0, center, method, beta, delta, 1, thetas, 0, False, guess)
-                    recons[i] = guess[0]
-                    print("reconstructing row {} on iteration{}".format(i,k))
+                    err, mse = self.actions.assessRecon(guess, xsection[0,:,0], thetas, show_stats)
+                    print(mse)
+            elif method ==1:
+                for i in range(num_xsections):
+                    print("reconstructing row{}/{}".format(i,num_xsections))
+                    j = num_xsections - i - 1
+                    xsection[0, :, 0] = data[element, :, j]
+                    if offst_top != 0 or offst_bottom != 0:
+                        cent = center[i]
+                    else:
+                        cent = center
+                    recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 1, thetas, None)
+                    if offst_top != 0 or offst_bottom != 0:
+                        recon[0] = scipy.ndimage.shift(recon[0], (0,shifts[i]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
+                    recons[i] = recon[0]
+
+                    err, mse = self.actions.assessRecon(recon, xsection[0,:,0], thetas, show_stats)
+                    print(mse)
+
+            else:
+                for i in range(num_xsections):
+                    print("reconstructing row{}/{}".format(i,num_xsections))
+                    j = num_xsections - i - 1
+                    xsection[0, :, 0] = data[element, :, j]
+                    if offst_top != 0 or offst_bottom != 0:
+                        cent = center[i]
+                    else:
+                        cent = center
+                    #  data, element, center, method, beta, delta, iters, thetas, guess=None):
+                    recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, iters, thetas, None)
+                    recons[i] = recon[0]
+
+
+                    err, mse = self.actions.assessRecon(recon, xsection[0, :, 0], thetas, show_stats)
+                    print(mse)
 
             self.recon = np.array(recons)
 

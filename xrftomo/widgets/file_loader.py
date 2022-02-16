@@ -730,12 +730,12 @@ class FileTableWidget(QtWidgets.QWidget):
             quant_tag = None
             scaler_idx=-1
 
-        try:
-            # data, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
-            data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, quant_tag, scaler_tag, scaler_idx)
-        except:
-            self.message.setText('Loading failed')
-            return [], [], [], []
+        # try:
+        # data, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
+        data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, quant_tag, scaler_tag, scaler_idx)
+        # except:
+        #     self.message.setText('Loading failed')
+        #     return [], [], [], []
 
         if data is None or scalers is None:
             return [], [], [], []
