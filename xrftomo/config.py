@@ -78,6 +78,11 @@ SECTIONS['file-io'] = {
         'type': str,
         'help': "element tag for h5 file",
         'metavar': 'PATH'},
+    'quant-tag': {
+        'default': 'XRF_roi',
+        'type': str,
+        'help': "data tag for h5 file",
+        'metavar': 'PATH'},
     'sorted-angles': {
         'default': 'True',
         'type': bool,

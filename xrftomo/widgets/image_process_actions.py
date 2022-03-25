@@ -229,7 +229,11 @@ class ImageProcessActions(QtWidgets.QWidget):
 		for i in range(imgs.shape[0]):
 			img = imgs[i]
 			img[img > 0.98*max_val] = 0.98*max_val
+			img[img < 0] = 0
 			data[element,i] = img
+
+
+
 		return data
 
 	def fill_void(self,data, element):

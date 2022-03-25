@@ -305,7 +305,7 @@ class xrftomoGui(QtGui.QMainWindow):
         analysis.addAction(layerDensityAction)
         layerDensityAction.triggered.connect(self.onionWindow)
 
-        subPixShift = QtGui.QMenu("Sub pixel shift", self)
+        subPixShift = QtGui.QMenu("shift step size", self)
         ag = QtGui.QActionGroup(subPixShift)
         ag.setExclusive(True)
         self.subPix_1 = ag.addAction(QtGui.QAction('1', subPixShift, checkable=True))
@@ -2419,7 +2419,6 @@ class xrftomoGui(QtGui.QMainWindow):
         # return the MSE, the lower the error, the more "similar"
         return rVal
 
-
     def keyMapSettings(self):
         self.keymap_options.show()
         return
@@ -2429,7 +2428,6 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def closeEvent(self, event):
-        print("here I am")
         try:
             sections = config.TOMO_PARAMS + ('gui', )
             home = expanduser("~")

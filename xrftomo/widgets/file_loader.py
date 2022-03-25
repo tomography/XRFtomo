@@ -57,7 +57,8 @@ class FileTableWidget(QtWidgets.QWidget):
         self.auto_input_path = self.parent.params.input_path
         self.auto_image_tag = self.parent.params.image_tag
         self.auto_data_tag = self.parent.params.data_tag
-        # self.auto_element_tag = self.parent.params.element_tag
+        self.auto_element_tag = self.parent.params.element_tag
+        self.auto_quant_tag = self.parent.params.quant_tag
         self.auto_scaler_names = self.parent.params.scaler_names
         #self.auto_detector_tag = self.parent.params.detector_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
@@ -102,7 +103,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.thetaLineEdit.setVisible(False)
 
 
-        imageTag_label = QtWidgets.QLabel('data tag:')
+        imageTag_label = QtWidgets.QLabel('image tag:')
         imageTag_label.setFixedWidth(90)
         self.imageTag = QtWidgets.QComboBox()
         self.imageTag.activated.connect(self.getDataTag)
@@ -110,7 +111,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.imageTag.activated.connect(self.getElementList)
         self.imageTag.setFixedWidth(122.5)
 
-        dataTag_label = QtWidgets.QLabel('image tag')
+        dataTag_label = QtWidgets.QLabel('data tag')
         dataTag_label.setFixedWidth(90)
         self.dataTag = QtWidgets.QComboBox()
         # self.dataTag.currentIndexChanged.connect(self.getDataTag)
@@ -469,7 +470,8 @@ class FileTableWidget(QtWidgets.QWidget):
                     indx = 0
                 self.elementTag.setCurrentIndex(indx)
                 # self.elementTag.currentIndexChanged.connect(self.getElementList)
-
+                #TODO: enable auto_element_tag and auto_quant_tag
+                
                 # if self.auto_element_tag in self.dataTags:
                 #     self.elementTag.setCurrentText(self.auto_element_tag)
                 # self.element_tag = self.elementTag.currentText()
@@ -683,7 +685,8 @@ class FileTableWidget(QtWidgets.QWidget):
         hdf_tag = self.imgTags[self.imageTag.currentIndex()]
         data_tag = self.dataTag.currentText()
         element_tag = self.element_tag
-        # scaler_name = self.scaler_names.currentText()
+        quant_name = self.quant_names.currentText()
+        scaler_name = self.scaler_names.currentText()
 
         k = np.arange(len(files))
         l = np.arange(len(elements))
@@ -703,7 +706,9 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.params.theta_pv = self.thetaLineEdit.text()
         self.parent.params.image_tag = self.imgTags[self.imageTag.currentIndex()]
         self.parent.params.data_tag = self.dataTag.currentText()
-        # self.parent.params.element_tag = element_tag
+        self.parent.params.element_tag = element_tag
+        self.parent.params.quant_tag = quant_name
+        self.parent.params.scaler_names = scaler_name
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
         #self.parent.params.detector_tag = self.scaler_option.currentText()
 

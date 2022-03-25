@@ -164,19 +164,19 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 		return err, mse
 
-	def equalize_recon(self,recon):
-		# Equalization
-		global_mean = np.mean(recon)
-		num_recons = recon.shape[0]
-		for i in range(num_recons):
-			local_mean = np.mean(recon[i])
-			coeff = global_mean/local_mean
-			recon[i] = recon[i]*coeff
-			img = recon[i]
-			# data[element,i] = exposure.equalize_hist(img)
-			img *= 1/img.max()
-			recon[i] = exposure.equalize_adapthist(img)
-		return recon
+	# def equalize_recon(self,recon):
+	# 	# Equalization
+	# 	global_mean = np.mean(recon)
+	# 	num_recons = recon.shape[0]
+	# 	for i in range(num_recons):
+	# 		local_mean = np.mean(recon[i])
+	# 		coeff = global_mean/local_mean
+	# 		recon[i] = recon[i]*coeff
+	# 		img = recon[i]
+	# 		# data[element,i] = exposure.equalize_hist(img)
+	# 		img *= 1/img.max()
+	# 		recon[i] = exposure.equalize_adapthist(img)
+	# 	return recon
 
 	def setThreshold(self,threshold,recon):
 		for i in range(recon.shape[0]):
