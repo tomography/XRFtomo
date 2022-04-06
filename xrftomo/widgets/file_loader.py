@@ -59,7 +59,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.auto_data_tag = self.parent.params.data_tag
         self.auto_element_tag = self.parent.params.element_tag
         self.auto_quant_tag = self.parent.params.quant_tag
-        self.auto_scaler_names = self.parent.params.scaler_names
+        self.auto_scaler_tag = self.parent.params.scaler_tag
         #self.auto_detector_tag = self.parent.params.detector_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
@@ -107,35 +107,36 @@ class FileTableWidget(QtWidgets.QWidget):
         imageTag_label.setFixedWidth(90)
         self.imageTag = QtWidgets.QComboBox()
         self.imageTag.activated.connect(self.getDataTag)
-        self.imageTag.activated.connect(self.getScalerOptions)
-        self.imageTag.activated.connect(self.getElementList)
+        self.imageTag.activated.connect(self.setup_element_list)
         self.imageTag.setFixedWidth(122.5)
 
         dataTag_label = QtWidgets.QLabel('data tag')
         dataTag_label.setFixedWidth(90)
         self.dataTag = QtWidgets.QComboBox()
         # self.dataTag.currentIndexChanged.connect(self.getDataTag)
-        self.dataTag.currentIndexChanged.connect(self.getElementList)
+        self.dataTag.currentIndexChanged.connect(self.setup_element_list)
         self.dataTag.setFixedWidth(122.5)
 
         self.elementTag_label = QtWidgets.QLabel('Elements:')
         self.elementTag_label.setFixedWidth(90)
 
         self.elementTag = QtWidgets.QComboBox()
-        self.elementTag.currentIndexChanged.connect(self.getElementList)
+        self.elementTag.currentIndexChanged.connect(self.element_tag_changed)
         self.elementTag.setFixedWidth(122.5)
 
         quant_label = QtWidgets.QLabel('quant options:')
         quant_label.setFixedWidth(90)
-        self.quant_names = QtWidgets.QComboBox()
-        # self.scaler_names.currentIndexChanged.connect(self.getScalerOptions)
-        self.quant_names.setFixedWidth(122.5)
+        self.quantTag = QtWidgets.QComboBox()
+        # self.scalerTag.currentIndexChanged.connect(self.getScalerOptions)
+        self.quantTag.setFixedWidth(122.5)
 
-        scaler_label = QtWidgets.QLabel('Normalize by:')
+        scaler_label = QtWidgets.QLabel('Normalize by scaler:')
         scaler_label.setFixedWidth(90)
-        self.scaler_names = QtWidgets.QComboBox()
-        # self.scaler_names.currentIndexChanged.connect(self.getScalerOptions)
-        self.scaler_names.setFixedWidth(122.5)
+        self.scalerTag = QtWidgets.QComboBox()
+        self.scalerTag.currentIndexChanged.connect(self.setup_scaler_list)
+        # self.imageTag.activated.connect(self.setup_scaler_list())
+
+        self.scalerTag.setFixedWidth(122.5)
 
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
@@ -170,12 +171,12 @@ class FileTableWidget(QtWidgets.QWidget):
 
         hBox5 = QtWidgets.QHBoxLayout()
         hBox5.addWidget(quant_label)
-        hBox5.addWidget(self.quant_names)
+        hBox5.addWidget(self.quantTag)
         hBox5.setAlignment(QtCore.Qt.AlignLeft)
 
         hBox6 = QtWidgets.QHBoxLayout()
         hBox6.addWidget(scaler_label)
-        hBox6.addWidget(self.scaler_names)
+        hBox6.addWidget(self.scalerTag)
         hBox6.setAlignment(QtCore.Qt.AlignLeft)
 
         hBox7 = QtWidgets.QHBoxLayout()
@@ -222,7 +223,9 @@ class FileTableWidget(QtWidgets.QWidget):
             print("Invalid directory or file; Try a new folder or remove problematic files.")
         self.onThetaUpdate()
 
-        # self.dataTag.currentIndexChanged.connect(self.getElementList)
+
+
+
 
     def onLoadDirectory(self, files = None):
         self.version = 0
@@ -267,10 +270,36 @@ class FileTableWidget(QtWidgets.QWidget):
                 self.imageTag.clear()
                 self.getImgTags()
                 self.getDataTag()
-                self.getElementList()
-                self.getScalerOptions()
-                self.getQuantOptions()
+                self.setup_element_list()
+                self.setup_quant_list()
+                self.setup_scaler_list()
                 self.onThetaUpdate()
+
+                try: #set auto_load options here:
+
+                    img_indx = self.imgTags.index(self.auto_image_tag)
+                    self.imageTag.setCurrentIndex(img_indx)
+
+                    data_indx = self.dataTags.index(self.auto_data_tag)
+                    self.dataTag.setCurrentIndex(data_indx)
+
+                    elem_indx = self.elementTags[self.imageTag.currentIndex()].index(self.auto_element_tag)
+                    self.elementTag.setCurrentIndex(elem_indx)
+                    self.element_tag = self.elementTag.currentText()
+                    self.element_tag_changed()
+
+                    quant_indx = self.quantTags.index(self.auto_quant_tag)
+                    self.quantTag.setCurrentIndex(quant_indx)
+
+                    scaler_indx = self.scalerTags.index(self.auto_scaler_tag)
+                    self.scalerTag.setCurrentIndex(scaler_indx)
+
+                except:
+                    pass
+                self.imageTag.currentIndexChanged.connect(self.setup_element_list)
+                self.elementTag.currentIndexChanged.connect(self.element_tag_changed)
+                # self.scalerTag.currentIndexChanged.connect(self.scaler_tag_changed)
+
             except KeyError:
                 pass
 
@@ -287,15 +316,16 @@ class FileTableWidget(QtWidgets.QWidget):
 
             self.imageTag.setEnabled(False)
             self.dataTag.setEnabled(False)
-            self.scaler_names.setEnabled(False)
+            self.scalerTag.setEnabled(False)
             self.message.setText("Load angle information using txt or csv file")
             pass
-
+        return
 
     def getImgTags(self):
         fpath = self.fileTableModel.getFirstCheckedFilePath()
         self.img = h5py.File(fpath,"r")
-        self.imgTags = list(self.img.keys())
+        tmpTags = list(self.img.keys())
+        self.imgTags =  list(filter(lambda k: 'version' not in k, tmpTags))
         self.version = self.checkVersion()
         self.description = []
 
@@ -333,7 +363,7 @@ class FileTableWidget(QtWidgets.QWidget):
             self.message.clear()
             # self.thetaLineEdit.setEnabled(True)
             self.dataTag.setEnabled(True)
-            # self.scaler_names.setEnabled(True)
+            # self.scalerTag.setEnabled(True)
 
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
@@ -341,10 +371,8 @@ class FileTableWidget(QtWidgets.QWidget):
             # if 'exchange' in self.imgTags and 'MAPS' in self.imgTags:
             #     self.imgTags.remove('MAPS')
 
-            if self.auto_image_tag in self.imgTags:
-                indx = self.imgTags.index(self.auto_image_tag)
-            else:
-                indx = 0
+
+            indx = 0
             self.imageTag.setCurrentIndex(indx)
 
             # else:
@@ -360,70 +388,31 @@ class FileTableWidget(QtWidgets.QWidget):
 
             self.dataTag.clear()
             self.dataTag.addItem('data')
-            # self.elementTag.clear()
-            # self.elementTag.addItem('data_names')
-            # for exchange_0
-            # if self.imgTags[self.imageTag.currentIndex()] == 'exchange_0':
-            #     #temp
-            #     self.scaler_names.setEnabled(False)
-            #
-            # else:
-            #     self.scaler_names.setEnabled(True)
 
         if self.version == 0:
+            self.message.clear()
+            self.dataTags = []
+            self.dataTags = list(self.img[self.imgTags[self.imageTag.currentIndex()]])
+            indx = self.imageTag.currentIndex()
+            if indx == -1:
+                return
 
-
-            # for old 2IDE HDF files with "exchange"
-            # if self.imageTag.currentText() == 'exchange':
-            #     self.message.setText('exchange: Fitted normalized by DS-IC')
-            #     self.dataTag.clear()
-            #     self.dataTag.addItem('images')
-            #     # self.elementTag.clear()
-            #     self.element_tag = 'images_names'
-            #     self.thetaLineEdit.setEnabled(True)
-            #     self.dataTag.setEnabled(False)
-            #     # self.elementTag.setEnabled(False)
-            #     self.scaler_names.setEnabled(False)
-            #
-            # # for old 2IDE HDF files without "exchange"
-            #
-            #
-
-            if True:
-                # for read
-                self.message.clear()
-                self.dataTags = {}
-
-
-                for i in range(len(self.imgTags)):      #get 'data' tags and element tags
-                    self.dataTags[i] = list(self.img[self.imgTags[i]])
-                    indx = self.imageTag.currentIndex()
-                    if indx == -1:
-                        return
-                try:
-                    # #filtering  drop-down menu to inlcude only relevant entries.
-                    temp_tags1 = list(filter(lambda k: not 'names' in k, self.dataTags[indx]))
-                    temp_tags1 = list(filter(lambda k: not 'units' in k, temp_tags1))
-                    temp_tags1 = list(filter(lambda k: not 'axis' in k, temp_tags1))
-                    # temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
-                    self.dataTags[indx] = temp_tags1
-                    self.dataTag.clear()
-                    # # self.elementTag.clear()
-                    for i in range(len(self.dataTags[indx])):
-                        self.dataTag.addItem(self.dataTags[indx][i])
-
-                except KeyError:
-                    pass
-
-                try:
-                    indx2 = self.dataTags[indx].index(self.auto_data_tag)
-                    self.dataTag.setCurrentIndex(indx2)
-                except ValueError:
-                    pass
-
-                # self.thetaLineEdit.setEnabled(True)
-                self.dataTag.setEnabled(True)
-                # self.scaler_names.setEnabled(True)
+            # #filtering  drop-down menu to inlcude only relevant entries.
+            temp_tags1 = list(filter(lambda k: not 'names' in k, self.dataTags))
+            temp_tags1 = list(filter(lambda k: not 'units' in k, temp_tags1))
+            temp_tags1 = list(filter(lambda k: not 'axis' in k, temp_tags1))
+            temp_tags1 = list(filter(lambda k: not 'quant' in k, temp_tags1))
+            # temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
+            self.dataTags = temp_tags1
+            try:
+                self.dataTag.disconnect()
+            except TypeError:
+                pass
+            self.dataTag.clear()
+            for i in range(len(self.dataTags)):
+                self.dataTag.addItem(self.dataTags[i])
+                self.dataTag.setCurrentIndex(0)
+            self.dataTag.setEnabled(True)
 
     def getElements(self):
         img_tag = self.imageTag.currentText()
@@ -439,124 +428,101 @@ class FileTableWidget(QtWidgets.QWidget):
 
         return element_names, element_idxs
 
-    def getElementList(self):
-        if self.version == 0:   #legacy data
-            fpath = self.fileTableModel.getFirstCheckedFilePath()
-            image_tag = self.imageTag.currentText()
 
-            # for read
-            self.message.clear()
-            self.elementTags = {}
-            num_image_tags = len(self.imgTags)
-            for i in range(num_image_tags):      #get element tags
-                self.elementTags[i] = list(self.img[self.imgTags[i]])
-            indx = self.imageTag.currentIndex()
-            if indx == -1:
-                return
-            try:
-                #filtering  drop-down menu to inlcude only relevant entries.
-                self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
-                self.element_tag = self.elementTag.currentText()
-                # self.elementTag.currentIndexChanged.disconnect(self.getElementList)
-                self.elementTag.disconnect()
-                self.elementTag.clear()
+    def element_tag_changed(self):
+        fpath = self.fileTableModel.getFirstCheckedFilePath()
+        image_tag = self.imgTags[self.imageTag.currentIndex()]
+        self.element_tag = self.elementTag.currentText()
+        self.elementTableModel.loadElementNames(fpath, image_tag, self.element_tag)
+        self.elementTableModel.setAllChecked(False)
+        self.elementTableModel.setChecked(self.auto_selected_elements, (True))
+        return
 
-                for i in range(len(self.elementTags[indx])):
-                    self.elementTag.addItem(self.elementTags[indx][i])
-
-                try:
-                    indx = self.elementTags[0].index(self.element_tag)
-                except:
-                    indx = 0
-                self.elementTag.setCurrentIndex(indx)
-                # self.elementTag.currentIndexChanged.connect(self.getElementList)
-                #TODO: enable auto_element_tag and auto_quant_tag
-                
-                # if self.auto_element_tag in self.dataTags:
-                #     self.elementTag.setCurrentText(self.auto_element_tag)
-                # self.element_tag = self.elementTag.currentText()
-            except KeyError:
-                pass
-
-
-            # self.elementTag.setEnabled(True)
-
-        if self.version == 1:   #9idbdata
-            fpath = self.fileTableModel.getFirstCheckedFilePath()
-            image_tag = self.imgTags[self.imageTag.currentIndex()]
-            if self.dataTag.currentText() == 'scalers':
-                self.element_tag = 'scaler_names'
-            else:
-                self.element_tag = 'data_names'
-            # element_tag = self.elementTag.currentText()
+    def setup_element_list(self):
+        fpath = self.fileTableModel.getFirstCheckedFilePath()
+        image_tag = self.imageTag.currentText()
+        self.message.clear()
+        self.elementTags = {}
+        num_image_tags = len(self.imgTags)
+        for i in range(num_image_tags):      #get element tags
+            self.elementTags[i] = list(self.img[self.imgTags[i]])
+            self.elementTags[i] = list(filter(lambda k: 'names' in k, self.elementTags[i]))
+            self.elementTags[i] = list(filter(lambda k: 'quant' not in k, self.elementTags[i]))
+        try:
+            self.elementTag.disconnect()
+        except TypeError:
+            pass
+        self.elementTag.clear()
+        img_indx = self.imageTag.currentIndex()
+        if img_indx == -1:
+            return
+        for i in range(len(self.elementTags[img_indx])):
+            self.elementTag.addItem(self.elementTags[img_indx][i])
+        self.elementTag.setCurrentIndex(0)
+        self.element_tag = self.elementTag.currentText()
 
         self.elementTableModel.loadElementNames(fpath, image_tag, self.element_tag)
         self.elementTableModel.setAllChecked(False)
         self.elementTableModel.setChecked(self.auto_selected_elements, (True))
-        self.elementTag.currentIndexChanged.connect(self.getElementList)
 
-    def getQuantOptions(self):
-        self.quant_names.clear()
-        indx = self.imageTag.currentIndex()
-        if indx == -1:
+    def setup_quant_list(self):
+        self.quantTag.clear()
+        quant_indx = self.imageTag.currentIndex()
+        if quant_indx == -1:
             return
-
         try:
             # #filtering  drop-down menu to inlcude only relevant entries.
-            img_tag = self.imgTags[indx]
-            quant_ops = list(self.img[img_tag])
-            quant_ops = list(filter(lambda k: 'quant' in k, quant_ops))
-            quant_ops.insert(0,"None")
-
+            img_tag = self.imgTags[quant_indx]
+            self.quantTags = list(self.img[img_tag])
+            self.quantTags = list(filter(lambda k: 'quant' in k, self.quantTags))
+            self.quantTags = list(filter(lambda k: 'names' not in k, self.quantTags))
+            self.quantTags.insert(0,"None")
         except:
             print("no qaunts found")
             return
-
         try:
-            if self.version == 0:   #legacy data
-                for i in range(len(quant_ops)):
-                    self.quant_names.addItem(quant_ops[i])
+            for i in range(len(self.quantTags)):
+                self.quantTag.addItem(self.quantTags[i])
+            self.quantTag.setCurrentIndex(0)
         except:
             return
         return
 
-    def getScalerOptions(self):
-        self.scaler_names.clear()
-        indx = self.imageTag.currentIndex()
-        if indx == -1:
-            return
+    def setup_scaler_list(self):
+        self.message.clear()
+        tmpscalerTags = {}
+        num_image_tags = len(self.imgTags)
+        for i in range(num_image_tags):      #get scaler tags
+            tmpscalerTags[i] = list(self.img[self.imgTags[i]])
+            tmpscalerTags[i] = list(filter(lambda k: 'scaler' in k, tmpscalerTags[i]))
+            tmpscalerTags[i] = list(filter(lambda k: 'names'  in k, tmpscalerTags[i]))
+        try:
+            self.scalerTag.disconnect()
+        except TypeError:
+            pass
 
+        self.scalerTag.clear()
+        scaler_indx = self.imageTag.currentIndex()
+        if scaler_indx == -1:
+            return
         try:
             # #filtering  drop-down menu to inlcude only relevant entries.
-            img_tag = self.imgTags[indx]
-            scaler_ops = list(self.img[img_tag]["scaler_names"])
-            scaler_ops = [x.decode("utf-8") for x in scaler_ops]
-            scaler_ops.insert(0,"None")
-
+            img_tag = self.imgTags[scaler_indx]
+            scaler_tag = tmpscalerTags[scaler_indx][0]
+            self.scalerTags = list(self.img[img_tag][scaler_tag])
+            self.scalerTags = [x.decode("utf-8") for x in self.scalerTags]
+            self.scalerTags.insert(0, "None")
         except:
             print("no scalers found")
             return
-
         try:
-            # if self.version == 0:   #legacy data
-            for i in range(len(scaler_ops)):
-                self.scaler_names.addItem(scaler_ops[i])
-            # if self.version == 1:   #9idbdata
-            #     scaler_names = list(self.img[img_tag]['scaler_names'])
-            #     scaler_names = [scaler_names[i].decode() for i in range(len(scaler_names))]
-            #     self.scaler_names.addItem('None')
-            #     for i in range(len(scaler_names)):
-            #         self.scaler_names.addItem(scaler_names[i])
-                # default_idx = scaler_names.index("DS_IC")
-                # self.scaler_names.setCurrentIndex(default_idx)
-            # self.scaler_names.setEnabled(True)
-            # self.scaler_exists = True
+            for i in range(len(self.scalerTags)):
+                self.scalerTag.addItem(self.scalerTags[i])
+            self.scalerTag.setCurrentIndex(0)
+            self.scaler_tag = self.scalerTag.currentText()
         except:
-            # default_idx = scaler_names.index("None")
-            # self.scaler_exists = False
-            self.scaler_names.addItem('None')
+            return
         return
-
 
     def normalizeData(self, data, scalers, quants):
         #normalize
@@ -685,8 +651,8 @@ class FileTableWidget(QtWidgets.QWidget):
         hdf_tag = self.imgTags[self.imageTag.currentIndex()]
         data_tag = self.dataTag.currentText()
         element_tag = self.element_tag
-        quant_name = self.quant_names.currentText()
-        scaler_name = self.scaler_names.currentText()
+        quant_tag = self.quantTag.currentText()
+        scaler_tag = self.scalerTag.currentText()
 
         k = np.arange(len(files))
         l = np.arange(len(elements))
@@ -707,8 +673,8 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.params.image_tag = self.imgTags[self.imageTag.currentIndex()]
         self.parent.params.data_tag = self.dataTag.currentText()
         self.parent.params.element_tag = element_tag
-        self.parent.params.quant_tag = quant_name
-        self.parent.params.scaler_names = scaler_name
+        self.parent.params.quant_tag = quant_tag
+        self.parent.params.scaler_tag = scaler_tag
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
         #self.parent.params.detector_tag = self.scaler_option.currentText()
 
@@ -724,9 +690,9 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.clear_all()
         try:
             scaler_exists = self.img[self.imageTag.currentText()]["scalers"]
-            quant_tag = self.quant_names.currentText()
+            quant_tag = self.quantTag.currentText()
             scaler_tag = "scalers"
-            scaler_idx = self.scaler_names.currentIndex()-1
+            scaler_idx = self.scalerTag.currentIndex()-1
             if scaler_idx<-1:
                 scaler_idx = -1
         except:
@@ -737,16 +703,17 @@ class FileTableWidget(QtWidgets.QWidget):
 
         # try:
         # data, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
-        data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, quant_tag, scaler_tag, scaler_idx)
-        # except:
-        #     self.message.setText('Loading failed')
-        #     return [], [], [], []
+        try:
+            data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, quant_tag, scaler_tag, scaler_idx)
+        except:
+            self.message.setText("invalid image/data/element tag combination. Load failed")
+            return [], [], [], []
 
         if data is None or scalers is None:
             return [], [], [], []
-        if self.scaler_names.currentText() != 'None':
-            scaler_idx = self.scaler_names.currentIndex()-1
-            quant_option = self.quant_names.currentText()
+        if self.scalerTag.currentText() != 'None':
+            scaler_idx = self.scalerTag.currentIndex()-1
+            quant_option = self.quantTag.currentText()
             elements, element_idxs = self.getElements()
             data = self.normalizeData(data, scalers, quants)
         self.message.setText('finished loading')

@@ -97,7 +97,7 @@ SECTIONS['file-io'] = {
         'default': '[0,1]',
         'type': str,
         'help': "list of selected elements indexes"},
-    'scaler-names': {
+    'scaler-tag': {
         'default': 'SRcurrent',
         'type': str,
         'help': "normalize by this detector",
