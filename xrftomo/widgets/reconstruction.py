@@ -55,7 +55,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, name='elementChangedSig')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
     reconChangedSig = pyqtSignal(np.ndarray, name='reconChangedSig')
-    reconArrChangedSig = pyqtSignal(np.ndarray, name='reconArrChangedSig')
+    reconArrChangedSig = pyqtSignal(dict, name='reconArrChangedSig')
 
     def __init__(self):
         super(ReconstructionWidget, self).__init__()
@@ -88,28 +88,28 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.hist.setImageItem(self.ReconView.projView)
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
-        self.ViewControl.reconGroup.currentIndexChanged.connect(self.recon_combobox_changed)
+        self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
         self.ViewControl.btn.clicked.connect(self.reconstruct_params)
         # self.ViewControl.equalizeBtn.clicked.connect(self.equalize_params)
         self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
 
 
-        self.ViewControl.btn2.clicked.connect(self.reconstruct_all_params)
+        # self.ViewControl.btn2.clicked.connect(self.reconstruct_all_params)
         # self.ViewControl.recon2npy.clicked.connect(self.reconstruct_all_npy_params)
         self.ViewControl.mulBtn.clicked.connect(self.call_reconMultiply)
         self.ViewControl.divBtn.clicked.connect(self.call_reconDivide)
         self.ViewControl.end_indx.editingFinished.connect(self.update_y_range)
         self.ViewControl.start_indx.editingFinished.connect(self.update_y_range)
         self.ViewControl.mid_indx.editingFinished.connect(self.update_middle_index)
-        self.ViewControl.recon_stats.clicked.connect(self.toggle_middle_index)
+        self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
 
         self.x_shifts = None
         self.y_shifts = None
         self.centers = None
         self.recon = None
-        self.recon_array = None
+        self.recon_dict = {}
         self.data = None
         self.data_original = None
 
@@ -160,21 +160,22 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.clear()
         self.ViewControl.method.clear()
-        self.ViewControl.reconGroup.clear()
-        self.ViewControl.reconGroup.disconnect()
+        self.ViewControl.recon_set.clear()
+        self.ViewControl.recon_set.disconnect()
         methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
         for j in self.elements:
             self.ViewControl.combo1.addItem(j)
         for k in range(len(methodname)):
             self.ViewControl.method.addItem(methodname[k])
         for l in self.elements:
-            self.ViewControl.reconGroup.addItem(l)
-        self.recon_array = np.zeros((len(self.elements),self.y_range,self.data.shape[3],self.data.shape[3]))
+            self.ViewControl.recon_set.addItem(l)
+            self.recon_dict[l] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
-        self.ViewControl.reconGroup.currentIndexChanged.connect(self.recon_combobox_changed)
+        self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
         self.elementChanged()
 
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
+
         # self.ViewControl.centerTextBox.setText(str(self.centers[2]))
         self.ViewControl.mulBtn.setEnabled(False)
         self.ViewControl.divBtn.setEnabled(False)
@@ -186,6 +187,11 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
+        self.updateElementSlot(element)
+        self.elementChangedSig.emit(element)
+
+    def recon_set_changed(self):
+        element = self.ViewControl.recon_set.currentIndex()
         self.updateElementSlot(element)
         self.elementChangedSig.emit(element)
 
@@ -219,7 +225,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text())) -start_indx - 1
         offst_top = int(self.ViewControl.offst_top.text())
         offst_bottom = int(self.ViewControl.offst_bottom.text())
-
 
         data = self.data[:,:,start_indx:end_indx,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
@@ -310,9 +315,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
-        self.update_recon_array(self.recon)
+        self.update_recon_dict(self.recon)
         self.reconChangedSig.emit(self.recon)
-        self.reconArrChangedSig.emit(self.recon_array)
+        self.reconArrChangedSig.emit(self.recon_dict)
         return
 
     def reconstruct_all_params(self):
@@ -338,47 +343,19 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.reconChangedSig.emit(self.recon)
         return
 
-    # def reconstruct_all_npy_params(self):
-    #     #figure out how to get a list of all selected elements
-    #     num_elements = self.ViewControl.combo1.count()
-    #     element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
-    #     # box_checked = self.ViewControl.cbox.isChecked()
-    #     center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
-    #     method = self.ViewControl.method.currentIndex()
-    #     beta = float(self.ViewControl.beta.text())
-    #     delta = float(self.ViewControl.delta.text())
-    #     iters = int(self.ViewControl.iters.text())
-    #     thetas = self.thetas
-    #     end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
-    #     start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
-    #     mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
-    #     data = self.data[:,:,start_indx:end_indx,:]
-
-    #     #reconArray [element,stack,y,x]
-    #     num_elements = data.shape[0]
-    #     num_slices = data.shape[2]
-    #     slice_dim = data.shape[3]
-
-    #     for i in range(num_elements):
-    #         self.recon = self.actions.reconstruct(data, i, center, method, beta, delta, iters, thetas, mid_indx, False)
-    #         self.recon_array[i] = self.recon
-    #         self.update_recon_image()
-    #         self.reconChangedSig.emit(self.recon)
-    #     self.writer.save_recon_array_2npy(self.recon_array, savedir=None, index=-1)
-    #     return
-
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
         self.ViewControl.end_indx.setText(str(ySize))
         self.ViewControl.mid_indx.setText(str(ySize//2))
         self.sld.setValue(0)
         self.sld.setMaximum(ySize)
-        self.recon_array = np.zeros((len(self.elements),ySize,self.data.shape[3],self.data.shape[3]))
-        #check for xSize too.
+        for key in self.recon_dict.keys():
+            self.recon_dict[key] = np.zeros((ySize,self.data.shape[3],self.data.shape[3]))
         return
         
     def xSizeChanged(self, xSize):
-        self.recon_array = np.zeros((len(self.elements),self.data.shape[2],xSize,xSize))
+        for key in self.recon_dict.keys():
+            self.recon_dict[key] = np.zeros((self.data.shape[2],xSize,xSize))
         return
 
     def update_y_range(self):
@@ -413,16 +390,19 @@ class ReconstructionWidget(QtWidgets.QWidget):
             mid_indx = start_indx
             self.ViewControl.mid_indx.setText(str(mid_indx))
 
-    def toggle_middle_index(self):
-        if self.ViewControl.recon_stats.isChecked():
-            self.ViewControl.mid_indx.setEnabled(True)
-        else:
-            self.ViewControl.mid_indx.setEnabled(False)
+    def get_recon_stats(self):
+        # element = self.element
+        # recon = self.recon[element]
+        #middle index = ???
+        # err, mse = self.actions.recon_stats(recon, middle_index, ??)
+        pass
 
-    # def equalize_params(self):
-    #     recon = self.recon 
-    #     recon = self.actions.equalize_recon(recon)
-    #     self.update_recon_image()
+    # def toggle_middle_index(self):
+    #     if self.ViewControl.recon_stats.isChecked():
+    #         self.ViewControl.mid_indx.setEnabled(True)
+    #     else:
+    #         self.ViewControl.mid_indx.setEnabled(False)
+
         
     def rm_hotspot_params(self):
         recon = self.recon 
@@ -435,19 +415,25 @@ class ReconstructionWidget(QtWidgets.QWidget):
         recon = self.actions.setThreshold(threshold,recon)
         self.update_recon_image()
 
-    def update_recon_array(self, recon):
-        indx = self.ViewControl.combo1.currentIndex()    
+    def update_recon_dict(self, recon):
+        elem = self.ViewControl.combo1.currentText()
         #recon could be a partial reconstruction, account for this by indexing the Y range as well 
         ymin = int(eval(self.ViewControl.start_indx.text()))
         ymax = int(eval(self.ViewControl.end_indx.text()))
-
-        self.recon_array[indx,ymin:ymax,:] = recon
+        self.recon_dict[elem][ymin:ymax,:] = recon
 
     def recon_combobox_changed(self):
-        indx = self.ViewControl.reconGroup.currentIndex()
-        recon = self.recon_array[indx]
-        self.recon = recon
-        self.update_recon_image()
+        elem = self.ViewControl.recon_set.currentText()
+        element = self.ViewControl.recon_set.currentIndex()
+        self.updateElementSlot(element)
+        self.elementChangedSig.emit(element)
+        try:
+            recon = self.recon_dict[elem]
+            self.recon = recon
+            self.update_recon_image()
+        except KeyError:
+            print("KeyError")
+            #TODO: "loading data twice results in this error, figure out how to re-initialize recon_dict"
 
     def update_recon_image(self):
         index = self.sld.value()

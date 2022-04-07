@@ -232,27 +232,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 			img[img < 0] = 0
 			data[element,i] = img
 
-
-
-		return data
-
-	def fill_void(self,data, element):
-		imgs = data[element]
-
-		for i in range(imgs.shape[0]):
-			img = imgs[i]
-			mask = self.create_mask(img)
-			mask123 = np.logical_not(mask)*0.123456
-			img_masked = img*mask+mask123
-			local_max = img_masked.max()
-			tru0_mask = img_masked == 0
-			void_fill = tru0_mask*local_max
-			filled = void_fill+img
-
-			#get mask for current image
-			#for pixel in pixels in mask, if 0, set to max
-			# img[img > 0.95*max_val] = 0
-			data[element,i] = filled
 		return data
 
 	def create_mask(self, data, mask_thresh=None, scale=.8):
@@ -273,27 +252,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		# Remove small holes
 		mask = ndi.binary_fill_holes(mask)
 		return mask * mask_nan
-
-	def remove_empty_columns(self,data, element):
-		imgs = data[element]
-		num_projections = imgs.shape[0]
-		num_cols = imgs.shape[2]
-		for i in range(num_projections):
-			for j in range(num_cols):
-				if len(np.unique(imgs[i,:,j])) <= 2:
-					data[:,i,:,j] = np.zeros_like(data[:,i,:,j])
-		return data
-
-	def remove_empty_rows(self,data, element):
-		imgs = data[element]
-		num_projections = imgs.shape[0]
-		num_rows = imgs.shape[1]
-		for i in range(num_projections):
-			for j in range(num_rows):
-				if len(np.unique(imgs[i,j])) <= 2:
-					data[:,i,j] = np.zeros_like(data[:,i,j])
-		return data
-
 
 	def equalize(self, data, element):
 		# Equalization
@@ -419,25 +377,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 			num_projections -= 1
 
 		return index, data, thetas, fnames, x_shifts, y_shifts
-
-	def create_mask(self, data, mask_thresh = None, scale = .8):
-		# Remove nan values
-		mask_nan = np.isfinite(data)
-		data[~np.isfinite(data)] = 0
-		#     data /= data.max()
-		# Median filter with disk structuring element to preserve cell edges.
-		data = ndi.median_filter(data, size=int(data.size**.5*.05), mode = 'nearest')
-		#     data = rank.median(data, disk(int(size**.5*.05)))
-		# Threshold
-		if mask_thresh == None:
-			mask_thresh = np.nanmean(data)*scale/np.nanmax(data)
-		mask = np.isfinite(data)
-		mask[data/np.nanmax(data) < mask_thresh] = False
-		# Remove small spots
-		mask = remove_small_objects(mask, data.size//100)
-		# Remove small holes
-		mask = ndi.binary_fill_holes(mask)
-		return mask*mask_nan
 
 	def equalize_hist_ev(self, image, nbins=2**16, mask=None, shift_funct = np.median):
 		# For global_shift use np.median if hot spots are present and np.mean otherwise

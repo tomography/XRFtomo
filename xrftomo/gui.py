@@ -111,8 +111,8 @@ class xrftomoGui(QtGui.QMainWindow):
         saveRecon2npyAction = QtGui.QAction("recon as npy", self)
         saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
 
-        saveReconArray2npyAction = QtGui.QAction("reconArr as npy", self)
-        saveReconArray2npyAction.triggered.connect(self.saveReconArray2npy)
+        # saveReconArray2npyAction = QtGui.QAction("reconArr as npy", self)
+        # saveReconArray2npyAction.triggered.connect(self.saveReconArray2npy)
 
         saveToHDFAction = QtGui.QAction('as HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
@@ -157,8 +157,8 @@ class xrftomoGui(QtGui.QMainWindow):
         configAction.triggered.connect(self.configSettings)
 
 
-        self.forceLegacy = QtGui.QAction("force legacy mode", self)
-        self.forceLegacy.setCheckable(True)
+        # self.forceLegacy = QtGui.QAction("force legacy mode", self)
+        # self.forceLegacy.setCheckable(True)
 
 
         # matcherAction = QtGui.QAction("match template", self)
@@ -230,7 +230,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         #update_reconstructed_data
         self.reconstructionWidget.reconChangedSig.connect(self.update_recon)
-        self.reconstructionWidget.reconArrChangedSig.connect(self.update_recon_array)
+        self.reconstructionWidget.reconArrChangedSig.connect(self.update_recon_dict)
 
         self.prevTab = 0
         self.TAB_FILE = 0
@@ -337,7 +337,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.toolsMenu.setDisabled(True)
 
         self.settingsMenu = menubar.addMenu("Settings")
-        self.settingsMenu.addAction(self.forceLegacy)
+        # self.settingsMenu.addAction(self.forceLegacy)
 
         self.viewMenu = menubar.addMenu("View")
         self.viewMenu.addAction(setAspectratio)
@@ -348,7 +348,7 @@ class xrftomoGui(QtGui.QMainWindow):
         # self.afterConversionMenu.addAction(saveHotSpotPosAction)
         self.afterConversionMenu.addAction(saveReconstructionAction)
         self.afterConversionMenu.addAction(saveRecon2npyAction)
-        self.afterConversionMenu.addAction(saveReconArray2npyAction)
+        # self.afterConversionMenu.addAction(saveReconArray2npyAction)
         self.afterConversionMenu.addAction(saveAlignemtInfoAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(saveSinogram2Action)
@@ -826,9 +826,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.onion_layers = None
 
 
-
-
-
     def updateOnion(self):
         if self.first_run_w5:
             e1 = 0
@@ -840,7 +837,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.elem1_list_w5.clear()
         self.elem2_list_w5.clear()
         try:
-            self.recon_sld_w5.setRange(0, len(self.recon_array[0])-1)
+            self.recon_sld_w5.setRange(0, len(self.recon_dict[self.recon_dict.keys()[0]])-1)
         except TypeError:
             print("run reconstruction first")
             return
@@ -870,7 +867,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         num_layers = self.onion_layers.max()
         total_signal = np.zeros(num_layers)
-        img = self.recon_array[self.elem2_list_w5.currentIndex(), self.recon_sld_w5.value()]
+        img = self.recon_dict[self.elem2_list_w5.currentText(), self.recon_sld_w5.value()]
 
         for i in range(num_layers):
             depth_mask = self.onion_layers == (i+1)
@@ -896,7 +893,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         layer_depth = eval(self.layer_depth_w5.text())
         threshold = eval(self.elem1_thresh_w5.text())
-        img = self.recon_array[self.elem1_list_w5.currentIndex(), self.recon_sld_w5.value()]
+        img = self.recon_dict[self.elem1_list_w5.currentText(), self.recon_sld_w5.value()]
         self.onion_slice, self.onion_layers = self.peel_onion(img,threshold,layer_depth)
 
         self.miniReconWidget_w5.reconView.setImage(self.onion_slice)
@@ -1087,7 +1084,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.recons_list_w4.currentIndexChanged.disconnect(self.updateDistanceHisto)
         self.recons_list_w4.clear()
         try:
-            self.recon_sld_w4.setRange(0, len(self.recon_array[0])-1)
+            self.recon_sld_w4.setRange(0, len(self.recon_dict[self.recon_dict.keys()[0]])-1)
         except TypeError:
             print("run reconstruction first")
             return
@@ -1106,11 +1103,10 @@ class xrftomoGui(QtGui.QMainWindow):
         self.recons_list_w4.currentIndexChanged.connect(self.updateDistanceHisto)
 
         ##calculate distance_array
-        recon_element = self.recons_list_w4.currentIndex()
+        recon_element = self.recons_list_w4.currentText()
         recon_indx = self.recon_sld_w4.value()
 
-        # distance_array = self.calculate_pixel_distance(self.recon_array[recon_element,recon_indx])
-        distance_array = self.calculate_all_distances(self.recon_array[recon_element])
+        distance_array = self.calculate_all_distances(self.recon_dict[recon_element])
         
         #generate histogram
         # Creating histogram 
@@ -1357,8 +1353,10 @@ class xrftomoGui(QtGui.QMainWindow):
         else:
             e1 = self.elem1_options_recon.currentIndex()
             e2 = self.elem2_options_recon.currentIndex()
+            e1_txt = self.elem1_options_recon.currentText()
+            e2_txt = self.elem2_options_recon.currentText()
 
-        self.recon_sld.setRange(0, self.recon_array.shape[1]-1)
+        self.recon_sld.setRange(0, self.recon_array.shape[self.recon_dict.keys()[0][0]]-1)
         self.elem1_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
         self.elem2_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
         recon_indx = self.recon_sld.value()
@@ -1380,9 +1378,9 @@ class xrftomoGui(QtGui.QMainWindow):
             self.elem1_options_recon.setCurrentIndex(0)
             self.elem2_options_recon.setCurrentIndex(0)
 
-        elem1 = self.recon_array[e1, recon_indx]
+        elem1 = self.recon_dict[e1_txt][recon_indx]
         elem1 = elem1.flatten()
-        elem2 = self.recon_array[e2,recon_indx]
+        elem2 = self.recon_array[e2_txt][recon_indx]
         elem2 = elem2.flatten()
 
         #update projection index LCD
@@ -1390,8 +1388,6 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.elem1_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
         self.elem2_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
-        # self.elem1_options.currentIndexChanged.connect(self.updateInnerScatter)
-        # self.elem2_options.currentIndexChanged.connect(self.updateInnerScatter)
 
         self.scatterWidgetRecon.plotView.setData(elem2, elem1)
         self.scatterWidgetRecon.p1.setLabel(axis='left', text=self.elements[e1])
@@ -1403,14 +1399,14 @@ class xrftomoGui(QtGui.QMainWindow):
     def updateInnerScatterRecon(self,*dummy):
         self.scatterWidgetRecon.mousePressSig.disconnect(self.updateInnerScatterRecon)
         self.scatterWidgetRecon.roiDraggedSig.disconnect(self.updateInnerScatterRecon)
-        e1 = self.elem1_options_recon.currentIndex()
-        e2 = self.elem2_options_recon.currentIndex()
+        e1 = self.elem1_options_recon.currentText()
+        e2 = self.elem2_options_recon.currentText()
 
         #Normalizeself.projection_sld.currentIndex()
 
-        elem1 = self.reconstructionWidget.recon_array[e1,self.recon_sld.value()]
+        elem1 = self.reconstructionWidget.recon_array[e1][self.recon_sld.value()]
         elem1 = elem1.flatten()
-        elem2 = self.reconstructionWidget.recon_array[e2, self.recon_sld.value()]
+        elem2 = self.reconstructionWidget.recon_array[e2][self.recon_sld.value()]
         elem2 = elem2.flatten()
 
         # get slope then calculate new handle pos
@@ -1453,11 +1449,11 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatterWidgetRecon.roiDraggedSig.disconnect(self.updateInnerScatterRecon)
 
 
-        e1 = self.elem1_options_recon.currentIndex()
-        e2 = self.elem2_options_recon.currentIndex()
-        elem1 = self.reconstructionWidget.recon_array[e1,self.recon_sld.value()]
+        e1 = self.elem1_options_recon.currentText()
+        e2 = self.elem2_options_recon.currentText()
+        elem1 = self.reconstructionWidget.recon_dict[e1][self.recon_sld.value()]
         elem1 = elem1.flatten()
-        elem2 = self.reconstructionWidget.recon_array[e2, self.recon_sld.value()]
+        elem2 = self.reconstructionWidget.recon_dict[e2][self.recon_sld.value()]
         elem2 = elem2.flatten()
 
         x_pos = 1/slope
@@ -1572,12 +1568,11 @@ class xrftomoGui(QtGui.QMainWindow):
 
     def sendRecon(self):
 
-        e1 = self.elem1_options_recon.currentIndex()
-        e2 = self.elem2_options_recon.currentIndex()
+        e1 = self.elem1_options_recon.currentText()
+        e2 = self.elem2_options_recon.currentText()
         # recon_indx = self.recon_sld.value()
 
-        recon2 = self.recon_array[e2].copy()
-        element= e2
+        recon2 = self.recon_dict[e2].copy()
         original_shape = recon2[0].shape
         tmp_data = np.zeros_like(recon2)
 
@@ -1588,8 +1583,8 @@ class xrftomoGui(QtGui.QMainWindow):
 
         for i in range(recon2.shape[0]-1):
             #Normalizeself.projection_sld.currentIndex()
-            elem1 = self.recon_array[e1,i].flatten()
-            elem2 = self.recon_array[e2,i].flatten()
+            elem1 = self.recon_dict[e1][i].flatten()
+            elem2 = self.recon_dict[e2][i].flatten()
 
             tmp_arr = [(slope * elem2) < elem1]
             bounded_index = np.where(tmp_arr)[1]
@@ -1601,9 +1596,9 @@ class xrftomoGui(QtGui.QMainWindow):
         recon2 = tmp_data
 
         self.recon = recon2.copy()
-        self.recon_array[e2] = recon2.copy()
+        self.recon_dict[e2] = recon2.copy()
         self.update_recon(self.recon)
-        self.update_recon_array(self.recon_array)
+        self.update_recon_dict(self.recon_dict)
 
     def refresh_filetable(self):
         self.fileTableWidget.onLoadDirectory()
@@ -1646,8 +1641,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileTableWidget.elementTag_label.setVisible(True)
         self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
         self.imageProcessWidget.ViewControl.invert.setVisible(True)
-        self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(True)
-        # self.imageProcessWidget.ViewControl.btn2.setVisible(True)
 
         self.sinogramWidget.ViewControl.btn1.setVisible(True)
         self.sinogramWidget.ViewControl.btn3.setVisible(True)
@@ -1905,13 +1898,13 @@ class xrftomoGui(QtGui.QMainWindow):
         except AttributeError:
             print("reconstructed data does not exist")
         return
-
-    def saveReconArray2npy(self, recon):
-        try:
-            self.writer.save_recon_array_2npy(self.recon_array)
-        except AttributeError:
-            print("reconstructed data does not exist")
-        return
+    #
+    # def saveReconArray2npy(self, recon):
+    #     try:
+    #         self.writer.save_recon_array_2npy(self.recon_array)
+    #     except AttributeError:
+    #         print("reconstructed data does not exist")
+    #     return
 
     def saveToHDF(self):
         try:
@@ -2078,9 +2071,9 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
 
-    def update_recon_array(self, recon_array):
-        self.recon_array = recon_array
-        self.reconstructionWidget.recon_array = recon_array
+    def update_recon_dict(self, recon_dict):
+        self.recon_dict = recon_dict
+        self.reconstructionWidget.recon_dict = recon_dict
         self.reconstructionWidget.update_recon_image()
         return
 
@@ -2161,7 +2154,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.data = None
         self.recon = None
-        self.recon_array = None
+        self.recon_dict = {}
         self.imageProcessWidget.data = None
         self.sinogramWidget.data = None
         self.sinogramWidget.sinogramData = None

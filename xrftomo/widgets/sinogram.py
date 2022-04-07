@@ -130,10 +130,17 @@ class SinogramWidget(QtWidgets.QWidget):
         self.imageView.mousePressSig.connect(self.hotspot_event)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.view_options.currentIndexChanged.connect(self.display)
+
         self.ViewControl.amp.returnPressed.connect(self.updateSinoPlot)
         self.ViewControl.freq.returnPressed.connect(self.updateSinoPlot)
         self.ViewControl.phase.returnPressed.connect(self.updateSinoPlot)
         self.ViewControl.offst.returnPressed.connect(self.updateSinoPlot)
+
+        self.ViewControl.amp.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.freq.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.phase.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.offst.returnPressed.connect(self.updateSinoPlot)
+
         self.ViewControl.set2line.clicked.connect(self.fit_curve)
 
         self.ViewControl.fit_line.clicked.connect(self.fitLine_params)
@@ -342,13 +349,35 @@ class SinogramWidget(QtWidgets.QWidget):
         offst_arr = np.linspace(-self.data.shape[3], self.data.shape[3], 201)
 
         #TODO: set Qlineedit to value[index]
-
         self.ViewControl.freq.setText(str(round(freq_arr[freq_idx],3)))
         self.ViewControl.amp.setText(str(round(amp_arr[amp_idx],3)))
         self.ViewControl.phase.setText(str(round(phase_arr[phase_idx],3)))
         self.ViewControl.offst.setText(str(round(offst_arr[offst_idx],3)))
         self.updateSinoPlot()
+        return
 
+    def sinoCurveParamsChanged(self):
+        #sld current index
+        freq_idx = self.ViewControl.freq_sld.value()
+        amp_idx = self.ViewControl.amp_sld.value()
+        phase_idx = self.ViewControl.phase_sld.value()
+        offst_idx = self.ViewControl.offst_sld.value()
+
+        # array values
+        # TODO: create array of values for each slider, set each QlineEdit to the indexed value.
+        freq_arr = np.linspace(0, 2, 201)
+        amp_arr = np.linspace(0, self.data.shape[3], self.data.shape[3] + 1)
+        self.ViewControl.amp_sld.setRange(0, self.data.shape[3] + 1)
+
+        phase_arr = np.linspace(-np.pi, np.pi, 201)
+        offst_arr = np.linspace(-self.data.shape[3], self.data.shape[3], 201)
+
+        # TODO: set Qlineedit to value[index]
+        self.ViewControl.freq.setText(str(round(freq_arr[freq_idx], 3)))
+        self.ViewControl.amp.setText(str(round(amp_arr[amp_idx], 3)))
+        self.ViewControl.phase.setText(str(round(phase_arr[phase_idx], 3)))
+        self.ViewControl.offst.setText(str(round(offst_arr[offst_idx], 3)))
+        self.updateSinoPlot()
         return
 
     def diffSliderChanged(self):
@@ -390,6 +419,8 @@ class SinogramWidget(QtWidgets.QWidget):
         self.curve = amp*np.sin((freq*np.array(thetas) * np.pi / 180) - phase ) + middl + offst
         self.sinoView.p1.clearPlots()
         self.sinoView.p1.plot(thetas,self.curve, pen=pyqtgraph.mkPen(color='c'))
+
+        
     def fit_curve(self):
         try:
             data = self.data.copy()

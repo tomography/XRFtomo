@@ -130,7 +130,7 @@ class FileTableWidget(QtWidgets.QWidget):
         # self.scalerTag.currentIndexChanged.connect(self.getScalerOptions)
         self.quantTag.setFixedWidth(122.5)
 
-        scaler_label = QtWidgets.QLabel('Normalize by scaler:')
+        scaler_label = QtWidgets.QLabel('Normalize by:')
         scaler_label.setFixedWidth(90)
         self.scalerTag = QtWidgets.QComboBox()
         self.scalerTag.currentIndexChanged.connect(self.setup_scaler_list)
@@ -557,8 +557,8 @@ class FileTableWidget(QtWidgets.QWidget):
             print("checking file version... No version info available")
             self.version = 0
 
-        if self.parent.forceLegacy.isChecked():
-            self.version=0
+        # if self.parent.forceLegacy.isChecked():
+        #     self.version=0
 
         #Temporary hardcode version to 0 (legacy import mode)
         #self.version = 0

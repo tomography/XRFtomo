@@ -95,7 +95,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.fitPeaks.setFixedWidth(button2size)
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setFixedWidth(button2size)
-        # self.combo2.setVisible(False)
 
         self.freq = QtWidgets.QLineEdit("1")
         self.freq.setFixedWidth(button4size)
@@ -107,14 +106,23 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.offst.setFixedWidth(button4size)
 
         self.freq_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.freq_sld.setFixedWidth(button4size)
         self.amp_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.amp_sld.setFixedWidth(button4size)
         self.phase_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.phase_sld.setFixedWidth(button4size)
         self.offst_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.offst_sld.setFixedWidth(button4size)
         freq_lbl = QtWidgets.QLabel("frequency")
+        freq_lbl.setFixedWidth(button4size)
         amp_lbl = QtWidgets.QLabel("amplitude")
+        amp_lbl.setFixedWidth(button4size)
         phase_lbl = QtWidgets.QLabel("phase")
+        phase_lbl.setFixedWidth(button4size)
         offst_lbl = QtWidgets.QLabel("DC offset")
+        offst_lbl.setFixedWidth(button4size)
         self.set2line = QtWidgets.QPushButton("set2line")
+        self.set2line.setFixedWidth(button1size)
 
         for i in range(5):
             self.combo3.addItem(str(i + 1))
@@ -130,8 +138,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.hotspot_lbl.setFixedWidth(button2size)
         self.hotspot_mode_chbx = QtWidgets.QCheckBox("enable hotspot mode")
         self.hotspot_mode_chbx.setFixedWidth(button1size)
-
-
 
         self.hotspot_mode_chbx.setVisible(False)
         self.hotspot_lbl.setVisible(False)
@@ -169,7 +175,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         hb6 = QtWidgets.QHBoxLayout()
         hb6.addWidget(self.rot_axis)
         hb6.addWidget(self.fitPeaks)
-
 
         hb65 = QtWidgets.QHBoxLayout()
         hb65.addWidget(self.hotspot_mode_chbx)

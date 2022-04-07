@@ -83,8 +83,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.lbl7 = QtWidgets.QLabel("")
 
         self.imageView.mouseMoveSig.connect(self.updatePanel)
-        #get pixel value from Histogram widget's projview 
-
+        #get pixel value from Histogram widget's projview
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
@@ -106,21 +105,13 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         # self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
-        self.ViewControl.reshapeBtn.clicked.connect(self.ViewControl.reshape_options.show)
-        self.ViewControl.run_reshape.clicked.connect(self.reshape_params)
-        self.ViewControl.padBtn.clicked.connect(self.ViewControl.padding_options.show)
-        self.ViewControl.fillBtn.clicked.connect(self.fill_params)
-        self.ViewControl.run_padding.clicked.connect(self.pad_params)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
-        # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
-        # self.ViewControl.gaussian55Btn.clicked.connect(self.actions.gauss55)
+        self.ViewControl.padBtn.clicked.connect(self.ViewControl.padding_options.show)
+        self.ViewControl.run_padding.clicked.connect(self.pad_params)
         self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
         self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
-        # self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
-        self.ViewControl.rm_empty_cols.clicked.connect(self.rm_cols_params)
-        self.ViewControl.rm_empty_rows.clicked.connect(self.rm_rows_params)
         self.ViewControl.Equalize.clicked.connect(self.histo_params)
         self.ViewControl.invert.clicked.connect(self.invert_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histogram)
@@ -415,11 +406,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         self.actions.background_value(img)
 
-    def fill_params(self):
-        data = self.data
-        element = self.ViewControl.combo1.currentIndex()
-        data = self.actions.fill_void(data, element)
-        self.dataChangedSig.emit(data)
+
 
     def normalize_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -475,22 +462,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         img = data[element, projection, :,:]
         self.actions.bounding_analysis(img)
 
-    def reshape_params(self):
-        valid = self.ViewControl.validate_reshape_parameters()
-        if not valid:
-            return
-        y_multiplier = int(self.ViewControl.yUpsample_text.text())
-        x_multiplier = int(self.ViewControl.xUpsample_text.text())
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        datasize_x = self.data.shape[3]
-        datasize_y = self.data.shape[2]
-        data = self.actions.reshape_data(self.data, x_multiplier, y_multiplier)
-        new_ySize = int(datasize_y*y_multiplier)
-        self.ySizeChangedSig.emit(new_ySize)
-        self.xSizeChangedSig.emit(new_xSize)
-        self.dataChangedSig.emit(data)
-        self.refreshSig.emit()
-        pass
 
     def pad_params(self):
         data = self.data
@@ -549,17 +520,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.actions.remove_hotspots(data, element)
         self.dataChangedSig.emit(data)
 
-    def rm_cols_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        data = self.actions.remove_empty_columns(data, element)
-        self.dataChangedSig.emit(data)
-
-    def rm_rows_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        data = self.actions.remove_empty_rows(data, element)
-        self.dataChangedSig.emit(data)
 
 
 
