@@ -44,16 +44,13 @@ from scipy import ndimage, optimize, signal
 import tomopy
 from skimage import filters
 from skimage.measure import regionprops
-from skimage.feature import register_translation
 import numpy as np
 from matplotlib import pyplot as plt
 from skimage.color import rgb2gray
-# from skimage.data import stereo_motorcycle, vortex
 from skimage.transform import warp
 from skimage.registration import optical_flow_tvl1, optical_flow_ilk
 import scipy.ndimage
 from skimage.registration import phase_cross_correlation
-from skimage.registration._phase_cross_correlation import _upsampled_dft
 from scipy.signal import find_peaks
 
 class SinogramActions(QtWidgets.QWidget):
@@ -73,7 +70,6 @@ class SinogramActions(QtWidgets.QWidget):
         x_shifts = np.zeros(num_proj)
         y_shifts = np.zeros(num_proj)
 
-        # shifts  = center_pos_y - max_y, center_pos_x - max_x
         for i in range(num_proj):
             img=stack[i]
             row = np.sum(img, axis=0)
@@ -91,32 +87,6 @@ class SinogramActions(QtWidgets.QWidget):
     def runOpFlow(self, element,data):
         # --- Load the sequence
         imgs = data[element]
-        # num_proj = imgs.shape[0]//2
-        # new_imgs = np.zeros_like(imgs)
-        # new_imgs[0] = imgs[0]
-        # for i in range(1, num_proj):
-        #     image0 = imgs[i-1]
-        #     image1 = np.fliplr(imgs[-i])
-        #
-        #     img0_max = image0.max()
-        #     img1_max = image1.max()
-        #     #need to normalize to 1
-        #     image0 = image0 / image0.max()
-        #     image1 = image1 / image1.max()
-        #
-        #     # --- Compute the optical flow
-        #     v, u = optical_flow_tvl1(image0, image1)
-        #
-        #     # --- Use the estimated optical flow for registration
-        #     nr, nc = image0.shape
-        #     row_coords, col_coords = np.meshgrid(np.arange(nr), np.arange(nc),indexing='ij')
-        #     image1_warp = warp(image1, np.array([row_coords + v, col_coords + u]),mode='nearest')
-        #
-        #     #convert to original scale
-        #     image1_warp = np.fliplr(image1_warp*img1_max)
-        #     # imgs[-i] = image1_warp
-        #     new_imgs[i] = image0*img0_max
-        #     new_imgs[-i] = image1_warp
 
         image0 = imgs[0]
         image1 = np.fliplr(imgs[-1])
@@ -140,70 +110,22 @@ class SinogramActions(QtWidgets.QWidget):
         return data
 
 
-
-    # def runCenterOfMass(self, element, data, thetas):
-    #     '''
-    #     Center of mass alignment
-    #     Variables
-    #     -----------
-    #     element: int
-    #         element index
-    #     data: ndarray
-    #         4D xrf dataset ndarray [elements, theta, y,x]
-    #     thetas: ndarray
-    #         sorted projection angle list
-    #     '''
-    #     num_projections = data.shape[1]
-    #     com = zeros(num_projections)
-    #     temp = zeros(data.shape[3])
-    #     temp2 = zeros(data.shape[3])
-    #     for i in arange(num_projections):
-    #         temp = sum(data[element, i, :, :] - data[element, i, :10, :10].mean(), axis=0)
-    #         numb2 = sum(temp)
-    #         for j in arange(data.shape[3]):
-    #             temp2[j] = temp[j] * j
-    #         if numb2 <= 0:
-    #             numb2 = 1
-    #         numb = float(sum(temp2)) / numb2
-    #         if numb == NaN:
-    #             numb = 0.000
-    #         com[i] = numb
-
-    #     x=thetas
-    #     fitfunc = lambda p, x: p[0] * sin(2 * pi / 360 * (x - p[1])) + p[2]
-    #     errfunc = lambda p, x, y: fitfunc(p, x) - y
-    #     p0 = [100, 100, 100]
-    #     self.centers, success = optimize.leastsq(errfunc, p0, args=(x, com))
-    #     centerOfMassDiff = fitfunc(self.centers, x) - com
-
-    #     #set some label within the sinogram widget to the string defined in the line below
-    #     # self.lbl.setText("Center of Mass: " + str(p1[2]))
-
-    #     num_projections = data.shape[1]
-    #     for i in arange(num_projections):
-    #         self.x_shifts[i] += int(centerOfMassDiff[i])
-    #         data[:, i, :, :] = np.roll(data[:, i, :, :], int(round(self.x_shifts[i])), axis=2)
-    #     #set some status label
-    #     self.alignmentDone()
-    #     # return data, self.x_shifts, self.centers
-    #     return data, self.x_shifts
-
     def runCenterOfMass(self, element, data, thetas, weighted = True, shift_y = False):
-    #     '''
-    #     Center of mass alignment
-    #     Variables
-    #     -----------
-    #     element: int
-    #         element index
-    #     data: ndarray
-    #         4D xrf dataset ndarray [elements, theta, y,x]
-    #     thetas: ndarray
-    #         sorted projection angle list
-    #     weighted: bool
-    #         run center of mass or weighted center of mass
-    #     shift_y: bool
-    #         align in y as well as x
-    #     '''
+        '''
+        Center of mass alignment
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        thetas: ndarray
+            sorted projection angle list
+        weighted: bool
+            run center of mass or weighted center of mass
+        shift_y: bool
+            align in y as well as x
+        '''
         num_projections = data.shape[1]
         view_center_x = data.shape[3]//2
         view_center_y = data.shape[2]//2
@@ -703,21 +625,6 @@ class SinogramActions(QtWidgets.QWidget):
 
         y_shifts_3 = self.push_edge(new_dy_arr,1,0.60)
 
-        #run peakfinding once again, this time align top peaks.___
-        # TODO: TOP peaks occasiaonly shift between two locations. consider aligning to first peak edge like xcor_sum___________________
-        # num_pks = new_dy_arr.shape[0]
-        # pks = []
-        # for i in range(num_pks):
-        #     sum_dy_sqrd = new_dy_arr[i]** 2
-        #     norm_arr = sum_dy_sqrd/ sum_dy_sqrd.max() + i * 0.2
-        #     peaks, dummy = find_peaks(sum_dy_sqrd, prominence=(sum_dy_sqrd.max() / 5, sum_dy_sqrd.max()))
-        #     max_peak = np.where(norm_arr[peaks] == (max(norm_arr[peaks])))[0][0]
-        #     #peaks = list of peak index locations
-        #     pks.append(peaks[max_peak])
-        #
-        # #get relative shifts for y_shifts_3
-        # y_shifts_3 = [pks[0]-pks[i] for i in range(1,len(pks))]
-        # y_shifts_3.insert(0,0)
         y_shifts = y_shifts+y_shifts_3
         #plot staggered row sums
         # dummy = self.multiplot(dy_arr)
@@ -1108,23 +1015,6 @@ class SinogramActions(QtWidgets.QWidget):
             tmp_y = tmp_y[alignment_mask==1]
             num_projections = len(tmp_y)
 
-
-            # for i in range(num_projections):
-                # j = i + 1
-                # secondcol = round(float(read[j].split(",")[2]))
-                # firstcol = round(float(read[j].split(",")[1]))
-                # y_shifts[i] = secondcol
-                # x_shifts[i] = firstcol
-                #
-                # y_shifts[i] = tmp_y[i]
-                # x_shifts[i] = tmp_x[i]
-                #
-                # x_shifts = list(x_shifts)
-                # y_shifts = list(y_shifts)
-                # x_shifts[i] = self.unwind(x_shifts[i], data.shape[3]-x_padding*2)
-                # print(i)
-                # data = self.shiftProjection(data,x_shifts[i],-y_shifts[i],i)
-                # data = self.shiftProjection(data,x_shifts[i],y_shifts[i],i)
             y_shifts = list(tmp_y)
             x_shifts = list(tmp_x)
             data = self.subpixshift_data(data, x_shifts, y_shifts)

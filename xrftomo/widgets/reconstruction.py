@@ -1,4 +1,3 @@
-# #########################################################################
 # Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.           #
 #                                                                         #
 #                       Software Name: XRFtomo                            #
@@ -45,6 +44,8 @@ import xrftomo
 import pyqtgraph
 import numpy as np
 import scipy.ndimage
+import os
+import shutil
 
 from matplotlib import pyplot as plt
 # from matplotlib.pyplot import figure, draw, pause, close
@@ -78,7 +79,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.lbl7 = QtWidgets.QLabel("")
 
         self.ReconView.mouseMoveSig.connect(self.updatePanel)
-        #get pixel value from Histogram widget's projview 
+        #get pixel value from Histogram widget's projview
 
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.lcd = QtWidgets.QLCDNumber(self)
@@ -188,15 +189,12 @@ class ReconstructionWidget(QtWidgets.QWidget):
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
         self.updateElementSlot(element)
+        self.updateReconSlot(element)
         self.elementChangedSig.emit(element)
 
-    def recon_set_changed(self):
-        element = self.ViewControl.recon_set.currentIndex()
-        self.updateElementSlot(element)
-        self.elementChangedSig.emit(element)
-
-    def updateElementSlot(self, element):
-        self.ViewControl.combo1.setCurrentIndex(element)
+    def updateReconSlot(self,element):
+        element = self.ViewControl.combo1.currentIndex()
+        self.ViewControl.recon_set.setCurrentIndex(element)
 
     def call_reconMultiply(self):
         '''
@@ -212,137 +210,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.recon = self.actions.reconDivide(self.recon)
         self.update_recon_image()
 
-    def reconstruct_params(self):
-        element = self.ViewControl.combo1.currentIndex()
-        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
-        method = self.ViewControl.method.currentIndex()
-        beta = float(self.ViewControl.beta.text())
-        delta = float(self.ViewControl.delta.text())
-        iters = int(self.ViewControl.iters.text())
-        thetas = self.thetas
-        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
-        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
-        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text())) -start_indx - 1
-        offst_top = int(self.ViewControl.offst_top.text())
-        offst_bottom = int(self.ViewControl.offst_bottom.text())
-
-        data = self.data[:,:,start_indx:end_indx,:]
-        show_stats = self.ViewControl.recon_stats.isChecked()
-        num_xsections = data.shape[2]
-        recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
-        xsection = np.zeros((1, data.shape[1], 1, data.shape[3]))  # empty array size [1(element), frames, 1(y), x]
-        if offst_top !=0 or offst_bottom !=0:
-            center = center + np.linspace(offst_top, offst_bottom, data.shape[2])
-            shifts = np.linspace(offst_top, offst_bottom, data.shape[2])
-        if self.ViewControl.recon_save.isChecked():
-            try:
-                savedir = QtGui.QFileDialog.getSaveFileName()[0]
-                # savedir = '/Users/fabriciomarin/Documents/scans/Lin_XRF_tomo/Lin_3D2/testing/ptycho'
-
-                if savedir == "":
-                    raise IOError
-                if savedir == None:
-                    return
-            except IOError:
-                print("type the header name")
-            except: 
-                print("Something went horribly wrong.")
-
-            #reconstruct one ccross section at a time and save after each loop/completion.
-            start_idx = int(eval(self.ViewControl.start_indx.text()))
-            for i in range(num_xsections):
-                j = num_xsections-i-1
-                xsection[0,:,0] = data[element,:,j]
-                recon = self.actions.reconstruct(xsection, 0, center, method, beta, delta, iters, thetas, 0)
-                recons[i] = recon
-                self.writer.save_reconstruction(recon, savedir, start_idx+i)
-            self.recon = np.array(recons)
-        else:
-            print("working fine")
-            if method== 0 or method==2:
-                for i in range(num_xsections):
-                    j = num_xsections-i-1
-                    xsection[0,:,0] = data[element,:,j]
-                    if offst_top != 0 or offst_bottom != 0:
-                        cent = center[i]
-                    else:
-                        cent = center
-                    guess = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 5, thetas, None)
-                    for k in range(5, iters):
-                        #  data, element, center, method, beta, delta, iters, thetas, guess=None):
-                        guess = self.actions.reconstruct(xsection, 0, center, method, beta, delta, 1, thetas, guess)
-                        recons[i] = guess[0]
-                        print("reconstructing row {} on iteration{}".format(i,k))
-
-                    err, mse = self.actions.assessRecon(guess, xsection[0,:,0], thetas, show_stats)
-                    print(mse)
-            elif method ==1:
-                for i in range(num_xsections):
-                    print("reconstructing row{}/{}".format(i,num_xsections))
-                    j = num_xsections - i - 1
-                    xsection[0, :, 0] = data[element, :, j]
-                    if offst_top != 0 or offst_bottom != 0:
-                        cent = center[i]
-                    else:
-                        cent = center
-                    recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 1, thetas, None)
-                    if offst_top != 0 or offst_bottom != 0:
-                        recon[0] = scipy.ndimage.shift(recon[0], (0,shifts[i]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
-                    recons[i] = recon[0]
-
-                    err, mse = self.actions.assessRecon(recon, xsection[0,:,0], thetas, show_stats)
-                    print(mse)
-
-            else:
-                for i in range(num_xsections):
-                    print("reconstructing row{}/{}".format(i,num_xsections))
-                    j = num_xsections - i - 1
-                    xsection[0, :, 0] = data[element, :, j]
-                    if offst_top != 0 or offst_bottom != 0:
-                        cent = center[i]
-                    else:
-                        cent = center
-                    #  data, element, center, method, beta, delta, iters, thetas, guess=None):
-                    recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, iters, thetas, None)
-                    recons[i] = recon[0]
-
-
-                    err, mse = self.actions.assessRecon(recon, xsection[0, :, 0], thetas, show_stats)
-                    print(mse)
-
-            self.recon = np.array(recons)
-
-        self.ViewControl.mulBtn.setEnabled(True)
-        self.ViewControl.divBtn.setEnabled(True)
-        self.update_recon_image()
-        self.update_recon_dict(self.recon)
-        self.reconChangedSig.emit(self.recon)
-        self.reconArrChangedSig.emit(self.recon_dict)
-        return
-
-    def reconstruct_all_params(self):
-        #figure out how to get a list of all selected elements
-        num_elements = self.ViewControl.combo1.count()
-        element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
-        # box_checked = self.ViewControl.cbox.isChecked()
-        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
-        method = self.ViewControl.method.currentIndex()
-        beta = float(self.ViewControl.beta.text())
-        delta = float(self.ViewControl.delta.text())
-        iters = int(self.ViewControl.iters.text())
-        thetas = self.thetas
-        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
-        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
-        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
-        data = self.data[:,:,start_indx:end_indx,:]
-
-        self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas,start_indx)
-        self.ViewControl.mulBtn.setEnabled(True)
-        self.ViewControl.divBtn.setEnabled(True)
-        self.update_recon_image()
-        self.reconChangedSig.emit(self.recon)
-        return
-
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
         self.ViewControl.end_indx.setText(str(ySize))
@@ -352,7 +219,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         for key in self.recon_dict.keys():
             self.recon_dict[key] = np.zeros((ySize,self.data.shape[3],self.data.shape[3]))
         return
-        
+
     def xSizeChanged(self, xSize):
         for key in self.recon_dict.keys():
             self.recon_dict[key] = np.zeros((self.data.shape[2],xSize,xSize))
@@ -403,24 +270,28 @@ class ReconstructionWidget(QtWidgets.QWidget):
     #     else:
     #         self.ViewControl.mid_indx.setEnabled(False)
 
-        
+
     def rm_hotspot_params(self):
-        recon = self.recon 
+        recon = self.recon
         recon = self.actions.remove_hotspots(recon)
         self.update_recon_image()
 
     def set_thresh_params(self):
-        recon = self.recon 
+        recon = self.recon
         threshold = float(self.ViewControl.lThresh.text())
         recon = self.actions.setThreshold(threshold,recon)
         self.update_recon_image()
 
     def update_recon_dict(self, recon):
         elem = self.ViewControl.combo1.currentText()
-        #recon could be a partial reconstruction, account for this by indexing the Y range as well 
+        #recon could be a partial reconstruction, account for this by indexing the Y range as well
         ymin = int(eval(self.ViewControl.start_indx.text()))
         ymax = int(eval(self.ViewControl.end_indx.text()))
-        self.recon_dict[elem][ymin:ymax,:] = recon
+        try:
+            self.recon_dict[elem][ymin:ymax,:] = recon
+        except ValueError:
+            self.recon_dict[elem] = recon
+            print("array shape missmatch. array_dict possibly updated elsewhere ")
 
     def recon_combobox_changed(self):
         elem = self.ViewControl.recon_set.currentText()
@@ -445,3 +316,123 @@ class ReconstructionWidget(QtWidgets.QWidget):
             self.ReconView.projView.setImage(self.recon[index, :, :])
         except:
             print("run reconstruction first")
+
+    def recon_set_changed(self):
+        element = self.ViewControl.recon_set.currentIndex()
+        self.updateElementSlot(element)
+        self.elementChangedSig.emit(element)
+
+    def updateElementSlot(self, element):
+        self.ViewControl.combo1.setCurrentIndex(element)
+
+    def reconstruct_params(self):
+        element = self.ViewControl.combo1.currentIndex()
+        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
+        method = self.ViewControl.method.currentIndex()
+        beta = float(self.ViewControl.beta.text())
+        delta = float(self.ViewControl.delta.text())
+        iters = int(self.ViewControl.iters.text())
+        thetas = self.thetas
+        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
+        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
+        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text())) -start_indx - 1
+
+        data = self.data[:,:,start_indx:end_indx,:]
+        show_stats = self.ViewControl.recon_stats.isChecked()
+        num_xsections = data.shape[2]
+        recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
+        xsection = np.zeros((1, data.shape[1], 1, data.shape[3]))  # empty array size [1(element), frames, 1(y), x]
+        recon_dict = self.recon_dict.copy()
+        if self.ViewControl.recon_save.isChecked():
+            try: #promps for directory and subdir folder
+                # save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+                save_path = '/Users/marinf/Downloads/test_recon'
+                if save_path == "":
+                    raise IOError
+                if save_path == None:
+                    return
+            except IOError:
+                print("type the header name")
+                return
+            except:
+                print("Unknown error in reconstruct_params()")
+                return
+
+        if self.ViewControl.recon_all.isChecked():
+            #element is an index, so get list of indices.
+            num_elements = self.ViewControl.combo1.count()
+            elements = [i for i in range(num_elements)]
+        else:
+            elements = [self.ViewControl.combo1.currentIndex()]
+
+        for element in elements:
+            self.ViewControl.combo1.setCurrentIndex(element)    #required to properly update recon_dict
+            recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
+            if self.ViewControl.recon_save.isChecked():
+                #get list of element names from list of elemnt indices
+                element_names = [self.ViewControl.combo1.itemText(idx) for idx in elements]
+                print("running reconstruction for:", element_names[element])
+                savepath = save_path + '/' + element_names[element]
+                savedir = savepath + '/' + element_names[element]
+
+                if os.path.exists(savepath):
+                    shutil.rmtree(savepath)
+                os.makedirs(savepath)
+
+            start_idx = int(eval(self.ViewControl.start_indx.text()))
+            print("working fine")
+            for i in range(num_xsections):
+                j = num_xsections - i - 1
+                xsection[0, :, 0] = data[element, :, j]
+                cent = center
+
+                if method!= 1:  #all methods other than gridrec
+                    recon = self.actions.reconstruct(xsection, 0, cent, 1, beta, delta, 5, thetas, None)
+                    for k in range(5, iters):
+                        recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 1, thetas, recon)
+                        print("reconstructing row {}/{} on iteration{}".format(i+1,num_xsections,k))
+
+                else:        #gridrec
+                    recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 1, thetas, None)
+                    print("reconstructing row{}/{}".format(i+1, num_xsections))
+
+                recons[i] = recon[0]
+                if self.ViewControl.recon_save.isChecked():
+                    self.writer.save_reconstruction(recon, savedir, start_idx+i)
+                err, mse = self.actions.assessRecon(recon, xsection[0,:,0], thetas, show_plots=False)
+                print(mse)
+
+            #TODO: Update recon_dict and recon display.
+            recon_dict[self.ViewControl.combo1.itemText(element)] = np.array(recons)
+            self.recon = np.array(recons)
+
+        self.ViewControl.mulBtn.setEnabled(True)
+        self.ViewControl.divBtn.setEnabled(True)
+        self.update_recon_image()
+        self.update_recon_dict(self.recon)
+        self.reconChangedSig.emit(self.recon)
+        self.reconArrChangedSig.emit(recon_dict)
+        return
+
+    def reconstruct_all_params(self):
+        #figure out how to get a list of all selected elements
+        num_elements = self.ViewControl.combo1.count()
+        element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
+        # box_checked = self.ViewControl.cbox.isChecked()
+        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
+        method = self.ViewControl.method.currentIndex()
+        beta = float(self.ViewControl.beta.text())
+        delta = float(self.ViewControl.delta.text())
+        iters = int(self.ViewControl.iters.text())
+        thetas = self.thetas
+        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
+        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
+        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
+        data = self.data[:,:,start_indx:end_indx,:]
+
+        self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas,start_indx)
+        self.ViewControl.mulBtn.setEnabled(True)
+        self.ViewControl.divBtn.setEnabled(True)
+        self.update_recon_image()
+        self.reconChangedSig.emit(self.recon)
+        return

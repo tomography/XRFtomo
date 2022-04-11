@@ -122,10 +122,9 @@ class ReconstructionActions(QtWidgets.QWidget):
 					recons[i] = guess[0]
 					print("reconstructing row {} on iteration{}".format(l, k))
 				self.writer.save_reconstruction(guess, savedir, start_idx + l)
-
 		return np.array(recons)
 
-	def assessRecon(self,recon, data, thetas,show_plots):
+	def assessRecon(self,recon, data, thetas,show_plots=False):
 		#TODO: make sure cros-section index does not exceed the data height
 		#get index where projection angle is zero
 		zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]
@@ -163,20 +162,6 @@ class ReconstructionActions(QtWidgets.QWidget):
 			figA.show()
 
 		return err, mse
-
-	# def equalize_recon(self,recon):
-	# 	# Equalization
-	# 	global_mean = np.mean(recon)
-	# 	num_recons = recon.shape[0]
-	# 	for i in range(num_recons):
-	# 		local_mean = np.mean(recon[i])
-	# 		coeff = global_mean/local_mean
-	# 		recon[i] = recon[i]*coeff
-	# 		img = recon[i]
-	# 		# data[element,i] = exposure.equalize_hist(img)
-	# 		img *= 1/img.max()
-	# 		recon[i] = exposure.equalize_adapthist(img)
-	# 	return recon
 
 	def setThreshold(self,threshold,recon):
 		for i in range(recon.shape[0]):
@@ -232,11 +217,11 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 			return data
 
-	def reconMultiply(self):
+	def reconMultiply(self, recon):
 		'''
 		multiply reconstruction by 10
 		'''
-		self.recon = self.recon * 10
+		self.recon = recon * 10
 		return self.recon
 
 	def reconDivide(self, recon):
