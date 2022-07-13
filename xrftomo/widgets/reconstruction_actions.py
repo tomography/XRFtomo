@@ -163,6 +163,49 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 		return err, mse
 
+
+
+	def recon_stats(self,recon, middle_index, projection, show_plots = False):
+		# TODO: make sure cros-section index does not exceed the data height
+		# get index where projection angle is zero
+		num_slices = recon.shape[0]
+		width = recon.shape[1]
+
+		# get recon reporjection for slice i and take the difference with data projection (at angle ~=0).
+		reprojection = np.zeros((num_slices, width))
+		reprojection = np.sum(recon, axis=1)
+		# reprojection = np.flipud(reprojection)
+		# normslize projections against corss section height so plot fits, only used for plotting puposess.
+
+
+		#TODO: normalize all to 1 to make mse calculation more fair and not dependant on the recon width.
+		if projection.max() > reprojection[middle_index].max():
+			plot_proj = projection / projection.max() * recon.shape[1]
+			plot_repr = reprojection[middle_index] / reprojection[middle_index].max() * recon.shape[1]
+			norm_proj = projection / projection.max()
+			norm_repr = reprojection[middle_index] / projection.max()
+
+		else:
+			plot_proj = projection / projection.max() * recon.shape[1]
+			plot_repr = reprojection[middle_index] / reprojection[middle_index].max() * recon.shape[1]
+			norm_proj = projection / reprojection[middle_index].max()
+			norm_repr = reprojection[middle_index] / reprojection[middle_index].max()
+
+		sf = np.round(norm_repr.max() / norm_proj.max(), 4)
+		# difference between reporjection and original projection at angle == 0
+		# err = projection - reprojection
+		err = (norm_proj - norm_repr)*100
+		# mean squared error
+		mse = (np.square(err)).mean(axis=None)
+		if show_plots:
+			figA = plt.figure()
+			plt.imshow(np.flipud(recon[middle_index]), origin='lower'), plt.plot(plot_proj), plt.plot(plot_repr)
+			plt.legend(('projection', 'reprojection'), loc=1)
+			plt.title("MSE:{}\nScale Factor: {}".format(np.round(mse, 4), sf))
+			figA.show()
+
+		return err, mse
+
 	def setThreshold(self,threshold,recon):
 		for i in range(recon.shape[0]):
 			img = recon[i]

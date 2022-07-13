@@ -1076,18 +1076,27 @@ class SinogramActions(QtWidgets.QWidget):
         return x_shifts
 
 
-    def validate_alignment(self,data,x_shifts,y_shifts):
-        x_size = data.shape[3]
-        y_size = data.shape[2]
-        num_shifts = len(x_shifts)
-        for i in range(num_shifts):
-            if abs(x_shifts[i]) > x_size:
-                x_shifts[i] = int(x_shifts[i]%x_size*np.sign(x_shifts[i]))
-            if abs(y_shifts[i]) > y_size:
-                y_shifts[i] = int(y_shifts[i]%y_size*np.sign(y_shifts[i]))
+    def validate_alignment(self,data,x_shifts,y_shifts=None):
+        if y_shifts is not None:
 
-        return x_shifts, y_shifts
+            x_size = data.shape[3]
+            y_size = data.shape[2]
+            num_shifts = len(x_shifts)
+            for i in range(num_shifts):
+                if abs(x_shifts[i]) > x_size:
+                    x_shifts[i] = int(x_shifts[i]%x_size*np.sign(x_shifts[i]))
+                if abs(y_shifts[i]) > y_size:
+                    y_shifts[i] = int(y_shifts[i]%y_size*np.sign(y_shifts[i]))
 
+            return x_shifts, y_shifts
+        else:
+            x_size = data.shape[3]
+            num_shifts = len(x_shifts)
+            for i in range(num_shifts):
+                if abs(x_shifts[i]) > x_size:
+                    x_shifts[i] = int(x_shifts[i] % x_size * np.sign(x_shifts[i]))
+
+            return x_shifts
 
 
 

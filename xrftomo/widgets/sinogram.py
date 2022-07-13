@@ -824,6 +824,7 @@ class SinogramWidget(QtWidgets.QWidget):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
         self.data, x_shifts = self.actions.xcor_sino(element,layer, data)
+        x_shifts = self.actions.validate_alignment(data, x_shifts)
 
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)

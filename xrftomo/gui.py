@@ -157,8 +157,7 @@ class xrftomoGui(QtGui.QMainWindow):
         configAction.triggered.connect(self.configSettings)
 
 
-        # self.forceLegacy = QtGui.QAction("force legacy mode", self)
-        # self.forceLegacy.setCheckable(True)
+
 
 
         # matcherAction = QtGui.QAction("match template", self)
@@ -337,7 +336,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.toolsMenu.setDisabled(True)
 
         self.settingsMenu = menubar.addMenu("Settings")
-        # self.settingsMenu.addAction(self.forceLegacy)
 
         self.viewMenu = menubar.addMenu("View")
         self.viewMenu.addAction(setAspectratio)
@@ -362,7 +360,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.helpMenu.addAction(configAction)
 
         self.afterConversionMenu.setDisabled(True)
-        version = "1.0.7"
+        version = "1.0.8"
         add = 0
         if sys.platform == "win32":
             add = 50
@@ -374,52 +372,89 @@ class xrftomoGui(QtGui.QMainWindow):
         self.config_options = QtWidgets.QWidget()
         self.config_options.resize(300,400)
         self.config_options.setWindowTitle('config options')
-        self.legacy_chbx = QtWidgets.QCheckBox("Load as legacy data")
+
+        file_lbl = QtWidgets.QLabel("Files")
         self.directory_chbx = QtWidgets.QCheckBox("Load last directory")
-        self.element_chbx = QtWidgets.QCheckBox("Load last elements")
+        self.suffix_chbx = QtWidgets.QCheckBox("Load last suffix")
+        self.thetaPV_chbx = QtWidgets.QCheckBox("Load last theta PV")
         self.image_tag_chbx = QtWidgets.QCheckBox("Load last image_tag")
         self.data_tag_chbx= QtWidgets.QCheckBox("Load last data_tag")
-        self.alingmen_chbx = QtWidgets.QCheckBox("Load alignment information")
-        self.iter_align_param_chbx = QtWidgets.QCheckBox("Load last iter-align parameters")
+        self.elem_tag_chbx = QtWidgets.QCheckBox("Load last element tag")
+        self.quant_chbx = QtWidgets.QCheckBox("Load last quant setting")
+        self.normalize_chbx = QtWidgets.QCheckBox("Load last normalization")
+        self.elememts_chbx = QtWidgets.QCheckBox("Load last element selection")
+        self.files_chbx = QtWidgets.QCheckBox("Load last files selection")
+
+        processing_lbl = QtWidgets.QLabel("pre-processing")
+        self.crop_chbx = QtWidgets.QCheckBox("crop after aligning")
+        self.padding_chbx = QtWidgets.QCheckBox("pad at startup")
+
+        alignment_lbl = QtWidgets.QLabel("alignment")
+        self.alingmen_chbx = QtWidgets.QCheckBox("Align at startup")
+
+        recon_lbl = QtWidgets.QLabel("reconstruction")
+        self.recon_chbx = QtWidgets.QCheckBox("reconstruct at startup")
+        self.recon_all_chbx = QtWidgets.QCheckBox("reconstruct all?")
+        self.recon_save_chbx = QtWidgets.QCheckBox("reconstruct and save?")
+        self.recon_save_chbx = QtWidgets.QCheckBox("save simultaneously?")
+        self.iter_align_param_chbx = QtWidgets.QCheckBox("load last iteration preferences")
         self.recon_method_chbx = QtWidgets.QCheckBox("Load last-used reconstruction method")
-
-        self.checkbox_states = eval(self.params.load_settings)
-        self.legacy_chbx.setChecked(self.checkbox_states[0])
-        self.directory_chbx.setChecked(self.checkbox_states[1])
-        self.element_chbx.setChecked(self.checkbox_states[2])
-        self.image_tag_chbx.setChecked(self.checkbox_states[3])
-        self.data_tag_chbx.setChecked(self.checkbox_states[4])
-
-        self.alingmen_chbx.setChecked(self.checkbox_states[5])
-        self.iter_align_param_chbx.setChecked(self.checkbox_states[6])
-        self.recon_method_chbx.setChecked(self.checkbox_states[7])
 
         self.toggleDebugMode()
 
-        self.legacy_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.legacy_chbx.stateChanged.connect(self.refresh_filetable)
-        self.directory_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.element_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.image_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.data_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
+        file_box = QtWidgets.QVBoxLayout()
+        file_box.addWidget(file_lbl)
+        file_box.addWidget(self.directory_chbx)
+        file_box.addWidget(self.suffix_chbx)
+        file_box.addWidget(self.thetaPV_chbx)
+        file_box.addWidget(self.image_tag_chbx)
+        file_box.addWidget(self.data_tag_chbx)
+        file_box.addWidget(self.elem_tag_chbx)
+        file_box.addWidget(self.quant_chbx)
+        file_box.addWidget(self.normalize_chbx)
+        file_box.addWidget(self.elememts_chbx)
+        file_box.addWidget(self.files_chbx)
 
-        self.alingmen_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.iter_align_param_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.recon_method_chbx.stateChanged.connect(self.loadSettingsChanged)
+        processing_box = QtWidgets.QVBoxLayout()
+        processing_box.addWidget(processing_lbl)
+        processing_box.addWidget(self.crop_chbx)
+        processing_box.addWidget(self.padding_chbx)
+
+        alignment_box = QtWidgets.QVBoxLayout()
+        alignment_box.addWidget(alignment_lbl)
+        alignment_box.addWidget(self.alingmen_chbx)
+
+        recon_box = QtWidgets.QVBoxLayout()
+        recon_box.addWidget(recon_lbl)
+        recon_box.addWidget(self.recon_chbx)
+        recon_box.addWidget(self.recon_all_chbx)
+        recon_box.addWidget(self.recon_save_chbx)
+        recon_box.addWidget(self.recon_save_chbx)
+        recon_box.addWidget(self.iter_align_param_chbx)
+        recon_box.addWidget(self.recon_method_chbx)
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.legacy_chbx)
-        vbox.addWidget(self.directory_chbx)
-        vbox.addWidget(self.element_chbx)
-        vbox.addWidget(self.image_tag_chbx)
-        vbox.addWidget(self.data_tag_chbx)
-        vbox.addWidget(self.alingmen_chbx)
-        vbox.addWidget(self.iter_align_param_chbx)
-        vbox.addWidget(self.recon_method_chbx)
+        vbox.addLayout(file_box)
+        vbox.addLayout(processing_box)
+        vbox.addLayout(alignment_box)
+        vbox.addLayout(recon_box)
 
         self.config_options.setLayout(vbox)
 
-
+        self.checkbox_states = eval(self.params.load_settings)
+        counter = 0
+        for child in self.config_options.children():
+            if isinstance(child, QtWidgets.QCheckBox):
+                try:
+                    child.setChecked(self.checkbox_states[counter])
+                except:
+                    print("number of checkbox states changed, appending new settings... ")
+                    child.setChecked(False)
+                    self.checkbox_states.append(False)
+                child.stateChanged.connect(self.loadSettingsChanged)
+                counter += 1
+            else:
+                pass
 
         #_______________________Help/keymap_options______________________
         self.keymap_options = QtWidgets.QWidget()
@@ -462,8 +497,6 @@ class xrftomoGui(QtGui.QMainWindow):
         slope_lbl = QtWidgets.QLabel("Slope: ")
         self.slope_value = QtWidgets.QLineEdit("")
 
-
-
         self.apply_globally = QtWidgets.QPushButton("set red region to zero")
 
         ##_____ left blok: scatter view _____
@@ -476,11 +509,6 @@ class xrftomoGui(QtGui.QMainWindow):
         hboxA2.addWidget(projection_lbl)
         hboxA2.addWidget(self.projection_lcd)
         hboxA2.addWidget(self.projection_sld)
-
-        # hboxA3 = QtWidgets.QHBoxLayout()
-        # hboxA3.addWidget(width_lbl)
-        # hboxA3.addWidget(self.width_lcd)
-        # hboxA3.addWidget(self.width_sld)
 
         hboxA4 = QtWidgets.QHBoxLayout()
         hboxA4.addWidget(slope_lbl)
@@ -677,12 +705,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.first_run_a = True
 
 
-
-
-
-
-
-
   #_______________________ pixel distance window ______________________ win4
         self.pixel_distance_window = QtWidgets.QWidget()
         self.pixel_distance_window.resize(1000,500)
@@ -826,6 +848,9 @@ class xrftomoGui(QtGui.QMainWindow):
         self.onion_layers = None
 
 
+
+
+
     def updateOnion(self):
         if self.first_run_w5:
             e1 = 0
@@ -914,7 +939,7 @@ class xrftomoGui(QtGui.QMainWindow):
             try:
                 msk = ndi.binary_erosion(msk, structure=np.ones((layer_depth*2, layer_depth*2)))
                 msks = msk+msks
-                if msk.max()==0:
+                if msk.max() == 0:
                     reached_core = True
 
             except: 
@@ -945,11 +970,6 @@ class xrftomoGui(QtGui.QMainWindow):
         # Remove small holes
         mask = ndi.binary_fill_holes(mask)
         return mask * mask_nan
-
-
-
-
-
 
     def updateMiniReproj(self):
 
@@ -1080,11 +1100,13 @@ class xrftomoGui(QtGui.QMainWindow):
 
         else:
             e1 = self.recons_list_w4.currentIndex()
-
-        self.recons_list_w4.currentIndexChanged.disconnect(self.updateDistanceHisto)
+        try:
+            self.recons_list_w4.currentIndexChanged.disconnect(self.updateDistanceHisto)
+        except:
+            print("method not connected")
         self.recons_list_w4.clear()
         try:
-            self.recon_sld_w4.setRange(0, len(self.recon_dict[self.recon_dict.keys()[0]])-1)
+            self.recon_sld_w4.setRange(0, len(self.recon_dict[list(self.recon_dict.keys())[0]])-1)
         except TypeError:
             print("run reconstruction first")
             return
@@ -1127,7 +1149,7 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def calculate_pixel_distance(self,img):
-
+        #TODO: do something if empty array
         point_arr = []
 
 
@@ -1141,7 +1163,7 @@ class xrftomoGui(QtGui.QMainWindow):
                 if img[i,j]>0:
                     point_arr.append([i,j])
 
-        #find pixel distances using permutations of points array
+        #find pixel distances using combination of points array, nCr.
         point_arr = np.asanyarray(point_arr)
         num_points = len(point_arr)
         sub_points = list(np.arange(1, num_points))
@@ -1167,6 +1189,9 @@ class xrftomoGui(QtGui.QMainWindow):
 
         slice_arr = [img_stack[i] for i in non_zero_slices]
         num_images = len(slice_arr)
+        if len(slice_arr)==0:
+            print("")
+            return
         distance_arr = np.asarray(self.calculate_pixel_distance(slice_arr[0]))
 
 
@@ -1342,53 +1367,62 @@ class xrftomoGui(QtGui.QMainWindow):
     def updateScatterRecon(self):
         if self.first_run_recon:
             try:
-                self.scatterWidget.ROI.endpoints[1].setPos(self.recon[0,0].max(), self.recon[0,0].max())
+                self.scatterWidget.ROI.endpoints[1].setPos(self.recon.shape[1], self.recon.shape[1])
                 e1 = 0
                 e2 = 0
+
+                self.recon_sld.setRange(0, self.recon.shape[0] - 1)
+                self.elem1_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
+                self.elem2_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
+                recon_indx = self.recon_sld.value()
+                self.elem1_options_recon.clear()
+                self.elem2_options_recon.clear()
+
+                for i in self.elements:
+                    self.elem1_options_recon.addItem(i)
+                    self.elem2_options_recon.addItem(i)
+                try:
+                    self.elem1_options_recon.setCurrentIndex(e1)
+                    self.elem1_options_recon.setCurrentText(self.elements[e1])
+                    self.elem2_options_recon.setCurrentIndex(e2)
+                    self.elem2_options_recon.setCurrentText(self.elements[e2])
+                    self.scatterWidgetRecon.p1.setLabel(axis='left', text=self.elements[e1])
+                    self.scatterWidgetRecon.p1.setLabel(axis='bottom', text=self.elements[e2])
+
+                except:
+                    self.elem1_options_recon.setCurrentIndex(0)
+                    self.elem2_options_recon.setCurrentIndex(0)
+
+                e1 = self.elem1_options_recon.currentIndex()
+                e2 = self.elem2_options_recon.currentIndex()
+                e1_txt = self.elem1_options_recon.currentText()
+                e2_txt = self.elem2_options_recon.currentText()
+                elem1 = self.recon_dict[e1_txt][recon_indx]
+                elem1 = elem1.flatten()
+                elem2 = self.recon_dict[e2_txt][recon_indx]
+                elem2 = elem2.flatten()
+
 
                 self.first_run_recon = False
             except TypeError:
                 print("run reconstruction first")
                 return
         else:
+            recon_indx = self.recon_sld.value()
             e1 = self.elem1_options_recon.currentIndex()
             e2 = self.elem2_options_recon.currentIndex()
             e1_txt = self.elem1_options_recon.currentText()
             e2_txt = self.elem2_options_recon.currentText()
+            elem1 = self.recon_dict[e1_txt][recon_indx]
+            elem1 = elem1.flatten()
+            elem2 = self.recon_dict[e2_txt][recon_indx]
+            elem2 = elem2.flatten()
 
-        self.recon_sld.setRange(0, self.recon_array.shape[self.recon_dict.keys()[0][0]]-1)
-        self.elem1_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
-        self.elem2_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
-        recon_indx = self.recon_sld.value()
-        self.elem1_options_recon.clear()
-        self.elem2_options_recon.clear()
-
-        for i in self.elements:
-            self.elem1_options_recon.addItem(i)
-            self.elem2_options_recon.addItem(i)
-        try:
-            self.elem1_options_recon.setCurrentIndex(e1)
-            self.elem1_options_recon.setCurrentText(self.elements[e1])
-            self.elem2_options_recon.setCurrentIndex(e2)
-            self.elem2_options_recon.setCurrentText(self.elements[e2])
-            self.scatterWidgetRecon.p1.setLabel(axis='left', text=self.elements[e1])
-            self.scatterWidgetRecon.p1.setLabel(axis='bottom', text=self.elements[e2])
-
-        except:
-            self.elem1_options_recon.setCurrentIndex(0)
-            self.elem2_options_recon.setCurrentIndex(0)
-
-        elem1 = self.recon_dict[e1_txt][recon_indx]
-        elem1 = elem1.flatten()
-        elem2 = self.recon_array[e2_txt][recon_indx]
-        elem2 = elem2.flatten()
 
         #update projection index LCD
         self.recon_lcd.display(self.recon_sld.value())
-
         self.elem1_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
         self.elem2_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
-
         self.scatterWidgetRecon.plotView.setData(elem2, elem1)
         self.scatterWidgetRecon.p1.setLabel(axis='left', text=self.elements[e1])
         self.scatterWidgetRecon.p1.setLabel(axis='bottom', text=self.elements[e2])
@@ -1404,9 +1438,9 @@ class xrftomoGui(QtGui.QMainWindow):
 
         #Normalizeself.projection_sld.currentIndex()
 
-        elem1 = self.reconstructionWidget.recon_array[e1][self.recon_sld.value()]
+        elem1 = self.reconstructionWidget.recon_dict[e1][self.recon_sld.value()]
         elem1 = elem1.flatten()
-        elem2 = self.reconstructionWidget.recon_array[e2][self.recon_sld.value()]
+        elem2 = self.reconstructionWidget.recon_dict[e2][self.recon_sld.value()]
         elem2 = elem2.flatten()
 
         # get slope then calculate new handle pos
@@ -1448,7 +1482,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatterWidgetRecon.mousePressSig.disconnect(self.updateInnerScatterRecon)
         self.scatterWidgetRecon.roiDraggedSig.disconnect(self.updateInnerScatterRecon)
 
-
         e1 = self.elem1_options_recon.currentText()
         e2 = self.elem2_options_recon.currentText()
         elem1 = self.reconstructionWidget.recon_dict[e1][self.recon_sld.value()]
@@ -1456,8 +1489,14 @@ class xrftomoGui(QtGui.QMainWindow):
         elem2 = self.reconstructionWidget.recon_dict[e2][self.recon_sld.value()]
         elem2 = elem2.flatten()
 
-        x_pos = 1/slope
+        #TODO: Exception error div by zero
+        try:
+            x_pos = 1/slope
+        except ZeroDivisionError:
+            x_pos = 1
+
         y_pos = x_pos*slope
+
 
         if elem2.max()*slope < elem1.max():
             x_pos = elem2.max()
@@ -1624,14 +1663,13 @@ class xrftomoGui(QtGui.QMainWindow):
             self.reconstructionWidget.ReconView.p1.vb.setAspectLocked(False)
 
     def loadSettingsChanged(self):
-        load_settings = [self.legacy_chbx.isChecked(),
-                    self.directory_chbx.isChecked(),
-                    self.element_chbx.isChecked(),
-                    self.image_tag_chbx.isChecked(),
-                    self.data_tag_chbx.isChecked(),
-                    self.alingmen_chbx.isChecked(),
-                    self.iter_align_param_chbx.isChecked(),
-                    self.recon_method_chbx.isChecked()]
+        load_settings = []
+        for child in self.config_options.children():
+            if isinstance(child, QtWidgets.QCheckBox):
+                load_settings.append(child.isChecked())
+            else:
+                pass
+
         self.params.load_settings = str(load_settings)
         # return
     def debugMode(self):

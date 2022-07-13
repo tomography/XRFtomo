@@ -174,7 +174,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
         self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
         self.elementChanged()
-
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
 
         # self.ViewControl.centerTextBox.setText(str(self.centers[2]))
@@ -185,6 +184,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
         self.sld.setRange(0, self.y_range - 1)
         self.lcd.display(0)
+        return
 
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -258,11 +258,17 @@ class ReconstructionWidget(QtWidgets.QWidget):
             self.ViewControl.mid_indx.setText(str(mid_indx))
 
     def get_recon_stats(self):
-        # element = self.element
-        # recon = self.recon[element]
-        #middle index = ???
-        # err, mse = self.actions.recon_stats(recon, middle_index, ??)
-        pass
+        element = self.elements[self.ViewControl.combo1.currentIndex()]
+
+        #TODO: get curent reconstruction from recon_dict
+        recon = self.recon_dict[element]
+        zero_index = np.where(abs(self.thetas) == abs(self.thetas).min())[0][0]
+        middle_index = self.sld.value()
+        row_index = int(eval(self.ViewControl.start_indx.text())) + middle_index
+        data = self.data[self.elements.index(element)][zero_index]
+        data = np.flipud(data)[row_index]
+        err, mse = self.actions.recon_stats(recon, middle_index, data, True)
+        return
 
     # def toggle_middle_index(self):
     #     if self.ViewControl.recon_stats.isChecked():
@@ -292,6 +298,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         except ValueError:
             self.recon_dict[elem] = recon
             print("array shape missmatch. array_dict possibly updated elsewhere ")
+        return
 
     def recon_combobox_changed(self):
         elem = self.ViewControl.recon_set.currentText()
