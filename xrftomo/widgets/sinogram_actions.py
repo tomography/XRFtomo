@@ -356,7 +356,10 @@ class SinogramActions(QtWidgets.QWidget):
             shift, error, diffphase = phase_cross_correlation(data[element,i-1], data[element,i],upsample_factor=100)
             x_shifts[i] += round(shift[1],2)
             y_shifts[i] += round(shift[0],2)
-            data[:,i] = scipy.ndimage.shift(data[element,i], (y_shifts[i],x_shifts[i]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
+            for j in range(data.shape[0]):
+                data[j,i] = scipy.ndimage.shift(data[j,i], (y_shifts[i], x_shifts[i]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
+
+
         self.alignmentDone()
         return data, x_shifts, -y_shifts
 
@@ -429,10 +432,10 @@ class SinogramActions(QtWidgets.QWidget):
         for i in range(len(y_shifts)):
             new_row_sums[i] = scipy.ndimage.shift(new_row_sums[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
             row_sums[i] = scipy.ndimage.shift(row_sums[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-            data[:,i] = scipy.ndimage.shift(data[element,i], (y_shifts[i],0), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            for j in range(data.shape[0]):
+                data[j,i] = scipy.ndimage.shift(data[j,i], (y_shifts[i], 0), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
 
-        # dummy = self.multiplot(row_sums)
-        # plt.show()
+
 
         self.alignmentDone()
         return data, x_shifts, y_shifts
@@ -449,16 +452,19 @@ class SinogramActions(QtWidgets.QWidget):
         num_projections = data.shape[1]
         x_shifts = np.zeros(num_projections)
 
-        row_sums = np.array([np.sum(data[element, i],axis=1) for i in range(data.shape[1])])
+        #
+        row_sums = np.array([np.sum(data[element, i],axis=1) for i in range(num_projections)])
         row_sums_orig = np.copy(row_sums)
         # dummy = self.multiplot(row_sums_orig)
 
         ##push edges
-        y_shifts = self.push_edge(row_sums,0,0.3)
+        y_shifts = self.push_edge(row_sums,0,0.7)
 
         for i in range(len(y_shifts)):
             row_sums[i] = scipy.ndimage.shift(row_sums[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-            data[:,i] = scipy.ndimage.shift(data[element,i], (-y_shifts[i],0), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            for j in range(data.shape[0]):
+                data[j,i] = scipy.ndimage.shift(data[j,i], (-y_shifts[i], 0), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
+
 
         # dummy = self.multiplot(row_sums)
         plt.show()
@@ -467,7 +473,7 @@ class SinogramActions(QtWidgets.QWidget):
         return data, x_shifts, y_shifts
 
 
-    def push_edge(self, arr, side=0,threshold=0.5):
+    def push_edge(self, arr, side=0,threshold=0.6):
 
         num_rows = arr.shape[0]
         Lindx = []
@@ -587,13 +593,22 @@ class SinogramActions(QtWidgets.QWidget):
             new_dy_arr = np.copy(dy_arr[:,tail:head])
         else:
             # select 1st peak
-            tail = int(peak_locs[0] - 10)
-            head = int(peak_locs[0] + 10)
-            if tail <0:
-                tail = 0
-            if head >dy_arr.shape[1]:
-                head = dy_arr.shape[1]-1
-            new_dy_arr = np.copy(dy_arr[:,tail:head])
+            try:
+                tail = int(peak_locs[0] - 10)
+                head = int(peak_locs[0] + 10)
+                if tail <0:
+                    tail = 0
+                if head >dy_arr.shape[1]:
+                    head = dy_arr.shape[1]-1
+                new_dy_arr = np.copy(dy_arr[:,tail:head])
+            except IndexError:
+                print("index out of bounds error")
+
+                return self.data, np.zeros_like(self.x_shifts), np.zeros_like(self.y_shifts)
+            except:
+                print("unknown error")
+                return self.data, np.zeros_like(self.x_shifts), np.zeros_like(self.y_shifts)
+
         # dummy = self.multiplot(dy_arr)
         new_dy_arr = np.copy(dy_arr)
 
@@ -633,7 +648,9 @@ class SinogramActions(QtWidgets.QWidget):
             new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts_3[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
             # new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
             dy_arr[i] = scipy.ndimage.shift(dy_arr[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-            data[:,i] = scipy.ndimage.shift(data[element,i], (-y_shifts[i],0), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            for j in range(data.shape[0]):
+                data[j,i] = scipy.ndimage.shift(data[j,i], (-y_shifts[i], 0), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
+
 
         # dummy = self.multiplot(dy_arr)
         plt.show()

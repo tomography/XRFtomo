@@ -269,19 +269,20 @@ class FileTableWidget(QtWidgets.QWidget):
             try:
                 self.imageTag.clear()
                 self.getImgTags()
+                img_indx = self.imgTags.index(self.auto_image_tag)
+                self.imageTag.setCurrentIndex(img_indx)
+
+
                 self.getDataTag()
+                data_indx = self.dataTags.index(self.auto_data_tag)
+                self.dataTag.setCurrentIndex(data_indx)
+
                 self.setup_element_list()
                 self.setup_quant_list()
                 self.setup_scaler_list()
                 self.onThetaUpdate()
 
                 try: #set auto_load options here:
-
-                    img_indx = self.imgTags.index(self.auto_image_tag)
-                    self.imageTag.setCurrentIndex(img_indx)
-
-                    data_indx = self.dataTags.index(self.auto_data_tag)
-                    self.dataTag.setCurrentIndex(data_indx)
 
                     elem_indx = self.elementTags[self.imageTag.currentIndex()].index(self.auto_element_tag)
                     self.elementTag.setCurrentIndex(elem_indx)
