@@ -451,14 +451,26 @@ class SinogramActions(QtWidgets.QWidget):
         '''
         num_projections = data.shape[1]
         x_shifts = np.zeros(num_projections)
+        y_shifts = np.zeros(num_projections)
 
         #
         row_sums = np.array([np.sum(data[element, i],axis=1) for i in range(num_projections)])
         row_sums_orig = np.copy(row_sums)
-        # dummy = self.multiplot(row_sums_orig)
+        dummy = self.multiplot(row_sums_orig)
+        row_sums = scipy.signal.savgol_filter(row_sums, 11, 2, deriv=0, delta=1.0, axis=- 1, mode='interp', cval=0.0)
 
+
+
+        #
         ##push edges
-        y_shifts = self.push_edge(row_sums,0,0.7)
+        y_shifts = self.push_edge(row_sums,1,0.7)
+
+        # # xcor adjacent arrays to remove jitter__________________
+        # for i in range(1, num_projections):
+        #     shift, error, diffphase = phase_cross_correlation(row_sums[i - 1], row_sums[i], upsample_factor=100)
+        #     y_shifts[i:] -= round(shift[0], 2)
+
+
 
         for i in range(len(y_shifts)):
             row_sums[i] = scipy.ndimage.shift(row_sums[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
@@ -466,7 +478,9 @@ class SinogramActions(QtWidgets.QWidget):
                 data[j,i] = scipy.ndimage.shift(data[j,i], (-y_shifts[i], 0), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
 
 
-        # dummy = self.multiplot(row_sums)
+        dummy = self.multiplot(row_sums)
+
+
         plt.show()
 
         self.alignmentDone()
@@ -560,99 +574,112 @@ class SinogramActions(QtWidgets.QWidget):
         stack = data[element]
         for i in range(num_projections):
             plotv = np.sum(data[element, i], axis=1) * yrange * 0.2 / (np.sum(stack, axis=2).max())
+            plotv = scipy.signal.savgol_filter(plotv, 11, 2, deriv=0, delta=1.0, axis=- 1, mode='interp', cval=0.0)
             plot_dy = np.gradient(plotv, dy)
+            plot_dy = scipy.signal.savgol_filter(plot_dy, 11, 2, deriv=0, delta=1.0, axis=- 1, mode='interp', cval=0.0)
 
             ploty_dy = plot_dy * xrange * 0.1 / plot_dy.max()
             dy_arr[i]= ploty_dy
-        dy_arr = self.remove_false_peak(dy_arr,4)
+        # dy_arr = self.remove_false_peak(dy_arr,4)
         dy_arr_orig = np.copy(dy_arr)
 
         #plot staggered row sums
-        # dummy = self.multiplot(dy_arr)
+        dummy = self.multiplot(dy_arr_orig)
 
-        peak_list = []
-        for i in range(len(dy_arr)):
-            pks, dummy = find_peaks(dy_arr[i], prominence=(dy_arr[i].max() / 3, dy_arr[i].max()))
-            peak_list.append(list(pks))
-        flat_list = [item for sublist in peak_list for item in sublist]
-
-        sum_dy_sqrd = np.sum(dy_arr, axis=0)**2
-        peaks, dummy = find_peaks(sum_dy_sqrd, prominence=(sum_dy_sqrd.max() / 5, sum_dy_sqrd.max()))
-        peak_locs = np.flip(peaks[np.argsort(sum_dy_sqrd[peaks])])
-        num_peaks = len(peak_locs)
-
-        if num_peaks>1:
-            # select 2nd peak
-            #TODO: add option to select peak, 0th peak if none selected.
-            tail = int(peak_locs[1] - 10)
-            head = int(peak_locs[1] + 10)
-            if tail <0:
-                tail = 0
-            if head >dy_arr.shape[1]:
-                head = dy_arr.shape[1]-1
-            new_dy_arr = np.copy(dy_arr[:,tail:head])
-        else:
-            # select 1st peak
-            try:
-                tail = int(peak_locs[0] - 10)
-                head = int(peak_locs[0] + 10)
-                if tail <0:
-                    tail = 0
-                if head >dy_arr.shape[1]:
-                    head = dy_arr.shape[1]-1
-                new_dy_arr = np.copy(dy_arr[:,tail:head])
-            except IndexError:
-                print("index out of bounds error")
-
-                return self.data, np.zeros_like(self.x_shifts), np.zeros_like(self.y_shifts)
-            except:
-                print("unknown error")
-                return self.data, np.zeros_like(self.x_shifts), np.zeros_like(self.y_shifts)
-
-        # dummy = self.multiplot(dy_arr)
+        # #filter arrays to smoothen them
+        # peak_list = []
+        # for i in range(len(dy_arr)):
+        #     pks, dummy = find_peaks(dy_arr[i], prominence=(dy_arr[i].max() / 3, dy_arr[i].max()))
+        #     peak_list.append(list(pks))
+        # flat_list = [item for sublist in peak_list for item in sublist]
+        #
+        # sum_dy_sqrd = np.sum(dy_arr, axis=0)**2
+        # peaks, dummy = find_peaks(sum_dy_sqrd, prominence=(sum_dy_sqrd.max() / 5, sum_dy_sqrd.max()))
+        # peak_locs = np.flip(peaks[np.argsort(sum_dy_sqrd[peaks])])
+        # num_peaks = len(peak_locs)
+        #
+        # if num_peaks>1:
+        #     # select 2nd peak
+        #     #TODO: add option to select peak, 0th peak if none selected.
+        #     tail = int(peak_locs[1] - 10)
+        #     head = int(peak_locs[1] + 10)
+        #     if tail <0:
+        #         tail = 0
+        #     if head >dy_arr.shape[1]:
+        #         head = dy_arr.shape[1]-1
+        #     new_dy_arr = np.copy(dy_arr[:,tail:head])
+        # else:
+        #     # select 1st peak
+        #     try:
+        #         tail = int(peak_locs[0] - 10)
+        #         head = int(peak_locs[0] + 10)
+        #         if tail <0:
+        #             tail = 0
+        #         if head >dy_arr.shape[1]:
+        #             head = dy_arr.shape[1]-1
+        #         new_dy_arr = np.copy(dy_arr[:,tail:head])
+        #     except IndexError:
+        #         print("index out of bounds error")
+        #
+        #         return data, np.zeros_like(self.x_shifts), np.zeros_like(self.y_shifts)
+        #     except:
+        #         print("unknown error")
+        #         return data, np.zeros_like(self.x_shifts), np.zeros_like(self.y_shifts)
+        #
+        # # dummy = self.multiplot(dy_arr)
         new_dy_arr = np.copy(dy_arr)
 
-        #xcor adjacent arrays to remove jitter__________________
-        for i in range(1, num_projections):
-            shift, error, diffphase = phase_cross_correlation(new_dy_arr[i-1], new_dy_arr[i],upsample_factor=100)
-            y_shifts[i:]-= round(shift[0],2)
-        #adjust for discontinuities
-        y_shifts = self.tweak_shifts(y_shifts,new_dy_arr)
+        # #xcor adjacent arrays to remove jitter__________________
+        # for i in range(1, num_projections):
+        #     shift, error, diffphase = phase_cross_correlation(new_dy_arr[i-1], new_dy_arr[i],upsample_factor=100)
+        #     y_shifts[i:]-= round(shift[0],2)
 
-        #shift complete array
-        for i in range(num_projections):
-            new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-        #create new shifts array
-        y_shifts_2 = np.zeros_like(y_shifts)
-        #xcor arrays with respect to first array ________________
-        for i in range(1, num_projections):
-            shift, error, diffphase = phase_cross_correlation(new_dy_arr[i-1], new_dy_arr[i],upsample_factor=100)
-            y_shifts_2[i] -= round(shift[0],2)
+        # #adjust for discontinuities
+        # y_shifts = self.tweak_shifts(y_shifts,new_dy_arr)
+        #
+        # #shift complete array
+        # for i in range(num_projections):
+        #     new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+        # #create new shifts array
+        # y_shifts_2 = np.zeros_like(y_shifts)
+        # #xcor arrays with respect to first array ________________
+        # for i in range(1, num_projections):
+        #     shift, error, diffphase = phase_cross_correlation(new_dy_arr[i-1], new_dy_arr[i],upsample_factor=100)
+        #     y_shifts_2[i] -= round(shift[0],2)
+        #
+        # #adjust for discontinuities
+        # y_shifts_2 = self.tweak_shifts(y_shifts_2,new_dy_arr)
+        #
+        # #add shifts together
+        # y_shifts = y_shifts+y_shifts_2
 
-        #adjust for discontinuities
-        y_shifts_2 = self.tweak_shifts(y_shifts_2,new_dy_arr)
+        # for i in range(num_projections):
+        #     new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts_2[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
 
-        #add shifts together
-        y_shifts = y_shifts+y_shifts_2
-
-        for i in range(num_projections):
-            new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts_2[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-
-        y_shifts_3 = self.push_edge(new_dy_arr,1,0.60)
+        y_shifts_3 = self.push_edge(new_dy_arr,1,0.90)
 
         y_shifts = y_shifts+y_shifts_3
+
+        # #xcor adjacent arrays to remove jitter__________________
+        # for i in range(1, num_projections):
+        #     shift, error, diffphase = phase_cross_correlation(new_dy_arr[i-1], new_dy_arr[i],upsample_factor=100)
+        #     y_shifts[i:]-= round(shift[0],2)
+
+
         #plot staggered row sums
         # dummy = self.multiplot(dy_arr)
         #shift complete array
         for i in range(num_projections):
-            new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts_3[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
+            # new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts_3[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
             # new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
             dy_arr[i] = scipy.ndimage.shift(dy_arr[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
             for j in range(data.shape[0]):
                 data[j,i] = scipy.ndimage.shift(data[j,i], (-y_shifts[i], 0), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
 
 
-        # dummy = self.multiplot(dy_arr)
+
+
+        dummy = self.multiplot(dy_arr)
         plt.show()
 
         self.alignmentDone()

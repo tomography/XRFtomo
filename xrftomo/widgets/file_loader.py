@@ -269,12 +269,18 @@ class FileTableWidget(QtWidgets.QWidget):
             try:
                 self.imageTag.clear()
                 self.getImgTags()
-                img_indx = self.imgTags.index(self.auto_image_tag)
+                try:
+                    img_indx = self.imgTags.index(self.auto_image_tag)
+                except ValueError:
+                    img_indx = 0
                 self.imageTag.setCurrentIndex(img_indx)
 
 
                 self.getDataTag()
-                data_indx = self.dataTags.index(self.auto_data_tag)
+                try:
+                    data_indx = self.dataTags.index(self.auto_data_tag)
+                except ValueError:
+                    data_indx = 0
                 self.dataTag.setCurrentIndex(data_indx)
 
                 self.setup_element_list()
