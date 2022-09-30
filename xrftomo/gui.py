@@ -257,8 +257,8 @@ class xrftomoGui(QtGui.QMainWindow):
 
         ## Top menu bar [file   Convert Option    Alignment   After saving in memory]
         menubar = self.menuBar()
-        menubar.setNativeMenuBar(True)
-        self.fileMenu = menubar.addMenu('&File')
+        menubar.setNativeMenuBar(False)
+        self.fileMenu = menubar.addMenu(' &File')
         self.fileMenu.addAction(openH5Action)
         self.fileMenu.addAction(openExchangeAction)
         self.fileMenu.addAction(openTiffAction)
@@ -269,7 +269,8 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileMenu.addAction(exitAction)
         self.fileMenu.addAction(closeAction)
 
-        self.editMenu = menubar.addMenu("Edit")
+        self.editMenu = menubar.addMenu(" &Edit")
+        self.editMenu = menubar.addMenu(" &Edit")
         self.editMenu.addAction(undoAction)
         self.editMenu.addAction(preferencesAction)
         # self.editMenu.addAction(matcherAction)
@@ -330,18 +331,18 @@ class xrftomoGui(QtGui.QMainWindow):
         # viewStatAct.setChecked(True)
         # viewStatAct.triggered.connect(self.toggle_sps)
 
-        self.toolsMenu = menubar.addMenu("Tools")
+        self.toolsMenu = menubar.addMenu(" &Tools")
         self.toolsMenu.addMenu(analysis)
         self.toolsMenu.addMenu(subPixShift)
         self.toolsMenu.setDisabled(True)
 
-        self.settingsMenu = menubar.addMenu("Settings")
+        self.settingsMenu = menubar.addMenu(" &Settings")
 
-        self.viewMenu = menubar.addMenu("View")
+        self.viewMenu = menubar.addMenu(" &View")
         self.viewMenu.addAction(setAspectratio)
         self.viewMenu.setDisabled(True)
 
-        self.afterConversionMenu = menubar.addMenu('Save')
+        self.afterConversionMenu = menubar.addMenu(' &Save')
         self.afterConversionMenu.addAction(saveProjectionAction)
         # self.afterConversionMenu.addAction(saveHotSpotPosAction)
         self.afterConversionMenu.addAction(saveReconstructionAction)
@@ -355,7 +356,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveToNumpyAction)
         self.afterConversionMenu.addAction(saveCorrAnalysisAction)
 
-        self.helpMenu = menubar.addMenu('&Help')
+        self.helpMenu = menubar.addMenu(' &Help')
         self.helpMenu.addAction(keyMapAction)
         self.helpMenu.addAction(configAction)
 
