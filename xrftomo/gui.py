@@ -55,6 +55,7 @@ from skimage import measure
 from matplotlib.pyplot import *
 from scipy import ndimage as ndi
 from skimage.morphology import remove_small_objects
+from skimage import io
 
 
 
@@ -86,6 +87,9 @@ class xrftomoGui(QtGui.QMainWindow):
 
         openTiffAction = QtGui.QAction('open tiff files', self)
         openTiffAction.triggered.connect(self.openTiffs)
+
+        openStackAction = QtGui.QAction('open tiff stack', self)
+        openStackAction.triggered.connect(self.openStack)
 
         openThetaAction = QtGui.QAction('open thetas file', self)
         openThetaAction.triggered.connect(self.openThetas)
@@ -262,6 +266,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileMenu.addAction(openH5Action)
         self.fileMenu.addAction(openExchangeAction)
         self.fileMenu.addAction(openTiffAction)
+        self.fileMenu.addAction(openStackAction)
         self.fileMenu.addAction(openThetaAction)
         ##self.fileMenu.addAction(openFileAction)
         #self.fileMenu.addAction(openFolderAction)
@@ -1759,6 +1764,35 @@ class xrftomoGui(QtGui.QMainWindow):
         self.toolsMenu.setDisabled(True)
         # update images seems to have dissappeare.
         return
+
+    def openStack(self):
+        file = QtGui.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "tiff (*.tiff)" )
+        if file[0] == '':
+            return
+        im = io.imread(file[0])
+        data = np.zeros([1, im.shape[0], im.shape[1], im.shape[2]])
+        data[0] = im
+        self.data = data
+        self.fnames = ["file_{}".format(i) for i in range(self.data.shape[1])]
+        self.tab_widget.setTabEnabled(1, False)
+        self.tab_widget.setTabEnabled(2, False)
+        self.tab_widget.setTabEnabled(3, False)
+        self.afterConversionMenu.setDisabled(True)
+        self.editMenu.setDisabled(True)
+        self.toolsMenu.setDisabled(True)
+        # update images seems to have dissappeare.
+
+        self.thetas = np.asarray([i for i in range(self.data.shape[1])])
+        self.elements = ["Channel_1"]
+        self.updateImages(True)
+        self.tab_widget.setTabEnabled(1, True)
+        self.tab_widget.setTabEnabled(2, True)
+        self.tab_widget.setTabEnabled(3, True)
+        self.afterConversionMenu.setDisabled(False)
+        self.editMenu.setDisabled(False)
+        self.toolsMenu.setDisabled(False)
+        self.viewMenu.setDisabled(False)
+        self.fileTableWidget.message.setText("Angle information loaded.")
 
     def openThetas(self):
         file = QtGui.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "text (*.txt)" )

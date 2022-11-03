@@ -131,6 +131,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 		num_slices = recon.shape[0]
 		width = recon.shape[1]
 		reprojection = np.zeros([num_slices, width])
+		projection = np.zeros([num_slices, width])
 
 		# get recon reporjection for slice i and take the difference with data projection (at angle ~=0).
 		for i in range(num_slices):
