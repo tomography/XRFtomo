@@ -739,10 +739,18 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def centerOfMass_params(self):
+        #TODO: if roi checked, get partial data and get shifts based on partial data, then adjust full data based on shifts
+        #TODO: alignment methods should just output shifts, and nother function to apply shifts should be separate
         element, row, data, thetas = self.get_params()
         wcom = self.ViewControl.weighted_com_checkbox.isChecked()
         shiftXY = self.ViewControl.shiftXY_checkbox.isChecked()
-        data, x_shifts, y_shifts = self.actions.runCenterOfMass(element, data, thetas, wcom, shiftXY)
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data , x_shifts, y_shifts = self.actions.runCenterOfMass(element, roi_data, thetas, wcom, shiftXY)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+        else:
+            data, x_shifts, y_shifts = self.actions.runCenterOfMass(element, data, thetas, wcom, shiftXY)
+
         x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
@@ -750,6 +758,19 @@ class SinogramWidget(QtWidgets.QWidget):
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
 
+    def get_roi_data(self, data):
+        x_pos = self.imageView.x_pos
+        y_pos = self.imageView.y_pos
+        x_size = self.imageView.xSize
+        y_size = self.imageView.ySize
+        frame_height = data.shape[2]
+        y_end = int(round(frame_height - y_pos))
+        y_start = int(round(frame_height-y_pos-y_size))
+        x_start = int(round(x_pos))
+        x_end = int(round(x_pos) + x_size)
+
+        img = data[:, :, y_start:y_end, x_start: x_end]
+        return img
     def opFlow_params(self):
         element, row, data, thetas = self.get_params()
         data = self.actions.runOpFlow(element, data)
@@ -757,9 +778,15 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def fitPeaks_params(self):
+        #TODO: if roi checked
         element, row, data, thetas = self.get_params()
-        data, x_shifts, y_shifts = self.actions.runFitPeaks(element, data)
 
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data , x_shifts, y_shifts = self.actions.runFitPeaks(element, roi_data)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+        else:
+            data, x_shifts, y_shifts = self.actions.runFitPeaks(element, data)
 
         #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
         x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
@@ -768,7 +795,6 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
-
         pass
 
 
@@ -784,11 +810,18 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def crossCorrelate_params(self):
+        #TODO: if roi checked
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        data, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data , x_shifts, y_shifts = self.actions.crossCorrelate2(element, roi_data)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+        else:
+            data, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
+
         #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
-        x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
+        # x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
         #TODO: add a post-alignment function to validate shifts based on image size
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
@@ -796,10 +829,16 @@ class SinogramWidget(QtWidgets.QWidget):
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
 
-
     def xcorrdy_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data, x_shifts, y_shifts = self.actions.xcor_dysum(element, roi_data)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+        else:
+            data, x_shifts, y_shifts = self.actions.xcor_dysum(element, data)
+
         data, x_shifts, y_shifts = self.actions.xcor_dysum(element, data)
         x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
@@ -809,9 +848,18 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def xcorry_params(self):
+        #TODO: if roi checked
+
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        data, x_shifts, y_shifts = self.actions.xcor_ysum(element, data)
+
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data , x_shifts, y_shifts = self.actions.xcor_ysum(element, roi_data)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+        else:
+            data, x_shifts, y_shifts = self.actions.xcor_ysum(element, data)
+
         x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
@@ -823,7 +871,14 @@ class SinogramWidget(QtWidgets.QWidget):
         layer = self.sld.value()-1
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        self.data, x_shifts = self.actions.xcor_sino(element,layer, data)
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data , x_shifts = self.actions.xcor_sino(element, layer, roi_data)
+            data = self.actions.shift_all(data,x_shifts)
+        else:
+            data, x_shifts = self.actions.xcor_sino(element, layer, data)
+
+        data, x_shifts = self.actions.xcor_sino(element,layer, data)
         x_shifts = self.actions.validate_alignment(data, x_shifts)
 
         self.dataChangedSig.emit(self.data)
@@ -839,6 +894,8 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def move2edge_params(self):
+        #TODO: if roi checked
+
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
 
@@ -853,7 +910,14 @@ class SinogramWidget(QtWidgets.QWidget):
 
         threshold = int(self.ViewControl.threshold_textbox.text())
 
-        y_shifts, data = self.actions.align2edge(element, data, loc, threshold) 
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            y_shifts, roi_data = self.actions.align2edge(element, roi_data, loc, threshold)
+            data = self.actions.shift_all(data,np.zeros_like(y_shifts),y_shifts)
+
+        else:
+            y_shifts, data = self.actions.align2edge(element, data, loc, threshold)
+
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts+y_shifts)
         return

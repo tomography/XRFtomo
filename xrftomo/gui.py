@@ -1683,7 +1683,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileTableWidget.thetaLineEdit.setVisible(True)
         self.fileTableWidget.elementTag.setVisible(True)
         self.fileTableWidget.elementTag_label.setVisible(True)
-        self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
+        # self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
         self.imageProcessWidget.ViewControl.invert.setVisible(True)
 
         self.sinogramWidget.ViewControl.btn1.setVisible(True)

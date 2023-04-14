@@ -108,11 +108,11 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         self.ViewControl.padBtn.clicked.connect(self.ViewControl.padding_options.show)
         self.ViewControl.run_padding.clicked.connect(self.pad_params)
-        self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
-        self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
+        # self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
+        # self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
-        self.ViewControl.Equalize.clicked.connect(self.histo_params)
+        # self.ViewControl.Equalize.clicked.connect(self.histo_params)
         self.ViewControl.invert.clicked.connect(self.invert_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histogram)
 
@@ -381,10 +381,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.dataChangedSig.emit(data)
         if command == 'Delete':
             self.exclude_params()
-        if command == 'Copy':
-            self.copyBG_params(img)
-        if command == 'Paste':
-            data = self.pasteBG_params()
+        # if command == 'Copy':
+        #     self.copyBG_params(img)
+        # if command == 'Paste':
+        #     data = self.pasteBG_params()
 
     def get_params(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -406,19 +406,17 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         self.actions.background_value(img)
 
-
-
     def normalize_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         self.actions.normalize(data, element)
         self.dataChangedSig.emit(data)
 
-    def equalize_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        data = self.actions.equalize(data, element)
-        self.dataChangedSig.emit(data)
+    # def equalize_params(self):
+    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     data = self.data
+    #     data = self.actions.equalize(data, element)
+    #     self.dataChangedSig.emit(data)
 
     def invert_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -438,19 +436,19 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imageView.ROI.setPos([0, 0], finish=False)
         self.refreshSig.emit()
 
-    def copyBG_params(self,*img):
-        if type(img[0]) == bool:
-            element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.meanNoise, self.stdNoise = self.actions.copy_background(img)
-        return
+    # def copyBG_params(self,*img):
+    #     if type(img[0]) == bool:
+    #         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     self.meanNoise, self.stdNoise = self.actions.copy_background(img)
+    #     return
 
-    def pasteBG_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        meanNoise = self.meanNoise
-        stdNoise= self.stdNoise
-        data = self.data
-        data = self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img, meanNoise, stdNoise)
-        self.dataChangedSig.emit(data)
+    # def pasteBG_params(self):
+    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     meanNoise = self.meanNoise
+    #     stdNoise= self.stdNoise
+    #     data = self.data
+    #     data = self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img, meanNoise, stdNoise)
+    #     self.dataChangedSig.emit(data)
 
     def analysis_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -563,50 +561,50 @@ class ImageProcessWidget(QtWidgets.QWidget):
     #
 
 
-    def histo_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        for i in range(data.shape[1]):
-            mask = self.actions.create_mask(data[element,i])
-            data[element, i], m = self.actions.equalize_hist_ev(data[element,i], 2**16, mask)
-        self.dataChangedSig.emit(data)
+    # def histo_params(self):
+    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     data = self.data
+    #     for i in range(data.shape[1]):
+    #         mask = self.actions.create_mask(data[element,i])
+    #         data[element, i], m = self.actions.equalize_hist_ev(data[element,i], 2**16, mask)
+    #     self.dataChangedSig.emit(data)
 
-    def equalize_colocalization(self, elements, mask = None, nbins = 2**16, eq_hsv = False,
-                                global_shift = True, shift_funct = np.median):
-        '''
-        elements: each element dataset to use for colocalization (up to 3).
-        mask: bool or binary masks used to select roi.
-        nbins: number of bins used for histogram equalization.
-        eq_hsv: equalize the lumination of the colocalization.
-        global_shift: global shift each element to match
-                (i.e. have the mean of element 1 match the mean of element 2 after colocalization)
-        shift_funct: function used for global_shift.
-        '''
-        rgb = np.zeros((elements[0].shape[0], elements[0].shape[1], 3))
-        for i, element in enumerate(elements):
-            # Remove inf and nan.
-            element[~np.isfinite(element)] = 0
-            # Add to RGB image and normalize components.
-            rgb[:,:,i] = element/element.max()
-            # Equalize the R, G, and B components individually.
-            rgb[:,:,i], m = self.equalize_hist_ev(rgb[:,:,i], mask = mask, nbins = nbins,
-                                             shift_funct = np.median)
-            # Set shift value to zero.
-            if global_shift:
-                rgb[:,:,i] -= m
-
-        # shift all values to > 0.
-        if global_shift:
-            rgb[:,:,0:len(elements)] -= rgb[:,:,0:len(elements)].min()
-        if eq_hsv:
-            # Convert RGB to HSV and equalize the value. Convert back to RGB.
-            hsv = rgb_to_hsv(rgb)
-            # Equalize value component of the hsv image
-            #hsv[:,:,2] = equalize_hist(hsv[:,:,2], mask = mask, nbins = nbins)
-            # OR use CLASqualize value component of the hsv image
-            hsv[:,:,2] = exposure.equalize_adapthist(hsv[:,:,2], nbins = nbins, clip_limit = .001)
-            rgb = hsv_to_rgb(hsv)
-        return rgb
+    # def equalize_colocalization(self, elements, mask = None, nbins = 2**16, eq_hsv = False,
+    #                             global_shift = True, shift_funct = np.median):
+    #     '''
+    #     elements: each element dataset to use for colocalization (up to 3).
+    #     mask: bool or binary masks used to select roi.
+    #     nbins: number of bins used for histogram equalization.
+    #     eq_hsv: equalize the lumination of the colocalization.
+    #     global_shift: global shift each element to match
+    #             (i.e. have the mean of element 1 match the mean of element 2 after colocalization)
+    #     shift_funct: function used for global_shift.
+    #     '''
+    #     rgb = np.zeros((elements[0].shape[0], elements[0].shape[1], 3))
+    #     for i, element in enumerate(elements):
+    #         # Remove inf and nan.
+    #         element[~np.isfinite(element)] = 0
+    #         # Add to RGB image and normalize components.
+    #         rgb[:,:,i] = element/element.max()
+    #         # Equalize the R, G, and B components individually.
+    #         rgb[:,:,i], m = self.equalize_hist_ev(rgb[:,:,i], mask = mask, nbins = nbins,
+    #                                          shift_funct = np.median)
+    #         # Set shift value to zero.
+    #         if global_shift:
+    #             rgb[:,:,i] -= m
+    #
+    #     # shift all values to > 0.
+    #     if global_shift:
+    #         rgb[:,:,0:len(elements)] -= rgb[:,:,0:len(elements)].min()
+    #     if eq_hsv:
+    #         # Convert RGB to HSV and equalize the value. Convert back to RGB.
+    #         hsv = rgb_to_hsv(rgb)
+    #         # Equalize value component of the hsv image
+    #         #hsv[:,:,2] = equalize_hist(hsv[:,:,2], mask = mask, nbins = nbins)
+    #         # OR use CLASqualize value component of the hsv image
+    #         hsv[:,:,2] = exposure.equalize_adapthist(hsv[:,:,2], nbins = nbins, clip_limit = .001)
+    #         rgb = hsv_to_rgb(hsv)
+    #     return rgb
 
     # # Rotation Center Finding
 

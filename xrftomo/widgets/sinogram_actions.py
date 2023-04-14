@@ -170,6 +170,14 @@ class SinogramActions(QtWidgets.QWidget):
                 y_shifts = np.asarray(y_shifts)*0
             return data, np.asarray(x_shifts), -np.asarray(y_shifts)
 
+    def shift_all(self, data, x_shifts, y_shifts = None):
+        for idx in range(len(x_shifts)):
+            if y_shifts is None:
+                data = self.shiftProjection(data, x_shifts[idx], 0, idx)
+            else:
+                data = self.shiftProjection(data, x_shifts[idx], y_shifts[idx], idx)
+
+        return data
     def shiftProjection(self, data, x, y, index):
         X = int(x//1)
         Y = int(y//1)

@@ -64,6 +64,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.combo3 = QtWidgets.QComboBox(self)
         self.combo3.setFixedWidth(button2size)
 
+        self.roi = QtWidgets.QCheckBox("constrain registration to roi")
         self.xcorsino = QtWidgets.QPushButton('xcor sino')
         self.xcorsino.setFixedWidth(button2size)
         self.xcorry = QtWidgets.QPushButton('xcor y row.')
@@ -236,12 +237,12 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb3 = QtWidgets.QVBoxLayout()
         vb3.addWidget(self.combo1)
         # vb3.addWidget(self.combo2)
+        vb3.addWidget(self.roi)
         vb3.addLayout(vb1)
         vb3.addLayout(vb2)
         vb3.addLayout(sinoctrls)
         # self.setFixedWidth(button1size)
         self.setLayout(vb3)
-
 
         self.btn3.setVisible(False)
         self.btn5.setVisible(False)
