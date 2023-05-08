@@ -163,7 +163,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.method.clear()
         self.ViewControl.recon_set.clear()
         self.ViewControl.recon_set.disconnect()
-        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
+        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv", "lamni-fbp"]
         for j in self.elements:
             self.ViewControl.combo1.addItem(j)
         for k in range(len(methodname)):
@@ -389,17 +389,19 @@ class ReconstructionWidget(QtWidgets.QWidget):
             start_idx = int(eval(self.ViewControl.start_indx.text()))
             print("working fine")
             for i in range(num_xsections):
+                if method ==8:
+                    break
                 j = num_xsections - i - 1
                 xsection[0, :, 0] = data[element, :, j]
                 cent = center
 
-                if method!= 1:  #all methods other than gridrec
-                    recon = self.actions.reconstruct(xsection, 0, cent, 1, beta, delta, 5, thetas, None)
-                    for k in range(5, iters):
+                if method!= 1 and method !=8:  #all methods other than gridrec
+                    recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 1, thetas, None)
+                    for k in range(1, iters):
                         recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 1, thetas, recon)
                         print("reconstructing row {}/{} on iteration{}".format(i+1,num_xsections,k))
 
-                else:        #gridrec
+                if method == 1:        #gridrec
                     recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 1, thetas, None)
                     print("reconstructing row{}/{}".format(i+1, num_xsections))
 
@@ -408,6 +410,11 @@ class ReconstructionWidget(QtWidgets.QWidget):
                     self.writer.save_reconstruction(recon, savedir, start_idx+i)
                 err, mse = self.actions.assessRecon(recon, xsection[0,:,0], thetas, show_plots=False)
                 print(mse)
+
+            if method == 8:
+                #TODO: laminography angle hardcoded, make interface for laminography settings
+                recon = self.actions.FBP(data[element], thetas, 20, bpfilter=1, tau=1.0)
+                recons = recon
 
             #TODO: Update recon_dict and recon display.
             recon_dict[self.ViewControl.combo1.itemText(element)] = np.array(recons)

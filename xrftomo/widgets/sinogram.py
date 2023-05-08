@@ -239,21 +239,21 @@ class SinogramWidget(QtWidgets.QWidget):
     def display(self,i):
         self.Stack.setCurrentIndex(i)
 
-        if i == 1:
+        # if i == 1:
 
-            self.ViewControl.hotspot_mode_chbx.setVisible(True)
-            self.ViewControl.hotspot_lbl.setVisible(True)
-            self.ViewControl.combo3.setVisible(True)
-            self.ViewControl.fit_line.setVisible(True)
-            self.ViewControl.fit_y.setVisible(True)
-            self.ViewControl.clear_data.setVisible(True)
-        else:
-            self.ViewControl.hotspot_mode_chbx.setVisible(False)
-            self.ViewControl.hotspot_lbl.setVisible(False)
-            self.ViewControl.combo3.setVisible(False)
-            self.ViewControl.fit_line.setVisible(False)
-            self.ViewControl.fit_y.setVisible(False)
-            self.ViewControl.clear_data.setVisible(False)
+        #     self.ViewControl.hotspot_mode_chbx.setVisible(True)
+        #     self.ViewControl.hotspot_lbl.setVisible(True)
+        #     self.ViewControl.combo3.setVisible(True)
+        #     self.ViewControl.fit_line.setVisible(True)
+        #     self.ViewControl.fit_y.setVisible(True)
+        #     self.ViewControl.clear_data.setVisible(True)
+        # else:
+        self.ViewControl.hotspot_mode_chbx.setVisible(False)
+        self.ViewControl.hotspot_lbl.setVisible(False)
+        self.ViewControl.combo3.setVisible(False)
+        self.ViewControl.fit_line.setVisible(False)
+        self.ViewControl.fit_y.setVisible(False)
+        self.ViewControl.clear_data.setVisible(False)
         #change slider range and label here depending on i
 
     def keyProcess(self, command):
@@ -768,8 +768,8 @@ class SinogramWidget(QtWidgets.QWidget):
         y_start = int(round(frame_height-y_pos-y_size))
         x_start = int(round(x_pos))
         x_end = int(round(x_pos) + x_size)
-
-        img = data[:, :, y_start:y_end, x_start: x_end]
+        img = np.copy(data)
+        img = img[:, :, y_start:y_end, x_start: x_end]
         return img
     def opFlow_params(self):
         element, row, data, thetas = self.get_params()
@@ -821,11 +821,11 @@ class SinogramWidget(QtWidgets.QWidget):
             data, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
 
         #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
-        # x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
         #TODO: add a post-alignment function to validate shifts based on image size
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
-        self.dataChangedSig.emit(self.data)
+        self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
 
@@ -848,8 +848,6 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def xcorry_params(self):
-        #TODO: if roi checked
-
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
 
@@ -878,9 +876,7 @@ class SinogramWidget(QtWidgets.QWidget):
         else:
             data, x_shifts = self.actions.xcor_sino(element, layer, data)
 
-        data, x_shifts = self.actions.xcor_sino(element,layer, data)
         x_shifts = self.actions.validate_alignment(data, x_shifts)
-
         self.dataChangedSig.emit(self.data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
         pass

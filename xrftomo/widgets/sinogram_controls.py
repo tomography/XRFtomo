@@ -67,11 +67,11 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.roi = QtWidgets.QCheckBox("constrain registration to roi")
         self.xcorsino = QtWidgets.QPushButton('xcor sino')
         self.xcorsino.setFixedWidth(button2size)
-        self.xcorry = QtWidgets.QPushButton('xcor y row.')
+        self.xcorry = QtWidgets.QPushButton('sum y row.')
         self.xcorry.setFixedWidth(button2size)
         self.btn1 = QtWidgets.QPushButton('center of mass')
         self.btn1.setFixedWidth(button2size)
-        self.xcorrdy = QtWidgets.QPushButton('xcor dy row.')
+        self.xcorrdy = QtWidgets.QPushButton('sum dy row.')
         self.xcorrdy.setFixedWidth(button2size)
         self.btn2 = QtWidgets.QPushButton('cross corr.')
         self.btn2.setFixedWidth(button2size)
@@ -91,7 +91,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.opflow.setFixedWidth(button2size)
         self.rot_axis = QtWidgets.QPushButton("Set rot. axis")
         self.rot_axis.setFixedWidth(button2size)
-        self.rot_axis.setDisabled(True)
         self.fitPeaks = QtWidgets.QPushButton("fit peaks")
         self.fitPeaks.setFixedWidth(button2size)
         self.lbl = QtWidgets.QLabel("")
@@ -159,22 +158,23 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
         hb2 = QtWidgets.QHBoxLayout()
         hb2.addWidget(self.btn2)
-        hb2.addWidget(self.btn3)
+        hb2.addWidget(self.btn5)
+        # hb2.addWidget(self.btn3)
 
         hb3 = QtWidgets.QHBoxLayout()
         hb3.addWidget(self.btn6)
         hb3.addWidget(self.btn7)
 
         hb4 = QtWidgets.QHBoxLayout()
-        hb4.addWidget(self.btn5)
-        hb4.addWidget(self.btn9)
+        # hb4.addWidget(self.btn5)
+        # hb4.addWidget(self.btn9)
 
         hb5 = QtWidgets.QHBoxLayout()
         hb5.addWidget(self.center)
         hb5.addWidget(self.opflow)
 
         hb6 = QtWidgets.QHBoxLayout()
-        hb6.addWidget(self.rot_axis)
+        # hb6.addWidget(self.rot_axis)
         hb6.addWidget(self.fitPeaks)
 
         hb65 = QtWidgets.QHBoxLayout()
@@ -242,13 +242,18 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb3.addLayout(vb2)
         vb3.addLayout(sinoctrls)
         # self.setFixedWidth(button1size)
+
+        self.btn3.setVisible(False) #phase corr
+        # self.btn5.setVisible(False)
+        # self.btn6.setVisible(False)
+        self.btn9.setVisible(False) #adjust sino
+        self.rot_axis.setVisible(False) #rot axis
+
         self.setLayout(vb3)
 
-        self.btn3.setVisible(False)
-        self.btn5.setVisible(False)
-        self.btn6.setVisible(False)
 
-        #__________Popup window for iterative alignment__________
+
+    #__________Popup window for iterative alignment__________
 
         self.iter_parameters = QtWidgets.QWidget()
         self.iter_parameters.resize(275,400)

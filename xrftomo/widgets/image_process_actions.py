@@ -224,14 +224,25 @@ class ImageProcessActions(QtWidgets.QWidget):
 		return new_data
 
 	def remove_hotspots(self, data, element):
+		imgs = data[element].copy()
+		max_val = np.max(imgs)
+		std_imgs = np.std(imgs)
+		imgs[imgs>15*std_imgs] = std_imgs
+		data[element] = imgs
+
+		dif = data[element] - imgs
+		if dif.max() == 0:
+			imgs[imgs>0.98*max_val] = 0.98*max_val
+			data[element] = imgs
+
+		return data
+
+	def remove_hotspots_new(self, data, element):
 		imgs = data[element]
 		max_val = np.max(imgs)
-		for i in range(imgs.shape[0]):
-			img = imgs[i]
-			img[img > 0.98*max_val] = 0.98*max_val
-			img[img < 0] = 0
-			data[element,i] = img
-
+		std_imgs = np.std(imgs)
+		imgs[imgs>15*std_imgs] = std_imgs
+		data[element] = imgs
 		return data
 
 	def create_mask(self, data, mask_thresh=None, scale=.8):

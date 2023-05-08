@@ -84,7 +84,7 @@ class FileTableWidget(QtWidgets.QWidget):
         dirLabel = QtWidgets.QLabel('Directory:')
         self.dirLineEdit = QtWidgets.QLineEdit(self.auto_input_path)
         self.dirLineEdit.returnPressed.connect(self.onLoadDirectory)
-        self.extLineEdit = QtWidgets.QLineEdit('*.h5')
+        self.extLineEdit = QtWidgets.QLineEdit('.h5')
         self.extLineEdit.setMaximumSize(50, 30)
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
         # self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
@@ -234,26 +234,14 @@ class FileTableWidget(QtWidgets.QWidget):
         if files == None:
             try:
                 filenames = os.listdir(self.dirLineEdit.text())
-
+                ext = "."+self.extLineEdit.text().split(".")[1]
 
             except FileNotFoundError:
                 self.message.setText("directory probably not mounted")
                 return
-            extension_list = ["."+ x.split(".")[-1] for x in filenames]
-            unique_ext = list(set(extension_list))
-            counter = 0
-            for i in unique_ext:
-                tmp_counter = 0
-                for j in extension_list:
-                    tmp_counter += i == j
-                if tmp_counter > counter:
-                    dominant_ext = i
-                    counter = tmp_counter
-                    self.extLineEdit.setText("*"+dominant_ext)
-                    ext = dominant_ext
+
         else:
-            ext = "*."+ files[0].split(".")[-1]
-            self.extLineEdit.setText(ext)
+            pass
 
 
         #TODO: get filetablemodel to accept only the selected files and not all files in the directory.
@@ -265,7 +253,7 @@ class FileTableWidget(QtWidgets.QWidget):
             return
         self.fileTableModel.setAllChecked(True)
 
-        if ext == '*.h5' or ext == '.h5':
+        if ".h5" in ext:
             try:
                 self.imageTag.clear()
                 self.getImgTags()

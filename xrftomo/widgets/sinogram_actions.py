@@ -364,9 +364,9 @@ class SinogramActions(QtWidgets.QWidget):
             shift, error, diffphase = phase_cross_correlation(data[element,i-1], data[element,i],upsample_factor=100)
             x_shifts[i] += round(shift[1],2)
             y_shifts[i] += round(shift[0],2)
+            # data[:,i] = scipy.ndimage.shift(data[:,i],(y_shifts[i],x_shifts[i]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
             for j in range(data.shape[0]):
                 data[j,i] = scipy.ndimage.shift(data[j,i], (y_shifts[i], x_shifts[i]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
-
 
         self.alignmentDone()
         return data, x_shifts, -y_shifts
@@ -443,8 +443,6 @@ class SinogramActions(QtWidgets.QWidget):
             for j in range(data.shape[0]):
                 data[j,i] = scipy.ndimage.shift(data[j,i], (y_shifts[i], 0), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
 
-
-
         self.alignmentDone()
         return data, x_shifts, y_shifts
 
@@ -465,9 +463,8 @@ class SinogramActions(QtWidgets.QWidget):
         row_sums = np.array([np.sum(data[element, i],axis=1) for i in range(num_projections)])
         row_sums_orig = np.copy(row_sums)
         dummy = self.multiplot(row_sums_orig)
+        #TODO: will not work if num rows greater than 10 due to the filtering
         row_sums = scipy.signal.savgol_filter(row_sums, 11, 2, deriv=0, delta=1.0, axis=- 1, mode='interp', cval=0.0)
-
-
 
         #
         ##push edges
@@ -477,8 +474,6 @@ class SinogramActions(QtWidgets.QWidget):
         # for i in range(1, num_projections):
         #     shift, error, diffphase = phase_cross_correlation(row_sums[i - 1], row_sums[i], upsample_factor=100)
         #     y_shifts[i:] -= round(shift[0], 2)
-
-
 
         for i in range(len(y_shifts)):
             row_sums[i] = scipy.ndimage.shift(row_sums[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
@@ -664,7 +659,7 @@ class SinogramActions(QtWidgets.QWidget):
         # for i in range(num_projections):
         #     new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts_2[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
 
-        y_shifts_3 = self.push_edge(new_dy_arr,1,0.90)
+        y_shifts_3 = self.push_edge(new_dy_arr,0,0.80)
 
         y_shifts = y_shifts+y_shifts_3
 
@@ -808,7 +803,6 @@ class SinogramActions(QtWidgets.QWidget):
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
                 data[i,j] = scipy.ndimage.shift(data[i,j], (0, x_shifts[j]), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-
         return data, x_shifts
 
     def phaseCorrelate(self, element, data):

@@ -275,7 +275,6 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileMenu.addAction(closeAction)
 
         self.editMenu = menubar.addMenu(" &Edit")
-        self.editMenu = menubar.addMenu(" &Edit")
         self.editMenu.addAction(undoAction)
         self.editMenu.addAction(preferencesAction)
         # self.editMenu.addAction(matcherAction)
@@ -989,8 +988,12 @@ class xrftomoGui(QtGui.QMainWindow):
         except:
             return 0,0
         self.reprojection = self.reproject(recon)
-        dummy, sf = self.compare_projections(self.compare_metric.currentIndex(), self.proj, self.reprojection)
-        
+        try:
+            dummy, sf = self.compare_projections(self.compare_metric.currentIndex(), self.proj, self.reprojection)
+        except:
+            sf = 1
+            pass
+
         self.reprojection /= sf
         results, dummy = self.compare_projections(self.compare_metric.currentIndex(), self.proj, self.reprojection)
 
@@ -1033,7 +1036,13 @@ class xrftomoGui(QtGui.QMainWindow):
 
             for i in range(projA.shape[0]):
                 err = np.sum((projA[i].astype("float") - projB[i].astype("float")) ** 2)
-                err /= float(projA[i].shape[0] * projA[i].shape[1])
+                try:
+                    err /= float(projA[i].shape[0] * projA[i].shape[1])
+                except:
+                    print("error")
+                    result = -1
+                    sf = -1
+                    return result, sf
                 sim = measure.compare_ssim(projA[i], projB[i])
 
                 errMat[i] = err
@@ -1686,10 +1695,14 @@ class xrftomoGui(QtGui.QMainWindow):
         # self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
         self.imageProcessWidget.ViewControl.invert.setVisible(True)
 
-        self.sinogramWidget.ViewControl.btn1.setVisible(True)
-        self.sinogramWidget.ViewControl.btn3.setVisible(True)
-        self.sinogramWidget.ViewControl.btn5.setVisible(True)
-        self.sinogramWidget.ViewControl.btn6.setVisible(True)
+
+        #
+        # self.btn3.setVisible(False) #phase corr
+        # # self.btn5.setVisible(False)
+        # # self.btn6.setVisible(False)
+        # self.btn9.setVisible(False) #adjust sino
+        # self.rot_axis.setVisible(False) #rot axis
+
         return
 
     def openFolder(self):
@@ -1703,7 +1716,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
     def openH5(self):
         currentDir = self.fileTableWidget.dirLineEdit.text()
-        files = QtGui.QFileDialog.getOpenFileNames(self, "Open h5", QtCore.QDir.currentPath(), "h5 (*.h5)" )
+        files = QtGui.QFileDialog.getOpenFileNames(self, "Open h5", QtCore.QDir.currentPath(), "h5 (*.h5*)" )
         if files[0] == '' or files[0] == []:
             return
 
