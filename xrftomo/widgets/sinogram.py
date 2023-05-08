@@ -1,53 +1,49 @@
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.           #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
+#                       Software Name: XRFtomo                            #
 #                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
+#                   By: Argonne National Laboratory                       #
 #                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
+#                       OPEN SOURCE LICENSE                               #
 #                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
+# Redistribution and use in source and binary forms, with or without      #
+# modification, are permitted provided that the following conditions      #
+# are met:                                                                #
 #                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
+# 1. Redistributions of source code must retain the above copyright       #
+#    notice, this list of conditions and the following disclaimer.        #
 #                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
+# 2. Redistributions in binary form must reproduce the above copyright    #
+#    notice, this list of conditions and the following disclaimer in      #
+#    the documentation and/or other materials provided with the           #
+#    distribution.                                                        #
+#                                                                         #
+# 3. Neither the name of the copyright holder nor the names of its        #
+#    contributors may be used to endorse or promote products derived      #
+#    from this software without specific prior written permission.        #
+#                                                                         #
+#                               DISCLAIMER                                #
+#                                                                         #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR   #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT    #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT        #
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   #
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY   #
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT     #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
+###########################################################################
 
 import xrftomo
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
 import pyqtgraph
 import numpy as np
+import scipy.ndimage
 
 class SinogramWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, int, name='elementCahngedSig')
@@ -74,6 +70,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.x_padding_hist = [0]
         self.y_padding_hist = [0]
         self.sub_pixel_shift = 1
+        self.fnames = None
 
         self.view_options = QtWidgets.QComboBox()
         self.view_options.setFixedWidth(button2size)
@@ -102,7 +99,12 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.ViewControl.btn1.clicked.connect(self.ViewControl.com_options.show)
         self.ViewControl.run_com.clicked.connect(self.centerOfMass_params)
+        self.ViewControl.xcorsino.clicked.connect(self.xcorsino_params)
+        self.ViewControl.opflow.clicked.connect(self.opFlow_params)
+        self.ViewControl.fitPeaks.clicked.connect(self.fitPeaks_params)
         self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
+        self.ViewControl.xcorry.clicked.connect(self.xcorry_params)
+        self.ViewControl.xcorrdy.clicked.connect(self.xcorrdy_params)
         self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
         self.ViewControl.btn6.clicked.connect(self.ViewControl.iter_parameters.show)
         self.ViewControl.run_iter_align.clicked.connect(self.iter_align_params)
@@ -117,6 +119,10 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.center.clicked.connect(self.ViewControl.center_parameters.show)
         self.ViewControl.center.clicked.connect(self.updateCenterFindParameters)
         self.ViewControl.rot_axis.clicked.connect(self.rot_axis_params)
+        self.ViewControl.freq_sld.sliderReleased.connect(self.sinoCurvesldChanged)
+        self.ViewControl.amp_sld.sliderReleased.connect(self.sinoCurvesldChanged)
+        self.ViewControl.phase_sld.sliderReleased.connect(self.sinoCurvesldChanged)
+        self.ViewControl.offst_sld.sliderReleased.connect(self.sinoCurvesldChanged)
         self.sld.valueChanged.connect(self.sinoSliderChanged)
         self.sld2.valueChanged.connect(self.imageSliderChanged)
         self.sld3.valueChanged.connect(self.diffSliderChanged)
@@ -124,6 +130,18 @@ class SinogramWidget(QtWidgets.QWidget):
         self.imageView.mousePressSig.connect(self.hotspot_event)
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.view_options.currentIndexChanged.connect(self.display)
+
+        self.ViewControl.amp.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.freq.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.phase.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.offst.returnPressed.connect(self.updateSinoPlot)
+
+        self.ViewControl.amp.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.freq.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.phase.returnPressed.connect(self.updateSinoPlot)
+        self.ViewControl.offst.returnPressed.connect(self.updateSinoPlot)
+
+        self.ViewControl.set2line.clicked.connect(self.fit_curve)
 
         self.ViewControl.fit_line.clicked.connect(self.fitLine_params)
         self.ViewControl.fit_sine.clicked.connect(self.fitSine_params)
@@ -175,6 +193,8 @@ class SinogramWidget(QtWidgets.QWidget):
         # set the palette
         self.lcd.setPalette(palette)
 
+        self.updateSinoPlot()
+
     def stack1UI(self):
         lbl = QtWidgets.QLabel('Row y')
         hb0 = QtWidgets.QHBoxLayout()
@@ -219,21 +239,21 @@ class SinogramWidget(QtWidgets.QWidget):
     def display(self,i):
         self.Stack.setCurrentIndex(i)
 
-        if i == 1:
+        # if i == 1:
 
-            self.ViewControl.hotspot_mode_chbx.setVisible(True)
-            self.ViewControl.hotspot_lbl.setVisible(True)
-            self.ViewControl.combo3.setVisible(True)
-            self.ViewControl.fit_line.setVisible(True)
-            self.ViewControl.fit_y.setVisible(True)
-            self.ViewControl.clear_data.setVisible(True)
-        else:
-            self.ViewControl.hotspot_mode_chbx.setVisible(False)
-            self.ViewControl.hotspot_lbl.setVisible(False)
-            self.ViewControl.combo3.setVisible(False)
-            self.ViewControl.fit_line.setVisible(False)
-            self.ViewControl.fit_y.setVisible(False)
-            self.ViewControl.clear_data.setVisible(False)
+        #     self.ViewControl.hotspot_mode_chbx.setVisible(True)
+        #     self.ViewControl.hotspot_lbl.setVisible(True)
+        #     self.ViewControl.combo3.setVisible(True)
+        #     self.ViewControl.fit_line.setVisible(True)
+        #     self.ViewControl.fit_y.setVisible(True)
+        #     self.ViewControl.clear_data.setVisible(True)
+        # else:
+        self.ViewControl.hotspot_mode_chbx.setVisible(False)
+        self.ViewControl.hotspot_lbl.setVisible(False)
+        self.ViewControl.combo3.setVisible(False)
+        self.ViewControl.fit_line.setVisible(False)
+        self.ViewControl.fit_y.setVisible(False)
+        self.ViewControl.clear_data.setVisible(False)
         #change slider range and label here depending on i
 
     def keyProcess(self, command):
@@ -298,6 +318,12 @@ class SinogramWidget(QtWidgets.QWidget):
         num_projections  = self.data.shape[1]
         self.sld2.setRange(0, num_projections - 1)
 
+    def showSinoCurve(self):
+        self.ViewControl.freq_sld.setRange(0, 200)
+        self.ViewControl.amp_sld.setRange(0, 200)
+        self.ViewControl.phase_sld.setRange(0, 200)
+        self.ViewControl.offst_sld.setRange(0,200)
+
     def showDiffProcess(self):
         num_projections  = self.data.shape[1]
         self.sld3.setRange(0, num_projections - 1)
@@ -306,9 +332,60 @@ class SinogramWidget(QtWidgets.QWidget):
         index = self.sld2.value()
         self.updateSliderSlot(index)
 
+    def sinoCurvesldChanged(self):
+        #sld current index
+        freq_idx = self.ViewControl.freq_sld.value()
+        amp_idx = self.ViewControl.amp_sld.value()
+        phase_idx = self.ViewControl.phase_sld.value()
+        offst_idx = self.ViewControl.offst_sld.value()
+
+        #array values
+        #TODO: create array of values for each slider, set each QlineEdit to the indexed value.
+        freq_arr = np.linspace(0, 2, 201)
+        amp_arr = np.linspace(0, self.data.shape[3], self.data.shape[3]+1)
+        self.ViewControl.amp_sld.setRange(0, self.data.shape[3]+1)
+
+        phase_arr = np.linspace(-np.pi, np.pi, 201)
+        offst_arr = np.linspace(-self.data.shape[3], self.data.shape[3], 201)
+
+        #TODO: set Qlineedit to value[index]
+        self.ViewControl.freq.setText(str(round(freq_arr[freq_idx],3)))
+        self.ViewControl.amp.setText(str(round(amp_arr[amp_idx],3)))
+        self.ViewControl.phase.setText(str(round(phase_arr[phase_idx],3)))
+        self.ViewControl.offst.setText(str(round(offst_arr[offst_idx],3)))
+        self.updateSinoPlot()
+        return
+
+    def sinoCurveParamsChanged(self):
+        #sld current index
+        freq_idx = self.ViewControl.freq_sld.value()
+        amp_idx = self.ViewControl.amp_sld.value()
+        phase_idx = self.ViewControl.phase_sld.value()
+        offst_idx = self.ViewControl.offst_sld.value()
+
+        # array values
+        # TODO: create array of values for each slider, set each QlineEdit to the indexed value.
+        freq_arr = np.linspace(0, 2, 201)
+        amp_arr = np.linspace(0, self.data.shape[3], self.data.shape[3] + 1)
+        self.ViewControl.amp_sld.setRange(0, self.data.shape[3] + 1)
+
+        phase_arr = np.linspace(-np.pi, np.pi, 201)
+        offst_arr = np.linspace(-self.data.shape[3], self.data.shape[3], 201)
+
+        # TODO: set Qlineedit to value[index]
+        self.ViewControl.freq.setText(str(round(freq_arr[freq_idx], 3)))
+        self.ViewControl.amp.setText(str(round(amp_arr[amp_idx], 3)))
+        self.ViewControl.phase.setText(str(round(phase_arr[phase_idx], 3)))
+        self.ViewControl.offst.setText(str(round(offst_arr[offst_idx], 3)))
+        self.updateSinoPlot()
+        return
+
     def diffSliderChanged(self):
         index = self.sld3.value()
         self.updateDiffSliderSlot(index)
+
+    def update_filenames(self, fnames):
+        self.fnames = fnames
 
     def updateDiffSliderSlot(self, index):
         if len(self.thetas) == 0:
@@ -317,35 +394,81 @@ class SinogramWidget(QtWidgets.QWidget):
         self.lcd3.display(angle)
         self.sld3.setValue(index)
         # self.updateDiffImage(index)
+
+
+    def updateSinoPlot(self, thetas= None):
+
+        try:
+            thetas = self.thetas
+        except:
+            thetas = np.linspace(-np.pi, np.pi, 10)
+            middl = 0
+        else:
+            thetas = self.thetas
+            middl = self.sinogramData.shape[1] // 2
+
+        try:
+            amp = eval(self.ViewControl.amp.text())
+            phase = eval(self.ViewControl.phase.text())
+            freq = eval(self.ViewControl.freq.text())
+            offst = eval(self.ViewControl.offst.text())
+        except:
+            print("eval enter int or float")
+
+
+        self.curve = amp*np.sin((freq*np.array(thetas) * np.pi / 180) - phase ) + middl + offst
+        self.sinoView.p1.clearPlots()
+        self.sinoView.p1.plot(thetas,self.curve, pen=pyqtgraph.mkPen(color='c'))
+
         
-    # def updateDiffImage(self, index):
-    #     element = self.ViewControl.combo1.currentIndex()
-    #     x_index = int(self.data.shape[3] * 0.3)
-    #     y_index = int(self.data.shape[2]* 0.3)
-    #
-    #     # position = [0.0, 0.25, 0.4, 0.6, 0.75, 1.0]
-    #     # colors = [[64, 0, 0, 255], [255, 0, 0, 255], [255, 255, 255, 255], [255, 255, 255, 255], [0, 0, 255, 255], [0, 0, 64, 255]]
-    #     # bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
-    #     # lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
-    #
-    #
-    #     # if index < self.data.shape[1]-1:
-    #     #     img = self.data[element, index] - self.data[element, index+1]
-    #     #     img = img[y_index:-y_index, x_index:-x_index]
-    #     # else:
-    #     #     img = self.data[element, index] - self.data[element, 0]
-    #     #     img = img[x_index:-x_index, y_index:-y_index]
-    #
-    #     if index < self.data.shape[1]-1:
-    #         img = self.data[element, index]/2 + self.data[element, index+1]/2
-    #         img = img[y_index:-y_index, x_index:-x_index]
-    #     else:
-    #         img = self.data[element, index]/2 + self.data[element, 0]/2
-    #         img = img[x_index:-x_index, y_index:-y_index]
-    #
-    #     self.diffView.projView.setImage(img, border='w')
-    #     # self.diffView.projView.setLookupTable(lookup_table)
-    #
+    def fit_curve(self):
+        try:
+            data = self.data.copy()
+            thetas = self.thetas
+            curve = self.curve
+            middl = self.sinogramData.shape[1] // 2
+            shifts = middl - curve
+            x_shifts, y_shifts = self.actions.validate_alignment(data, shifts, self.y_shifts)
+
+            for i in range(data.shape[0]):
+                for j in range(len(x_shifts)):
+                    data[i,j] = scipy.ndimage.shift(data[i,j], (0,x_shifts[j]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
+            self.alignmentChangedSig.emit(self.x_shifts + shifts, self.y_shifts)
+            self.dataChangedSig.emit(data)
+            return
+        except:
+            return
+        pass
+
+
+    def updateDiffImage(self, index):
+        element = self.ViewControl.combo1.currentIndex()
+        x_index = int(self.data.shape[3] * 0.1)
+        y_index = int(self.data.shape[2]* 0.1)
+
+        position = [0.0, 0.25, 0.4, 0.6, 0.75, 1.0]
+        colors = [[64, 0, 0, 255], [255, 0, 0, 255], [255, 255, 255, 255], [255, 255, 255, 255], [0, 0, 255, 255], [0, 0, 64, 255]]
+        bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
+        lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
+
+
+        # if index < self.data.shape[1]-1:
+        #     img = self.data[element, index] - self.data[element, index+1]
+        #     img = img[y_index:-y_index, x_index:-x_index]
+        # else:
+        #     img = self.data[element, index] - self.data[element, 0]
+        #     img = img[x_index:-x_index, y_index:-y_index]
+
+        if index < self.data.shape[1]-1:
+            img = self.data[element, index]/2 + self.data[element, index+1]/2
+            img = img[y_index:-y_index, x_index:-x_index]
+        else:
+            img = self.data[element, index]/2 + self.data[element, 0]/2
+            img = img[x_index:-x_index, y_index:-y_index]
+
+        # self.diffView.projView.setImage(img, border='w')
+        # self.diffView.projView.setLookupTable(lookup_table)
+
 
     def updateSliderSlot(self, index):
         if len(self.thetas) == 0:
@@ -390,6 +513,10 @@ class SinogramWidget(QtWidgets.QWidget):
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
 
+
+
+
+
     def sinoSliderChanged(self):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
@@ -428,6 +555,7 @@ class SinogramWidget(QtWidgets.QWidget):
             if projection == None:
                 projection =  self.sld.value()
             # self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
+            #TODO: line below errors out when loading another dataset, somethin is not getting cleared and reinitialized properly.
             self.imageView.projView.setImage(self.data[element, projection, ::-1, :], border='w')
         except TypeError:
             return
@@ -611,14 +739,65 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def centerOfMass_params(self):
+        #TODO: if roi checked, get partial data and get shifts based on partial data, then adjust full data based on shifts
+        #TODO: alignment methods should just output shifts, and nother function to apply shifts should be separate
         element, row, data, thetas = self.get_params()
         wcom = self.ViewControl.weighted_com_checkbox.isChecked()
         shiftXY = self.ViewControl.shiftXY_checkbox.isChecked()
-        data, x_shifts, y_shifts = self.actions.runCenterOfMass(element, data, thetas, wcom, shiftXY)
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data , x_shifts, y_shifts = self.actions.runCenterOfMass(element, roi_data, thetas, wcom, shiftXY)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+        else:
+            data, x_shifts, y_shifts = self.actions.runCenterOfMass(element, data, thetas, wcom, shiftXY)
+
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
- 
+
+    def get_roi_data(self, data):
+        x_pos = self.imageView.x_pos
+        y_pos = self.imageView.y_pos
+        x_size = self.imageView.xSize
+        y_size = self.imageView.ySize
+        frame_height = data.shape[2]
+        y_end = int(round(frame_height - y_pos))
+        y_start = int(round(frame_height-y_pos-y_size))
+        x_start = int(round(x_pos))
+        x_end = int(round(x_pos) + x_size)
+        img = np.copy(data)
+        img = img[:, :, y_start:y_end, x_start: x_end]
+        return img
+    def opFlow_params(self):
+        element, row, data, thetas = self.get_params()
+        data = self.actions.runOpFlow(element, data)
+        self.dataChangedSig.emit(data)
+        return
+
+    def fitPeaks_params(self):
+        #TODO: if roi checked
+        element, row, data, thetas = self.get_params()
+
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data , x_shifts, y_shifts = self.actions.runFitPeaks(element, roi_data)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+        else:
+            data, x_shifts, y_shifts = self.actions.runFitPeaks(element, data)
+
+        #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
+        #TODO: add a post-alignment function to validate shifts based on image size
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+        pass
+
+
     def shiftEvent_params(self, shift_dir, col_number):
         sinoData = self.sinogramData
         data = self.data
@@ -631,12 +810,76 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def crossCorrelate_params(self):
+        #TODO: if roi checked
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-        data, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
-        self.dataChangedSig.emit(self.data)
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data , x_shifts, y_shifts = self.actions.crossCorrelate2(element, roi_data)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+        else:
+            data, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
+
+        #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
+        #TODO: add a post-alignment function to validate shifts based on image size
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
+        self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
+
+    def xcorrdy_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data, x_shifts, y_shifts = self.actions.xcor_dysum(element, roi_data)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+        else:
+            data, x_shifts, y_shifts = self.actions.xcor_dysum(element, data)
+
+        data, x_shifts, y_shifts = self.actions.xcor_dysum(element, data)
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+        return
+
+    def xcorry_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data , x_shifts, y_shifts = self.actions.xcor_ysum(element, roi_data)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+        else:
+            data, x_shifts, y_shifts = self.actions.xcor_ysum(element, data)
+
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+        return
+
+    def xcorsino_params(self):
+        layer = self.sld.value()-1
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            roi_data , x_shifts = self.actions.xcor_sino(element, layer, roi_data)
+            data = self.actions.shift_all(data,x_shifts)
+        else:
+            data, x_shifts = self.actions.xcor_sino(element, layer, data)
+
+        x_shifts = self.actions.validate_alignment(data, x_shifts)
+        self.dataChangedSig.emit(self.data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
+        pass
 
     def phaseCorrelate_params(self):
         data = self.data
@@ -647,6 +890,8 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def move2edge_params(self):
+        #TODO: if roi checked
+
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
 
@@ -661,7 +906,14 @@ class SinogramWidget(QtWidgets.QWidget):
 
         threshold = int(self.ViewControl.threshold_textbox.text())
 
-        y_shifts, data = self.actions.align2edge(element, data, loc, threshold) 
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            y_shifts, roi_data = self.actions.align2edge(element, roi_data, loc, threshold)
+            data = self.actions.shift_all(data,np.zeros_like(y_shifts),y_shifts)
+
+        else:
+            y_shifts, data = self.actions.align2edge(element, data, loc, threshold)
+
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts+y_shifts)
         return
@@ -679,6 +931,7 @@ class SinogramWidget(QtWidgets.QWidget):
         slope = int(self.ViewControl.slope_adjust_textbox.text())
             
         x_shifts, data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, shift, slope)
+        x_shifts, dummy = self.actions.validate_alignment(data,x_shifts,self.y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts+x_shifts, self.y_shifts)
         return
@@ -690,6 +943,7 @@ class SinogramWidget(QtWidgets.QWidget):
     def iter_align_params(self):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
+        #TODO: Thetas must be in radians
         thetas = self.thetas
         valid = self.ViewControl.validate_parameters()
         if not valid:
@@ -739,8 +993,10 @@ class SinogramWidget(QtWidgets.QWidget):
         if fileName[0] == "":
             return
         data = self.data.copy()
+        data_fnames = self.fnames
+        x_padding = self.x_padding_hist[-1]
         try:
-            data, x_shifts, y_shifts = self.actions.alignFromText2(fileName, data)
+            data, x_shifts, y_shifts = self.actions.alignFromText2(fileName, data, data_fnames, x_padding)
             self.restoreSig.emit()
                 
         except TypeError:

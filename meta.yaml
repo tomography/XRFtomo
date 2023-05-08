@@ -1,6 +1,6 @@
 
 {% set name = "XRFtomo" %}
-{% set version = "1.0.1" %}
+{% set version = "1.0.9" %}
 {% set repo = "fabricioSMarin" %}
 #tomography
 #fabricioSMarin
@@ -10,49 +10,32 @@ package:
   version: {{ version }}
 
 source:
-  # path: /home/MARINF/Downloads/XRFtomo-1.0.0.tar.gz
-  url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
-  # sha256: b1c7a9655e76a86ab555fb1360adcd61ae14bcd8e5397bb38c76d8750b2c84f2
+  path: ../XRFtomo
   # url: https://github.com/{{ repo }}/{{ name }}/archive/v{{ version }}.tar.gz
-  # sha256: 986c4ea85c7fe8bcef274b7085209b74e8a93acd444ad1f9b947fb3f1352cbbb
-# extra:
-#   channels:
-#     - conda-forge
 
 build:
-  noarch: python
   number: 0
-  script: "{{ PYTHON }} -m pip install ."
-  # script: "{{ python }} setup.py install"
-  # entry_points: 
-  #   - xrftomo = xrftomo.xrftomo:main
-  # ignore_prefix_files:
-  #   - xrftomo
+  entry_points:
+    - xrftomo = xrftomo.__main__:main
 
 requirements:
   host:
-    - python =3.6
+    - python=3.7
     - pip
   run:
-    - python =3.6
-    - dxfile
-    - h5py
-    - matplotlib
-    - numpy
-    - pandas
-    - pyqt >=5
-    - pyqtgraph
-    - scipy
-    - seaborn
+    - python=3.7
+    - dxchange=0.1.8
+    - matplotlib=3.5.1
+    - pyqtgraph=0.11
+    - seaborn=0.11.2
     - setuptools
-    - scikit-image
-    - tomopy
-    - dxchange
-    - pywin32
+    - pyqt =5.9.2
+    - pywin32 # [win]
+    - tomopy=1.11.0
+    - scikit-image=0.19.2
+    - numpy=1.21.5
 
 test:
-  source_files:
-    - ../Menu/menu_installer.py
   imports:
     - xrftomo
 
@@ -72,5 +55,3 @@ about:
 extra:
   recipe-maintainers:
     - FabricioSMarin
-
-

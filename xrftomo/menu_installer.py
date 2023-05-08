@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from __future__ import division, print_function
 import sys, os, os.path, stat, shutil, subprocess, plistlib
 from os.path import expanduser
@@ -61,7 +59,8 @@ def install_menu():
 
 		# where the app will be created
 		appPath = os.path.abspath(os.path.join(scriptdir,project+".app"))
-		env = "source activate py36; "
+		py_env = os.environ['CONDA_DEFAULT_ENV']
+		env = "source activate {}; ".format(py_env)
 
 		AppleScript = '''(*   xrftomo AppleScript by Fabricio S.Marin (marinf@anl.gov)
 		It can launch xrftomo by double clicking 
@@ -113,7 +112,10 @@ def install_menu():
 		newpython = os.path.join(appPath,"Contents","MacOS",project)
 		if pythonExe.split("/")[-1] == "python3.6":
 			pythonExe = "/".join(pythonExe.split("/")[:-1])+"/python"
-
+		if pythonExe.split("/")[-1] == "python3.7":
+			pythonExe = "/".join(pythonExe.split("/")[:-1])+"/python"
+		if pythonExe.split("/")[-1] == "python3.9":
+			pythonExe = "/".join(pythonExe.split("/")[:-1])+"/python"
 		# create a link to the python inside the app, if named to match the project
 		if pythonExe != newpython:
 			os.symlink(pythonExe,newpython)
@@ -162,26 +164,64 @@ def install_menu():
 			import _winreg as winreg
 		except ImportError:
 			import winreg
+		import xrftomo 
+		import platform
+		py_version = ("").join(platform.python_version().split(".")[:2])
+		package_version = xrftomo.__version__
+		xrftomo_path = xrftomo.__file__
+		home_dir = os.path.expanduser('~')
+		go_home = os.system("cd {}".format(home_dir))
+
+		if "egg" in xrftomo_path:
+			pkg_name = xrftomo_path.split(".egg")[0].split("\\")[-1].replace(".","_")
+			src_dir = xrftomo_path.split("envs")[0]+"pkgs\\"+pkg_name+"\\info\\recipe"
+			menu_dir = os.path.join(src_dir,"Menu")
+			entry_point = os.popen("where xrftomo")
+			entry_point = entry_point.read().split("\n")[0]
+
+		else:
+			src_files = xrftomo_path.split("envs")[0]+"pkgs\\"
+			src_files = os.listdir(src_files)
+			src_files = list(filter(lambda k: 'xrftomo' in k, src_files))
+			src_files = list(filter(lambda k: 'tar' not in k, src_files))
+			src_files = list(filter(lambda k: py_version in k, src_files))
+			src_files = list(filter(lambda k: package_version in k, src_files))
+
+			if len(src_files)>1:
+				print("number of possible source directories are greater than 1. Selecting the first one, hope for the best.")
+ 
+			pkg_name = src_files[0]
+			src_dir = xrftomo_path.split("envs")[0]+"pkgs\\"+pkg_name+"\\info\\recipe"
+			menu_dir = os.path.join(src_dir,"Menu")
+			entry_point = os.popen("where xrftomo")
+			entry_point = entry_point.read().split("\n")[0]
+			print(entry_point)
+
 		app = None # delay starting wx until we need it. Likely not needed.
-		scriptpath = os.path.split(sys.argv[0])[0]
-		if not scriptpath: scriptpath = "/".join(os.path.abspath("xrftomo.__file__").split("/")[:-1])+"/"
-                      #if no path specified: "", scriptpath="."
-		scriptpath = os.path.abspath(os.path.expanduser(scriptpath))        #scriptpath = =current path
-		XRFscript = os.path.join(scriptpath,'__main__.py')                   #assuming path is where script is
-		XRFbat = os.path.join(scriptpath,'RunXRFtomo.bat')                   #place bat alongside xrftomo ?
-		XRFicon = os.path.join(scriptpath,'xrftomo.ico')                     #place xrftomo.ico alongisde xrftomo.py ?
+		#scriptpath = os.path.split(sys.argv[0])[0]
+		# current_path = os.path.abspath(os.path.expanduser("menu_installer.py"))
+		# print("this is the path", current_path)
+		print("this is the path", src_dir)
+		# scriptpath = "\\".join(current_path.split("\\")[:-1])+"\\"
+		scriptpath = os.path.join(src_dir,"xrftomo")
+		print("this is the script path", scriptpath)
+
+		#if no path specified: "", scriptpath="."
+		# scriptpath = os.path.abspath(os.path.expanduser(scriptpath))        #scriptpath = =current path
+		XRFscript = os.path.join(scriptpath,"__main__.py")                #assuming path is where script is
+		XRFbat = os.path.join(scriptpath,"RunXRFtomo.bat")
+		XRFicon = os.path.join(menu_dir,'xrftomo.ico')                     #place xrftomo.ico alongisde xrftomo.py ?
 		pythonexe = os.path.realpath(sys.executable)                        #python path, automatically detects python path
-		# if pythonExe.split("/")[-1] == "python3.6":
-		# 	pythonExe = "/".join(pythonExe.split("/")[:-1])+"/python"
 		print('Python installed at',pythonexe)
-		print('xrftomo installed at',scriptpath)
+		# print('xrftomo installed at',scriptpath)
+		print('xrftomo installed at',entry_point)
 		# Bob reports a problem using pythonw.exe w/Canopy on Windows, so change that if used
 		if pythonexe.lower().endswith('pythonw.exe'):
 			print("  using python.exe rather than "+pythonexe)
 			pythonexe = os.path.join(os.path.split(pythonexe)[0],'python.exe')
 			print("  now pythonexe="+pythonexe)
 
-		# create a GSAS-II script
+		# create a xrftomo script
 		fp = open(os.path.join(XRFbat),'w')
 		fp.write("@REM created by run of bootstrap.py on {:%d %b %Y %H:%M}\n".format(datetime.datetime.now()))
 		activate = os.path.join(os.path.split(pythonexe)[0],'Scripts','activate')
@@ -201,8 +241,8 @@ def install_menu():
 					AnacondaPathIndx = os.path.split(pythonexe)[0].split("\\").index("anaconda3")
 				except ValueError:
 					print("could not find Anaconda activate script")
-
-			activate = "\\".join(os.path.split(pythonexe)[0].split("\\")[:AnacondaPathIndx+1])+"\\Scripts\\activate py36"
+			py_env = os.environ['CONDA_DEFAULT_ENV']
+			activate = "\\".join(os.path.split(pythonexe)[0].split("\\")[:AnacondaPathIndx+1])+"\\Scripts\\activate {}".format(py_env)
 			print("set activate path to {}".format(activate))
 		pexe = pythonexe
 		if ' ' in pythonexe:

@@ -1,47 +1,43 @@
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.           #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
+#                       Software Name: XRFtomo                            #
 #                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
+#                   By: Argonne National Laboratory                       #
 #                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
+#                       OPEN SOURCE LICENSE                               #
 #                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
+# Redistribution and use in source and binary forms, with or without      #
+# modification, are permitted provided that the following conditions      #
+# are met:                                                                #
 #                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
+# 1. Redistributions of source code must retain the above copyright       #
+#    notice, this list of conditions and the following disclaimer.        #
 #                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
+# 2. Redistributions in binary form must reproduce the above copyright    #
+#    notice, this list of conditions and the following disclaimer in      #
+#    the documentation and/or other materials provided with the           #
+#    distribution.                                                        #
+#                                                                         #
+# 3. Neither the name of the copyright holder nor the names of its        #
+#    contributors may be used to endorse or promote products derived      #
+#    from this software without specific prior written permission.        #
+#                                                                         #
+#                               DISCLAIMER                                #
+#                                                                         #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR   #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT    #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT        #
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   #
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY   #
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT     #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
+###########################################################################
+
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 # from matplotlib.figure import Figure
@@ -57,6 +53,9 @@ import matplotlib
 from os.path import expanduser
 from skimage import measure
 from matplotlib.pyplot import *
+from scipy import ndimage as ndi
+from skimage.morphology import remove_small_objects
+from skimage import io
 
 
 
@@ -89,6 +88,9 @@ class xrftomoGui(QtGui.QMainWindow):
         openTiffAction = QtGui.QAction('open tiff files', self)
         openTiffAction.triggered.connect(self.openTiffs)
 
+        openStackAction = QtGui.QAction('open tiff stack', self)
+        openStackAction.triggered.connect(self.openStack)
+
         openThetaAction = QtGui.QAction('open thetas file', self)
         openThetaAction.triggered.connect(self.openThetas)
 
@@ -113,6 +115,9 @@ class xrftomoGui(QtGui.QMainWindow):
         saveRecon2npyAction = QtGui.QAction("recon as npy", self)
         saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
 
+        # saveReconArray2npyAction = QtGui.QAction("reconArr as npy", self)
+        # saveReconArray2npyAction.triggered.connect(self.saveReconArray2npy)
+
         saveToHDFAction = QtGui.QAction('as HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
 
@@ -127,6 +132,8 @@ class xrftomoGui(QtGui.QMainWindow):
 
         saveCorrAnalysisAction = QtGui.QAction("Corelation Analysis", self)
         saveCorrAnalysisAction.triggered.connect(self.saveCorrAlsys)
+
+
 
         runTransRecAction = QtGui.QAction("Transmission Recon", self)
         #runTransRecAction.triggered.connect(self.runTransReconstruct)
@@ -154,8 +161,7 @@ class xrftomoGui(QtGui.QMainWindow):
         configAction.triggered.connect(self.configSettings)
 
 
-        self.forceLegacy = QtGui.QAction("force legacy mode", self)
-        self.forceLegacy.setCheckable(True)
+
 
 
         # matcherAction = QtGui.QAction("match template", self)
@@ -183,6 +189,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget = xrftomo.SinogramWidget()
         self.reconstructionWidget = xrftomo.ReconstructionWidget()
         self.scatterWidget = xrftomo.ScatterView()
+        self.scatterWidgetRecon = xrftomo.ScatterView()
         self.miniReconWidget = xrftomo.MiniReconView()
 
         self.writer = xrftomo.SaveOptions()
@@ -212,6 +219,7 @@ class xrftomoGui(QtGui.QMainWindow):
         #data dimensions changed
         self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
         self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
+        self.imageProcessWidget.xSizeChangedSig.connect(self.reconstructionWidget.xSizeChanged)
         self.imageProcessWidget.padSig.connect(self.update_padding)
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
@@ -220,9 +228,12 @@ class xrftomoGui(QtGui.QMainWindow):
 
         #fnames changed 
         self.imageProcessWidget.fnamesChanged.connect(self.update_filenames)
+        self.imageProcessWidget.fnamesChanged.connect(self.sinogramWidget.update_filenames)
+
 
         #update_reconstructed_data
         self.reconstructionWidget.reconChangedSig.connect(self.update_recon)
+        self.reconstructionWidget.reconArrChangedSig.connect(self.update_recon_dict)
 
         self.prevTab = 0
         self.TAB_FILE = 0
@@ -250,11 +261,12 @@ class xrftomoGui(QtGui.QMainWindow):
 
         ## Top menu bar [file   Convert Option    Alignment   After saving in memory]
         menubar = self.menuBar()
-        menubar.setNativeMenuBar(True)
-        self.fileMenu = menubar.addMenu('&File')
+        menubar.setNativeMenuBar(False)
+        self.fileMenu = menubar.addMenu(' &File')
         self.fileMenu.addAction(openH5Action)
         self.fileMenu.addAction(openExchangeAction)
         self.fileMenu.addAction(openTiffAction)
+        self.fileMenu.addAction(openStackAction)
         self.fileMenu.addAction(openThetaAction)
         ##self.fileMenu.addAction(openFileAction)
         #self.fileMenu.addAction(openFolderAction)
@@ -262,7 +274,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileMenu.addAction(exitAction)
         self.fileMenu.addAction(closeAction)
 
-        self.editMenu = menubar.addMenu("Edit")
+        self.editMenu = menubar.addMenu(" &Edit")
         self.editMenu.addAction(undoAction)
         self.editMenu.addAction(preferencesAction)
         # self.editMenu.addAction(matcherAction)
@@ -281,15 +293,25 @@ class xrftomoGui(QtGui.QMainWindow):
         analysis.addAction(scatterPlotAction)
         scatterPlotAction.triggered.connect(self.scatterPlot)
 
+        scatterPlotReconAction = QtGui.QAction('Scatter Plot Recon', self)
+        analysis.addAction(scatterPlotReconAction)
+        scatterPlotReconAction.triggered.connect(self.scatterPlotRecon)
+
         projWinAction = QtGui.QAction('reprojection', self)
         analysis.addAction(projWinAction)
         projWinAction.triggered.connect(self.projWindow)
 
+        pixelDistanceAction = QtGui.QAction('spatial analysis', self)
+        analysis.addAction(pixelDistanceAction)
+        pixelDistanceAction.triggered.connect(self.pixDistanceWindow)
 
+        layerDensityAction = QtGui.QAction('onion analysis', self)
+        analysis.addAction(layerDensityAction)
+        layerDensityAction.triggered.connect(self.onionWindow)
 
-
-        subPixShift = QtGui.QMenu("Sub pixel shift", self)
-        ag = QtGui.QActionGroup(subPixShift, exclusive=True)
+        subPixShift = QtGui.QMenu("shift step size", self)
+        ag = QtGui.QActionGroup(subPixShift)
+        ag.setExclusive(True)
         self.subPix_1 = ag.addAction(QtGui.QAction('1', subPixShift, checkable=True))
         subPixShift.addAction(self.subPix_1)
         self.subPix_1.setChecked(True)
@@ -313,23 +335,23 @@ class xrftomoGui(QtGui.QMainWindow):
         # viewStatAct.setChecked(True)
         # viewStatAct.triggered.connect(self.toggle_sps)
 
-        self.toolsMenu = menubar.addMenu("Tools")
+        self.toolsMenu = menubar.addMenu(" &Tools")
         self.toolsMenu.addMenu(analysis)
         self.toolsMenu.addMenu(subPixShift)
         self.toolsMenu.setDisabled(True)
 
-        self.settingsMenu = menubar.addMenu("Settings")
-        self.settingsMenu.addAction(self.forceLegacy)
+        self.settingsMenu = menubar.addMenu(" &Settings")
 
-        self.viewMenu = menubar.addMenu("View")
+        self.viewMenu = menubar.addMenu(" &View")
         self.viewMenu.addAction(setAspectratio)
         self.viewMenu.setDisabled(True)
 
-        self.afterConversionMenu = menubar.addMenu('Save')
+        self.afterConversionMenu = menubar.addMenu(' &Save')
         self.afterConversionMenu.addAction(saveProjectionAction)
         # self.afterConversionMenu.addAction(saveHotSpotPosAction)
         self.afterConversionMenu.addAction(saveReconstructionAction)
         self.afterConversionMenu.addAction(saveRecon2npyAction)
+        # self.afterConversionMenu.addAction(saveReconArray2npyAction)
         self.afterConversionMenu.addAction(saveAlignemtInfoAction)
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(saveSinogram2Action)
@@ -338,12 +360,12 @@ class xrftomoGui(QtGui.QMainWindow):
         self.afterConversionMenu.addAction(saveToNumpyAction)
         self.afterConversionMenu.addAction(saveCorrAnalysisAction)
 
-        self.helpMenu = menubar.addMenu('&Help')
+        self.helpMenu = menubar.addMenu(' &Help')
         self.helpMenu.addAction(keyMapAction)
         self.helpMenu.addAction(configAction)
 
         self.afterConversionMenu.setDisabled(True)
-        version = "1.0.5"
+        version = "1.0.9"
         add = 0
         if sys.platform == "win32":
             add = 50
@@ -355,52 +377,89 @@ class xrftomoGui(QtGui.QMainWindow):
         self.config_options = QtWidgets.QWidget()
         self.config_options.resize(300,400)
         self.config_options.setWindowTitle('config options')
-        self.legacy_chbx = QtWidgets.QCheckBox("Load as legacy data")
+
+        file_lbl = QtWidgets.QLabel("Files")
         self.directory_chbx = QtWidgets.QCheckBox("Load last directory")
-        self.element_chbx = QtWidgets.QCheckBox("Load last elements")
+        self.suffix_chbx = QtWidgets.QCheckBox("Load last suffix")
+        self.thetaPV_chbx = QtWidgets.QCheckBox("Load last theta PV")
         self.image_tag_chbx = QtWidgets.QCheckBox("Load last image_tag")
         self.data_tag_chbx= QtWidgets.QCheckBox("Load last data_tag")
-        self.alingmen_chbx = QtWidgets.QCheckBox("Load alignment information")
-        self.iter_align_param_chbx = QtWidgets.QCheckBox("Load last iter-align parameters")
+        self.elem_tag_chbx = QtWidgets.QCheckBox("Load last element tag")
+        self.quant_chbx = QtWidgets.QCheckBox("Load last quant setting")
+        self.normalize_chbx = QtWidgets.QCheckBox("Load last normalization")
+        self.elememts_chbx = QtWidgets.QCheckBox("Load last element selection")
+        self.files_chbx = QtWidgets.QCheckBox("Load last files selection")
+
+        processing_lbl = QtWidgets.QLabel("pre-processing")
+        self.crop_chbx = QtWidgets.QCheckBox("crop after aligning")
+        self.padding_chbx = QtWidgets.QCheckBox("pad at startup")
+
+        alignment_lbl = QtWidgets.QLabel("alignment")
+        self.alingmen_chbx = QtWidgets.QCheckBox("Align at startup")
+
+        recon_lbl = QtWidgets.QLabel("reconstruction")
+        self.recon_chbx = QtWidgets.QCheckBox("reconstruct at startup")
+        self.recon_all_chbx = QtWidgets.QCheckBox("reconstruct all?")
+        self.recon_save_chbx = QtWidgets.QCheckBox("reconstruct and save?")
+        self.recon_save_chbx = QtWidgets.QCheckBox("save simultaneously?")
+        self.iter_align_param_chbx = QtWidgets.QCheckBox("load last iteration preferences")
         self.recon_method_chbx = QtWidgets.QCheckBox("Load last-used reconstruction method")
-
-        self.checkbox_states = eval(self.params.load_settings)
-        self.legacy_chbx.setChecked(self.checkbox_states[0])
-        self.directory_chbx.setChecked(self.checkbox_states[1])
-        self.element_chbx.setChecked(self.checkbox_states[2])
-        self.image_tag_chbx.setChecked(self.checkbox_states[3])
-        self.data_tag_chbx.setChecked(self.checkbox_states[4])
-
-        self.alingmen_chbx.setChecked(self.checkbox_states[5])
-        self.iter_align_param_chbx.setChecked(self.checkbox_states[6])
-        self.recon_method_chbx.setChecked(self.checkbox_states[7])
 
         self.toggleDebugMode()
 
-        self.legacy_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.legacy_chbx.stateChanged.connect(self.refresh_filetable)
-        self.directory_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.element_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.image_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.data_tag_chbx.stateChanged.connect(self.loadSettingsChanged)
+        file_box = QtWidgets.QVBoxLayout()
+        file_box.addWidget(file_lbl)
+        file_box.addWidget(self.directory_chbx)
+        file_box.addWidget(self.suffix_chbx)
+        file_box.addWidget(self.thetaPV_chbx)
+        file_box.addWidget(self.image_tag_chbx)
+        file_box.addWidget(self.data_tag_chbx)
+        file_box.addWidget(self.elem_tag_chbx)
+        file_box.addWidget(self.quant_chbx)
+        file_box.addWidget(self.normalize_chbx)
+        file_box.addWidget(self.elememts_chbx)
+        file_box.addWidget(self.files_chbx)
 
-        self.alingmen_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.iter_align_param_chbx.stateChanged.connect(self.loadSettingsChanged)
-        self.recon_method_chbx.stateChanged.connect(self.loadSettingsChanged)
+        processing_box = QtWidgets.QVBoxLayout()
+        processing_box.addWidget(processing_lbl)
+        processing_box.addWidget(self.crop_chbx)
+        processing_box.addWidget(self.padding_chbx)
+
+        alignment_box = QtWidgets.QVBoxLayout()
+        alignment_box.addWidget(alignment_lbl)
+        alignment_box.addWidget(self.alingmen_chbx)
+
+        recon_box = QtWidgets.QVBoxLayout()
+        recon_box.addWidget(recon_lbl)
+        recon_box.addWidget(self.recon_chbx)
+        recon_box.addWidget(self.recon_all_chbx)
+        recon_box.addWidget(self.recon_save_chbx)
+        recon_box.addWidget(self.recon_save_chbx)
+        recon_box.addWidget(self.iter_align_param_chbx)
+        recon_box.addWidget(self.recon_method_chbx)
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.legacy_chbx)
-        vbox.addWidget(self.directory_chbx)
-        vbox.addWidget(self.element_chbx)
-        vbox.addWidget(self.image_tag_chbx)
-        vbox.addWidget(self.data_tag_chbx)
-        vbox.addWidget(self.alingmen_chbx)
-        vbox.addWidget(self.iter_align_param_chbx)
-        vbox.addWidget(self.recon_method_chbx)
+        vbox.addLayout(file_box)
+        vbox.addLayout(processing_box)
+        vbox.addLayout(alignment_box)
+        vbox.addLayout(recon_box)
 
         self.config_options.setLayout(vbox)
 
-
+        self.checkbox_states = eval(self.params.load_settings)
+        counter = 0
+        for child in self.config_options.children():
+            if isinstance(child, QtWidgets.QCheckBox):
+                try:
+                    child.setChecked(self.checkbox_states[counter])
+                except:
+                    print("number of checkbox states changed, appending new settings... ")
+                    child.setChecked(False)
+                    self.checkbox_states.append(False)
+                child.stateChanged.connect(self.loadSettingsChanged)
+                counter += 1
+            else:
+                pass
 
         #_______________________Help/keymap_options______________________
         self.keymap_options = QtWidgets.QWidget()
@@ -424,7 +483,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.keymap_options.setLayout(vbox)
 
 
-        #_______________________ scatter plot window ______________________
+        #_______________________ scatter plot window ______________________ win 1
         self.scatter_window = QtWidgets.QWidget()
         self.scatter_window.resize(1000,500)
         self.scatter_window.setWindowTitle('scatter')
@@ -443,8 +502,6 @@ class xrftomoGui(QtGui.QMainWindow):
         slope_lbl = QtWidgets.QLabel("Slope: ")
         self.slope_value = QtWidgets.QLineEdit("")
 
-
-
         self.apply_globally = QtWidgets.QPushButton("set red region to zero")
 
         ##_____ left blok: scatter view _____
@@ -457,11 +514,6 @@ class xrftomoGui(QtGui.QMainWindow):
         hboxA2.addWidget(projection_lbl)
         hboxA2.addWidget(self.projection_lcd)
         hboxA2.addWidget(self.projection_sld)
-
-        # hboxA3 = QtWidgets.QHBoxLayout()
-        # hboxA3.addWidget(width_lbl)
-        # hboxA3.addWidget(self.width_lcd)
-        # hboxA3.addWidget(self.width_sld)
 
         hboxA4 = QtWidgets.QHBoxLayout()
         hboxA4.addWidget(slope_lbl)
@@ -521,12 +573,78 @@ class xrftomoGui(QtGui.QMainWindow):
         self.first_run = True
 
 
+        #_______________________ scatter plot window Recon ______________________ win 2
+        self.scatter_window_recon = QtWidgets.QWidget()
+        self.scatter_window_recon.resize(1000,500)
+        self.scatter_window_recon.setWindowTitle('scatter')
+
+        self.elem1_options_recon = QtWidgets.QComboBox()
+        self.elem1_options_recon.setFixedWidth(100)
+        self.elem2_options_recon = QtWidgets.QComboBox()
+        self.elem2_options_recon.setFixedWidth(100)
+
+        self.recon_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.recon_lcd = QtWidgets.QLCDNumber(self)
+        recon_lbl = QtWidgets.QLabel("Projection index")
+        # self.width_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        # self.width_lcd = QtWidgets.QLCDNumber(self)
+        width_lbl_recon = QtWidgets.QLabel("curve width")
+        slope_lbl_recon = QtWidgets.QLabel("Slope: ")
+        self.slope_value_recon = QtWidgets.QLineEdit("")
+
+
+
+        self.apply_globally_recon = QtWidgets.QPushButton("set red region to zero")
+
+        ##_____ left blok: scatter view _____
+        hboxA1_recon = QtWidgets.QHBoxLayout()
+        hboxA1_recon.addWidget(self.elem1_options_recon)
+        hboxA1_recon.addWidget(self.elem2_options_recon)
+        hboxA1_recon.addWidget(self.apply_globally_recon)
+
+        hboxA2_recon = QtWidgets.QHBoxLayout()
+        hboxA2_recon.addWidget(recon_lbl)
+        hboxA2_recon.addWidget(self.recon_lcd)
+        hboxA2_recon.addWidget(self.recon_sld)
+
+        # hboxA3 = QtWidgets.QHBoxLayout()
+        # hboxA3.addWidget(width_lbl)
+        # hboxA3.addWidget(self.width_lcd)
+        # hboxA3.addWidget(self.width_sld)
+
+        hboxA4_recon = QtWidgets.QHBoxLayout()
+        hboxA4_recon.addWidget(slope_lbl_recon)
+        hboxA4_recon.addWidget(self.slope_value_recon)
+
+        vboxA1_recon = QtWidgets.QVBoxLayout()
+        vboxA1_recon.addWidget(self.scatterWidgetRecon)
+        vboxA1_recon.addLayout(hboxA1_recon)
+        vboxA1_recon.addLayout(hboxA2_recon)
+        # vboxA1.addLayout(hboxA3)
+        vboxA1_recon.addLayout(hboxA4_recon)
+
+
+
+        hboxC1_recon = QtWidgets.QHBoxLayout()
+        hboxC1_recon.addLayout(vboxA1_recon)
+
+        self.scatter_window_recon.setLayout(hboxC1_recon)
+
+        self.elem1_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
+        self.elem2_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
+        self.recon_sld.valueChanged.connect(self.updateScatterRecon)
+        # self.width_sld.valueChanged.connect(self.updateWidth)
+        # self.width_sld.valueChanged.connect(self.updateInnerScatter)
+        self.scatterWidgetRecon.mousePressSig.connect(self.updateInnerScatterRecon)
+        self.scatterWidgetRecon.roiDraggedSig.connect(self.updateInnerScatterRecon)
+        self.apply_globally_recon.clicked.connect(self.sendRecon)
+        self.slope_value_recon.returnPressed.connect(self.slopeEnteredRecon)
+        self.first_run_recon = True
 
 
 
 
-
-        #_______________________ projecion compare window ______________________
+        #_______________________ projecion compare window ______________________ win 3
         self.projection_window = QtWidgets.QWidget()
         self.projection_window.resize(1000,500)
         self.projection_window.setWindowTitle('reprojection tools')
@@ -591,6 +709,273 @@ class xrftomoGui(QtGui.QMainWindow):
         self.elem_options.currentIndexChanged.connect(self.updateMiniProj)
         self.first_run_a = True
 
+
+  #_______________________ pixel distance window ______________________ win4
+        self.pixel_distance_window = QtWidgets.QWidget()
+        self.pixel_distance_window.resize(1000,500)
+        self.pixel_distance_window.setWindowTitle('spatial analysis')
+
+        self.miniReconWidget_w4 = xrftomo.MiniReconView()
+        self.miniHisto_w4 = xrftomo.MiniReconView()
+
+        self.recon_sld_w4 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+
+        recons_list_lbl = QtWidgets.QLabel("recons list")
+        self.recons_list_w4 = QtWidgets.QComboBox()
+        self.recons_list_w4.setFixedWidth(100)
+
+        numbins_lbl_w4 = QtWidgets.QLabel("number of bins")
+        self.numbins_box_w4 = QtWidgets.QLineEdit("100")
+
+        stack_range1_lbl_w4 = QtWidgets.QLabel("lower slice index")
+        stack_range2_lbl_w4 = QtWidgets.QLabel("upper slice index")
+        self.stack_range1_w4 = QtWidgets.QLineEdit("0")
+        self.stack_range2_w4 = QtWidgets.QLineEdit("1")
+
+
+        ##_____ left blok: recon view _____
+        hboxA_w4 = QtWidgets.QHBoxLayout()
+        hboxA_w4.addWidget(recons_list_lbl)
+        hboxA_w4.addWidget(self.recons_list_w4)
+
+        hboxB_w4 = QtWidgets.QHBoxLayout()
+        hboxB_w4.addWidget(numbins_lbl_w4)
+        hboxB_w4.addWidget(self.numbins_box_w4)
+
+        hboxC_w4 = QtWidgets.QHBoxLayout()
+        hboxC_w4.addWidget(stack_range1_lbl_w4)
+        hboxC_w4.addWidget(self.stack_range1_w4)
+
+        hboxD_w4 = QtWidgets.QHBoxLayout()
+        hboxD_w4.addWidget(stack_range2_lbl_w4)
+        hboxD_w4.addWidget(self.stack_range2_w4) 
+
+        hboxA1 = QtWidgets.QHBoxLayout()
+        hboxA1.addWidget(recons_list_lbl)
+        hboxA1.addWidget(self.recons_list_w4)
+
+
+        vboxA1 = QtWidgets.QVBoxLayout()
+        vboxA1.addWidget(self.miniReconWidget_w4)
+        vboxA1.addLayout(hboxA1)
+        vboxA1.addWidget(spacer)
+        
+
+        ##_____ right block: pixel distance analysis _____
+        vboxB1 = QtWidgets.QVBoxLayout()
+        vboxB1.addWidget(self.miniHisto_w4)
+
+        hboxC1 = QtWidgets.QHBoxLayout()
+        hboxC1.addLayout(hboxA_w4)
+        hboxC1.addLayout(vboxB1)
+
+        self.pixel_distance_window.setLayout(hboxC1)
+
+        self.recons_list_w4.currentIndexChanged.connect(self.updateDistanceHisto)
+        # self.recon_sld_w4.valueChanged.connect(self.updateDistanceHisto)
+        self.first_run_w4 = True
+
+  #_______________________ onion window ______________________ win5
+
+        self.onion_window = QtWidgets.QWidget()
+        self.onion_window.resize(1000,500)
+        self.onion_window.setWindowTitle('onion analysis')
+
+        self.miniReconWidget_w5 = xrftomo.MiniReconView()
+        self.miniHisto_w5 = xrftomo.MiniReconView()
+
+        elem1_list_lbl = QtWidgets.QLabel("recons list")
+        self.elem1_list_w5 = QtWidgets.QComboBox()
+        self.elem1_list_w5.setFixedWidth(100)
+
+        elem2_list_lbl = QtWidgets.QLabel("recons list")
+        self.elem2_list_w5 = QtWidgets.QComboBox()
+        self.elem2_list_w5.setFixedWidth(100)
+
+        self.recon_sld_w5 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.recon_lcd_w5 = QtWidgets.QLCDNumber(self)
+        recon_lbl_w5 = QtWidgets.QLabel("recon index")
+
+        layer_depth_lbl_w5 = QtWidgets.QLabel("layer depth (micron)")
+        elem1_thresh_lbl_w5 = QtWidgets.QLabel("element1 threshold 0-1")
+        self.layer_depth_w5 = QtWidgets.QLineEdit("50")
+        self.elem1_thresh_w5 = QtWidgets.QLineEdit("0.25")
+
+        self.create_onion_button = QtWidgets.QPushButton("create onion")
+        self.create_onion_button.clicked.connect(self.createOnion)
+
+        self.run_layer_analysis = QtWidgets.QPushButton("run analysis")
+        self.run_layer_analysis.clicked.connect(self.updateOnionHisto)
+
+        ##_____ left blok: recon view _____
+        hboxA_w5 = QtWidgets.QHBoxLayout()
+        hboxA_w5.addWidget(elem1_list_lbl)
+        hboxA_w5.addWidget(self.elem1_list_w5)
+        hboxA_w5.addWidget(self.create_onion_button)
+
+        hboxB_w5 = QtWidgets.QHBoxLayout()
+        hboxB_w5.addWidget(layer_depth_lbl_w5)
+        hboxB_w5.addWidget(self.layer_depth_w5)
+
+        hboxC_w5 = QtWidgets.QHBoxLayout()
+        hboxC_w5.addWidget(elem1_thresh_lbl_w5)
+        hboxC_w5.addWidget(self.elem1_thresh_w5)
+
+        hboxD_w5 = QtWidgets.QHBoxLayout()
+        hboxD_w5.addWidget(recon_lbl_w5)
+        hboxD_w5.addWidget(self.recon_lcd_w5)
+        hboxD_w5.addWidget(self.recon_sld_w5)
+
+        vboxA1 = QtWidgets.QVBoxLayout()
+        vboxA1.addWidget(self.miniReconWidget_w5)
+        vboxA1.addLayout(hboxA_w5)
+        vboxA1.addLayout(hboxD_w5)
+        vboxA1.addLayout(hboxB_w5)
+        vboxA1.addLayout(hboxC_w5)
+
+        ##_____ right block: pixel distance analysis _____
+        hboxE_w5 = QtWidgets.QHBoxLayout()
+        hboxE_w5.addWidget(elem2_list_lbl)
+        hboxE_w5.addWidget(self.elem2_list_w5)
+        hboxE_w5.addWidget(self.run_layer_analysis)
+
+        vboxB1 = QtWidgets.QVBoxLayout()
+        vboxB1.addWidget(self.miniHisto_w5)
+        vboxB1.addLayout(hboxE_w5)
+
+        hboxC1 = QtWidgets.QHBoxLayout()
+        hboxC1.addLayout(vboxA1)
+        hboxC1.addLayout(vboxB1)
+
+        self.onion_window.setLayout(hboxC1)
+
+        self.first_run_w5 = True
+        self.onion_layers = None
+
+
+
+
+
+    def updateOnion(self):
+        if self.first_run_w5:
+            e1 = 0
+            self.first_run_w5 = False
+
+        else:
+            e1 = self.elem1_list_w5.currentIndex()
+
+        self.elem1_list_w5.clear()
+        self.elem2_list_w5.clear()
+        try:
+            self.recon_sld_w5.setRange(0, len(self.recon_dict[self.recon_dict.keys()[0]])-1)
+        except TypeError:
+            print("run reconstruction first")
+            return
+
+
+        for i in self.elements:
+            self.elem1_list_w5.addItem(i)
+            self.elem2_list_w5.addItem(i)
+        try:
+            self.elem1_list_w5.setCurrentIndex(e1)
+            self.elem2_list_w5.setCurrentIndex(e1)
+            self.elem1_list_w5.setCurrentText(self.elements[e1])
+            self.elem2_list_w5.setCurrentText(self.elements[e1])
+        except:
+            self.elem1_list_w5.setCurrentIndex(0)
+            self.elem2_list_w5.setCurrentIndex(0)
+
+        recon_indx_w5 = self.recon_sld_w5.value()
+        self.recon_lcd_w5.display(recon_indx_w5)
+        return
+
+    def updateOnionHisto(self):
+
+        if self.onion_layers.any() == None:
+            print('create onion first')
+            return
+
+        num_layers = self.onion_layers.max()
+        total_signal = np.zeros(num_layers)
+        img = self.recon_dict[self.elem2_list_w5.currentText(), self.recon_sld_w5.value()]
+
+        for i in range(num_layers):
+            depth_mask = self.onion_layers == (i+1)
+            total_signal[i] = np.sum(img*depth_mask)
+
+
+        #generate histogram
+        # Creating histogram 
+        # fig, axs = plt.subplots(1, 1, figsize =(10, 7), tight_layout = True)
+        # #calculate number of bins based on max value
+        x = (np.arange(num_layers)+1)*eval(self.layer_depth_w5.text())
+        # axs.bar(x, total_signal,width=10)
+        # axs.set_title("Desnity as a function of depth")
+        # axs.set_xlabel("distance (micron)")
+        # axs.set_ylabel("total signal ug/cm^3")
+        #    Show plot
+        # fig.show()
+        self.miniHisto_w5.barView.setOpts(x=x,height=total_signal, width=9)
+
+        return
+
+    def createOnion(self):
+
+        layer_depth = eval(self.layer_depth_w5.text())
+        threshold = eval(self.elem1_thresh_w5.text())
+        img = self.recon_dict[self.elem1_list_w5.currentText(), self.recon_sld_w5.value()]
+        self.onion_slice, self.onion_layers = self.peel_onion(img,threshold,layer_depth)
+
+        self.miniReconWidget_w5.reconView.setImage(self.onion_slice)
+
+        pass
+
+    def peel_onion(self, data, data_thresh, layer_depth):
+        reached_core = False
+        #establish surface aka first layer
+        layer_0 = self.create_mask(data, data_thresh)      #bool array xy
+        msk = np.ones_like(layer_0)*layer_0*1     #uint8 array xy
+        msks = msk.copy()
+        i = 0
+        #peel away layers find out how many layers there are first
+        while not reached_core:
+            print("current layer: {}".format(i))
+            i+=1
+            try:
+                msk = ndi.binary_erosion(msk, structure=np.ones((layer_depth*2, layer_depth*2)))
+                msks = msk+msks
+                if msk.max() == 0:
+                    reached_core = True
+
+            except: 
+                reached_core = True
+        mask_incremental = msks.copy()
+        msks = msks*255//i
+        superimposed = (msks + data/np.max(data)*layer_0*255*0.6)
+        superimposed_img = superimposed//(superimposed.max()/255)
+        
+        return superimposed_img, mask_incremental, 
+
+
+    def create_mask(self, data, mask_thresh=None, scale=.8):
+        # Remove nan values
+        mask_nan = np.isfinite(data)
+        data[~np.isfinite(data)] = 0
+        #     data /= data.max()
+        # Median filter with disk structuring element to preserve cell edges.
+        data = ndi.median_filter(data, size=int(data.size ** .5 * .05), mode='nearest')
+        #     data = rank.median(data, disk(int(size**.5*.05)))
+        # Threshold
+        if mask_thresh == None:
+            mask_thresh = np.nanmean(data) * scale / np.nanmax(data)
+        mask = np.isfinite(data)
+        mask[data / np.nanmax(data) < mask_thresh] = False
+        # Remove small spots
+        mask = remove_small_objects(mask, data.size // 100)
+        # Remove small holes
+        mask = ndi.binary_fill_holes(mask)
+        return mask * mask_nan
+
     def updateMiniReproj(self):
 
         e1 = self.elem_options.currentIndex()
@@ -603,8 +988,12 @@ class xrftomoGui(QtGui.QMainWindow):
         except:
             return 0,0
         self.reprojection = self.reproject(recon)
-        dummy, sf = self.compare_projections(self.compare_metric.currentIndex(), self.proj, self.reprojection)
-        
+        try:
+            dummy, sf = self.compare_projections(self.compare_metric.currentIndex(), self.proj, self.reprojection)
+        except:
+            sf = 1
+            pass
+
         self.reprojection /= sf
         results, dummy = self.compare_projections(self.compare_metric.currentIndex(), self.proj, self.reprojection)
 
@@ -647,7 +1036,13 @@ class xrftomoGui(QtGui.QMainWindow):
 
             for i in range(projA.shape[0]):
                 err = np.sum((projA[i].astype("float") - projB[i].astype("float")) ** 2)
-                err /= float(projA[i].shape[0] * projA[i].shape[1])
+                try:
+                    err /= float(projA[i].shape[0] * projA[i].shape[1])
+                except:
+                    print("error")
+                    result = -1
+                    sf = -1
+                    return result, sf
                 sim = measure.compare_ssim(projA[i], projB[i])
 
                 errMat[i] = err
@@ -681,7 +1076,6 @@ class xrftomoGui(QtGui.QMainWindow):
             result = -1
             sf = -1
 
-
         return result, sf
         
 
@@ -708,12 +1102,118 @@ class xrftomoGui(QtGui.QMainWindow):
 
         #find where proj index angle ==0:
         zero_index = np.where(abs(thetas)==abs(thetas).min())[0][0]
-        self.proj = self.data[e1,zero_index]
+        self.proj = np.flipud(self.data[e1,zero_index])
 
         self.elem_options.currentIndexChanged.connect(self.updateMiniProj)
         self.miniProjectionWidget1.reconView.setImage(self.proj)
         return
 
+    def updateDistanceHisto(self):
+        if self.first_run_w4:
+            e1 = 0
+            self.first_run_w4 = False
+
+        else:
+            e1 = self.recons_list_w4.currentIndex()
+        try:
+            self.recons_list_w4.currentIndexChanged.disconnect(self.updateDistanceHisto)
+        except:
+            print("method not connected")
+        self.recons_list_w4.clear()
+        try:
+            self.recon_sld_w4.setRange(0, len(self.recon_dict[list(self.recon_dict.keys())[0]])-1)
+        except TypeError:
+            print("run reconstruction first")
+            return
+
+        elem_indx_w4 = self.recons_list_w4.currentIndex()
+        recon_indx_w4 = self.recon_sld_w4.value()
+
+        for i in self.elements:
+            self.recons_list_w4.addItem(i)
+        try:
+            self.recons_list_w4.setCurrentIndex(e1)
+            self.recons_list_w4.setCurrentText(self.elements[e1])
+        except:
+            self.recons_list_w4.setCurrentIndex(0)
+
+        self.recons_list_w4.currentIndexChanged.connect(self.updateDistanceHisto)
+
+        ##calculate distance_array
+        recon_element = self.recons_list_w4.currentText()
+        recon_indx = self.recon_sld_w4.value()
+
+        distance_array = self.calculate_all_distances(self.recon_dict[recon_element])
+        
+        #generate histogram
+        # Creating histogram 
+        fig, axs = plt.subplots(1, 1, figsize =(10, 7), tight_layout = True)
+        #whole numbers
+        distance_array = distance_array.round()
+        #cutoff max distance
+        # distance_array[distance_array < 100]
+        #calculate number of bins based on max value
+        num_bins = int(distance_array.max())
+
+        axs.hist(distance_array, bins = num_bins,  density = True)
+        axs.set_title(self.fileTableWidget.dirLineEdit.text())
+        axs.set_xlabel("distance (micron)")
+        #    Show plot
+        plt.show()
+
+        return
+
+    def calculate_pixel_distance(self,img):
+        #TODO: do something if empty array
+        point_arr = []
+
+
+        #filter image so there arent so many points to calculate distances for,
+        img[img<img.max()*0.05] = 0
+        #then downsample the image to 50% or variable.
+
+        #find non-zero pixels in image
+        for i in range(img.shape[0]):
+            for j in range(img.shape[1]):
+                if img[i,j]>0:
+                    point_arr.append([i,j])
+
+        #find pixel distances using combination of points array, nCr.
+        point_arr = np.asanyarray(point_arr)
+        num_points = len(point_arr)
+        sub_points = list(np.arange(1, num_points))
+        distance_arr = []
+        for i in range(num_points-1):
+            if len(sub_points)==0:
+                break
+            for j in sub_points:
+                distance_arr.append(np.sqrt( (point_arr[i,0]-point_arr[j,0])**2 +
+                                             (point_arr[i,1]-point_arr[j,1])**2  ))
+            del sub_points[0]
+
+        print(distance_arr)
+        return distance_arr
+
+    def calculate_all_distances(self,img_stack):
+        #remove slices in stack where values all zero
+        num_slices = img_stack.shape[0]
+        non_zero_slices = []
+        for i in range(num_slices):
+            if img_stack[i].max()>0:
+                non_zero_slices.append(i)
+
+        slice_arr = [img_stack[i] for i in non_zero_slices]
+        num_images = len(slice_arr)
+        if len(slice_arr)==0:
+            print("")
+            return
+        distance_arr = np.asarray(self.calculate_pixel_distance(slice_arr[0]))
+
+
+        for i in range(1, num_images):
+            distance_arr = np.append(distance_arr, np.asarray(self.calculate_pixel_distance(slice_arr[i])))
+
+        return distance_arr
 
     def update_padding(self, x,y):
         self.sinogramWidget.x_padding_hist.append(x)
@@ -785,6 +1285,9 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatterWidget.p1.setLabel(axis='bottom', text=self.elements[e2])
         self.updateInnerScatter()
         return
+
+
+
 
     # def updateWidth(self):
 
@@ -876,6 +1379,159 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatterWidget.roiDraggedSig.connect(self.updateInnerScatter)
 
 
+    def updateScatterRecon(self):
+        if self.first_run_recon:
+            try:
+                self.scatterWidget.ROI.endpoints[1].setPos(self.recon.shape[1], self.recon.shape[1])
+                e1 = 0
+                e2 = 0
+
+                self.recon_sld.setRange(0, self.recon.shape[0] - 1)
+                self.elem1_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
+                self.elem2_options_recon.currentIndexChanged.disconnect(self.updateScatterRecon)
+                recon_indx = self.recon_sld.value()
+                self.elem1_options_recon.clear()
+                self.elem2_options_recon.clear()
+
+                for i in self.elements:
+                    self.elem1_options_recon.addItem(i)
+                    self.elem2_options_recon.addItem(i)
+                try:
+                    self.elem1_options_recon.setCurrentIndex(e1)
+                    self.elem1_options_recon.setCurrentText(self.elements[e1])
+                    self.elem2_options_recon.setCurrentIndex(e2)
+                    self.elem2_options_recon.setCurrentText(self.elements[e2])
+                    self.scatterWidgetRecon.p1.setLabel(axis='left', text=self.elements[e1])
+                    self.scatterWidgetRecon.p1.setLabel(axis='bottom', text=self.elements[e2])
+
+                except:
+                    self.elem1_options_recon.setCurrentIndex(0)
+                    self.elem2_options_recon.setCurrentIndex(0)
+
+                e1 = self.elem1_options_recon.currentIndex()
+                e2 = self.elem2_options_recon.currentIndex()
+                e1_txt = self.elem1_options_recon.currentText()
+                e2_txt = self.elem2_options_recon.currentText()
+                elem1 = self.recon_dict[e1_txt][recon_indx]
+                elem1 = elem1.flatten()
+                elem2 = self.recon_dict[e2_txt][recon_indx]
+                elem2 = elem2.flatten()
+
+
+                self.first_run_recon = False
+            except TypeError:
+                print("run reconstruction first")
+                return
+        else:
+            recon_indx = self.recon_sld.value()
+            e1 = self.elem1_options_recon.currentIndex()
+            e2 = self.elem2_options_recon.currentIndex()
+            e1_txt = self.elem1_options_recon.currentText()
+            e2_txt = self.elem2_options_recon.currentText()
+            elem1 = self.recon_dict[e1_txt][recon_indx]
+            elem1 = elem1.flatten()
+            elem2 = self.recon_dict[e2_txt][recon_indx]
+            elem2 = elem2.flatten()
+
+
+        #update projection index LCD
+        self.recon_lcd.display(self.recon_sld.value())
+        self.elem1_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
+        self.elem2_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
+        self.scatterWidgetRecon.plotView.setData(elem2, elem1)
+        self.scatterWidgetRecon.p1.setLabel(axis='left', text=self.elements[e1])
+        self.scatterWidgetRecon.p1.setLabel(axis='bottom', text=self.elements[e2])
+        self.updateInnerScatterRecon()
+        return
+
+
+    def updateInnerScatterRecon(self,*dummy):
+        self.scatterWidgetRecon.mousePressSig.disconnect(self.updateInnerScatterRecon)
+        self.scatterWidgetRecon.roiDraggedSig.disconnect(self.updateInnerScatterRecon)
+        e1 = self.elem1_options_recon.currentText()
+        e2 = self.elem2_options_recon.currentText()
+
+        #Normalizeself.projection_sld.currentIndex()
+
+        elem1 = self.reconstructionWidget.recon_dict[e1][self.recon_sld.value()]
+        elem1 = elem1.flatten()
+        elem2 = self.reconstructionWidget.recon_dict[e2][self.recon_sld.value()]
+        elem2 = elem2.flatten()
+
+        # get slope then calculate new handle pos
+        x_pos = self.scatterWidgetRecon.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidgetRecon.p1.items[3].getHandles()[1].pos().y()
+        try:
+            slope = y_pos/x_pos
+        except ZeroDivisionError:
+            slope = 1
+
+
+        x_pos = 1/slope
+        y_pos = x_pos*slope
+
+        if elem2.max()*slope < elem1.max():
+            x_pos = elem2.max()
+            y_pos = x_pos*slope
+        if elem2.max()*slope > elem1.max():
+            x_pos = elem1.max()/slope
+            y_pos = x_pos*slope
+
+        self.scatterWidgetRecon.ROI.endpoints[1].setPos(x_pos,y_pos)
+        self.slope_value_recon.setText(str(round(slope,4)))
+
+        tmp_arr = [(slope*elem2) <= elem1]
+        tmp_elem1 = elem1[tmp_arr[0]]
+        tmp_elem2 = elem2[tmp_arr[0]]
+        self.scatterWidgetRecon.plotView2.setData(tmp_elem2, tmp_elem1, brush='r')
+
+        self.scatterWidgetRecon.mousePressSig.connect(self.updateInnerScatterRecon)
+        self.scatterWidgetRecon.roiDraggedSig.connect(self.updateInnerScatterRecon)
+
+        return
+
+    def slopeEnteredRecon(self):
+        slope = eval(self.slope_value_recon.text())
+        if slope < 0 :
+            return
+        self.scatterWidgetRecon.mousePressSig.disconnect(self.updateInnerScatterRecon)
+        self.scatterWidgetRecon.roiDraggedSig.disconnect(self.updateInnerScatterRecon)
+
+        e1 = self.elem1_options_recon.currentText()
+        e2 = self.elem2_options_recon.currentText()
+        elem1 = self.reconstructionWidget.recon_dict[e1][self.recon_sld.value()]
+        elem1 = elem1.flatten()
+        elem2 = self.reconstructionWidget.recon_dict[e2][self.recon_sld.value()]
+        elem2 = elem2.flatten()
+
+        #TODO: Exception error div by zero
+        try:
+            x_pos = 1/slope
+        except ZeroDivisionError:
+            x_pos = 1
+
+        y_pos = x_pos*slope
+
+
+        if elem2.max()*slope < elem1.max():
+            x_pos = elem2.max()
+            y_pos = x_pos*slope
+        if elem2.max()*slope > elem1.max():
+            x_pos = elem1.max()/slope
+            y_pos = x_pos*slope
+
+        self.scatterWidgetRecon.ROI.endpoints[1].setPos(x_pos,y_pos)
+        self.slope_value_recon.setText(str(round(slope,4)))
+
+        tmp_arr = [(slope*elem2) <= elem1]
+        tmp_elem1 = elem1[tmp_arr]
+        tmp_elem2 = elem2[tmp_arr]
+        self.scatterWidgetRecon.plotView2.setData(tmp_elem2, tmp_elem1, brush='r')
+
+        self.scatterWidgetRecon.mousePressSig.connect(self.updateInnerScatterRecon)
+        self.scatterWidgetRecon.roiDraggedSig.connect(self.updateInnerScatterRecon)
+
+
     def updateMiniRecon(self):
         
         e1 = self.elem1_options.currentIndex()
@@ -911,7 +1567,6 @@ class xrftomoGui(QtGui.QMainWindow):
 
         data2[element] = tmp_data
         center = self.data.shape[3]//2
-        method = self.recon_method.currentIndex()
         beta = 1
         delta = 0.01
         iters = 10
@@ -921,7 +1576,8 @@ class xrftomoGui(QtGui.QMainWindow):
         tmp_data2[element] = tmp_data
         tmp_data2 = tmp_data2[:, :, mid_indx:mid_indx + 1, :]
 
-        recon = self.reconstructionWidget.actions.reconstruct(tmp_data2, element, center, method, beta, delta, iters, thetas, 0, show_stats=False)
+        #TODO: unresolved method
+        recon = self.reconstructionWidget.actions.reconstruct(tmp_data2, element, center, beta, delta, iters, thetas, 0, show_stats=False)
 
         self.miniReconWidget.reconView.setImage(recon[0])
         return
@@ -963,6 +1619,41 @@ class xrftomoGui(QtGui.QMainWindow):
         self.data = data2.copy()
         self.update_data(self.data)
 
+
+    def sendRecon(self):
+
+        e1 = self.elem1_options_recon.currentText()
+        e2 = self.elem2_options_recon.currentText()
+        # recon_indx = self.recon_sld.value()
+
+        recon2 = self.recon_dict[e2].copy()
+        original_shape = recon2[0].shape
+        tmp_data = np.zeros_like(recon2)
+
+        #get handle pos
+        x_pos = self.scatterWidgetRecon.p1.items[3].getHandles()[1].pos().x()
+        y_pos = self.scatterWidgetRecon.p1.items[3].getHandles()[1].pos().y()
+        slope = y_pos/x_pos
+
+        for i in range(recon2.shape[0]-1):
+            #Normalizeself.projection_sld.currentIndex()
+            elem1 = self.recon_dict[e1][i].flatten()
+            elem2 = self.recon_dict[e2][i].flatten()
+
+            tmp_arr = [(slope * elem2) < elem1]
+            bounded_index = np.where(tmp_arr)[1]
+
+            tmp = recon2[i].flatten()
+            tmp[bounded_index] = 0
+            tmp_data[i] = tmp.reshape(original_shape)
+
+        recon2 = tmp_data
+
+        self.recon = recon2.copy()
+        self.recon_dict[e2] = recon2.copy()
+        self.update_recon(self.recon)
+        self.update_recon_dict(self.recon_dict)
+
     def refresh_filetable(self):
         self.fileTableWidget.onLoadDirectory()
         return
@@ -987,14 +1678,13 @@ class xrftomoGui(QtGui.QMainWindow):
             self.reconstructionWidget.ReconView.p1.vb.setAspectLocked(False)
 
     def loadSettingsChanged(self):
-        load_settings = [self.legacy_chbx.isChecked(),
-                    self.directory_chbx.isChecked(),
-                    self.element_chbx.isChecked(),
-                    self.image_tag_chbx.isChecked(),
-                    self.data_tag_chbx.isChecked(),
-                    self.alingmen_chbx.isChecked(),
-                    self.iter_align_param_chbx.isChecked(),
-                    self.recon_method_chbx.isChecked()]
+        load_settings = []
+        for child in self.config_options.children():
+            if isinstance(child, QtWidgets.QCheckBox):
+                load_settings.append(child.isChecked())
+            else:
+                pass
+
         self.params.load_settings = str(load_settings)
         # return
     def debugMode(self):
@@ -1002,15 +1692,17 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileTableWidget.thetaLineEdit.setVisible(True)
         self.fileTableWidget.elementTag.setVisible(True)
         self.fileTableWidget.elementTag_label.setVisible(True)
-        self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
+        # self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
         self.imageProcessWidget.ViewControl.invert.setVisible(True)
-        self.imageProcessWidget.ViewControl.reshapeBtn.setVisible(True)
-        # self.imageProcessWidget.ViewControl.btn2.setVisible(True)
 
-        self.sinogramWidget.ViewControl.btn1.setVisible(True)
-        self.sinogramWidget.ViewControl.btn3.setVisible(True)
-        self.sinogramWidget.ViewControl.btn5.setVisible(True)
-        self.sinogramWidget.ViewControl.btn6.setVisible(True)
+
+        #
+        # self.btn3.setVisible(False) #phase corr
+        # # self.btn5.setVisible(False)
+        # # self.btn6.setVisible(False)
+        # self.btn9.setVisible(False) #adjust sino
+        # self.rot_axis.setVisible(False) #rot axis
+
         return
 
     def openFolder(self):
@@ -1024,7 +1716,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
     def openH5(self):
         currentDir = self.fileTableWidget.dirLineEdit.text()
-        files = QtGui.QFileDialog.getOpenFileNames(self, "Open h5", QtCore.QDir.currentPath(), "h5 (*.h5)" )
+        files = QtGui.QFileDialog.getOpenFileNames(self, "Open h5", QtCore.QDir.currentPath(), "h5 (*.h5*)" )
         if files[0] == '' or files[0] == []:
             return
 
@@ -1085,6 +1777,35 @@ class xrftomoGui(QtGui.QMainWindow):
         self.toolsMenu.setDisabled(True)
         # update images seems to have dissappeare.
         return
+
+    def openStack(self):
+        file = QtGui.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "tiff (*.tiff)" )
+        if file[0] == '':
+            return
+        im = io.imread(file[0])
+        data = np.zeros([1, im.shape[0], im.shape[1], im.shape[2]])
+        data[0] = im
+        self.data = data
+        self.fnames = ["file_{}".format(i) for i in range(self.data.shape[1])]
+        self.tab_widget.setTabEnabled(1, False)
+        self.tab_widget.setTabEnabled(2, False)
+        self.tab_widget.setTabEnabled(3, False)
+        self.afterConversionMenu.setDisabled(True)
+        self.editMenu.setDisabled(True)
+        self.toolsMenu.setDisabled(True)
+        # update images seems to have dissappeare.
+
+        self.thetas = np.asarray([i for i in range(self.data.shape[1])])
+        self.elements = ["Channel_1"]
+        self.updateImages(True)
+        self.tab_widget.setTabEnabled(1, True)
+        self.tab_widget.setTabEnabled(2, True)
+        self.tab_widget.setTabEnabled(3, True)
+        self.afterConversionMenu.setDisabled(False)
+        self.editMenu.setDisabled(False)
+        self.toolsMenu.setDisabled(False)
+        self.viewMenu.setDisabled(False)
+        self.fileTableWidget.message.setText("Angle information loaded.")
 
     def openThetas(self):
         file = QtGui.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "text (*.txt)" )
@@ -1263,6 +1984,13 @@ class xrftomoGui(QtGui.QMainWindow):
         except AttributeError:
             print("reconstructed data does not exist")
         return
+    #
+    # def saveReconArray2npy(self, recon):
+    #     try:
+    #         self.writer.save_recon_array_2npy(self.recon_array)
+    #     except AttributeError:
+    #         print("reconstructed data does not exist")
+    #     return
 
     def saveToHDF(self):
         try:
@@ -1338,6 +2066,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.showSinogram()
         self.sinogramWidget.showImgProcess()
         self.sinogramWidget.showDiffProcess()
+        self.sinogramWidget.showSinoCurve()
         self.reconstructionWidget.showReconstruct()
         # self.reset_widgets()
 
@@ -1422,7 +2151,16 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def update_recon(self, recon):
-        self.recon = recon.copy()
+        self.recon = recon
+        self.reconstructionWidget.recon = recon
+        self.reconstructionWidget.update_recon_image()
+        return
+
+
+    def update_recon_dict(self, recon_dict):
+        self.recon_dict = recon_dict
+        self.reconstructionWidget.recon_dict = recon_dict
+        self.reconstructionWidget.update_recon_image()
         return
 
     def update_sino(self, sino):
@@ -1442,6 +2180,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.thetas = thetas
         self.imageProcessWidget.thetas = self.thetas
         self.sinogramWidget.thetas = self.thetas
+        self.reconstructionWidget.thetas = self.thetas
         return
 
     def update_alignment(self, x_shifts, y_shifts):
@@ -1501,6 +2240,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.data = None
         self.recon = None
+        self.recon_dict = {}
         self.imageProcessWidget.data = None
         self.sinogramWidget.data = None
         self.sinogramWidget.sinogramData = None
@@ -1577,12 +2317,25 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatter_window.show()
         self.updateScatter()
 
+    def scatterPlotRecon(self):
+        self.scatter_window_recon.show()
+        self.updateScatterRecon()
+
+    def pixDistanceWindow(self):
+        self.pixel_distance_window.show()
+        self.updateDistanceHisto()
 
         # self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         #create window, create two drop-down menus (for element selection)
         #load data[element1], load data2[element2], normalize the two,
         #assign elem1 to x axis, assign elem2 to y axis
         #divide data[elem2] by data[elem1], plot this.
+
+    def onionWindow(self):
+        self.onion_window.show()
+        self.updateOnion()
+
+
 
 
     def xy_power(self):
@@ -1651,6 +2404,8 @@ class xrftomoGui(QtGui.QMainWindow):
 
 
         pass
+
+
 
     def corrElem(self):
         self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
@@ -1740,13 +2495,8 @@ class xrftomoGui(QtGui.QMainWindow):
 
             rVal = r
 
-
-
-
-
         # return the MSE, the lower the error, the more "similar"
         return rVal
-
 
     def keyMapSettings(self):
         self.keymap_options.show()
@@ -1757,7 +2507,6 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def closeEvent(self, event):
-        print("here I am")
         try:
             sections = config.TOMO_PARAMS + ('gui', )
             home = expanduser("~")

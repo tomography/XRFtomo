@@ -1,47 +1,43 @@
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.        	  #
+#    																	  #
+#						Software Name: XRFtomo							  #
+#																		  #
+#					By: Argonne National Laboratory						  #
+#																		  #
+#						OPEN SOURCE LICENSE                               #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
+# Redistribution and use in source and binary forms, with or without      #
+# modification, are permitted provided that the following conditions      #
+# are met:                                                                #
 #                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
-#                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
-#                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
-#                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
-#                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENTn SHALL UChicago    #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+# 1. Redistributions of source code must retain the above copyright       #
+#    notice, this list of conditions and the following disclaimer.        #
+#																		  #
+# 2. Redistributions in binary form must reproduce the above copyright    #
+#    notice, this list of conditions and the following disclaimer in      #
+#    the documentation and/or other materials provided with the 		  #
+#    distribution.														  #
+# 									                                      #
+# 3. Neither the name of the copyright holder nor the names of its 		  #
+#    contributors may be used to endorse or promote products derived 	  #
+#    from this software without specific prior written permission.		  #
+#																		  #
+#								DISCLAIMER								  #
+#							  											  #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 	  #
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 	  #
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR   #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 	  #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 		  #
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   #
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY   #
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 	  #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.	  #
+###########################################################################
+
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from scipy import ndimage, optimize, signal
@@ -228,13 +224,45 @@ class ImageProcessActions(QtWidgets.QWidget):
 		return new_data
 
 	def remove_hotspots(self, data, element):
+		imgs = data[element].copy()
+		max_val = np.max(imgs)
+		std_imgs = np.std(imgs)
+		imgs[imgs>15*std_imgs] = std_imgs
+		data[element] = imgs
+
+		dif = data[element] - imgs
+		if dif.max() == 0:
+			imgs[imgs>0.98*max_val] = 0.98*max_val
+			data[element] = imgs
+
+		return data
+
+	def remove_hotspots_new(self, data, element):
 		imgs = data[element]
 		max_val = np.max(imgs)
-		for i in range(imgs.shape[0]):
-			img = imgs[i]
-			img[img > 0.5*max_val] = 0.5*max_val
-			data[element,i] = img
+		std_imgs = np.std(imgs)
+		imgs[imgs>15*std_imgs] = std_imgs
+		data[element] = imgs
 		return data
+
+	def create_mask(self, data, mask_thresh=None, scale=.8):
+		# Remove nan values
+		mask_nan = np.isfinite(data)
+		data[~np.isfinite(data)] = 0
+		#     data /= data.max()
+		# Median filter with disk structuring element to preserve cell edges.
+		data = ndi.median_filter(data, size=int(data.size ** .5 * .05), mode='nearest')
+		#     data = rank.median(data, disk(int(size**.5*.05)))
+		# Threshold
+		if mask_thresh == None:
+			mask_thresh = np.nanmean(data) * scale / np.nanmax(data)
+		mask = np.isfinite(data)
+		mask[data / np.nanmax(data) < mask_thresh] = False
+		# Remove small spots
+		mask = remove_small_objects(mask, data.size // 100)
+		# Remove small holes
+		mask = ndi.binary_fill_holes(mask)
+		return mask * mask_nan
 
 	def equalize(self, data, element):
 		# Equalization
@@ -280,30 +308,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 		print("done")
 		data = temp_data
 		return data
-
-	# def gauss33(self):
-	# 	result = self.gauss2D(shape=(3, 3), sigma=1.3)
-	# 	print(result)
-	# 	return result
-
-	# def gauss55(self):
-	# 	result = self.gauss2D(shape=(5, 5), sigma=1.3)
-	# 	print(result)
-	# 	return result
-
-	# def gauss2D(self, shape=(3, 3), sigma=0.5):
-	# 	"""s
-	# 	2D gaussian mask - should give the same result as MATLAB's
-	# 	fspecial('gaussian',[shape],[sigma])
-	# 	"""
-	# 	m, n = [(ss - 1.) / 2. for ss in shape]
-	# 	y, x = np.ogrid[-m:m + 1, -n:n + 1]
-	# 	h = np.exp(-(x * x + y * y) / (2. * sigma * sigma))
-	# 	h[h < np.finfo(h.dtype).eps * h.max()] = 0
-	# 	sumh = h.sum()
-	# 	if sumh != 0:
-	# 		h /= sumh
-	# 	return h
 
 	def copy_background(self, img):
 		'''
@@ -384,25 +388,6 @@ class ImageProcessActions(QtWidgets.QWidget):
 			num_projections -= 1
 
 		return index, data, thetas, fnames, x_shifts, y_shifts
-
-	def create_mask(self, data, mask_thresh = None, scale = .8):
-		# Remove nan values
-		mask_nan = np.isfinite(data)
-		data[~np.isfinite(data)] = 0
-		#     data /= data.max()
-		# Median filter with disk structuring element to preserve cell edges.
-		data = ndi.median_filter(data, size=int(data.size**.5*.05), mode = 'nearest')
-		#     data = rank.median(data, disk(int(size**.5*.05)))
-		# Threshold
-		if mask_thresh == None:
-			mask_thresh = np.nanmean(data)*scale/np.nanmax(data)
-		mask = np.isfinite(data)
-		mask[data/np.nanmax(data) < mask_thresh] = False
-		# Remove small spots
-		mask = remove_small_objects(mask, data.size//100)
-		# Remove small holes
-		mask = ndi.binary_fill_holes(mask)
-		return mask*mask_nan
 
 	def equalize_hist_ev(self, image, nbins=2**16, mask=None, shift_funct = np.median):
 		# For global_shift use np.median if hot spots are present and np.mean otherwise

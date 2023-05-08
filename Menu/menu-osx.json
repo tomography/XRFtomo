@@ -5,7 +5,8 @@
             {
                 "cmd": "${BIN_DIR}/xrftomo",
                 "name": "xrftomo",
-                // "icns": "${MENU_DIR}/app.icns"
+                //"icns": "${MENU_DIR}xrftomo.icns"
             }
         ]
 }
+

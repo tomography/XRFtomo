@@ -1,47 +1,42 @@
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.           #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
+#                       Software Name: XRFtomo                            #
 #                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
+#                   By: Argonne National Laboratory                       #
 #                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
+#                       OPEN SOURCE LICENSE                               #
 #                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
+# Redistribution and use in source and binary forms, with or without      #
+# modification, are permitted provided that the following conditions      #
+# are met:                                                                #
 #                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
+# 1. Redistributions of source code must retain the above copyright       #
+#    notice, this list of conditions and the following disclaimer.        #
 #                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
+# 2. Redistributions in binary form must reproduce the above copyright    #
+#    notice, this list of conditions and the following disclaimer in      #
+#    the documentation and/or other materials provided with the           #
+#    distribution.                                                        #
+#                                                                         #
+# 3. Neither the name of the copyright holder nor the names of its        #
+#    contributors may be used to endorse or promote products derived      #
+#    from this software without specific prior written permission.        #
+#                                                                         #
+#                               DISCLAIMER                                #
+#                                                                         #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR   #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT    #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT        #
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   #
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY   #
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT     #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
+###########################################################################
 
 """
 Subclasses the h5py module for interacting with Data Exchange files.
@@ -143,6 +138,11 @@ class FileTableModel(QtCore.QAbstractTableModel):
         all_files = [x for x in os.listdir(directoryName)]
         fileNames = [x for x in all_files if x.split(".")[-1] == ext.split(".")[-1]]
 
+        # TODO: filter files begining with "._"
+        with_ = [x for x in fileNames if x.startswith(".")]
+        without_ = [x for x in fileNames if x not in with_]
+        fileNames = without_
+
         # fileNames = [os.path.basename(x) for x in glob(directoryName+'/'+ext)]
         fileNames = sorted(fileNames)
         self.arrayData = []
@@ -151,33 +151,6 @@ class FileTableModel(QtCore.QAbstractTableModel):
         bottomRight = self.index(len(self.arrayData), len(self.columns))
         self.layoutChanged.emit()
         self.dataChanged.emit(topLeft, bottomRight)
-
-    # def loadThetasLegacy(self, thetaPV):
-    #     thetaBytes = thetaPV.encode('ascii')
-    #     topLeft = self.index(0, self.COL_THETA)
-    #     bottomRight = self.index(len(self.arrayData), self.COL_THETA)
-    #     for i in range(len(self.arrayData)):
-    #         try:
-    #             hFile = h5py.File(self.directory+'/'+self.arrayData[i].filename)
-    #             extra_pvs = hFile['/MAPS/extra_pvs']
-    #             self.idx = np.where(extra_pvs[0] == thetaBytes)
-    #             if len(self.idx[0]) > 0:
-    #                 self.arrayData[i].theta = float(extra_pvs[1][self.idx[0][0]])
-    #         except:
-    #             pass
-    #     self.dataChanged.emit(topLeft, bottomRight)
-    
-    # def loadThetas(self, img_tag):
-    #     topLeft = self.index(0, self.COL_THETA)
-    #     bottomRight = self.index(len(self.arrayData), self.COL_THETA)
-    #     for i in range(len(self.arrayData)):
-    #         try:
-    #             hFile = h5py.File(self.directory+'/'+self.arrayData[i].filename)
-    #             self.arrayData[i].theta = float(hFile[img_tag]['theta'].value)
-    #         except:
-    #             pass
-    #     self.dataChanged.emit(topLeft, bottomRight)
-
 
     def update_thetas(self, thetas):
         topLeft = self.index(0, self.COL_THETA)

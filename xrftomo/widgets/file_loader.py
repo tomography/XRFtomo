@@ -1,47 +1,43 @@
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.           #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
+#                       Software Name: XRFtomo                            #
 #                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
+#                   By: Argonne National Laboratory                       #
 #                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
+#                       OPEN SOURCE LICENSE                               #
 #                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
+# Redistribution and use in source and binary forms, with or without      #
+# modification, are permitted provided that the following conditions      #
+# are met:                                                                #
 #                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
+# 1. Redistributions of source code must retain the above copyright       #
+#    notice, this list of conditions and the following disclaimer.        #
 #                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
+# 2. Redistributions in binary form must reproduce the above copyright    #
+#    notice, this list of conditions and the following disclaimer in      #
+#    the documentation and/or other materials provided with the           #
+#    distribution.                                                        #
+#                                                                         #
+# 3. Neither the name of the copyright holder nor the names of its        #
+#    contributors may be used to endorse or promote products derived      #
+#    from this software without specific prior written permission.        #
+#                                                                         #
+#                               DISCLAIMER                                #
+#                                                                         #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR   #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT    #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT        #
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   #
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY   #
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT     #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
+###########################################################################
+
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 import xrftomo
@@ -61,8 +57,9 @@ class FileTableWidget(QtWidgets.QWidget):
         self.auto_input_path = self.parent.params.input_path
         self.auto_image_tag = self.parent.params.image_tag
         self.auto_data_tag = self.parent.params.data_tag
-        # self.auto_element_tag = self.parent.params.element_tag
-        self.auto_quant_names = self.parent.params.quant_name
+        self.auto_element_tag = self.parent.params.element_tag
+        self.auto_quant_tag = self.parent.params.quant_tag
+        self.auto_scaler_tag = self.parent.params.scaler_tag
         #self.auto_detector_tag = self.parent.params.detector_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
@@ -87,7 +84,7 @@ class FileTableWidget(QtWidgets.QWidget):
         dirLabel = QtWidgets.QLabel('Directory:')
         self.dirLineEdit = QtWidgets.QLineEdit(self.auto_input_path)
         self.dirLineEdit.returnPressed.connect(self.onLoadDirectory)
-        self.extLineEdit = QtWidgets.QLineEdit('*.h5')
+        self.extLineEdit = QtWidgets.QLineEdit('.h5')
         self.extLineEdit.setMaximumSize(50, 30)
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
         # self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
@@ -106,33 +103,40 @@ class FileTableWidget(QtWidgets.QWidget):
         self.thetaLineEdit.setVisible(False)
 
 
-        imageTag_label = QtWidgets.QLabel('Image tag:')
+        imageTag_label = QtWidgets.QLabel('image tag:')
         imageTag_label.setFixedWidth(90)
         self.imageTag = QtWidgets.QComboBox()
         self.imageTag.activated.connect(self.getDataTag)
-        self.imageTag.activated.connect(self.getQuantOptions)
-        self.imageTag.activated.connect(self.getElementList)
+        self.imageTag.activated.connect(self.setup_element_list)
         self.imageTag.setFixedWidth(122.5)
 
-        dataTag_label = QtWidgets.QLabel('')
+        dataTag_label = QtWidgets.QLabel('data tag')
         dataTag_label.setFixedWidth(90)
         self.dataTag = QtWidgets.QComboBox()
         # self.dataTag.currentIndexChanged.connect(self.getDataTag)
-        self.dataTag.currentIndexChanged.connect(self.getElementList)
+        self.dataTag.currentIndexChanged.connect(self.setup_element_list)
         self.dataTag.setFixedWidth(122.5)
 
         self.elementTag_label = QtWidgets.QLabel('Elements:')
         self.elementTag_label.setFixedWidth(90)
 
         self.elementTag = QtWidgets.QComboBox()
-        self.elementTag.currentIndexChanged.connect(self.getElementList)
+        self.elementTag.currentIndexChanged.connect(self.element_tag_changed)
         self.elementTag.setFixedWidth(122.5)
 
-        quant_label = QtWidgets.QLabel('Normalize by:')
+        quant_label = QtWidgets.QLabel('quant options:')
         quant_label.setFixedWidth(90)
-        self.quant_options = QtWidgets.QComboBox()
-        # self.quant_options.currentIndexChanged.connect(self.getQuantOptions)
-        self.quant_options.setFixedWidth(122.5)
+        self.quantTag = QtWidgets.QComboBox()
+        # self.scalerTag.currentIndexChanged.connect(self.getScalerOptions)
+        self.quantTag.setFixedWidth(122.5)
+
+        scaler_label = QtWidgets.QLabel('Normalize by:')
+        scaler_label.setFixedWidth(90)
+        self.scalerTag = QtWidgets.QComboBox()
+        self.scalerTag.currentIndexChanged.connect(self.setup_scaler_list)
+        # self.imageTag.activated.connect(self.setup_scaler_list())
+
+        self.scalerTag.setFixedWidth(122.5)
 
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
@@ -167,8 +171,13 @@ class FileTableWidget(QtWidgets.QWidget):
 
         hBox5 = QtWidgets.QHBoxLayout()
         hBox5.addWidget(quant_label)
-        hBox5.addWidget(self.quant_options)
+        hBox5.addWidget(self.quantTag)
         hBox5.setAlignment(QtCore.Qt.AlignLeft)
+
+        hBox6 = QtWidgets.QHBoxLayout()
+        hBox6.addWidget(scaler_label)
+        hBox6.addWidget(self.scalerTag)
+        hBox6.setAlignment(QtCore.Qt.AlignLeft)
 
         hBox7 = QtWidgets.QHBoxLayout()
         hBox7.addWidget(self.saveDataBtn)
@@ -180,7 +189,7 @@ class FileTableWidget(QtWidgets.QWidget):
         vBox1.addLayout(hBox3)
         vBox1.addLayout(hBox4)
         vBox1.addLayout(hBox5)
-        # vBox1.addLayout(hBox6)
+        vBox1.addLayout(hBox6)
         vBox1.addLayout(hBox7)
         # vBox1.setFixedWidth(275)
 
@@ -214,7 +223,9 @@ class FileTableWidget(QtWidgets.QWidget):
             print("Invalid directory or file; Try a new folder or remove problematic files.")
         self.onThetaUpdate()
 
-        # self.dataTag.currentIndexChanged.connect(self.getElementList)
+
+
+
 
     def onLoadDirectory(self, files = None):
         self.version = 0
@@ -223,24 +234,14 @@ class FileTableWidget(QtWidgets.QWidget):
         if files == None:
             try:
                 filenames = os.listdir(self.dirLineEdit.text())
+                ext = "."+self.extLineEdit.text().split(".")[1]
+
             except FileNotFoundError:
                 self.message.setText("directory probably not mounted")
                 return
-            extension_list = ["."+ x.split(".")[-1] for x in filenames]
-            unique_ext = list(set(extension_list))
-            counter = 0
-            for i in unique_ext:
-                tmp_counter = 0
-                for j in extension_list:
-                    tmp_counter += i == j
-                if tmp_counter > counter:
-                    dominant_ext = i
-                    counter = tmp_counter
-                    self.extLineEdit.setText("*"+dominant_ext)
-                    ext = dominant_ext
+
         else:
-            ext = "*."+ files[0].split(".")[-1]
-            self.extLineEdit.setText(ext)
+            pass
 
 
         #TODO: get filetablemodel to accept only the selected files and not all files in the directory.
@@ -252,14 +253,48 @@ class FileTableWidget(QtWidgets.QWidget):
             return
         self.fileTableModel.setAllChecked(True)
 
-        if ext == '*.h5' or ext == '.h5':
+        if ".h5" in ext:
             try:
                 self.imageTag.clear()
                 self.getImgTags()
+                try:
+                    img_indx = self.imgTags.index(self.auto_image_tag)
+                except ValueError:
+                    img_indx = 0
+                self.imageTag.setCurrentIndex(img_indx)
+
+
                 self.getDataTag()
-                self.getElementList()
-                self.getQuantOptions()
+                try:
+                    data_indx = self.dataTags.index(self.auto_data_tag)
+                except ValueError:
+                    data_indx = 0
+                self.dataTag.setCurrentIndex(data_indx)
+
+                self.setup_element_list()
+                self.setup_quant_list()
+                self.setup_scaler_list()
                 self.onThetaUpdate()
+
+                try: #set auto_load options here:
+
+                    elem_indx = self.elementTags[self.imageTag.currentIndex()].index(self.auto_element_tag)
+                    self.elementTag.setCurrentIndex(elem_indx)
+                    self.element_tag = self.elementTag.currentText()
+                    self.element_tag_changed()
+
+                    quant_indx = self.quantTags.index(self.auto_quant_tag)
+                    self.quantTag.setCurrentIndex(quant_indx)
+
+                    scaler_indx = self.scalerTags.index(self.auto_scaler_tag)
+                    self.scalerTag.setCurrentIndex(scaler_indx)
+
+                except:
+                    pass
+                self.imageTag.currentIndexChanged.connect(self.setup_element_list)
+                self.elementTag.currentIndexChanged.connect(self.element_tag_changed)
+                # self.scalerTag.currentIndexChanged.connect(self.scaler_tag_changed)
+
             except KeyError:
                 pass
 
@@ -276,21 +311,16 @@ class FileTableWidget(QtWidgets.QWidget):
 
             self.imageTag.setEnabled(False)
             self.dataTag.setEnabled(False)
-            self.quant_options.setEnabled(False)
+            self.scalerTag.setEnabled(False)
             self.message.setText("Load angle information using txt or csv file")
             pass
-
-
-
-
-
-
-
+        return
 
     def getImgTags(self):
         fpath = self.fileTableModel.getFirstCheckedFilePath()
         self.img = h5py.File(fpath,"r")
-        self.imgTags = list(self.img.keys())
+        tmpTags = list(self.img.keys())
+        self.imgTags =  list(filter(lambda k: 'version' not in k, tmpTags))
         self.version = self.checkVersion()
         self.description = []
 
@@ -326,9 +356,9 @@ class FileTableWidget(QtWidgets.QWidget):
 
         if self.version == 0:
             self.message.clear()
-            self.thetaLineEdit.setEnabled(True)
+            # self.thetaLineEdit.setEnabled(True)
             self.dataTag.setEnabled(True)
-            self.quant_options.setEnabled(True)
+            # self.scalerTag.setEnabled(True)
 
             for i in range(len(self.imgTags)):
                 self.imageTag.addItem(self.imgTags[i])
@@ -336,10 +366,8 @@ class FileTableWidget(QtWidgets.QWidget):
             # if 'exchange' in self.imgTags and 'MAPS' in self.imgTags:
             #     self.imgTags.remove('MAPS')
 
-            if self.auto_image_tag in self.imgTags:
-                indx = self.imgTags.index(self.auto_image_tag)
-            else:
-                indx = 0
+
+            indx = 0
             self.imageTag.setCurrentIndex(indx)
 
             # else:
@@ -355,168 +383,162 @@ class FileTableWidget(QtWidgets.QWidget):
 
             self.dataTag.clear()
             self.dataTag.addItem('data')
-            # self.elementTag.clear()
-            # self.elementTag.addItem('data_names')
-            # for exchange_0
-            # if self.imgTags[self.imageTag.currentIndex()] == 'exchange_0':
-            #     #temp
-            #     self.quant_options.setEnabled(False)
-            #
-            # else:
-            #     self.quant_options.setEnabled(True)
 
         if self.version == 0:
-
-
-            # for old 2IDE HDF files with "exchange"
-            # if self.imageTag.currentText() == 'exchange':
-            #     self.message.setText('exchange: Fitted normalized by DS-IC')
-            #     self.dataTag.clear()
-            #     self.dataTag.addItem('images')
-            #     # self.elementTag.clear()
-            #     self.element_tag = 'images_names'
-            #     self.thetaLineEdit.setEnabled(True)
-            #     self.dataTag.setEnabled(False)
-            #     # self.elementTag.setEnabled(False)
-            #     self.quant_options.setEnabled(False)
-            #
-            # # for old 2IDE HDF files without "exchange"
-            #
-            #
-
-            if True:
-                # for read
-                self.message.clear()
-                self.dataTags = {}
-
-
-                for i in range(len(self.imgTags)):      #get 'data' tags and element tags
-                    self.dataTags[i] = list(self.img[self.imgTags[i]])
-                    indx = self.imageTag.currentIndex()
-                    if indx == -1:
-                        return
-                try:
-                    # #filtering  drop-down menu to inlcude only relevant entries.
-                    temp_tags1 = list(filter(lambda k: not 'names' in k, self.dataTags[indx]))
-                    temp_tags1 = list(filter(lambda k: not 'units' in k, temp_tags1))
-                    # temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
-                    self.dataTags[indx] = temp_tags1
-                    self.dataTag.clear()
-                    # # self.elementTag.clear()
-                    for i in range(len(self.dataTags[indx])):
-                        self.dataTag.addItem(self.dataTags[indx][i])
-
-                except KeyError:
-                    pass
-
-                try:
-                    indx2 = self.dataTags[indx].index(self.auto_data_tag)
-                    self.dataTag.setCurrentIndex(indx2)
-                except ValueError:
-                    pass
-
-                self.thetaLineEdit.setEnabled(True)
-                self.dataTag.setEnabled(True)
-                self.quant_options.setEnabled(True)
-
-    def getElementList(self):
-        if self.version == 0:   #legacy data
-            fpath = self.fileTableModel.getFirstCheckedFilePath()
-            image_tag = self.imageTag.currentText()
-
-            # for read
             self.message.clear()
-            self.elementTags = {}
-            num_image_tags = len(self.imgTags)
-            for i in range(num_image_tags):      #get element tags
-                self.elementTags[i] = list(self.img[self.imgTags[i]])
+            self.dataTags = []
+            self.dataTags = list(self.img[self.imgTags[self.imageTag.currentIndex()]])
             indx = self.imageTag.currentIndex()
             if indx == -1:
                 return
+
+            # #filtering  drop-down menu to inlcude only relevant entries.
+            temp_tags1 = list(filter(lambda k: not 'names' in k, self.dataTags))
+            temp_tags1 = list(filter(lambda k: not 'units' in k, temp_tags1))
+            temp_tags1 = list(filter(lambda k: not 'axis' in k, temp_tags1))
+            temp_tags1 = list(filter(lambda k: not 'quant' in k, temp_tags1))
+            # temp_tags2 = list(filter(lambda k: 'scalers' in k, self.dataTags[indx]))
+            self.dataTags = temp_tags1
             try:
-                #filtering  drop-down menu to inlcude only relevant entries.
-                self.elementTags[indx] = list(filter(lambda k: 'names' in k, self.elementTags[indx]))
-                self.element_tag = self.elementTag.currentText()
-                # self.elementTag.currentIndexChanged.disconnect(self.getElementList)
-                self.elementTag.disconnect()
-                self.elementTag.clear()
-
-                for i in range(len(self.elementTags[indx])):
-                    self.elementTag.addItem(self.elementTags[indx][i])
-
-                try:
-                    indx = self.elementTags[0].index(self.element_tag)
-                except:
-                    indx = 0
-                self.elementTag.setCurrentIndex(indx)
-                # self.elementTag.currentIndexChanged.connect(self.getElementList)
-
-                # if self.auto_element_tag in self.dataTags:
-                #     self.elementTag.setCurrentText(self.auto_element_tag)
-                # self.element_tag = self.elementTag.currentText()
-            except KeyError:
+                self.dataTag.disconnect()
+            except TypeError:
                 pass
+            self.dataTag.clear()
+            for i in range(len(self.dataTags)):
+                self.dataTag.addItem(self.dataTags[i])
+                self.dataTag.setCurrentIndex(0)
+            self.dataTag.setEnabled(True)
+
+    def getElements(self):
+        img_tag = self.imageTag.currentText()
+        element_tag = self.elementTag.currentText()
+        element_list = list(self.img[img_tag][element_tag])
+        element_list = [x.decode("utf-8") for x in element_list]
+        element_idxs = []
+        element_names = []
+        for i in range(len(element_list)):
+            if self.elementTableModel.arrayData[i].use:
+                element_names.append(self.elementTableModel.arrayData[i].element_name)
+                element_idxs.append(i)
+
+        return element_names, element_idxs
 
 
-            # self.elementTag.setEnabled(True)
+    def element_tag_changed(self):
+        fpath = self.fileTableModel.getFirstCheckedFilePath()
+        image_tag = self.imgTags[self.imageTag.currentIndex()]
+        self.element_tag = self.elementTag.currentText()
+        self.elementTableModel.loadElementNames(fpath, image_tag, self.element_tag)
+        self.elementTableModel.setAllChecked(False)
+        self.elementTableModel.setChecked(self.auto_selected_elements, (True))
+        return
 
-        if self.version == 1:   #9idbdata
-            fpath = self.fileTableModel.getFirstCheckedFilePath()
-            image_tag = self.imgTags[self.imageTag.currentIndex()]
-            if self.dataTag.currentText() == 'scalers':
-                self.element_tag = 'scaler_names'
-            else:
-                self.element_tag = 'data_names'
-            # element_tag = self.elementTag.currentText()
+    def setup_element_list(self):
+        fpath = self.fileTableModel.getFirstCheckedFilePath()
+        image_tag = self.imageTag.currentText()
+        self.message.clear()
+        self.elementTags = {}
+        num_image_tags = len(self.imgTags)
+        for i in range(num_image_tags):      #get element tags
+            self.elementTags[i] = list(self.img[self.imgTags[i]])
+            self.elementTags[i] = list(filter(lambda k: 'names' in k, self.elementTags[i]))
+            self.elementTags[i] = list(filter(lambda k: 'quant' not in k, self.elementTags[i]))
+        try:
+            self.elementTag.disconnect()
+        except TypeError:
+            pass
+        self.elementTag.clear()
+        img_indx = self.imageTag.currentIndex()
+        if img_indx == -1:
+            return
+        for i in range(len(self.elementTags[img_indx])):
+            self.elementTag.addItem(self.elementTags[img_indx][i])
+        self.elementTag.setCurrentIndex(0)
+        self.element_tag = self.elementTag.currentText()
 
         self.elementTableModel.loadElementNames(fpath, image_tag, self.element_tag)
         self.elementTableModel.setAllChecked(False)
         self.elementTableModel.setChecked(self.auto_selected_elements, (True))
-        self.elementTag.currentIndexChanged.connect(self.getElementList)
 
-        # if self.version == 2:   #2ide data
-    def getQuantOptions(self):
-        self.quant_options.clear()
-        img_tag = self.imgTags[self.imageTag.currentIndex()]
+    def setup_quant_list(self):
+        self.quantTag.clear()
+        quant_indx = self.imageTag.currentIndex()
+        if quant_indx == -1:
+            return
         try:
-            if self.version == 0:   #legacy data
-                quant_names = ['None', 'SRcurrent', 'us_ic', 'ds_ic']
-                for i in range(len(quant_names)):
-                    self.quant_options.addItem(quant_names[i])
-
-            if self.version == 1:   #9idbdata
-                quant_names = list(self.img[img_tag]['quant_names'])
-                quant_names = [quant_names[i].decode() for i in range(len(quant_names))]
-                self.quant_options.addItem('None')
-                for i in range(len(quant_names)):
-                    self.quant_options.addItem(quant_names[i])
-                # default_idx = quant_names.index("DS_IC")
-                # self.quant_options.setCurrentIndex(default_idx)
-            # self.quant_options.setEnabled(True)
-            # self.quant_exists = True
+            # #filtering  drop-down menu to inlcude only relevant entries.
+            img_tag = self.imgTags[quant_indx]
+            self.quantTags = list(self.img[img_tag])
+            self.quantTags = list(filter(lambda k: 'quant' in k, self.quantTags))
+            self.quantTags = list(filter(lambda k: 'names' not in k, self.quantTags))
+            self.quantTags.insert(0,"None")
         except:
-            # default_idx = quant_names.index("None")
-            # self.quant_exists = False
-            self.quant_options.addItem('None')
+            print("no qaunts found")
+            return
+        try:
+            for i in range(len(self.quantTags)):
+                self.quantTag.addItem(self.quantTags[i])
+            self.quantTag.setCurrentIndex(0)
+        except:
+            return
         return
 
-    def normalizeData(self, data, quants, scalers):
-        quants[quants <= 0] = 1
-        scalers[scalers <= 0] = 1
-        num_elements = data.shape[0]
-        num_files = data.shape[1]
+    def setup_scaler_list(self):
+        self.message.clear()
+        tmpscalerTags = {}
+        num_image_tags = len(self.imgTags)
+        for i in range(num_image_tags):      #get scaler tags
+            tmpscalerTags[i] = list(self.img[self.imgTags[i]])
+            tmpscalerTags[i] = list(filter(lambda k: 'scaler' in k, tmpscalerTags[i]))
+            tmpscalerTags[i] = list(filter(lambda k: 'names'  in k, tmpscalerTags[i]))
+        try:
+            self.scalerTag.disconnect()
+        except TypeError:
+            pass
+
+        self.scalerTag.clear()
+        scaler_indx = self.imageTag.currentIndex()
+        if scaler_indx == -1:
+            return
+        try:
+            # #filtering  drop-down menu to inlcude only relevant entries.
+            img_tag = self.imgTags[scaler_indx]
+            scaler_tag = tmpscalerTags[scaler_indx][0]
+            self.scalerTags = list(self.img[img_tag][scaler_tag])
+            self.scalerTags = [x.decode("utf-8") for x in self.scalerTags]
+            self.scalerTags.insert(0, "None")
+        except:
+            print("no scalers found")
+            return
+        try:
+            for i in range(len(self.scalerTags)):
+                self.scalerTag.addItem(self.scalerTags[i])
+            self.scalerTag.setCurrentIndex(0)
+            self.scaler_tag = self.scalerTag.currentText()
+        except:
+            return
+        return
+
+    def normalizeData(self, data, scalers, quants):
         #normalize
-        data = data / quants[:, :, None, None] / scalers
+        num_files = data.shape[1]
+        num_elements= data.shape[0]
         for i in range(num_elements):
-            norm_median = np.median(data[i, :, :, :])
-            norm_mean = np.mean(data[i, :, :, :])
-            norm_std = np.std(data[i, :, :, :])
-            elem_max = np.max(data[i, :, :, :])
-            norm_max = 3*norm_std + norm_mean
             for j in range(num_files):
-                median_arr = np.ones_like(data[i,j])*norm_mean
-                data[i,j] = [data[i,j] <= norm_max]*data[i,j,:,:]
-                data[i,j] = data[i,j] + [data[i,j] == 1]*np.ones_like(data[i,j])*norm_max
+                data[i,j] = data[i,j]/quants[i,j]
+            data[i] = data[i]/scalers
+        data[np.isnan(data)] = 0.0001
+        data[data == np.inf] = 0.0001
+        # for i in range(num_elements):
+        #     norm_median = np.median(data[i, :, :, :])
+        #     norm_mean = np.mean(data[i, :, :, :])
+        #     norm_std = np.std(data[i, :, :, :])
+        #     elem_max = np.max(data[i, :, :, :])
+        #     norm_max = 3*norm_std + norm_mean
+        #     for j in range(num_files):
+        #         median_arr = np.ones_like(data[i,j])*norm_mean
+        #         data[i,j] = [data[i,j] <= norm_max]*data[i,j,:,:]
+        #         data[i,j] = data[i,j] + [data[i,j] == 1]*np.ones_like(data[i,j])*norm_max
         return data
 
     def checkVersion(self):
@@ -530,8 +552,8 @@ class FileTableWidget(QtWidgets.QWidget):
             print("checking file version... No version info available")
             self.version = 0
 
-        if self.parent.forceLegacy.isChecked():
-            self.version=0
+        # if self.parent.forceLegacy.isChecked():
+        #     self.version=0
 
         #Temporary hardcode version to 0 (legacy import mode)
         #self.version = 0
@@ -624,13 +646,19 @@ class FileTableWidget(QtWidgets.QWidget):
         hdf_tag = self.imgTags[self.imageTag.currentIndex()]
         data_tag = self.dataTag.currentText()
         element_tag = self.element_tag
-        scaler_name = self.quant_options.currentText()
+        quant_tag = self.quantTag.currentText()
+        scaler_tag = self.scalerTag.currentText()
 
         k = np.arange(len(files))
         l = np.arange(len(elements))
 
         files = [files[j] for j in k if files_bool[j]==True]
+
+
+        
         path_files = [self.fileTableModel.directory + '/' + s for s in files]
+
+
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
 
@@ -639,7 +667,9 @@ class FileTableWidget(QtWidgets.QWidget):
         self.parent.params.theta_pv = self.thetaLineEdit.text()
         self.parent.params.image_tag = self.imgTags[self.imageTag.currentIndex()]
         self.parent.params.data_tag = self.dataTag.currentText()
-        # self.parent.params.element_tag = element_tag
+        self.parent.params.element_tag = element_tag
+        self.parent.params.quant_tag = quant_tag
+        self.parent.params.scaler_tag = scaler_tag
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
         #self.parent.params.detector_tag = self.scaler_option.currentText()
 
@@ -654,15 +684,33 @@ class FileTableWidget(QtWidgets.QWidget):
 
         self.parent.clear_all()
         try:
-            data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
+            scaler_exists = self.img[self.imageTag.currentText()]["scalers"]
+            quant_tag = self.quantTag.currentText()
+            scaler_tag = "scalers"
+            scaler_idx = self.scalerTag.currentIndex()-1
+            if scaler_idx<-1:
+                scaler_idx = -1
         except:
-            self.message.setText('Loading failed')
+            print("no 'scaler' tag found")
+            scaler_tag = None
+            quant_tag = None
+            scaler_idx=-1
+
+        # try:
+        # data, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, scaler_name)
+        try:
+            data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, quant_tag, scaler_tag, scaler_idx)
+        except:
+            self.message.setText("invalid image/data/element tag combination. Load failed")
             return [], [], [], []
 
-        if data is None or quants is None or scalers is None:
+        if data is None or scalers is None:
             return [], [], [], []
-        # if self.quant_options.currentText() != 'None':
-        self.data = self.normalizeData(data, quants, scalers)
+        if self.scalerTag.currentText() != 'None':
+            scaler_idx = self.scalerTag.currentIndex()-1
+            quant_option = self.quantTag.currentText()
+            elements, element_idxs = self.getElements()
+            data = self.normalizeData(data, scalers, quants)
         self.message.setText('finished loading')
 
         data[np.isnan(data)] = 0.0001

@@ -1,47 +1,42 @@
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.           #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
+#                       Software Name: XRFtomo                            #
 #                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
+#                   By: Argonne National Laboratory                       #
 #                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
+#                       OPEN SOURCE LICENSE                               #
 #                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
+# Redistribution and use in source and binary forms, with or without      #
+# modification, are permitted provided that the following conditions      #
+# are met:                                                                #
 #                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
+# 1. Redistributions of source code must retain the above copyright       #
+#    notice, this list of conditions and the following disclaimer.        #
 #                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
+# 2. Redistributions in binary form must reproduce the above copyright    #
+#    notice, this list of conditions and the following disclaimer in      #
+#    the documentation and/or other materials provided with the           #
+#    distribution.                                                        #
+#                                                                         #
+# 3. Neither the name of the copyright holder nor the names of its        #
+#    contributors may be used to endorse or promote products derived      #
+#    from this software without specific prior written permission.        #
+#                                                                         #
+#                               DISCLAIMER                                #
+#                                                                         #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR   #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT    #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT        #
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   #
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY   #
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT     #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
+###########################################################################
 
 
 from PyQt5 import QtCore, QtWidgets
@@ -56,7 +51,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
 
     def initUI(self):
         button1size = 270       #long button (1 column)
-        button12sie = 200       #2/3 column button
+        button12size = 200       #2/3 column button
         button2size = 142.5     #mid button (2 column)
         button33size = 98.3
         button3size = 93.3      #small button (almost third)
@@ -66,32 +61,49 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.combo1.setFixedWidth(button1size)
         self.method = QtWidgets.QComboBox(self)
         self.method.setFixedWidth(button1size)
+        self.recon_set = QtWidgets.QComboBox(self)
+        self.recon_set.setFixedWidth(button2size)
+        self.recon_set.setToolTip("reconstruction group")
+        recon_set_lbl = QtWidgets.QLabel("reconstruction set")
+        recon_set_lbl.setFixedWidth(button2size)
+
+
         self.btn = QtWidgets.QPushButton('Reconstruct')
-        self.btn.setFixedWidth(button2size)     
-        self.btn2 = QtWidgets.QPushButton('recon & save all')
-        self.btn2.setFixedWidth(button2size)
+        self.btn.setFixedWidth(button2size)
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setFixedWidth(button3size)
-        self.equalizeBtn = QtWidgets.QPushButton('equalize')
-        self.equalizeBtn.setFixedWidth(button2size)   
         self.rmHotspotBtn = QtWidgets.QPushButton('remove hotspot')
-        self.rmHotspotBtn.setFixedWidth(button2size)   
+        self.rmHotspotBtn.setFixedWidth(button2size)
+        self.setThreshBtn = QtWidgets.QPushButton('set L-threshold')
+        self.setThreshBtn.setFixedWidth(button2size)
+        self.recon_stats = QtWidgets.QPushButton("recon stats")
+        self.recon_stats.setFixedWidth(button2size)
 
-        self.start_lbl = QtWidgets.QLabel("bottom cross-section index")
-        self.start_lbl.setFixedWidth(button12sie)
+        self.start_lbl = QtWidgets.QLabel("bottom row")
+        self.start_lbl.setFixedWidth(button12size)
         self.start_indx = QtWidgets.QLineEdit("0")
         self.start_indx.setFixedWidth(button4size)
-        self.end_lbl = QtWidgets.QLabel("top cross-section index")
-        self.end_lbl.setFixedWidth(button12sie)
+        self.end_lbl = QtWidgets.QLabel("top row")
+        self.end_lbl.setFixedWidth(button12size)
         self.end_indx = QtWidgets.QLineEdit("0")
         self.end_indx.setFixedWidth(button4size)
-        self.mid_lbl = QtWidgets.QLabel("middle cross-section index")
-        self.mid_lbl.setFixedWidth(button12sie)
+        self.mid_lbl = QtWidgets.QLabel("middle row")
+        self.mid_lbl.setFixedWidth(button12size)
         self.mid_indx = QtWidgets.QLineEdit("-1")
         self.mid_indx.setFixedWidth(button4size)
         self.mid_indx.setDisabled(True)
-        self.recon_stats = QtWidgets.QCheckBox("show reconstructions statistics")
-        self.recon_stats.setChecked(False)
+
+        # offst_top_lbl = QtWidgets.QLabel("centers offset top")
+        # offst_top_lbl.setFixedWidth(button12size)
+        # offst_bottom_lbl = QtWidgets.QLabel("centers offset top")
+        # offst_bottom_lbl.setFixedWidth(button12size)
+        # self.offst_top = QtWidgets.QLineEdit("0")
+        # self.offst_top.setFixedWidth(button4size)
+        # self.offst_bottom = QtWidgets.QLineEdit("0")
+        # self.offst_bottom.setFixedWidth(button4size)
+
+        self.recon_all = QtWidgets.QCheckBox("reconstruct all elements")
+        self.recon_all.setChecked(False)
         self.recon_save = QtWidgets.QCheckBox("reconstruct & save simultaneously")
         self.recon_save.setChecked(False)
 
@@ -110,17 +122,28 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.betaName.setFixedWidth(button2size)
         self.deltaName = QtWidgets.QLabel("Delta")
         self.deltaName.setFixedWidth(button2size)
+        self.lThreshLbl = QtWidgets.QLabel("Lower Threshold")
+        self.lThreshLbl.setFixedWidth(button2size)
+
         self.iters = QtWidgets.QLineEdit("10")
         self.iters.setFixedWidth(button2size)
         self.beta = QtWidgets.QLineEdit("1")
         self.beta.setFixedWidth(button2size)
         self.delta = QtWidgets.QLineEdit("0.01")
         self.delta.setFixedWidth(button2size)
+        self.lThresh = QtWidgets.QLineEdit("0.0")
+        self.lThresh.setFixedWidth(button2size)
+
         self.maxText = QtWidgets.QLineEdit()
         self.maxText.setFixedWidth(button2size)
         self.minText = QtWidgets.QLineEdit()
         self.minText.setFixedWidth(button2size)
        
+        recon_setBox = QtWidgets.QHBoxLayout()
+        recon_setBox.addWidget(recon_set_lbl)
+        recon_setBox.addWidget(self.recon_set)
+
+
         startBox = QtWidgets.QHBoxLayout()
         startBox.addWidget(self.start_lbl)
         startBox.addWidget(self.start_indx)
@@ -130,7 +153,12 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         midBox = QtWidgets.QHBoxLayout()
         midBox.addWidget(self.mid_lbl)
         midBox.addWidget(self.mid_indx)
-        paddingBox = QtWidgets.QHBoxLayout()
+        # offst_top_box = QtWidgets.QHBoxLayout()
+        # offst_top_box.addWidget(offst_top_lbl)
+        # offst_top_box.addWidget(self.offst_top)
+        # offst_bottom_box = QtWidgets.QHBoxLayout()
+        # offst_bottom_box.addWidget(offst_bottom_lbl)
+        # offst_bottom_box.addWidget(self.offst_bottom)
 
         mdBox = QtWidgets.QHBoxLayout()
         mdBox.addWidget(self.mulBtn)
@@ -150,22 +178,29 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         deltaBox = QtWidgets.QHBoxLayout()
         deltaBox.addWidget(self.deltaName)
         deltaBox.addWidget(self.delta)
+        threshBox = QtWidgets.QHBoxLayout()
+        threshBox.addWidget(self.lThreshLbl)
+        threshBox.addWidget(self.lThresh)
         reconBox = QtWidgets.QHBoxLayout()
         reconBox.addWidget(self.btn)
-        reconBox.addWidget(self.btn2)
+        reconBox.addWidget(self.recon_stats)
+
         postReconBox = QtWidgets.QHBoxLayout()
-        postReconBox.addWidget(self.equalizeBtn)
+        # postReconBox.addWidget(self.equalizeBtn)
         postReconBox.addWidget(self.rmHotspotBtn)
+        postReconBox.addWidget(self.setThreshBtn)
 
 
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)
         vb.addWidget(self.method)
+        vb.addLayout(recon_setBox)
         vb.addLayout(endBox)
         vb.addLayout(startBox)
         vb.addLayout(midBox)
-        vb.addLayout(paddingBox)
-        vb.addWidget(self.recon_stats)
+        # vb.addLayout(offst_top_box)
+        # vb.addLayout(offst_bottom_box)
+        vb.addWidget(self.recon_all)
         vb.addWidget(self.recon_save)
         vb.addWidget(self.lbl)
         vb.addLayout(mdBox)
@@ -174,6 +209,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addLayout(itersBox)
         vb.addLayout(betaBox)
         vb.addLayout(deltaBox)
+        vb.addLayout(threshBox)
         vb.addLayout(reconBox)
         vb.addLayout(postReconBox)
 

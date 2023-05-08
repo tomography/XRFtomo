@@ -1,54 +1,50 @@
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.           #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
+#                       Software Name: XRFtomo                            #
 #                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
+#                   By: Argonne National Laboratory                       #
 #                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
+#                       OPEN SOURCE LICENSE                               #
 #                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
+# Redistribution and use in source and binary forms, with or without      #
+# modification, are permitted provided that the following conditions      #
+# are met:                                                                #
 #                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
+# 1. Redistributions of source code must retain the above copyright       #
+#    notice, this list of conditions and the following disclaimer.        #
 #                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
+# 2. Redistributions in binary form must reproduce the above copyright    #
+#    notice, this list of conditions and the following disclaimer in      #
+#    the documentation and/or other materials provided with the           #
+#    distribution.                                                        #
+#                                                                         #
+# 3. Neither the name of the copyright holder nor the names of its        #
+#    contributors may be used to endorse or promote products derived      #
+#    from this software without specific prior written permission.        #
+#                                                                         #
+#                               DISCLAIMER                                #
+#                                                                         #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR   #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT    #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT        #
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   #
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY   #
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT     #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
+###########################################################################
 
+import numpy as np
+import pyqtgraph
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
-import xrftomo
-import pyqtgraph
-import numpy as np
 from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
+
+import xrftomo
 
 
 class ImageProcessWidget(QtWidgets.QWidget):
@@ -60,6 +56,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
     alignmentChangedSig = pyqtSignal(np.ndarray, np.ndarray, name="alignmentChangedSig")
     ySizeChangedSig = pyqtSignal(int, name='ySizeChangedSig')
+    xSizeChangedSig = pyqtSignal(int, name='xSizeChangedSig')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
     refreshSig = pyqtSignal(name='refreshSig')
     padSig = pyqtSignal(int, int, name="padSig")
@@ -86,8 +83,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.lbl7 = QtWidgets.QLabel("")
 
         self.imageView.mouseMoveSig.connect(self.updatePanel)
-        #get pixel value from Histogram widget's projview 
-
+        #get pixel value from Histogram widget's projview
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
@@ -109,19 +105,14 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         # self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
-        self.ViewControl.reshapeBtn.clicked.connect(self.ViewControl.reshape_options.show)
-        self.ViewControl.run_reshape.clicked.connect(self.reshape_params)
+        self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         self.ViewControl.padBtn.clicked.connect(self.ViewControl.padding_options.show)
         self.ViewControl.run_padding.clicked.connect(self.pad_params)
-        self.ViewControl.cropBtn.clicked.connect(self.cut_params)
-        # self.ViewControl.gaussian33Btn.clicked.connect(self.actions.gauss33)
-        # self.ViewControl.gaussian55Btn.clicked.connect(self.actions.gauss55)
-        self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
-        self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
+        # self.ViewControl.captureBackground.clicked.connect(self.copyBG_params)
+        # self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
-        # self.ViewControl.hist_equalize.clicked.connect(self.equalize_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
-        self.ViewControl.Equalize.clicked.connect(self.histo_params)
+        # self.ViewControl.Equalize.clicked.connect(self.histo_params)
         self.ViewControl.invert.clicked.connect(self.invert_params)
         # self.ViewControl.histogramButton.clicked.connect(self.histogram)
 
@@ -237,12 +228,77 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.lcd.display(angle)
         self.sld.setValue(index)
         # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        self.updatePlot(self.data[element, index, ::-1, :], self.data[element])
         self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
+
+
+    def updatePlot(self,img,stack):
+        yrange = img.shape[0]
+        xrange = img.shape[1]
+
+        ploth = np.sum(img, axis=0)*xrange*0.2/(np.sum(stack,axis=1).max())
+        plotv = np.sum(img, axis=1)*yrange*0.2/(np.sum(stack,axis=2).max())
+        dy = 0.1
+        plot_dx = np.gradient(ploth, dy)
+        ploty_dx = plot_dx*yrange*0.1/plot_dx.max()
+
+        dx = 0.1
+        plot_dy = np.gradient(plotv, dx)**2
+        plot_dy = self.relax_edge(plot_dy,3)
+
+        ploty_dy = plot_dy*xrange*0.1/plot_dy.max()
+
+
+        self.imageView.p1.clearPlots()
+        self.imageView.p1.plot(ploth, pen=pyqtgraph.mkPen(color='b'))
+        self.imageView.p1.plot(ploty_dx, pen=pyqtgraph.mkPen(color='c'))
+
+        self.imageView.p1.plot(plotv, np.arange(len(plotv)), pen=pyqtgraph.mkPen(color='r'))
+        self.imageView.p1.plot(ploty_dy, np.arange(len(plot_dy)), pen=pyqtgraph.mkPen(color='y'))
+
+        self.imageView.p1.setXRange(int(-xrange*0.1), xrange, padding=0)
+        self.imageView.p1.setYRange(int(-yrange*0.1), yrange, padding=0)
+
+    def relax_edge(self, arr, N):
+        # tail_head = int(len(arr)*0.1)
+        # new_arr = arr[tail_head:-tail_head]
+
+        if len(arr.shape) >=2:
+            new_arr = np.zeros_like(arr)
+            for i in range(new_arr.shape[0]):
+                for j in range(N):
+                    new_arr[i] = self.trim_edge(arr[i])
+                new_arr[i][-1]=0
+                new_arr[i][0]=0
+
+            return new_arr
+        else:
+            #TODO: check array size, if tail_head exceeds bounds, raise exception.
+            for i in range(N):
+                new_arr = self.trim_edge(arr)
+            return new_arr
+
+    def trim_edge(self, arr):
+        arr_max = abs(arr.max())
+        arr_length = arr.shape[0]
+        for i in range(1, arr_length):
+            l_diff = abs(arr[i]-arr[i-1])
+            r_diff = abs(arr[-i-1] - arr[-i])
+            arr[-1] = 0
+            arr[0] = 0
+            if l_diff > arr_max*0.50:
+                arr[i] = 0
+                break
+            if r_diff >= arr_max*0.50:
+                arr[-i-1] = 0
+                break
+        return arr
 
     def updateElementSlot(self, element, projection = None):
         if projection == None:
            projection =  self.sld.value()
         # self.imageView.projView.setImage(self.data[element, projection, :, :], border='w')
+        self.updatePlot(self.data[element, projection, ::-1, :], self.data[element])
         self.imageView.projView.setImage(self.data[element, projection, ::-1, :], border='w')
 
         self.ViewControl.combo1.setCurrentIndex(element)
@@ -256,6 +312,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         index = self.sld.value()
         element = self.ViewControl.combo1.currentIndex()
         # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
+        self.updatePlot(self.data[element, index, ::-1, :], self.data[element])
         self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
 
     # def ySizeChanged(self, ySize):
@@ -324,10 +381,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.dataChangedSig.emit(data)
         if command == 'Delete':
             self.exclude_params()
-        if command == 'Copy':
-            self.copyBG_params(img)
-        if command == 'Paste':
-            data = self.pasteBG_params()
+        # if command == 'Copy':
+        #     self.copyBG_params(img)
+        # if command == 'Paste':
+        #     data = self.pasteBG_params()
 
     def get_params(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -355,11 +412,11 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.actions.normalize(data, element)
         self.dataChangedSig.emit(data)
 
-    def equalize_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        data = self.actions.equalize(data, element)
-        self.dataChangedSig.emit(data)
+    # def equalize_params(self):
+    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     data = self.data
+    #     data = self.actions.equalize(data, element)
+    #     self.dataChangedSig.emit(data)
 
     def invert_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -371,26 +428,27 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.actions.cut(self.data, x_pos, y_pos, x_size, y_size)
         self.ySizeChangedSig.emit(y_size)
+        self.xSizeChangedSig.emit(x_size)
         self.dataChangedSig.emit(data)
         #TODO: move crosshairs an ROI to crop region after crop
+        self.imageView.p1.items[2].setValue(0)
         self.imageView.p1.items[3].setValue(0)
-        self.imageView.p1.items[4].setValue(0)
         self.imageView.ROI.setPos([0, 0], finish=False)
         self.refreshSig.emit()
 
-    def copyBG_params(self,*img):
-        if type(img[0]) == bool:
-            element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        self.meanNoise, self.stdNoise = self.actions.copy_background(img)
-        return
+    # def copyBG_params(self,*img):
+    #     if type(img[0]) == bool:
+    #         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     self.meanNoise, self.stdNoise = self.actions.copy_background(img)
+    #     return
 
-    def pasteBG_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        meanNoise = self.meanNoise
-        stdNoise= self.stdNoise
-        data = self.data
-        data = self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img, meanNoise, stdNoise)
-        self.dataChangedSig.emit(data)
+    # def pasteBG_params(self):
+    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     meanNoise = self.meanNoise
+    #     stdNoise= self.stdNoise
+    #     data = self.data
+    #     data = self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img, meanNoise, stdNoise)
+    #     self.dataChangedSig.emit(data)
 
     def analysis_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -402,22 +460,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         img = data[element, projection, :,:]
         self.actions.bounding_analysis(img)
 
-    def reshape_params(self):
-        valid = self.ViewControl.validate_reshape_parameters()
-        if not valid:
-            return
-        y_multiplier = int(self.ViewControl.yUpsample_text.text())
-        x_multiplier = int(self.ViewControl.xUpsample_text.text())
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        datasize_x = self.data.shape[3]
-        datasize_y = self.data.shape[2]
-        data = self.actions.reshape_data(self.data, x_multiplier, y_multiplier)
-        new_ySize = int(datasize_y*y_multiplier)
-        self.ySizeChangedSig.emit(new_ySize)
-        # self.xSizeChangedSig.emit(new_xSize)
-        self.dataChangedSig.emit(data)
-        self.refreshSig.emit()
-        pass
 
     def pad_params(self):
         data = self.data
@@ -440,8 +482,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
                     y_shifts[i] = y_shifts[i] - y_dimension
                 data = self.actions.shiftProjection(data, x_shifts[i], y_shifts[i], i)
 
-        # self.padSig.emit(x,y)
+        self.padSig.emit(padding_x,padding_y)
         self.dataChangedSig.emit(data)
+        self.ySizeChangedSig.emit(self.data.shape[2])
+        self.xSizeChangedSig.emit(self.data.shape[3])
         return data
 
     def save_analysis(self):
@@ -473,6 +517,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.data
         data = self.actions.remove_hotspots(data, element)
         self.dataChangedSig.emit(data)
+
 
 
 
@@ -516,50 +561,50 @@ class ImageProcessWidget(QtWidgets.QWidget):
     #
 
 
-    def histo_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        for i in range(data.shape[1]):
-            mask = self.actions.create_mask(data[element,i])
-            data[element, i], m = self.actions.equalize_hist_ev(data[element,i], 2**16, mask)
-        self.dataChangedSig.emit(data)
+    # def histo_params(self):
+    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     data = self.data
+    #     for i in range(data.shape[1]):
+    #         mask = self.actions.create_mask(data[element,i])
+    #         data[element, i], m = self.actions.equalize_hist_ev(data[element,i], 2**16, mask)
+    #     self.dataChangedSig.emit(data)
 
-    def equalize_colocalization(self, elements, mask = None, nbins = 2**16, eq_hsv = False,
-                                global_shift = True, shift_funct = np.median):
-        '''
-        elements: each element dataset to use for colocalization (up to 3).
-        mask: bool or binary masks used to select roi.
-        nbins: number of bins used for histogram equalization.
-        eq_hsv: equalize the lumination of the colocalization.
-        global_shift: global shift each element to match
-                (i.e. have the mean of element 1 match the mean of element 2 after colocalization)
-        shift_funct: function used for global_shift.
-        '''
-        rgb = np.zeros((elements[0].shape[0], elements[0].shape[1], 3))
-        for i, element in enumerate(elements):
-            # Remove inf and nan.
-            element[~np.isfinite(element)] = 0
-            # Add to RGB image and normalize components.
-            rgb[:,:,i] = element/element.max()
-            # Equalize the R, G, and B components individually.
-            rgb[:,:,i], m = self.equalize_hist_ev(rgb[:,:,i], mask = mask, nbins = nbins,
-                                             shift_funct = np.median)
-            # Set shift value to zero.
-            if global_shift:
-                rgb[:,:,i] -= m
-
-        # shift all values to > 0.
-        if global_shift:
-            rgb[:,:,0:len(elements)] -= rgb[:,:,0:len(elements)].min()
-        if eq_hsv:
-            # Convert RGB to HSV and equalize the value. Convert back to RGB.
-            hsv = rgb_to_hsv(rgb)
-            # Equalize value component of the hsv image
-            #hsv[:,:,2] = equalize_hist(hsv[:,:,2], mask = mask, nbins = nbins)
-            # OR use CLASqualize value component of the hsv image
-            hsv[:,:,2] = exposure.equalize_adapthist(hsv[:,:,2], nbins = nbins, clip_limit = .001)
-            rgb = hsv_to_rgb(hsv)
-        return rgb
+    # def equalize_colocalization(self, elements, mask = None, nbins = 2**16, eq_hsv = False,
+    #                             global_shift = True, shift_funct = np.median):
+    #     '''
+    #     elements: each element dataset to use for colocalization (up to 3).
+    #     mask: bool or binary masks used to select roi.
+    #     nbins: number of bins used for histogram equalization.
+    #     eq_hsv: equalize the lumination of the colocalization.
+    #     global_shift: global shift each element to match
+    #             (i.e. have the mean of element 1 match the mean of element 2 after colocalization)
+    #     shift_funct: function used for global_shift.
+    #     '''
+    #     rgb = np.zeros((elements[0].shape[0], elements[0].shape[1], 3))
+    #     for i, element in enumerate(elements):
+    #         # Remove inf and nan.
+    #         element[~np.isfinite(element)] = 0
+    #         # Add to RGB image and normalize components.
+    #         rgb[:,:,i] = element/element.max()
+    #         # Equalize the R, G, and B components individually.
+    #         rgb[:,:,i], m = self.equalize_hist_ev(rgb[:,:,i], mask = mask, nbins = nbins,
+    #                                          shift_funct = np.median)
+    #         # Set shift value to zero.
+    #         if global_shift:
+    #             rgb[:,:,i] -= m
+    #
+    #     # shift all values to > 0.
+    #     if global_shift:
+    #         rgb[:,:,0:len(elements)] -= rgb[:,:,0:len(elements)].min()
+    #     if eq_hsv:
+    #         # Convert RGB to HSV and equalize the value. Convert back to RGB.
+    #         hsv = rgb_to_hsv(rgb)
+    #         # Equalize value component of the hsv image
+    #         #hsv[:,:,2] = equalize_hist(hsv[:,:,2], mask = mask, nbins = nbins)
+    #         # OR use CLASqualize value component of the hsv image
+    #         hsv[:,:,2] = exposure.equalize_adapthist(hsv[:,:,2], nbins = nbins, clip_limit = .001)
+    #         rgb = hsv_to_rgb(hsv)
+    #     return rgb
 
     # # Rotation Center Finding
 

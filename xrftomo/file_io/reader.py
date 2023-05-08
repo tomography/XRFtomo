@@ -2,49 +2,44 @@
 # -*- coding: utf-8 -*-
 
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.           #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
+#                       Software Name: XRFtomo                            #
 #                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
+#                   By: Argonne National Laboratory                       #
 #                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
+#                       OPEN SOURCE LICENSE                               #
 #                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
+# Redistribution and use in source and binary forms, with or without      #
+# modification, are permitted provided that the following conditions      #
+# are met:                                                                #
 #                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
+# 1. Redistributions of source code must retain the above copyright       #
+#    notice, this list of conditions and the following disclaimer.        #
 #                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
+# 2. Redistributions in binary form must reproduce the above copyright    #
+#    notice, this list of conditions and the following disclaimer in      #
+#    the documentation and/or other materials provided with the           #
+#    distribution.                                                        #
+#                                                                         #
+# 3. Neither the name of the copyright holder nor the names of its        #
+#    contributors may be used to endorse or promote products derived      #
+#    from this software without specific prior written permission.        #
+#                                                                         #
+#                               DISCLAIMER                                #
+#                                                                         #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR   #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT    #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT        #
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   #
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY   #
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT     #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
+###########################################################################
 
 """
 Module for importing raw data files.
@@ -168,6 +163,7 @@ def read_projection(fname, element, hdf_tag, roi_tag, channel_tag):
     if elements == []:
         return
     print(fname)
+
     projections = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, roi_tag))
 
     return projections[find_index(elements, element)]
@@ -282,7 +278,7 @@ def load_thetas_file(path_file):
 def load_thetas_13(path_files, data_tag):
     pass
 
-def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_name):
+def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, quant_tag=None, scaler_name=None, scaler_idx=-1):
     """
     Converts hdf files to numpy arrays for plotting and manipulation
 
@@ -342,32 +338,34 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, scaler_nam
                     print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
                     data[i, j] = np.zeros([max_y,max_x])
 
-    #get scalers
-    if scaler_name == 'None':
+
+    if scaler_name == None:
         scalers = np.ones([num_files, max_y, max_x])
         quants = np.ones([num_elements, num_files])
-        data[np.isnan(data)] = 0.0001
-        data[data == np.inf] = 0.0001
-        return data, quants, scalers
 
-    for j in range(num_files):
-        scaler = read_scaler(path_files[j], hdf_tag, scaler_name)
-        scaler_x = scaler.shape[1]
-        scaler_y = scaler.shape[0]
-        dx = (max_x-scaler_x)//2
-        dy = (max_y-scaler_y)//2
-        scalers[j,dy:scaler_y+dy, dx:scaler_x+dx] = scaler
-    #get quants
-    for i in range(num_elements):
+    else:
         for j in range(num_files):
-            quant_name = scaler_name
-            quant = read_quant(path_files[j], elements[i], hdf_tag, quant_name, channel_tag)
-            quants[i,j] = quant
+            scaler = read_scaler(path_files[j], hdf_tag, scaler_name)[0][scaler_idx]
+            scaler_x = scaler.shape[1]
+            scaler_y = scaler.shape[0]
+            dx = (max_x-scaler_x)//2
+            dy = (max_y-scaler_y)//2
+            scalers[j,dy:scaler_y+dy, dx:scaler_x+dx] = scaler
+
+        #get quants
+        for i in range(num_elements):
+            for j in range(num_files):
+                element_tag = channel_tag
+                try:
+                    quant = read_quant(path_files[j], elements[i], hdf_tag, quant_tag, element_tag, scaler_idx)
+                    quants[i, j] = quant
+                except:
+                    print("problem reading quant")
 
     data[np.isnan(data)] = 0.0001
     data[data == np.inf] = 0.0001
-    scalers[np.isnan(scalers)] = 0.0001
-    scalers[scalers == np.inf] = 0.0001
+    scalers[np.isnan(scalers)] = 1
+    scalers[scalers == np.inf] = 1
     quants[np.isnan(quants)] = 0.0001
     quants[quants == np.inf] = 0.0001
 
@@ -383,19 +381,17 @@ def read_scaler(fname, hdf_tag, scaler_name):
         
     return all_scaler[find_index(scaler_names, scaler_name)]
 
-def read_quant(fname, element, hdf_tag, quant_name, channel_tag):
-    elements = read_channel_names(fname, hdf_tag, channel_tag)
+def read_quant(fname, element, hdf_tag, quant_tag, element_tag, scaler_idx):
+    elements = read_channel_names(fname, hdf_tag, element_tag)
     elem_idx = find_index(elements,element)
 
     try:
-        quant_names = read_channel_names(fname, hdf_tag, 'quant_names')
-        all_quants = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, 'quant'))
+        all_quants = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, quant_tag))
+        result = all_quants[scaler_idx][0][elem_idx]
     except:
-        quant_names = ['SRcurrent','us_ic','ds_ic']
-        all_quants = dxchange.read_hdf5(fname, "{}/{}".format('MAPS', 'XRF_roi_quant'))
+        return
 
-    quant_idx = find_index(quant_names,quant_name)
-    return all_quants[quant_idx][0][elem_idx]
+    return result
 
 def read_tiffs(fnames):
 

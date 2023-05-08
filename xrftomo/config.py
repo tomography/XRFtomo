@@ -78,6 +78,11 @@ SECTIONS['file-io'] = {
         'type': str,
         'help': "element tag for h5 file",
         'metavar': 'PATH'},
+    'quant-tag': {
+        'default': 'XRF_roi',
+        'type': str,
+        'help': "data tag for h5 file",
+        'metavar': 'PATH'},
     'sorted-angles': {
         'default': 'True',
         'type': bool,
@@ -92,7 +97,7 @@ SECTIONS['file-io'] = {
         'default': '[0,1]',
         'type': str,
         'help': "list of selected elements indexes"},
-    'quant-name': {
+    'scaler-tag': {
         'default': 'SRcurrent',
         'type': str,
         'help': "normalize by this detector",
@@ -199,7 +204,7 @@ def config_to_list(config_name=NAME):
         for name, opts in ((n, o) for n, o in SECTIONS[section].items() if config.has_option(section, n)):
             value = config.get(section, name)
 
-            if value is not '' and value != 'None':
+            if value != '' and value != 'None':
                 action = opts.get('action', None)
 
                 if action == 'store_true' and value == 'True':
@@ -255,7 +260,7 @@ def write(config_file, args=None, sections=None):
             else:
                 value = opts['default'] if opts['default'] is not None else ''
 
-            prefix = '# ' if value is '' else ''
+            prefix = '# ' if value == '' else ''
 
             if name != 'config':
                 config.set(section, prefix + name, str(value))

@@ -1,47 +1,42 @@
 # #########################################################################
-# Copyright (c) 2018, UChicago Argonne, LLC. All rights reserved.         #
+# Copyright © 2020, UChicago Argonne, LLC. All Rights Reserved.           #
 #                                                                         #
-# Copyright 2018. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
+#                       Software Name: XRFtomo                            #
 #                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
+#                   By: Argonne National Laboratory                       #
 #                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
+#                       OPEN SOURCE LICENSE                               #
 #                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
+# Redistribution and use in source and binary forms, with or without      #
+# modification, are permitted provided that the following conditions      #
+# are met:                                                                #
 #                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
+# 1. Redistributions of source code must retain the above copyright       #
+#    notice, this list of conditions and the following disclaimer.        #
 #                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
+# 2. Redistributions in binary form must reproduce the above copyright    #
+#    notice, this list of conditions and the following disclaimer in      #
+#    the documentation and/or other materials provided with the           #
+#    distribution.                                                        #
+#                                                                         #
+# 3. Neither the name of the copyright holder nor the names of its        #
+#    contributors may be used to endorse or promote products derived      #
+#    from this software without specific prior written permission.        #
+#                                                                         #
+#                               DISCLAIMER                                #
+#                                                                         #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS     #
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR   #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT    #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT        #
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   #
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY   #
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT     #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
+###########################################################################
 
 
 from PyQt5 import QtCore, QtWidgets
@@ -69,8 +64,15 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.combo3 = QtWidgets.QComboBox(self)
         self.combo3.setFixedWidth(button2size)
 
+        self.roi = QtWidgets.QCheckBox("constrain registration to roi")
+        self.xcorsino = QtWidgets.QPushButton('xcor sino')
+        self.xcorsino.setFixedWidth(button2size)
+        self.xcorry = QtWidgets.QPushButton('sum y row.')
+        self.xcorry.setFixedWidth(button2size)
         self.btn1 = QtWidgets.QPushButton('center of mass')
         self.btn1.setFixedWidth(button2size)
+        self.xcorrdy = QtWidgets.QPushButton('sum dy row.')
+        self.xcorrdy.setFixedWidth(button2size)
         self.btn2 = QtWidgets.QPushButton('cross corr.')
         self.btn2.setFixedWidth(button2size)
         self.btn3 = QtWidgets.QPushButton('phase corr.')
@@ -85,13 +87,42 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.btn9.setFixedWidth(button2size)
         self.center = QtWidgets.QPushButton("Find center")
         self.center.setFixedWidth(button2size)
+        self.opflow = QtWidgets.QPushButton("optical flow")
+        self.opflow.setFixedWidth(button2size)
         self.rot_axis = QtWidgets.QPushButton("Set rot. axis")
         self.rot_axis.setFixedWidth(button2size)
-        self.rot_axis.setDisabled(True)
+        self.fitPeaks = QtWidgets.QPushButton("fit peaks")
+        self.fitPeaks.setFixedWidth(button2size)
         self.lbl = QtWidgets.QLabel("")
         self.lbl.setFixedWidth(button2size)
-        # self.combo2.setVisible(False)
 
+        self.freq = QtWidgets.QLineEdit("1")
+        self.freq.setFixedWidth(button4size)
+        self.amp = QtWidgets.QLineEdit("10")
+        self.amp.setFixedWidth(button4size)
+        self.phase = QtWidgets.QLineEdit("0")
+        self.phase.setFixedWidth(button4size)
+        self.offst = QtWidgets.QLineEdit("0")
+        self.offst.setFixedWidth(button4size)
+
+        self.freq_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.freq_sld.setFixedWidth(button4size)
+        self.amp_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.amp_sld.setFixedWidth(button4size)
+        self.phase_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.phase_sld.setFixedWidth(button4size)
+        self.offst_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.offst_sld.setFixedWidth(button4size)
+        freq_lbl = QtWidgets.QLabel("frequency")
+        freq_lbl.setFixedWidth(button4size)
+        amp_lbl = QtWidgets.QLabel("amplitude")
+        amp_lbl.setFixedWidth(button4size)
+        phase_lbl = QtWidgets.QLabel("phase")
+        phase_lbl.setFixedWidth(button4size)
+        offst_lbl = QtWidgets.QLabel("DC offset")
+        offst_lbl.setFixedWidth(button4size)
+        self.set2line = QtWidgets.QPushButton("set2line")
+        self.set2line.setFixedWidth(button1size)
 
         for i in range(5):
             self.combo3.addItem(str(i + 1))
@@ -108,8 +139,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.hotspot_mode_chbx = QtWidgets.QCheckBox("enable hotspot mode")
         self.hotspot_mode_chbx.setFixedWidth(button1size)
 
-
-
         self.hotspot_mode_chbx.setVisible(False)
         self.hotspot_lbl.setVisible(False)
         self.combo3.setVisible(False)
@@ -119,28 +148,34 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.clear_data.setVisible(False)
         self.fit_sine.setVisible(False)
 
-
+        hb0 = QtWidgets.QHBoxLayout()
+        hb0.addWidget(self.xcorsino)
+        hb0.addWidget(self.xcorrdy)
 
         hb1 = QtWidgets.QHBoxLayout()
         hb1.addWidget(self.btn1)
+        hb1.addWidget(self.xcorry)
 
         hb2 = QtWidgets.QHBoxLayout()
         hb2.addWidget(self.btn2)
-        hb2.addWidget(self.btn3)
+        hb2.addWidget(self.btn5)
+        # hb2.addWidget(self.btn3)
 
         hb3 = QtWidgets.QHBoxLayout()
         hb3.addWidget(self.btn6)
         hb3.addWidget(self.btn7)
 
         hb4 = QtWidgets.QHBoxLayout()
-        hb4.addWidget(self.btn5)
-        hb4.addWidget(self.btn9)
+        # hb4.addWidget(self.btn5)
+        # hb4.addWidget(self.btn9)
 
         hb5 = QtWidgets.QHBoxLayout()
         hb5.addWidget(self.center)
+        hb5.addWidget(self.opflow)
 
         hb6 = QtWidgets.QHBoxLayout()
-        hb6.addWidget(self.rot_axis)
+        # hb6.addWidget(self.rot_axis)
+        hb6.addWidget(self.fitPeaks)
 
         hb65 = QtWidgets.QHBoxLayout()
         hb65.addWidget(self.hotspot_mode_chbx)
@@ -154,7 +189,31 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         hb9.addWidget(self.fit_sine)
         hb9.addWidget(self.clear_data)
 
+        hb10 = QtWidgets.QHBoxLayout()
+        hb10.addWidget(freq_lbl)
+        hb10.addWidget(self.freq)
+        hb10.addWidget(self.freq_sld)
+
+        hb11 = QtWidgets.QHBoxLayout()
+        hb11.addWidget(amp_lbl)
+        hb11.addWidget(self.amp)
+        hb11.addWidget(self.amp_sld)
+
+        hb12 = QtWidgets.QHBoxLayout()
+        hb12.addWidget(phase_lbl)
+        hb12.addWidget(self.phase)
+        hb12.addWidget(self.phase_sld)
+
+        hb13 = QtWidgets.QHBoxLayout()
+        hb13.addWidget(offst_lbl)
+        hb13.addWidget(self.offst)
+        hb13.addWidget(self.offst_sld)
+
+        hb14 = QtWidgets.QHBoxLayout()
+        hb14.addWidget(self.set2line)
+
         vb1 = QtWidgets.QVBoxLayout()
+        vb1.addLayout(hb0)
         vb1.addLayout(hb1)
         vb1.addLayout(hb2)
         vb1.addLayout(hb3)
@@ -168,21 +227,33 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb2.addLayout(hb8)
         vb2.addLayout(hb9)
 
+        sinoctrls = QtWidgets.QVBoxLayout()
+        sinoctrls.addLayout(hb10)
+        sinoctrls.addLayout(hb11)
+        sinoctrls.addLayout(hb12)
+        sinoctrls.addLayout(hb13)
+        sinoctrls.addLayout(hb14)
 
         vb3 = QtWidgets.QVBoxLayout()
         vb3.addWidget(self.combo1)
         # vb3.addWidget(self.combo2)
+        vb3.addWidget(self.roi)
         vb3.addLayout(vb1)
         vb3.addLayout(vb2)
+        vb3.addLayout(sinoctrls)
         # self.setFixedWidth(button1size)
+
+        self.btn3.setVisible(False) #phase corr
+        # self.btn5.setVisible(False)
+        # self.btn6.setVisible(False)
+        self.btn9.setVisible(False) #adjust sino
+        self.rot_axis.setVisible(False) #rot axis
+
         self.setLayout(vb3)
 
 
-        self.btn3.setVisible(False)
-        self.btn5.setVisible(False)
-        self.btn6.setVisible(False)
 
-        #__________Popup window for iterative alignment__________
+    #__________Popup window for iterative alignment__________
 
         self.iter_parameters = QtWidgets.QWidget()
         self.iter_parameters.resize(275,400)
