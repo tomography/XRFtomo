@@ -73,6 +73,11 @@ from xrftomo.widgets.sinogram_controls import *
 from xrftomo.widgets.sinogram_view import *
 from xrftomo.widgets.sinogram_actions import *
 
+from xrftomo.widgets.lami import *
+from xrftomo.widgets.lami_controls import *
+from xrftomo.widgets.lami_view import *
+from xrftomo.widgets.lami_actions import *
+
 from xrftomo.menu_installer import *
 
 try:

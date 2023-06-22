@@ -52,21 +52,20 @@ from matplotlib import pyplot as plt
 import time
 
 
-class ReconstructionWidget(QtWidgets.QWidget):
+class LaminographyWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, name='elementChangedSig')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
     reconChangedSig = pyqtSignal(np.ndarray, name='reconChangedSig')
     reconArrChangedSig = pyqtSignal(dict, name='reconArrChangedSig')
 
     def __init__(self):
-        super(ReconstructionWidget, self).__init__()
+        super(LaminographyWidget, self).__init__()
         self.initUI()
 
     def initUI(self):
-        self.ViewControl = xrftomo.ReconstructionControlsWidget()
-        self.ReconView = xrftomo.ReconView(self)
-        self.actions = xrftomo.ReconstructionActions()
-        self.actions2 = xrftomo.ImageProcessActions()
+        self.ViewControl = xrftomo.LaminographyControlsWidget()
+        self.ReconView = xrftomo.LamiView(self)
+        self.actions = xrftomo.LaminographyActions()
         self.writer = xrftomo.SaveOptions()
 
         self.file_name_title = QtWidgets.QLabel("_")
@@ -88,12 +87,11 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.hist.setMaximumWidth(120)
         self.hist.setImageItem(self.ReconView.projView)
 
-        self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
+        self.ViewControl.elem.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
-        self.ViewControl.btn.clicked.connect(self.reconstruct_params)
+        self.ViewControl.rec_btn.clicked.connect(self.reconstruct_params)
         self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
-
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
 
@@ -150,60 +148,33 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.actions.centers = self.centers
         self.y_range = self.data.shape[2]
 
-        self.ViewControl.combo1.clear()
-        self.ViewControl.method.clear()
+        self.ViewControl.elem.clear()
         self.ViewControl.recon_set.clear()
         self.ViewControl.recon_set.disconnect()
-        methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
         for j in self.elements:
-            self.ViewControl.combo1.addItem(j)
-        for k in range(len(methodname)):
-            self.ViewControl.method.addItem(methodname[k])
-        for l in self.elements:
-            self.ViewControl.recon_set.addItem(l)
-            self.recon_dict[l] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
+            self.ViewControl.elem.addItem(j)
+            self.ViewControl.recon_set.addItem(j)
+            self.recon_dict[j] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
         self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
+        self.ViewControl.axis_center.setText(str(self.data.shape[3]//2))
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
-
-        # self.ViewControl.centerTextBox.setText(str(self.centers[2]))
-        self.ViewControl.mulBtn.setEnabled(False)
-        self.ViewControl.divBtn.setEnabled(False)
-        self.ViewControl.end_indx.setText((str(self.data.shape[2])))
-        self.ViewControl.mid_indx.setText((str(self.data.shape[2]//2)))
 
         self.sld.setRange(0, self.y_range - 1)
         self.lcd.display(0)
         return
 
-
-
-
-
     def elementChanged(self):
-        element = self.ViewControl.combo1.currentIndex()
+        element = self.ViewControl.elem.currentIndex()
         self.updateElementSlot(element)
         self.updateReconSlot(element)
         self.elementChangedSig.emit(element)
 
     def updateReconSlot(self,element):
-        element = self.ViewControl.combo1.currentIndex()
+        element = self.ViewControl.elem.currentIndex()
         self.ViewControl.recon_set.setCurrentIndex(element)
 
-    def call_reconMultiply(self):
-        '''
-        multiply reconstruction by 10
-        '''
-        self.recon = self.actions.reconMultiply(self.recon)
-        self.update_recon_image()
-
-    def call_reconDivide(self):
-        '''
-        divide reconstuction by 10
-        '''
-        self.recon = self.actions.reconDivide(self.recon)
-        self.update_recon_image()
 
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
@@ -233,27 +204,14 @@ class ReconstructionWidget(QtWidgets.QWidget):
             self.ViewControl.start_indx.setText(str(end_indx-1))
         if start_indx < 0:
             self.ViewControl.start_indx.setText(str(0))
-        self.update_middle_index()
 
         self.sld.setRange(0, end_indx-start_indx - 1)
         self.sld.setValue(0)
         self.lcd.display(0)
 
-    def update_middle_index(self):
-        start_indx = int(self.ViewControl.start_indx.text())
-        end_indx = int(self.ViewControl.end_indx.text())
-        mid_indx = int(self.ViewControl.mid_indx.text())
-        if mid_indx == -1:
-            mid_indx = end_indx//2
-        if mid_indx > end_indx:
-            mid_indx = end_indx
-            self.ViewControl.mid_indx.setText(str(mid_indx))
-        if mid_indx < start_indx:
-            mid_indx = start_indx
-            self.ViewControl.mid_indx.setText(str(mid_indx))
 
     def get_recon_stats(self):
-        element = self.elements[self.ViewControl.combo1.currentIndex()]
+        element = self.elements[self.ViewControl.elem.currentIndex()]
 
         #TODO: get curent reconstruction from recon_dict
         recon = self.recon_dict[element]
@@ -264,12 +222,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         data = np.flipud(data)[row_index]
         err, mse = self.actions.recon_stats(recon, middle_index, data, True)
         return
-
-    # def toggle_middle_index(self):
-    #     if self.ViewControl.recon_stats.isChecked():
-    #         self.ViewControl.mid_indx.setEnabled(True)
-    #     else:
-    #         self.ViewControl.mid_indx.setEnabled(False)
 
 
     def rm_hotspot_params(self):
@@ -284,7 +236,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.update_recon_image()
 
     def update_recon_dict(self, recon):
-        elem = self.ViewControl.combo1.currentText()
+        elem = self.ViewControl.elem.currentText()
         #recon could be a partial reconstruction, account for this by indexing the Y range as well
         ymin = int(eval(self.ViewControl.start_indx.text()))
         ymax = int(eval(self.ViewControl.end_indx.text()))
@@ -325,10 +277,10 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.elementChangedSig.emit(element)
 
     def updateElementSlot(self, element):
-        self.ViewControl.combo1.setCurrentIndex(element)
+        self.ViewControl.elem.setCurrentIndex(element)
 
     def reconstruct_params(self):
-        element = self.ViewControl.combo1.currentIndex()
+        element = self.ViewControl.elem.currentIndex()
         center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
@@ -347,8 +299,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         recon_dict = self.recon_dict.copy()
         if self.ViewControl.recon_save.isChecked():
             try: #promps for directory and subdir folder
-                # save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
-                save_path = '/Users/marinf/Downloads/test_recon'
+                save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+                # save_path = '/Users/marinf/Downloads/test_recon'
                 if save_path == "":
                     raise IOError
                 if save_path == None:
@@ -362,17 +314,17 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
         if self.ViewControl.recon_all.isChecked():
             #element is an index, so get list of indices.
-            num_elements = self.ViewControl.combo1.count()
+            num_elements = self.ViewControl.elem.count()
             elements = [i for i in range(num_elements)]
         else:
-            elements = [self.ViewControl.combo1.currentIndex()]
+            elements = [self.ViewControl.elem.currentIndex()]
 
         for element in elements:
-            self.ViewControl.combo1.setCurrentIndex(element)    #required to properly update recon_dict
+            self.ViewControl.elem.setCurrentIndex(element)    #required to properly update recon_dict
             recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
             if self.ViewControl.recon_save.isChecked():
                 #get list of element names from list of elemnt indices
-                element_names = [self.ViewControl.combo1.itemText(idx) for idx in elements]
+                element_names = [self.ViewControl.elem.itemText(idx) for idx in elements]
                 print("running reconstruction for:", element_names[element])
                 savepath = save_path + '/' + element_names[element]
                 savedir = savepath + '/' + element_names[element]
@@ -384,34 +336,26 @@ class ReconstructionWidget(QtWidgets.QWidget):
             start_idx = int(eval(self.ViewControl.start_indx.text()))
             print("working fine")
             for i in range(num_xsections):
-                if method ==8:
-                    break
-                j = num_xsections - i - 1
-                xsection[0, :, 0] = data[element, :, j]
-                cent = center
+                if method == 0:
+                    pass
+                elif method ==1:
 
-                if method!= 1 and method !=8:  #all methods other than gridrec
-                    recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 1, thetas, None)
-                    for k in range(1, iters):
-                        recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 1, thetas, recon)
-                        print("reconstructing row {}/{} on iteration{}".format(i+1,num_xsections,k))
+                    try:
+                        lami_angle = 90 - eval(self.ViewControl.lami_angle.text())
 
-                if method == 1:        #gridrec
-                    recon = self.actions.reconstruct(xsection, 0, cent, method, beta, delta, 1, thetas, None)
-                    print("reconstructing row{}/{}".format(i+1, num_xsections))
+                        if lami_angle < 0 or lami_angle >90:
+                            return
 
-                recons[i] = recon[0]
-                if self.ViewControl.recon_save.isChecked():
-                    self.writer.save_reconstruction(recon, savedir, start_idx+i)
-                err, mse = self.actions.assessRecon(recon, xsection[0,:,0], thetas, show_plots=False)
-                print(mse)
+                    except:
+                        print("need valid laminograhy angle")
+                        return
+                    recon = self.actions.lam_BP2(data[element], thetas, lami_angle, interpolation="nearest_neighbor")
+                    recons = recon
 
             #TODO: Update recon_dict and recon display.
-            recon_dict[self.ViewControl.combo1.itemText(element)] = np.array(recons)
+            recon_dict[self.ViewControl.elem.itemText(element)] = np.array(recons)
             self.recon = np.array(recons)
 
-        self.ViewControl.mulBtn.setEnabled(True)
-        self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
         self.update_recon_dict(self.recon)
         self.reconChangedSig.emit(self.recon)
@@ -420,8 +364,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
     def reconstruct_all_params(self):
         #figure out how to get a list of all selected elements
-        num_elements = self.ViewControl.combo1.count()
-        element_names = [self.ViewControl.combo1.itemText(i) for i in range(num_elements)]
+        num_elements = self.ViewControl.elem.count()
+        element_names = [self.ViewControl.elem.itemText(i) for i in range(num_elements)]
         # box_checked = self.ViewControl.cbox.isChecked()
         center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
         method = self.ViewControl.method.currentIndex()
@@ -435,8 +379,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         data = self.data[:,:,start_indx:end_indx,:]
 
         self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas,start_indx)
-        self.ViewControl.mulBtn.setEnabled(True)
-        self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
         self.reconChangedSig.emit(self.recon)
         return

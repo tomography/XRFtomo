@@ -187,6 +187,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget = xrftomo.ImageProcessWidget()
         self.sinogramWidget = xrftomo.SinogramWidget()
         self.reconstructionWidget = xrftomo.ReconstructionWidget()
+        self.laminographyWidget = xrftomo.LaminographyWidget()
         self.scatterWidget = xrftomo.ScatterView()
         self.scatterWidgetRecon = xrftomo.ScatterView()
         self.miniReconWidget = xrftomo.MiniReconView()
@@ -205,7 +206,8 @@ class xrftomoGui(QtGui.QMainWindow):
         #element dropdown change
         self.imageProcessWidget.elementChangedSig.connect(self.sinogramWidget.updateElementSlot)
         self.sinogramWidget.elementChangedSig.connect(self.reconstructionWidget.updateElementSlot)
-        self.reconstructionWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
+        self.reconstructionWidget.elementChangedSig.connect(self.laminographyWidget.updateElementSlot)
+        self.laminographyWidget.elementChangedSig.connect(self.imageProcessWidget.updateElementSlot)
 
         # data update
         self.imageProcessWidget.dataChangedSig.connect(self.update_history)
@@ -219,6 +221,8 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget.ySizeChangedSig.connect(self.sinogramWidget.ySizeChanged)
         self.imageProcessWidget.ySizeChangedSig.connect(self.reconstructionWidget.ySizeChanged)
         self.imageProcessWidget.xSizeChangedSig.connect(self.reconstructionWidget.xSizeChanged)
+        self.imageProcessWidget.ySizeChangedSig.connect(self.laminographyWidget.ySizeChanged)
+        self.imageProcessWidget.xSizeChangedSig.connect(self.laminographyWidget.xSizeChanged)
         self.imageProcessWidget.padSig.connect(self.update_padding)
         #alignment changed
         self.imageProcessWidget.alignmentChangedSig.connect(self.update_alignment)
@@ -233,21 +237,26 @@ class xrftomoGui(QtGui.QMainWindow):
         #update_reconstructed_data
         self.reconstructionWidget.reconChangedSig.connect(self.update_recon)
         self.reconstructionWidget.reconArrChangedSig.connect(self.update_recon_dict)
+        self.laminographyWidget.reconChangedSig.connect(self.update_recon)
+        self.laminographyWidget.reconArrChangedSig.connect(self.update_recon_dict)
 
         self.prevTab = 0
         self.TAB_FILE = 0
         self.TAB_IMAGE_PROC = 1
         self.TAB_SINOGRAM = 2
         self.TAB_RECONSTRUCTION = 3
+        self.TAB_LAMINOGRAPHY = 4
 
         self.tab_widget = QtWidgets.QTabWidget()
         self.tab_widget.addTab(self.fileTableWidget, 'Files')
         self.tab_widget.addTab(self.imageProcessWidget, "Pre Processing")
         self.tab_widget.addTab(self.sinogramWidget, "Alignment")
         self.tab_widget.addTab(self.reconstructionWidget, "Reconstruction")
+        self.tab_widget.addTab(self.laminographyWidget, "Laminography")
         self.tab_widget.setTabEnabled(1,False)
         self.tab_widget.setTabEnabled(2,False)
         self.tab_widget.setTabEnabled(3,False)
+        self.tab_widget.setTabEnabled(4,False)
 
         self.tab_widget.currentChanged.connect(self.onTabChanged)
         self.fileTableWidget.saveDataBtn.clicked.connect(self.updateImages)
@@ -353,7 +362,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.toolsMenu.setDisabled(True)
 
         self.settingsMenu = menubar.addMenu(" &Settings")
-        self.settingsMenu.addAction(hardwareSelect)
+        # self.settingsMenu.addAction(hardwareSelect)
 
         self.viewMenu = menubar.addMenu(" &View")
         self.viewMenu.addAction(setAspectratio)
@@ -1555,6 +1564,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.scatterWidgetRecon.roiDraggedSig.connect(self.updateInnerScatterRecon)
 
 
+    #TODO: remove mini-recon stuff 
     def updateMiniRecon(self):
         
         e1 = self.elem1_options.currentIndex()
@@ -1693,12 +1703,14 @@ class xrftomoGui(QtGui.QMainWindow):
             self.sinogramWidget.imageView.p1.vb.setAspectLocked(True)
             self.sinogramWidget.diffView.p1.vb.setAspectLocked(True)
             self.reconstructionWidget.ReconView.p1.vb.setAspectLocked(True)
+            self.laminographyWidget.ReconView.p1.vb.setAspectLocked(True)
         else:
             self.imageProcessWidget.imageView.p1.vb.setAspectLocked(False)
             self.sinogramWidget.sinoView.p1.vb.setAspectLocked(False)
             self.sinogramWidget.imageView.p1.vb.setAspectLocked(False)
             self.sinogramWidget.diffView.p1.vb.setAspectLocked(False)
             self.reconstructionWidget.ReconView.p1.vb.setAspectLocked(False)
+            self.laminographyWidget.ReconView.p1.vb.setAspectLocked(False)
 
     def loadSettingsChanged(self):
         load_settings = []
@@ -1757,6 +1769,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.tab_widget.setTabEnabled(1,False)
         self.tab_widget.setTabEnabled(2,False)
         self.tab_widget.setTabEnabled(3,False)
+        self.tab_widget.setTabEnabled(4,False)
         self.afterConversionMenu.setDisabled(True)
         self.editMenu.setDisabled(True)
         self.toolsMenu.setDisabled(True)
@@ -1795,6 +1808,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.tab_widget.setTabEnabled(1, False)
         self.tab_widget.setTabEnabled(2, False)
         self.tab_widget.setTabEnabled(3, False)
+        self.tab_widget.setTabEnabled(4, False)
         self.afterConversionMenu.setDisabled(True)
         self.editMenu.setDisabled(True)
         self.toolsMenu.setDisabled(True)
@@ -1813,6 +1827,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.tab_widget.setTabEnabled(1, False)
         self.tab_widget.setTabEnabled(2, False)
         self.tab_widget.setTabEnabled(3, False)
+        self.tab_widget.setTabEnabled(4, False)
         self.afterConversionMenu.setDisabled(True)
         self.editMenu.setDisabled(True)
         self.toolsMenu.setDisabled(True)
@@ -1824,6 +1839,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.tab_widget.setTabEnabled(1, True)
         self.tab_widget.setTabEnabled(2, True)
         self.tab_widget.setTabEnabled(3, True)
+        self.tab_widget.setTabEnabled(4, True)
         self.afterConversionMenu.setDisabled(False)
         self.editMenu.setDisabled(False)
         self.toolsMenu.setDisabled(False)
@@ -1918,6 +1934,7 @@ class xrftomoGui(QtGui.QMainWindow):
             self.tab_widget.setTabEnabled(1, True)
             self.tab_widget.setTabEnabled(2, True)
             self.tab_widget.setTabEnabled(3, True)
+            self.tab_widget.setTabEnabled(4, True)
             self.afterConversionMenu.setDisabled(False)
             self.editMenu.setDisabled(False)
             self.toolsMenu.setDisabled(False)
@@ -1950,6 +1967,8 @@ class xrftomoGui(QtGui.QMainWindow):
         elif self.prevTab == self.TAB_SINOGRAM:
             pass
         elif self.prevTab == self.TAB_RECONSTRUCTION:
+            pass
+        elif self.prevTab == self.TAB_LAMINOGRAPHY:
             pass
         self.prevTab = index
 
@@ -2091,11 +2110,13 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.showDiffProcess()
         self.sinogramWidget.showSinoCurve()
         self.reconstructionWidget.showReconstruct()
+        self.laminographyWidget.showReconstruct()
         # self.reset_widgets()
 
         self.tab_widget.setTabEnabled(1,True)
         self.tab_widget.setTabEnabled(2,True)
         self.tab_widget.setTabEnabled(3,True)
+        self.tab_widget.setTabEnabled(4,True)
         self.afterConversionMenu.setDisabled(False)
         self.editMenu.setDisabled(False)
         self.toolsMenu.setDisabled(False)
@@ -2108,9 +2129,11 @@ class xrftomoGui(QtGui.QMainWindow):
         self.tab_widget.removeTab(1)
         self.tab_widget.removeTab(2)
         self.tab_widget.removeTab(3)
+        self.tab_widget.removeTab(4)
         self.tab_widget.insertTab(1, self.imageProcessWidget, "Pre Processing")
         self.tab_widget.insertTab(2, self.sinogramWidget, "Alignment")
         self.tab_widget.insertTab(3, self.reconstructionWidget, "Reconstruction")
+        self.tab_widget.insertTab(4, self.laminographyWidget, "Laminography")
 
     def init_widgets(self):
         self.imageProcessWidget.data = self.data
@@ -2143,10 +2166,23 @@ class xrftomoGui(QtGui.QMainWindow):
         self.reconstructionWidget.centers = self.centers
         self.reconstructionWidget.ViewControl.combo1.setCurrentIndex(0)
 
+        self.laminographyWidget.data_original = self.original_data
+        self.laminographyWidget.data = self.data 
+        self.laminographyWidget.elements = self.elements 
+        self.laminographyWidget.thetas = self.thetas 
+        self.laminographyWidget.fnames = self.fnames
+        self.laminographyWidget.x_shifts = self.x_shifts
+        self.laminographyWidget.y_shifts = self.y_shifts
+        self.laminographyWidget.centers = self.centers
+        self.laminographyWidget.ViewControl.elem.setCurrentIndex(0)
+
+
         self.imageProcessWidget.sld.setValue(0)
         self.reconstructionWidget.sld.setValue(0)
+        self.laminographyWidget.sld.setValue(0)
         self.imageProcessWidget.lcd.display(str(self.thetas[0]))
         self.reconstructionWidget.recon = []
+        self.laminographyWidget.recon = []
         self.sinogramWidget.sld.setValue(1)
 
     def update_history(self, data):
@@ -2177,6 +2213,8 @@ class xrftomoGui(QtGui.QMainWindow):
         self.recon = recon
         self.reconstructionWidget.recon = recon
         self.reconstructionWidget.update_recon_image()
+        self.laminographyWidget.recon = recon
+        self.laminographyWidget.update_recon_image()
         return
 
 
@@ -2184,6 +2222,8 @@ class xrftomoGui(QtGui.QMainWindow):
         self.recon_dict = recon_dict
         self.reconstructionWidget.recon_dict = recon_dict
         self.reconstructionWidget.update_recon_image()
+        self.laminographyWidget.recon_dict = recon_dict
+        self.laminographyWidget.update_recon_image()
         return
 
     def update_sino(self, sino):
@@ -2197,6 +2237,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.data = self.data
         self.sinogramWidget.imageChanged()
         self.reconstructionWidget.data = self.data
+        self.laminographyWidget.data = self.data
         return
 
     def update_theta(self, index, thetas):
@@ -2204,6 +2245,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget.thetas = self.thetas
         self.sinogramWidget.thetas = self.thetas
         self.reconstructionWidget.thetas = self.thetas
+        self.laminographyWidget.thetas = self.thetas
         return
 
     def update_alignment(self, x_shifts, y_shifts):
@@ -2220,7 +2262,8 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.actions.y_shifts = self.y_shifts
         self.reconstructionWidget.x_shifts = self.x_shifts
         self.reconstructionWidget.y_shifts = self.y_shifts
-
+        self.laminographyWidget.x_shifts = self.x_shifts
+        self.laminographyWidget.y_shifts = self.y_shifts
         # self.sinogramWidget.actions.centers = self.centers
         return
         
@@ -2251,7 +2294,8 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.sld.setRange(0,0)
         self.reconstructionWidget.sld.setValue(0)
         self.reconstructionWidget.sld.setRange(0,0)
-        
+        self.laminographyWidget.sld.setValue(0)
+        self.laminographyWidget.sld.setRange(0,0)
         # self.imageProcessWidget.ViewControl.x_sld.setValue(1)
         # self.imageProcessWidget.ViewControl.x_sld.setRange(1,10)
         # self.imageProcessWidget.ViewControl.y_sld.setValue(1)
@@ -2260,6 +2304,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget.imageView.projView.clear()
         self.sinogramWidget.sinoView.projView.clear()
         self.reconstructionWidget.ReconView.projView.clear()
+        self.laminographyWidget.ReconView.projView.clear()
 
         self.data = None
         self.recon = None
@@ -2269,7 +2314,8 @@ class xrftomoGui(QtGui.QMainWindow):
         self.sinogramWidget.sinogramData = None
         self.reconstructionWidget.data = None
         self.reconstructionWidget.recon = None
-
+        self.laminographyWidget.data = None
+        self.laminographyWidget.recon = None
         #move focus to first tab
         
         self.refreshUI()

@@ -43,10 +43,8 @@ from PyQt5 import QtCore, QtWidgets
 
 
 class ReconstructionControlsWidget(QtWidgets.QWidget):
-
     def __init__(self):
         super(ReconstructionControlsWidget, self).__init__()
-
         self.initUI()
 
     def initUI(self):
@@ -120,9 +118,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.minLbl = QtWidgets.QLabel("Min")
         self.minLbl.setFixedWidth(button2size)
         self.minLbl.setVisible(False)
-        self.lami_angle_lbl = QtWidgets.QLabel("laminography angle")
-        self.lami_angle_lbl.setFixedWidth(button2size)
-        self.lami_angle_lbl.setVisible(False)
+
 
         self.itersName = QtWidgets.QLabel("Iteration")
         self.itersName.setFixedWidth(button2size)
@@ -148,9 +144,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.minText = QtWidgets.QLineEdit()
         self.minText.setFixedWidth(button2size)
         self.minText.setVisible(False)
-        self.lami_angle = QtWidgets.QLineEdit("18.25")
-        self.lami_angle.setFixedWidth(button2size)
-        self.lami_angle.setVisible(False)
 
 
         recon_setBox = QtWidgets.QHBoxLayout()
@@ -182,10 +175,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         maxBox.addWidget(self.maxText)
         minBox = QtWidgets.QHBoxLayout()
         minBox.addWidget(self.minLbl)
-        minBox.addWidget(self.minText)
-        lamiBox = QtWidgets.QHBoxLayout()
-        lamiBox.addWidget(self.lami_angle_lbl)
-        lamiBox.addWidget(self.lami_angle)
+
         itersBox = QtWidgets.QHBoxLayout()
         itersBox.addWidget(self.itersName)
         itersBox.addWidget(self.iters)
@@ -223,7 +213,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addLayout(mdBox)
         vb.addLayout(maxBox)
         vb.addLayout(minBox)
-        vb.addLayout(lamiBox)
         vb.addLayout(itersBox)
         vb.addLayout(betaBox)
         vb.addLayout(deltaBox)
