@@ -94,6 +94,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         # self.ViewControl.equalizeBtn.clicked.connect(self.equalize_params)
         self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
+        self.ViewControl.method.currentIndexChanged.connect(self.method_changed)
 
 
         # self.ViewControl.btn2.clicked.connect(self.reconstruct_all_params)
@@ -185,6 +186,26 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.sld.setRange(0, self.y_range - 1)
         self.lcd.display(0)
         return
+
+    def method_changed(self):
+        method = self.ViewControl.method.currentIndex()
+        if method == 8:
+            self.ViewControl.betaName.setVisible(False)
+            self.ViewControl.deltaName.setVisible(False)
+            self.ViewControl.beta.setVisible(False)
+            self.ViewControl.delta.setVisible(False)
+            self.ViewControl.lami_angle_lbl.setVisible(True)
+            self.ViewControl.lami_angle.setVisible(True)
+        else:
+            self.ViewControl.betaName.setVisible(True)
+            self.ViewControl.deltaName.setVisible(True)
+            self.ViewControl.beta.setVisible(True)
+            self.ViewControl.delta.setVisible(True)
+            self.ViewControl.lami_angle_lbl.setVisible(False)
+            self.ViewControl.lami_angle.setVisible(False)
+
+
+
 
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -413,7 +434,16 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
             if method == 8:
                 #TODO: laminography angle hardcoded, make interface for laminography settings
-                recon = self.actions.FBP(data[element], thetas, 20, bpfilter=1, tau=1.0)
+                try:
+                    lami_angle = 90 - eval(self.ViewControl.lami_angle.text())
+
+                    if lami_angle < 0 or lami_angle >90:
+                        return
+
+                except:
+                    print("need valid laminograhy angle")
+                    return
+                recon = self.actions.lam_BP2(data[element], thetas, lami_angle, interpolation="nearest_neighbor")
                 recons = recon
 
             #TODO: Update recon_dict and recon display.

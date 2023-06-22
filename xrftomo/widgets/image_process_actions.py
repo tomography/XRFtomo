@@ -52,6 +52,8 @@ import skimage
 from scipy import ndimage as ndi
 from scipy import fftpack
 from scipy.stats import tmean
+from scipy.fftpack import fftshift, fft2, ifft2
+
 
 class ImageProcessActions(QtWidgets.QWidget):
 
@@ -234,6 +236,40 @@ class ImageProcessActions(QtWidgets.QWidget):
 		if dif.max() == 0:
 			imgs[imgs>0.98*max_val] = 0.98*max_val
 			data[element] = imgs
+
+		return data
+
+	def filter(self, data, bpfilter=3):
+		center = data.shape[1] / 2
+		n = data.shape[-1]
+		ne = 3 * n // 2  # padding
+		t = np.fft.rfftfreq(ne).astype('float32')
+
+		if bpfilter == 2:
+			# ramp filter
+			f = fftshift(abs(np.mgrid[-1:1:2 / n])).reshape(1, -1)
+
+			for i in range(data.shape[0]):
+				data[i] = np.real(np.ifft2(fft2(data[i]) * f))
+
+		elif bpfilter == 3:
+			# Shepp-Logan filter
+			f = fftshift(abs(np.mgrid[-1:1:2 / n])).reshape(1, -1)
+			w = 2 * np.pi * f
+			f[1:] = f[1:] * np.sin(w[1:] / 2) / (w[1:] / 2)
+			for i in range(data.shape[0]):
+				data[i] = np.real(ifft2(fft2(data[i]) * f))
+
+		elif bpfilter == 4:
+			w = t  # ramp filter
+			tmp = np.pad(data, ((0, 0), (0, 0), (ne // 2 - n // 2, ne // 2 - n // 2)), mode='edge')
+			w = w * np.exp(-2 * np.pi * 1j * t)  # center fix
+			tmp = np.fft.irfft(w * np.fft.rfft(tmp, axis=2), axis=2).astype('float32')
+			# TODO: cannot broadcast input array from shape [r,y,x-1] to [r,y,x]
+			try:
+				data[:] = tmp[:, :, ne // 2 - n // 2:ne // 2 + n // 2]
+			except:
+				data[:] = tmp[:, :, ne // 2 - n // 2:ne // 2 + n // 2 + 1]
 
 		return data
 

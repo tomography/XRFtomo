@@ -163,7 +163,6 @@ class xrftomoGui(QtGui.QMainWindow):
 
 
 
-
         # matcherAction = QtGui.QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
 
@@ -309,6 +308,19 @@ class xrftomoGui(QtGui.QMainWindow):
         analysis.addAction(layerDensityAction)
         layerDensityAction.triggered.connect(self.onionWindow)
 
+
+        hardwareSelect = QtGui.QMenu("select recon hardware", self)
+        ag = QtGui.QActionGroup(hardwareSelect)
+        ag.setExclusive(True)
+        self.CPU = ag.addAction(QtGui.QAction('CPU', hardwareSelect, checkable=True))
+        hardwareSelect.addAction(self.CPU)
+        self.CPU.setChecked(True)
+        self.CPU.triggered.connect(self.hardwareSelectChanged)
+
+        self.GPU = ag.addAction(QtGui.QAction('GPU', hardwareSelect, checkable=True))
+        hardwareSelect.addAction(self.GPU)
+        self.GPU.triggered.connect(self.hardwareSelectChanged)
+
         subPixShift = QtGui.QMenu("shift step size", self)
         ag = QtGui.QActionGroup(subPixShift)
         ag.setExclusive(True)
@@ -341,6 +353,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.toolsMenu.setDisabled(True)
 
         self.settingsMenu = menubar.addMenu(" &Settings")
+        self.settingsMenu.addAction(hardwareSelect)
 
         self.viewMenu = menubar.addMenu(" &View")
         self.viewMenu.addAction(setAspectratio)
@@ -1229,8 +1242,18 @@ class xrftomoGui(QtGui.QMainWindow):
 
         self.sinogramWidget.sub_pixel_shift = shift_size
         self.imageProcessWidget.sub_pixel_shift = shift_size
-
         return
+
+    def hardwareSelectChanged(self):
+        bool_arr = [self.CPU.isChecked(), self.GPU.isChecked()]
+        if self.CPU.isChecked():
+            #TODO: reconstructionWidget; populate recon-method with CPU options
+
+            pass
+        else:
+            #TODO: reconstructionWidget; populate recon-method with GPU options
+            pass
+
 
     def updateScatter(self):
         if self.first_run:

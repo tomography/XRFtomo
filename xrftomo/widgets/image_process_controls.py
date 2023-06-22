@@ -67,24 +67,23 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         self.padBtn.setFixedWidth(button2size)
         self.cropBtn = QtWidgets.QPushButton("Crop")
         self.cropBtn.setFixedWidth(button2size)
-        # self.captureBackground = QtWidgets.QPushButton("Copy")
-        # self.captureBackground.setFixedWidth(button2size)
+        # self.filter_center = QtWidgets.QPushButton("filter")
+        # self.filter_center.setFixedWidth(button2size)
         # self.setBackground = QtWidgets.QPushButton("Paste")
         # self.setBackground.setFixedWidth(button2size)
         self.deleteProjection = QtWidgets.QPushButton("remove img")
         self.deleteProjection.setFixedWidth(button2size)
         self.rm_hotspot = QtWidgets.QPushButton("Remove hotspot")
         self.rm_hotspot.setFixedWidth(button2size)
-        # self.Equalize = QtWidgets.QPushButton("Equalize")
-        # self.Equalize.setFixedWidth(button2size)
+        self.downsample = QtWidgets.QPushButton("downsample")
+        self.downsample.setFixedWidth(button2size)
         self.invert = QtWidgets.QPushButton("invert values")
         self.invert.setFixedWidth(button2size)
 
-        # self.Equalize.setVisible(False)
         self.invert.setVisible(False)
 
         hb10 = QtWidgets.QHBoxLayout()
-        # hb10.addWidget(self.Equalize)
+        hb10.addWidget(self.downsample)
         hb10.addWidget(self.invert)
 
         hb11 = QtWidgets.QHBoxLayout()
@@ -92,7 +91,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         hb11.addWidget(self.padBtn)
 
         # hb12 = QtWidgets.QHBoxLayout()
-        # hb12.addWidget(self.captureBackground)
+        # hb12.addWidget(self.filter_center)
         # hb12.addWidget(self.setBackground)
 
         hb13 = QtWidgets.QHBoxLayout()

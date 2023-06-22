@@ -55,7 +55,6 @@ class CustomViewBox(pyqtgraph.ViewBox):
             # self.autoRange()
             pass
 
-
     def mouseDragEvent(self, ev):
         if ev.button() == QtCore.Qt.RightButton:
             ev.ignore()

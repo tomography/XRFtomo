@@ -54,7 +54,7 @@ from skimage import exposure
 
 
 
-
+#TODO: add multiple viewing angles for reconstruction.
 class ReconstructionActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
 	fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
@@ -93,8 +93,8 @@ class ReconstructionActions(QtWidgets.QWidget):
 			recon= tomopy.recon(recData, thetas * np.pi / 180, algorithm='sirt', num_iter=iters)
 		elif method == 7:
 			recon = tomopy.recon(recData, thetas * np.pi / 180, algorithm='tv', center=recCenter, reg_par=np.array([beta, delta], dtype=np.float32), num_iter=iters)
-		elif method == 8:
-			recon = self.FBP(recData, thetas, 30, bpfilter=1, tau=1.0)
+		# elif method == 8:
+		# 	recon = self.FBP(recData, thetas, 30, bpfilter=1, tau=1.0)
 
 		# recon[recon<0] = 0
 		#tomopy.remove_nan() does not remove inf values
@@ -130,111 +130,55 @@ class ReconstructionActions(QtWidgets.QWidget):
 				self.writer.save_reconstruction(guess, savedir, start_idx + l)
 		return np.array(recons)
 
-	def FBP(self, stack, theta, tiltangle, bpfilter, tau=1.0, interpolation='nearest_neighbor'):
+	def lam(self, stack, thetas, tiltangle, interpolation="nearest_neighbor"):
+		# stack[theta,y,x]
+		theta = np.deg2rad(thetas)
 		tiltangle = np.deg2rad(tiltangle)
-		theta = np.deg2rad(theta)
-		#stack_original = [projections, y, x]
-		stack = np.transpose(stack, (2,1,0)) #
-		#stack_new = [x, y, projections]
 
-		nu = stack.shape[0]
-		nv = stack.shape[1]
-		M = stack.shape[2]
-
-		output_size = nu
-		output_sizez = nv
-		reconstructed = np.zeros((output_size, output_size, output_sizez))
-
-		# resize image to next power of two for fourier analysis
-		# speeds up fourier and lessens artifacts
-		order = int(max(64, 2 ** np.ceil(np.log(2 * max(nu, nv)) / np.log(2))))
-
-		# Create filter
-		x = int(nu / 2) * 2 + 2
-		y = int(nv / 2) * 2 + 2
-		X = np.mgrid[0.0:x]
-		Y = np.mgrid[0.0:y]
-
-		if bpfilter == 1:
-			ht = np.zeros((nu, nv))
-
-			for i in range(nu):
-				for j in range(nv):
-					if (i == 0) and (j == 0):
-						ht[i, j] = np.sin(tiltangle) / (8 * tau)
-					elif (i % 2 != 0) and (j == 0):
-						ht[i, j] = - np.sin(tiltangle) / (2 * np.pi ** 2 * i ** 2 * tau)
-					else:
-						ht[i, j] = 0.0
-
-			# zero pad input image
-			htzero = np.zeros((order, order))
-			htzero[:nu, :nv] = ht
-			f = fft2(htzero)
-
-		elif bpfilter == 2:
-			# ramp filter
-			f = fftshift(abs(np.mgrid[-1:1:2 / order])).reshape(-1, 1)
-
-		elif bpfilter == 3:
-			# Shepp-Logan filter
-			f = fftshift(abs(np.mgrid[-1:1:2 / order])).reshape(-1, 1)
-
-			w = 2 * np.pi * f
-			f[1:] = f[1:] * np.sin(w[1:] / 2) / (w[1:] / 2)
+		n = stack.shape[2]
+		nz = stack.shape[1]
+		M = stack.shape[0]
+		reconstructed = np.zeros((nz, n, n))
 
 		for itheta in range(M):
-			pt = stack[:,:,itheta]
+			data = stack[itheta]
 
-			# Apply filtering
-			ptzero = np.zeros((order, order))
-			ptzero[:nu, :nv] = pt
+			[Z, Y, X] = np.mgrid[0:nz, 0:n, 0:n]
+			zpr = Z - nz / 2
+			ypr = Y - n / 2
+			xpr = X - n / 2
 
-			ptf = fft2(ptzero)
-
-			if bpfilter == 0:
-				filtered = np.real(ifft2(ptf))
-			else:
-				filtered = np.real(ifft2(ptf * f))
-
-			qt = filtered[:nu, :nv]
-
-			# backprojection
-			x = output_size
-			y = output_size
-			z = output_sizez
-			mid_index = np.ceil(x / 2)
-			mid_indez = np.ceil(z / 2)
-			[X, Y, Z] = np.mgrid[0.0:x, 0.0:y, 0.0:z]
-
-			xpr = X - (output_size + 1.0) / 2.0
-			ypr = Y - (output_size + 1.0) / 2.0
-			zpr = Z - (output_sizez + 1.0) / 2.0
-
-			# Rotation Ry x Rz - backprojection (works for the tube tiltangle = 0)
-			# rx = xpr*np.cos(theta[itheta])*np.cos(tiltangle) + ypr*np.sin(theta[itheta])*np.cos(tiltangle) - zpr*np.sin(tiltangle)
-			# ry = xpr*np.cos(theta[itheta])*np.sin(tiltangle) + ypr*np.sin(theta[itheta])*np.sin(tiltangle) + zpr*np.cos(tiltangle)
-
-			# Backprojection Rotation Rz(-theta) x Ry(-fi)
-			# rx = xpr*np.cos(theta[itheta])*np.cos(tiltangle) + ypr*np.sin(theta[itheta]) - zpr*np.cos(theta[itheta])*np.sin(tiltangle)
-			# ry = xpr*np.sin(tiltangle) + zpr*np.cos(tiltangle)
-
-			# Geometry from the paper
-			rx = xpr * np.cos(theta[itheta]) + ypr * np.sin(theta[itheta])
-			ry = xpr * np.cos(tiltangle)*np.sin(theta[itheta]) - ypr*np.cos(tiltangle)*np.cos(theta[itheta]) + zpr*np.sin(tiltangle)
+			# victor Geometry
+			u = xpr * np.cos(theta[itheta]) + ypr * np.sin(theta[itheta]) + n / 2
+			v = xpr * np.cos(tiltangle) * np.sin(theta[itheta]) + ypr * np.cos(tiltangle) * np.cos(
+				theta[itheta]) + zpr * np.sin(tiltangle) + nz / 2
 
 			if interpolation == 'nearest_neighbor':
 				# Nearest neighbor
-				k = np.round(mid_index + rx)
-				l = np.round(mid_indez + ry)
-				reconstructed += qt[
-					((((k > 0) & (k < nu)) * k)).astype(np.int),
-					((((l > 0) & (l < nv)) * l)).astype(np.int)]
+				reconstructed += data[
+					((((v > 0) & (v < nz)) * v)).astype(np.int),
+					((((u > 0) & (u < n)) * u)).astype(np.int)]
+			elif interpolation == 'cubic':
+				# Cubic interpolation
+				[gY, gX] = np.mgrid[0:nz, 0:n]
+				reconstructed += interpolate.griddata((gY.ravel(), gX.ravel()), data.ravel(), ((v, u)), method='cubic',
+													  fill_value=0.0)
 
-		reconstructed = reconstructed * np.pi / (2 * M)
-		reconstructed = np.transpose(reconstructed, (2,0,1))
+			elif interpolation == "linear":
+				# linear interpolation
+				[gY, gX] = np.mgrid[0:nz, 0:n]
+				reconstructed += interpolate.griddata((gY.ravel(), gX.ravel()), data.ravel(), ((v, u)), method='linear',
+													  fill_value=0.0)
+			else:
+				pass
 
 		return reconstructed
+
+	def lam_BP2(self, stack, theta, tiltangle, interpolation="nearest_neighbor"):
+		from widgets.fbp import lam, filter
+		stack = filter(stack)
+		recon = lam(stack, theta, tiltangle, interpolation=interpolation)
+		return recon
 
 	def assessRecon(self,recon, data, thetas,show_plots=False):
 		#TODO: make sure cros-section index does not exceed the data height
