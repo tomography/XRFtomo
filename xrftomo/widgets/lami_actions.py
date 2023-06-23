@@ -42,14 +42,12 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
-import tomopy
 import os
-# from matplotlib.pyplot import *
 import matplotlib.pyplot as plt
-import numpy as np
 from scipy.fftpack import fftshift, ifftshift, fft, ifft, fft2, ifft2
 from scipy import interpolate
 import numpy as np
+import subprocess
 from skimage import exposure
 
 #TODO: add multiple viewing angles for reconstruction.
@@ -61,7 +59,7 @@ class LaminographyActions(QtWidgets.QWidget):
 		super(LaminographyActions, self).__init__()
 		self.writer = xrftomo.SaveOptions()
 
-	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas, guess=None):
+	def reconstruct(self, data, element, center, tiltangle, method, thetas, search_width, recon_option):
 		'''
 		load data for reconstruction and load variables for reconstruction
 		make it sure that data doesn't have infinity or nan as one of
@@ -73,43 +71,27 @@ class LaminographyActions(QtWidgets.QWidget):
 		recCenter = np.array(center, dtype=np.float32)
 
 		if method == 0:
-			pass
+			recon = self.lam(data, thetas, tiltangle, interpolation="nearest_neighbor")
+
 		elif method == 1:
 			pass
+			# os.system("echo Hello from the other side!")
+			# "tomocupy recon_steps " \
+			# "--file-name {} " \
+			# "--lamino-angle 18.25 " \
+			# "--center-search-width 50 " \
+			# "--rotation-axis 151 " \
+			# "--reconstruction-type full " \
+			# "--fbp-filter shepp " \
+			# "--minus-log False".format(fname)
+			# result = subprocess.run(["ls", "-l"])
+			recon = None
+
 		if np.isinf(recon).max():
 			print("WARNING: inf values found in reconstruction, consider reconstructing with less iterations")
 			print("inf values replaced with 0.001")
 			recon[recon == np.inf] = 0.001
 
-		return recon
-
-	def reconstructAll(self, data, element_names, center, method, thetas):
-		print("This will take a while")
-		save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
-		num_elements = data.shape[0]
-		for i in range(num_elements):
-			print("running reconstruction for:", element_names[i])
-			savepath = save_path+'/'+element_names[i]
-			savedir = savepath+'/'+element_names[i]
-			os.makedirs(savepath)
-			num_xsections = data.shape[2]
-			recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
-			xsection = np.zeros((1, data.shape[1], 1, data.shape[3]))  # empty array size [1(element), frames, 1(y), x]
-			for l in range(num_xsections):
-				j = num_xsections - l - 1
-				xsection[0, :, 0] = data[i, :, j]
-				guess = self.reconstruct(xsection, 0, center, method, beta, delta, 5, thetas, 0, False, None)
-				for k in range(5, iters):
-					guess = self.reconstruct(xsection, 0, center, method, beta, delta, 1, thetas, 0, False,guess)
-					recons[i] = guess[0]
-					print("reconstructing row {} on iteration{}".format(l, k))
-				self.writer.save_reconstruction(guess, savedir, start_idx + l)
-		return np.array(recons)
-
-
-	def lam_BP2(self, stack, theta, tiltangle):
-		stack = self.filter(stack)
-		recon = self.lam(stack, theta, tiltangle, interpolation="nearest_neighbor")
 		return recon
 
 	def assessRecon(self,recon, data, thetas,show_plots=False):
@@ -247,118 +229,116 @@ class LaminographyActions(QtWidgets.QWidget):
 
 			return data
 
-
 	def lam(self, stack, thetas, tiltangle, interpolation="nearest_neighbor"):
-	    # stack[theta,y,x]
-	    theta = np.deg2rad(thetas)
-	    tiltangle = np.deg2rad(tiltangle)
+		# stack[theta,y,x]
+		stack = self.filter(stack)
+		theta = np.deg2rad(thetas)
+		tiltangle = np.deg2rad(tiltangle)
 
-	    n = stack.shape[2]
-	    nz = stack.shape[1]
-	    M = stack.shape[0]
-	    reconstructed = np.zeros((nz, n, n))
+		n = stack.shape[2]
+		nz = stack.shape[1]
+		M = stack.shape[0]
+		reconstructed = np.zeros((nz, n, n))
 
-	    for itheta in range(M):
-	        data = stack[itheta]
+		for itheta in range(M):
+			data = stack[itheta]
 
 
-	        [Z, X, Y] = np.mgrid[0:nz, 0:n, 0:n]
-	        zpr = Z-nz/2
-	        ypr = Y-n/2
-	        xpr = X-n/2
+			[Z, X, Y] = np.mgrid[0:nz, 0:n, 0:n]
+			zpr = Z-nz/2
+			ypr = Y-n/2
+			xpr = X-n/2
 
-	        # Rotation Ry x Rz - backprojection (works for the tube tiltangle = 0)
-	        # u = xpr*np.cos(theta[itheta])*np.cos(tiltangle) + ypr*np.sin(theta[itheta])*np.cos(tiltangle) - zpr*np.sin(tiltangle) + n/2
-	        # v = xpr*np.cos(theta[itheta])*np.sin(tiltangle) + ypr*np.sin(theta[itheta])*np.sin(tiltangle) + zpr*np.cos(tiltangle) + nz/2
+			# Rotation Ry x Rz - backprojection (works for the tube tiltangle = 0)
+			# u = xpr*np.cos(theta[itheta])*np.cos(tiltangle) + ypr*np.sin(theta[itheta])*np.cos(tiltangle) - zpr*np.sin(tiltangle) + n/2
+			# v = xpr*np.cos(theta[itheta])*np.sin(tiltangle) + ypr*np.sin(theta[itheta])*np.sin(tiltangle) + zpr*np.cos(tiltangle) + nz/2
 
-	        # Backprojection Rotation Rz(-theta) x Ry(-fi)
-	        # u = xpr*np.cos(theta[itheta])*np.cos(tiltangle) + ypr*np.sin(theta[itheta]) - zpr*np.cos(theta[itheta])*np.sin(tiltangle) + n/2
-	        # v = xpr*np.sin(tiltangle) + zpr*np.cos(tiltangle) + nz/2
+			# Backprojection Rotation Rz(-theta) x Ry(-fi)
+			# u = xpr*np.cos(theta[itheta])*np.cos(tiltangle) + ypr*np.sin(theta[itheta]) - zpr*np.cos(theta[itheta])*np.sin(tiltangle) + n/2
+			# v = xpr*np.sin(tiltangle) + zpr*np.cos(tiltangle) + nz/2
 
-	        # # Geometry from the paper
-	        # u = xpr * np.cos(theta[itheta]) + ypr * np.sin(theta[itheta]) + n/2
-	        # v = xpr * np.cos(tiltangle) * np.sin(theta[itheta]) - ypr * np.cos(tiltangle) * np.cos(
-	        #     theta[itheta]) + zpr * np.sin(tiltangle) + nz/2
+			# # Geometry from the paper
+			# u = xpr * np.cos(theta[itheta]) + ypr * np.sin(theta[itheta]) + n/2
+			# v = xpr * np.cos(tiltangle) * np.sin(theta[itheta]) - ypr * np.cos(tiltangle) * np.cos(
+			#     theta[itheta]) + zpr * np.sin(tiltangle) + nz/2
 
-	        # victor Geometry
-	        # u = xpr * np.cos(theta[itheta]) + ypr * np.sin(theta[itheta]) + n/2
-	        # v = xpr * np.cos(tiltangle) * np.sin(theta[itheta]) + ypr * np.cos(tiltangle) * np.cos(
-	        #     theta[itheta]) + zpr * np.sin(tiltangle) + nz/2
+			# victor Geometry
+			# u = xpr * np.cos(theta[itheta]) + ypr * np.sin(theta[itheta]) + n/2
+			# v = xpr * np.cos(tiltangle) * np.sin(theta[itheta]) + ypr * np.cos(tiltangle) * np.cos(
+			#     theta[itheta]) + zpr * np.sin(tiltangle) + nz/2
 
-	        #cos(o)  -sin(o)
-	        #sin(a)sin(o) cos(a) sin(a)cos(o)
-	        # u = xpr * np.cos(theta[itheta]) - zpr * np.sin(theta[itheta]) + n/2
-	        # v = xpr * np.sin(tiltangle) * np.sin(theta[itheta]) - ypr * np.cos(tiltangle)  \
-	        #     + zpr * np.sin(tiltangle)*np.cos(theta[itheta]) + nz/2
+			#cos(o)  -sin(o)
+			#sin(a)sin(o) cos(a) sin(a)cos(o)
+			# u = xpr * np.cos(theta[itheta]) - zpr * np.sin(theta[itheta]) + n/2
+			# v = xpr * np.sin(tiltangle) * np.sin(theta[itheta]) - ypr * np.cos(tiltangle)  \
+			#     + zpr * np.sin(tiltangle)*np.cos(theta[itheta]) + nz/2
 
-	        # sin(a)sin(o) cos(a) sin(a)cos(o)
-	        #cos(a)sin(o) -sin(a) cos(a)cos(o)
-	        # u = xpr * np.sin(tiltangle) * np.sin(theta[itheta]) - ypr * np.cos(tiltangle)  \
-	        #     + zpr * np.sin(tiltangle)*np.cos(theta[itheta]) + n/2
-	        # v = xpr * np.cos(tiltangle) * np.sin(theta[itheta]) - ypr * np.sin(tiltangle) \
-	        #     + zpr * np.cos(tiltangle) * np.cos(theta[itheta]) + nz/2
+			# sin(a)sin(o) cos(a) sin(a)cos(o)
+			#cos(a)sin(o) -sin(a) cos(a)cos(o)
+			# u = xpr * np.sin(tiltangle) * np.sin(theta[itheta]) - ypr * np.cos(tiltangle)  \
+			#     + zpr * np.sin(tiltangle)*np.cos(theta[itheta]) + n/2
+			# v = xpr * np.cos(tiltangle) * np.sin(theta[itheta]) - ypr * np.sin(tiltangle) \
+			#     + zpr * np.cos(tiltangle) * np.cos(theta[itheta]) + nz/2
 
-	        #cos(o)  -sin(o)
-	        #cos(a)sin(o) -sin(a) cos(a)cos(o)
-	        # u = xpr * np.cos(theta[itheta]) - zpr * np.sin(theta[itheta]) + n/2
-	        # v = xpr * np.cos(tiltangle) * np.sin(theta[itheta]) - ypr * np.sin(tiltangle) \
-	        #     + zpr * np.cos(tiltangle) * np.cos(theta[itheta]) + nz/2
+			#cos(o)  -sin(o)
+			#cos(a)sin(o) -sin(a) cos(a)cos(o)
+			# u = xpr * np.cos(theta[itheta]) - zpr * np.sin(theta[itheta]) + n/2
+			# v = xpr * np.cos(tiltangle) * np.sin(theta[itheta]) - ypr * np.sin(tiltangle) \
+			#     + zpr * np.cos(tiltangle) * np.cos(theta[itheta]) + nz/2
 
-	        #THISSSSS
-	        u = xpr * np.cos(theta[itheta]) + ypr * np.sin(theta[itheta]) + n/2
-	        v = -xpr * np.cos(tiltangle) * np.sin(theta[itheta]) + ypr * np.cos(tiltangle) * np.cos(
-	            theta[itheta]) + zpr * np.sin(tiltangle) + nz/2
+			#THISSSSS
+			u = xpr * np.cos(theta[itheta]) + ypr * np.sin(theta[itheta]) + n/2
+			v = -xpr * np.cos(tiltangle) * np.sin(theta[itheta]) + ypr * np.cos(tiltangle) * np.cos(
+				theta[itheta]) + zpr * np.sin(tiltangle) + nz/2
 
-	        if interpolation == 'nearest_neighbor':
-	            # Nearest neighbor
-	            reconstructed += data[
-	                ((((v > 0) & (v < nz)) * v)).astype(np.int),
-	                ((((u > 0) & (u < n)) * u)).astype(np.int)]
-	        elif interpolation == 'cubic':
-	            # Cubic interpolation
-	            [gY, gX] = np.mgrid[0:nz, 0:n]
-	            reconstructed += interpolate.griddata((gY.ravel(), gX.ravel()), data.ravel(), ((v, u)), method='cubic', fill_value=0.0)
+			if interpolation == 'nearest_neighbor':
+				# Nearest neighbor
+				reconstructed += data[
+					((((v > 0) & (v < nz)) * v)).astype(np.int),
+					((((u > 0) & (u < n)) * u)).astype(np.int)]
+			elif interpolation == 'cubic':
+				# Cubic interpolation
+				[gY, gX] = np.mgrid[0:nz, 0:n]
+				reconstructed += interpolate.griddata((gY.ravel(), gX.ravel()), data.ravel(), ((v, u)), method='cubic', fill_value=0.0)
 
-	        elif interpolation == "linear":
-	            # linear interpolation
-	            [gY, gX] = np.mgrid[0:nz, 0:n]
-	            reconstructed += interpolate.griddata((gY.ravel(), gX.ravel()), data.ravel(), ((v, u)), method='linear', fill_value=0.0)
-	        else:
-	            pass
+			elif interpolation == "linear":
+				# linear interpolation
+				[gY, gX] = np.mgrid[0:nz, 0:n]
+				reconstructed += interpolate.griddata((gY.ravel(), gX.ravel()), data.ravel(), ((v, u)), method='linear', fill_value=0.0)
+			else:
+				pass
 
-	    return reconstructed
+		return reconstructed
 
 
 	def filter(self, data, bpfilter=3):
-	    center = data.shape[1] / 2
-	    n = data.shape[-1]
-	    ne = 3 * n // 2  # padding
-	    t = np.fft.rfftfreq(ne).astype('float32')
+		center = data.shape[1] / 2
+		n = data.shape[-1]
+		ne = 3 * n // 2  # padding
+		t = np.fft.rfftfreq(ne).astype('float32')
 
-	    if bpfilter == 2:
-	        # ramp filter
-	        f = fftshift(abs(np.mgrid[-1:1:2 / n])).reshape(1, -1)
+		if bpfilter == 2:
+			# ramp filter
+			f = fftshift(abs(np.mgrid[-1:1:2 / n])).reshape(1, -1)
+			for i in range(data.shape[0]):
+				data[i] = np.real(np.ifft2(fft2(data[i]) * f))
 
-	        for i in range(data.shape[0]):
-	            data[i] = np.real(np.ifft2(fft2(data[i]) * f))
+		elif bpfilter == 3:
+			# Shepp-Logan filter
+			f = fftshift(abs(np.mgrid[-1:1:2 / n])).reshape(1, -1)
+			w = 2 * np.pi * f
+			f[1:] = f[1:] * np.sin(w[1:] / 2) / (w[1:] / 2)
+			for i in range(data.shape[0]):
+				data[i] = np.real(ifft2(fft2(data[i]) * f))
 
-	    elif bpfilter == 3:
-	        # Shepp-Logan filter
-	        f = fftshift(abs(np.mgrid[-1:1:2 / n])).reshape(1, -1)
-	        w = 2 * np.pi * f
-	        f[1:] = f[1:] * np.sin(w[1:] / 2) / (w[1:] / 2)
-	        for i in range(data.shape[0]):
-	            data[i] = np.real(ifft2(fft2(data[i]) * f))
-
-	    elif bpfilter == 4:
-	        w = t  # ramp filter
-	        tmp = np.pad(data, ((0, 0), (0, 0), (ne // 2 - n // 2, ne // 2 - n // 2)), mode='edge')
-	        w = w * np.exp(-2 * np.pi * 1j * t)  # center fix
-	        tmp = np.fft.irfft(w * np.fft.rfft(tmp, axis=2), axis=2).astype('float32')
-	        # TODO: cannot broadcast input array from shape [r,y,x-1] to [r,y,x]
-	        try:
-	            data[:] = tmp[:, :, ne // 2 - n // 2:ne // 2 + n // 2]
-	        except:
-	            data[:] = tmp[:, :, ne // 2 - n // 2:ne // 2 + n // 2 + 1]
-
-	    return data
+		elif bpfilter == 4:
+			w = t  # ramp filter
+			tmp = np.pad(data, ((0, 0), (0, 0), (ne // 2 - n // 2, ne // 2 - n // 2)), mode='edge')
+			w = w * np.exp(-2 * np.pi * 1j * t)  # center fix
+			tmp = np.fft.irfft(w * np.fft.rfft(tmp, axis=2), axis=2).astype('float32')
+			# TODO: cannot broadcast input array from shape [r,y,x-1] to [r,y,x]
+			try:
+				data[:] = tmp[:, :, ne // 2 - n // 2:ne // 2 + n // 2]
+			except:
+				data[:] = tmp[:, :, ne // 2 - n // 2:ne // 2 + n // 2 + 1]
+		return data

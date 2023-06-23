@@ -65,6 +65,10 @@ class LaminographyControlsWidget(QtWidgets.QWidget):
         for k in range(len(methodname)):
             self.method.addItem(methodname[k])
 
+        #TODO: get h5 working directory and go one level up.
+        self.browse = QtWidgets.QPushButton("file path: /")
+        self.browse.setFixedWidth(button1size)
+
         recon_set_lbl = QtWidgets.QLabel("reconstruction set")
         recon_set_lbl.setFixedWidth(button2size)
         self.recon_set = QtWidgets.QComboBox(self)
@@ -150,6 +154,8 @@ class LaminographyControlsWidget(QtWidgets.QWidget):
         vb.addWidget(self.elem)
         vb.addWidget(self.method)
         vb.addLayout(recon_set_box)
+        vb.addWidget(self.browse)
+        # vb.addWidget(sel/f.tmp_dir)
         vb.addWidget(self.recon_all)
         vb.addWidget(self.lbl)
 

@@ -128,7 +128,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         hb2.addWidget(self.ViewControl)
         hb2.addLayout(vb1)
         hb2.addWidget(self.hist, 10)
-
         self.setLayout(hb2)
 
     def updatePanel(self,x,y):
@@ -347,8 +346,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         recon_dict = self.recon_dict.copy()
         if self.ViewControl.recon_save.isChecked():
             try: #promps for directory and subdir folder
-                # save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
-                save_path = '/Users/marinf/Downloads/test_recon'
+                save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+                # save_path = '/Users/marinf/Downloads/test_recon'
                 if save_path == "":
                     raise IOError
                 if save_path == None:

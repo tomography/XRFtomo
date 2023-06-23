@@ -174,12 +174,6 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 		return reconstructed
 
-	def lam_BP2(self, stack, theta, tiltangle, interpolation="nearest_neighbor"):
-		from widgets.fbp import lam, filter
-		stack = filter(stack)
-		recon = lam(stack, theta, tiltangle, interpolation=interpolation)
-		return recon
-
 	def assessRecon(self,recon, data, thetas,show_plots=False):
 		#TODO: make sure cros-section index does not exceed the data height
 		#get index where projection angle is zero

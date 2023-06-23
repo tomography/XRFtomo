@@ -58,8 +58,9 @@ class LaminographyWidget(QtWidgets.QWidget):
     reconChangedSig = pyqtSignal(np.ndarray, name='reconChangedSig')
     reconArrChangedSig = pyqtSignal(dict, name='reconArrChangedSig')
 
-    def __init__(self):
+    def __init__(self, parent):
         super(LaminographyWidget, self).__init__()
+        self.parent = parent
         self.initUI()
 
     def initUI(self):
@@ -78,22 +79,27 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.lbl7 = QtWidgets.QLabel("")
 
         self.ReconView.mouseMoveSig.connect(self.updatePanel)
-        #get pixel value from Histogram widget's projview
-
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.lcd = QtWidgets.QLCDNumber(self)
         self.hist = pyqtgraph.HistogramLUTWidget()
         self.hist.setMinimumSize(120,120)
         self.hist.setMaximumWidth(120)
         self.hist.setImageItem(self.ReconView.projView)
-
+        self.h5_dir = "/".join(self.parent.fileTableWidget.dirLineEdit.text().split("/")[:-1])+"/"
+        truncated_dir = "~/"+"/".join(self.h5_dir.split("/")[-4:])
+        self.ViewControl.browse.setText(truncated_dir)
         self.ViewControl.elem.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
-        self.ViewControl.rec_btn.clicked.connect(self.reconstruct_params)
+        self.ViewControl.browse.clicked.connect(self.file_browse)
         self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
+        self.ViewControl.rec_btn.clicked.connect(self.reconstruct_params)
+        self.ViewControl.lami_angle.textChanged.connect(self.validate_params)
+        self.ViewControl.axis_center.textChanged.connect(self.validate_params)
+        self.ViewControl.center_search_width.textChanged.connect(self.validate_params)
+        self.ViewControl.thresh.textChanged.connect(self.validate_params)
 
         self.x_shifts = None
         self.y_shifts = None
@@ -128,6 +134,29 @@ class LaminographyWidget(QtWidgets.QWidget):
         hb2.addWidget(self.hist, 10)
 
         self.setLayout(hb2)
+
+    def file_browse(self):
+        try:  # promps for directory and subdir folder
+            if os.path.exists(self.h5_dir):
+                save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", self.h5_dir)
+            else:
+                save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+            # save_path = '/Users/marinf/Downloads/test_recon'
+            if save_path == "":
+                raise IOError
+            if save_path == None:
+                return
+        except IOError:
+            print("type the header name")
+            return
+        except:
+            print("Unknown error in reconstruct_params()")
+            return
+        # print(save_path)
+        self.h5_dir = save_path
+        truncated_dir = "~/"+"/".join(self.h5_dir.split("/")[-4:])
+        self.ViewControl.browse.setText(truncated_dir)
+
 
     def updatePanel(self,x,y):
         self.lbl2.setText(str(x))
@@ -175,7 +204,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         element = self.ViewControl.elem.currentIndex()
         self.ViewControl.recon_set.setCurrentIndex(element)
 
-
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
         self.ViewControl.end_indx.setText(str(ySize))
@@ -209,7 +237,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.sld.setValue(0)
         self.lcd.display(0)
 
-
     def get_recon_stats(self):
         element = self.elements[self.ViewControl.elem.currentIndex()]
 
@@ -222,7 +249,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         data = np.flipud(data)[row_index]
         err, mse = self.actions.recon_stats(recon, middle_index, data, True)
         return
-
 
     def rm_hotspot_params(self):
         recon = self.recon
@@ -280,37 +306,28 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.ViewControl.elem.setCurrentIndex(element)
 
     def reconstruct_params(self):
-        element = self.ViewControl.elem.currentIndex()
-        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
-        method = self.ViewControl.method.currentIndex()
-        beta = float(self.ViewControl.beta.text())
-        delta = float(self.ViewControl.delta.text())
-        iters = int(self.ViewControl.iters.text())
-        thetas = self.thetas
-        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
-        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
-        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text())) -start_indx - 1
+        #TODO: create temporary directory to save structured h5 data in if one is not specified
 
-        data = self.data[:,:,start_indx:end_indx,:]
-        show_stats = self.ViewControl.recon_stats.isChecked()
+        element = self.ViewControl.elem.currentIndex()
+        method = self.ViewControl.method.currentIndex()
+        thetas = self.thetas
+        recon_option = self.ViewControl.recon_options.currentIndex()
+        lami_angle = eval(self.ViewControl.lami_angle.text())
+        axis_center = eval(self.ViewControl.axis_center.text())
+        search_width = eval(self.ViewControl.center_search_width.text())
+        lower_thresh = eval(self.ViewControl.thresh.text())
+        data = self.data
         num_xsections = data.shape[2]
-        recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
-        xsection = np.zeros((1, data.shape[1], 1, data.shape[3]))  # empty array size [1(element), frames, 1(y), x]
         recon_dict = self.recon_dict.copy()
-        if self.ViewControl.recon_save.isChecked():
-            try: #promps for directory and subdir folder
-                save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
-                # save_path = '/Users/marinf/Downloads/test_recon'
-                if save_path == "":
-                    raise IOError
-                if save_path == None:
-                    return
-            except IOError:
-                print("type the header name")
-                return
-            except:
-                print("Unknown error in reconstruct_params()")
-                return
+
+        lami_angle = 90 - lami_angle
+        if lami_angle < 0 or lami_angle > 90:
+            return
+
+        exists = self.check_savepath_exists()
+        if not exists:
+            print("save path invalid or insufficient permissions")
+            return
 
         if self.ViewControl.recon_all.isChecked():
             #element is an index, so get list of indices.
@@ -322,37 +339,9 @@ class LaminographyWidget(QtWidgets.QWidget):
         for element in elements:
             self.ViewControl.elem.setCurrentIndex(element)    #required to properly update recon_dict
             recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
-            if self.ViewControl.recon_save.isChecked():
-                #get list of element names from list of elemnt indices
-                element_names = [self.ViewControl.elem.itemText(idx) for idx in elements]
-                print("running reconstruction for:", element_names[element])
-                savepath = save_path + '/' + element_names[element]
-                savedir = savepath + '/' + element_names[element]
-
-                if os.path.exists(savepath):
-                    shutil.rmtree(savepath)
-                os.makedirs(savepath)
-
-            start_idx = int(eval(self.ViewControl.start_indx.text()))
             print("working fine")
             for i in range(num_xsections):
-                if method == 0:
-                    pass
-                elif method ==1:
-
-                    try:
-                        lami_angle = 90 - eval(self.ViewControl.lami_angle.text())
-
-                        if lami_angle < 0 or lami_angle >90:
-                            return
-
-                    except:
-                        print("need valid laminograhy angle")
-                        return
-                    recon = self.actions.lam_BP2(data[element], thetas, lami_angle, interpolation="nearest_neighbor")
-                    recons = recon
-
-            #TODO: Update recon_dict and recon display.
+                recons = self.actions.reconstruct(data, element, axis_center, lami_angle, method, thetas, search_width, recon_option)
             recon_dict[self.ViewControl.elem.itemText(element)] = np.array(recons)
             self.recon = np.array(recons)
 
@@ -361,6 +350,26 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.reconChangedSig.emit(self.recon)
         self.reconArrChangedSig.emit(recon_dict)
         return
+
+    def validate_params(self,sender):
+        valid = False
+        try:
+            val = eval(sender)
+            if val >= 0:
+                valid = True
+        except:
+            print("invalid params")
+        return valid
+    def check_savepath_exists(self):
+        if os.path.exists(self.h5_dir):
+            if not os.path.exists(self.h5_dir+"/data/"):
+                os.mkdir(self.h5_dir+"/data/")
+            if not os.path.exists(self.h5_dir+"/lami_recons/"):
+                os.mkdir(self.h5_dir + "/lami_recons/")
+        else:
+            return False
+        return True
+
 
     def reconstruct_all_params(self):
         #figure out how to get a list of all selected elements

@@ -187,7 +187,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.imageProcessWidget = xrftomo.ImageProcessWidget()
         self.sinogramWidget = xrftomo.SinogramWidget()
         self.reconstructionWidget = xrftomo.ReconstructionWidget()
-        self.laminographyWidget = xrftomo.LaminographyWidget()
+        self.laminographyWidget = xrftomo.LaminographyWidget(self)
         self.scatterWidget = xrftomo.ScatterView()
         self.scatterWidgetRecon = xrftomo.ScatterView()
         self.miniReconWidget = xrftomo.MiniReconView()
