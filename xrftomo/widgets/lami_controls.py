@@ -66,14 +66,15 @@ class LaminographyControlsWidget(QtWidgets.QWidget):
             self.method.addItem(methodname[k])
 
         #TODO: get h5 working directory and go one level up.
+        browse_lbl = QtWidgets.QLabel("data path: ")
         self.browse = QtWidgets.QPushButton("file path: /")
         self.browse.setFixedWidth(button1size)
 
-        recon_set_lbl = QtWidgets.QLabel("reconstruction set")
-        recon_set_lbl.setFixedWidth(button2size)
-        self.recon_set = QtWidgets.QComboBox(self)
-        self.recon_set.setFixedWidth(button2size)
-        self.recon_set.setToolTip("reconstruction group")
+        # recon_set_lbl = QtWidgets.QLabel("reconstruction set")
+        # recon_set_lbl.setFixedWidth(button2size)
+        # self.recon_set = QtWidgets.QComboBox(self)
+        # self.recon_set.setFixedWidth(button2size)
+        # self.recon_set.setToolTip("reconstruction group")
 
         recon_options_lbl = QtWidgets.QLabel("reconstruction options")
         recon_options_lbl.setFixedWidth(button2size)
@@ -83,7 +84,25 @@ class LaminographyControlsWidget(QtWidgets.QWidget):
         for k in range(len(options)):
             self.recon_options.addItem(options[k])
 
-        #TODO: add filename textbox?
+        self.scroll = QtWidgets.QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
+        self.widget = QtWidgets.QWidget()                 # Widget that contains the collection of Vertical Box
+        self.vbox = QtWidgets.QVBoxLayout()               # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+
+        for i in range(1,50):
+            object = QtWidgets.QLabel("TextLabel: "+str(i))
+            self.vbox.addWidget(object)
+
+        self.widget.setLayout(self.vbox)
+
+        #Scroll Area Properties
+        # self.scroll.setVerticalScrollBarPolicy(QtWidgets.ScrollBarAlwaysOn)
+        # self.scroll.setHorizontalScrollBarPolicy(QtWidgets.ScrollBarAlwaysOff)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setWidget(self.widget)
+        # self.scroll.setFixedWidth(button1size)
+
+
+
 
         lami_angle_lbl = QtWidgets.QLabel("laminography angle")
         lami_angle_lbl.setFixedWidth(button2size)
@@ -118,9 +137,13 @@ class LaminographyControlsWidget(QtWidgets.QWidget):
         self.recon_all = QtWidgets.QCheckBox("reconstruct all elements")
         self.recon_all.setChecked(False)
 
-        recon_set_box = QtWidgets.QHBoxLayout()
-        recon_set_box.addWidget(recon_set_lbl)
-        recon_set_box.addWidget(self.recon_set)
+        # recon_set_box = QtWidgets.QHBoxLayout()
+        # recon_set_box.addWidget(recon_set_lbl)
+        # recon_set_box.addWidget(self.recon_set)
+
+        browse_box = QtWidgets.QHBoxLayout()
+        browse_box.addWidget(browse_lbl)
+        browse_box.addWidget(self.browse)
 
         recon_options_box = QtWidgets.QHBoxLayout()
         recon_options_box.addWidget(recon_options_lbl)
@@ -153,11 +176,12 @@ class LaminographyControlsWidget(QtWidgets.QWidget):
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.elem)
         vb.addWidget(self.method)
-        vb.addLayout(recon_set_box)
-        vb.addWidget(self.browse)
-        # vb.addWidget(sel/f.tmp_dir)
+        vb.addLayout(browse_box)
         vb.addWidget(self.recon_all)
         vb.addWidget(self.lbl)
+        vb.addWidget(self.scroll)
+
+
 
         vb.addLayout(recon_options_box)
         vb.addLayout(lami_angle_box)

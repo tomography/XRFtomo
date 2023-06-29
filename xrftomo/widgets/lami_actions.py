@@ -51,6 +51,10 @@ import subprocess
 from skimage import exposure
 
 #TODO: add multiple viewing angles for reconstruction.
+#TODO: create parser and organize tomocupy options, defaults, and descriptions.
+#TODO: create frame to put in QtCombobox, QLineEdit, and button (for FILE or PATH) for EACH option.
+#TODO: for each Option, edit QLine edit to the default.
+#TODO: for PATH and File for specific options, set the default values.
 class LaminographyActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
 	fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
@@ -59,7 +63,7 @@ class LaminographyActions(QtWidgets.QWidget):
 		super(LaminographyActions, self).__init__()
 		self.writer = xrftomo.SaveOptions()
 
-	def reconstruct(self, data, element, center, tiltangle, method, thetas, search_width, recon_option):
+	def reconstruct(self, data, element, tiltangle, method, thetas, center, fname=None, rec_op="steps", search_width=20, recon_type=None, filter_type="shepp", minus_log=False):
 		'''
 		load data for reconstruction and load variables for reconstruction
 		make it sure that data doesn't have infinity or nan as one of
@@ -68,22 +72,23 @@ class LaminographyActions(QtWidgets.QWidget):
 		recData = data[element, :, :, :]
 		recData[recData == np.inf] = True
 		recData[np.isnan(recData)] = True
-		recCenter = np.array(center, dtype=np.float32)
 
 		if method == 0:
 			recon = self.lam(data, thetas, tiltangle, interpolation="nearest_neighbor")
 
 		elif method == 1:
 			pass
+
 			# os.system("echo Hello from the other side!")
-			# "tomocupy recon_steps " \
-			# "--file-name {} " \
-			# "--lamino-angle 18.25 " \
-			# "--center-search-width 50 " \
-			# "--rotation-axis 151 " \
-			# "--reconstruction-type full " \
-			# "--fbp-filter shepp " \
-			# "--minus-log False".format(fname)
+			"tomocupy recon_{} \
+			--file-name {} \
+			--lamino-angle {} \
+			--center-search-width {} \
+			--rotation-axis {} \
+			--reconstruction-type {} \
+			--fbp-filter {} \
+			--minus-log {}".format(rec_op, fname, tiltangle, search_width, center, recon_type, filter_type, minus_log)
+
 			# result = subprocess.run(["ls", "-l"])
 			recon = None
 

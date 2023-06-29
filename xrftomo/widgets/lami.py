@@ -89,7 +89,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         truncated_dir = "~/"+"/".join(self.h5_dir.split("/")[-4:])
         self.ViewControl.browse.setText(truncated_dir)
         self.ViewControl.elem.currentIndexChanged.connect(self.elementChanged)
-        self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
         self.ViewControl.browse.clicked.connect(self.file_browse)
         self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
@@ -178,14 +177,10 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.y_range = self.data.shape[2]
 
         self.ViewControl.elem.clear()
-        self.ViewControl.recon_set.clear()
-        self.ViewControl.recon_set.disconnect()
         for j in self.elements:
             self.ViewControl.elem.addItem(j)
-            self.ViewControl.recon_set.addItem(j)
             self.recon_dict[j] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
-        self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
         self.ViewControl.axis_center.setText(str(self.data.shape[3]//2))
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
@@ -197,12 +192,8 @@ class LaminographyWidget(QtWidgets.QWidget):
     def elementChanged(self):
         element = self.ViewControl.elem.currentIndex()
         self.updateElementSlot(element)
-        self.updateReconSlot(element)
         self.elementChangedSig.emit(element)
 
-    def updateReconSlot(self,element):
-        element = self.ViewControl.elem.currentIndex()
-        self.ViewControl.recon_set.setCurrentIndex(element)
 
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
@@ -274,8 +265,8 @@ class LaminographyWidget(QtWidgets.QWidget):
         return
 
     def recon_combobox_changed(self):
-        elem = self.ViewControl.recon_set.currentText()
-        element = self.ViewControl.recon_set.currentIndex()
+        elem = self.ViewControl.elem.currentText()
+        element = self.ViewControl.elem.currentIndex()
         self.updateElementSlot(element)
         self.elementChangedSig.emit(element)
         try:
@@ -297,10 +288,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         except:
             print("run reconstruction first")
 
-    def recon_set_changed(self):
-        element = self.ViewControl.recon_set.currentIndex()
-        self.updateElementSlot(element)
-        self.elementChangedSig.emit(element)
+
 
     def updateElementSlot(self, element):
         self.ViewControl.elem.setCurrentIndex(element)
@@ -308,24 +296,24 @@ class LaminographyWidget(QtWidgets.QWidget):
     def reconstruct_params(self):
         #TODO: create temporary directory to save structured h5 data in if one is not specified
 
-        element = self.ViewControl.elem.currentIndex()
+        elements = [self.ViewControl.elem.currentIndex()]
         method = self.ViewControl.method.currentIndex()
         thetas = self.thetas
-        recon_option = self.ViewControl.recon_options.currentIndex()
+        recon_option = self.ViewControl.recon_options.currentText()
         lami_angle = eval(self.ViewControl.lami_angle.text())
         axis_center = eval(self.ViewControl.axis_center.text())
         search_width = eval(self.ViewControl.center_search_width.text())
+        minus_log = None
+        filter_type = None
+        fname = self.h5_dir
+
+
         lower_thresh = eval(self.ViewControl.thresh.text())
         data = self.data
         num_xsections = data.shape[2]
         recon_dict = self.recon_dict.copy()
 
-        lami_angle = 90 - lami_angle
-        if lami_angle < 0 or lami_angle > 90:
-            return
-
-        exists = self.check_savepath_exists()
-        if not exists:
+        if not self.check_savepath_exists():
             print("save path invalid or insufficient permissions")
             return
 
@@ -333,15 +321,13 @@ class LaminographyWidget(QtWidgets.QWidget):
             #element is an index, so get list of indices.
             num_elements = self.ViewControl.elem.count()
             elements = [i for i in range(num_elements)]
-        else:
-            elements = [self.ViewControl.elem.currentIndex()]
 
         for element in elements:
             self.ViewControl.elem.setCurrentIndex(element)    #required to properly update recon_dict
             recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
             print("working fine")
             for i in range(num_xsections):
-                recons = self.actions.reconstruct(data, element, axis_center, lami_angle, method, thetas, search_width, recon_option)
+                recons = self.actions.reconstruct(data, element, lami_angle, method, thetas, axis_center, fname=fname, rec_op=recon_option, search_width=search_width, recon_type=None, filter_type=filter_type, minus_log=minus_log)
             recon_dict[self.ViewControl.elem.itemText(element)] = np.array(recons)
             self.recon = np.array(recons)
 
@@ -357,9 +343,12 @@ class LaminographyWidget(QtWidgets.QWidget):
             val = eval(sender)
             if val >= 0:
                 valid = True
+                self.sender().setStyleSheet("background: white")
         except:
             print("invalid params")
+            self.sender().setStyleSheet("background: lightsalmon")
         return valid
+
     def check_savepath_exists(self):
         if os.path.exists(self.h5_dir):
             if not os.path.exists(self.h5_dir+"/data/"):
@@ -369,25 +358,3 @@ class LaminographyWidget(QtWidgets.QWidget):
         else:
             return False
         return True
-
-
-    def reconstruct_all_params(self):
-        #figure out how to get a list of all selected elements
-        num_elements = self.ViewControl.elem.count()
-        element_names = [self.ViewControl.elem.itemText(i) for i in range(num_elements)]
-        # box_checked = self.ViewControl.cbox.isChecked()
-        center = np.array(float(self.data.shape[3]), dtype=np.float32)/2
-        method = self.ViewControl.method.currentIndex()
-        beta = float(self.ViewControl.beta.text())
-        delta = float(self.ViewControl.delta.text())
-        iters = int(self.ViewControl.iters.text())
-        thetas = self.thetas
-        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
-        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
-        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
-        data = self.data[:,:,start_indx:end_indx,:]
-
-        self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas,start_indx)
-        self.update_recon_image()
-        self.reconChangedSig.emit(self.recon)
-        return
