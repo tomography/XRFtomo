@@ -85,20 +85,12 @@ class LaminographyControlsWidget(QtWidgets.QWidget):
             self.recon_options.addItem(options[k])
 
         self.scroll = QtWidgets.QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
-        self.widget = QtWidgets.QWidget()                 # Widget that contains the collection of Vertical Box
-        self.vbox = QtWidgets.QVBoxLayout()               # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
 
-        for i in range(1,50):
-            object = QtWidgets.QLabel("TextLabel: "+str(i))
-            self.vbox.addWidget(object)
-
-        self.widget.setLayout(self.vbox)
 
         #Scroll Area Properties
         # self.scroll.setVerticalScrollBarPolicy(QtWidgets.ScrollBarAlwaysOn)
         # self.scroll.setHorizontalScrollBarPolicy(QtWidgets.ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setWidget(self.widget)
         # self.scroll.setFixedWidth(button1size)
 
 
@@ -191,3 +183,17 @@ class LaminographyControlsWidget(QtWidgets.QWidget):
         vb.addLayout(reconBox)
         vb.addLayout(postReconBox)
         self.setLayout(vb)
+
+
+    def populate_scroll_area(self, item_dict):
+        #item_dict[option] =  {type, description}
+        self.widget = QtWidgets.QWidget()                 # Widget that contains the collection of Vertical Box
+        self.vbox = QtWidgets.QVBoxLayout()               # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+        num_items = len(item_dict):
+        for key in item_dict:
+            if item_dict[key][0] == "PATH" or item_dict[key][0] == "FILE":
+
+            object = QtWidgets.QPushButton("TextLabel: "+str(i))
+            self.vbox.addWidget(object)
+        self.widget.setLayout(self.vbox)
+        self.scroll.setWidget(self.widget)

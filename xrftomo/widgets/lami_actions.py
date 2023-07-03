@@ -51,7 +51,8 @@ import subprocess
 from skimage import exposure
 
 #TODO: add multiple viewing angles for reconstruction.
-#TODO: create parser and organize tomocupy options, defaults, and descriptions.
+#TODO: create parser and organize tomocupy options, defaults
+#TODO: set description on the tooltip for each ComboBox
 #TODO: create frame to put in QtCombobox, QLineEdit, and button (for FILE or PATH) for EACH option.
 #TODO: for each Option, edit QLine edit to the default.
 #TODO: for PATH and File for specific options, set the default values.
