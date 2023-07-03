@@ -41,6 +41,7 @@
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import *
+import subprocess
 
 class LaminographyControlsWidget(QWidget):
 
@@ -92,6 +93,7 @@ class LaminographyControlsWidget(QWidget):
         # self.scroll.setHorizontalScrollBarPolicy(ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
         # self.scroll.setFixedWidth(button1size)
+        self.populate_scroll_area()
 
 
         lami_angle_lbl = QLabel("laminography angle")
@@ -180,28 +182,99 @@ class LaminographyControlsWidget(QWidget):
         vb.addLayout(postReconBox)
         self.setLayout(vb)
 
-    def populate_scroll_area(self, item_dict):
+    def populate_scroll_area(self):
         try:
             import tomocupy
             self.tcp_installed = True
-            self.op_parser()
+            item_dict = self.op_parser()
+
         except:
             self.tcp_installed = False
+            print("tomocupy not installed")
             return
 
         #item_dict[option] =  {type, description}
         self.widget = QWidget()                 # Widget that contains the collection of Vertical Box
         self.vbox = QVBoxLayout()               # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
         num_items = len(item_dict)
-        for key in item_dict:
-            if item_dict[key][0] == "PATH" or item_dict[key][0] == "FILE":
-                #TODO: add pushbutton with QFileDialog
+        for key in item_dict.keys():
+            # op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
+            #[label] [text input / combobox] [QFileDialog*] [enable]
+            lbl = QLabel(key)
+            lbl.setToolTip(item_dict[key][2])
+
+            if item_dict[key][0]:
+                dialog_btn = QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+
+            elif item_dict[key][1]:
+                dialog_btn = QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
+
+            else:
                 pass
-            object = QPushButton("TextLabel: "+str(key))
+
+            #TODO: create comoboboxes if NOT (PATH or FILE), else create QLineEdit(Disabled)
+            #TODO: set currentindex to default value
+
+
+
             self.vbox.addWidget(object)
         self.widget.setLayout(self.vbox)
         self.scroll.setWidget(self.widget)
 
     def op_parser(self):
-        
-        pass
+        result = subprocess.check_output(["tomocupy", "recon_steps", "-h"]).decode().split("options:")[1]
+        options = result.split("--")[1::]
+        op_tmp = [i.replace("                       ","") for i in options]
+        op_tmp = [i.replace("\r\n","") for i in op_tmp]
+        op_tmp = [i.replace("  "," ") for i in op_tmp]
+        op_tmp = [i.replace("  "," ") for i in op_tmp]
+        op_tmp = [i.replace("  "," ") for i in op_tmp]
+        keys = [i.split(" ")[0] for i in op_tmp]
+        op_tmp = [" ".join(i.split(" ")[1::]).strip(" ") for i in op_tmp]
+        default_tmp = [i.split("default: ") for i in op_tmp]
+
+        defaults = []
+        for i in default_tmp:
+            if len(i)>1:
+                default = i[-1].replace(")", "")
+            else:
+                default = None
+            defaults.append(default)
+
+        choices = []
+        for i in op_tmp:
+            idx_0 = i.find("{")
+            idx_1 = i.find("}")
+            if idx_0 == -1:
+                choices.append(None)
+            else:
+                choices.append(i[idx_0 + 1:idx_1].split(","))
+
+        op_tmp = [i.split("(default")[0] for i in op_tmp]
+        op_tmp = [i.split("}")[::-1][0].strip("") for i in op_tmp]
+
+        descriptions = []
+        is_PATH = []
+        is_FILE = []
+        for i in op_tmp:
+            first = i.split(" ")[0]
+            if first.isupper():
+                if first == "PATH":
+                    is_PATH.append(True)
+                else:
+                    is_PATH.append(False)
+                if first == "FILE":
+                    is_FILE.append(True)
+                else:
+                    is_FILE.append(False)
+                desc = " ".join(i.split(" ")[1::]).strip(" ")
+                descriptions.append(desc)
+            else:
+                is_PATH.append(False)
+                is_FILE.append(False)
+                descriptions.append(i.strip(" "))
+
+        op_dict = {}
+        for idx, key in enumerate(keys):
+            op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
+        return op_dict
