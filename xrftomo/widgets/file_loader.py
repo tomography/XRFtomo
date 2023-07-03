@@ -99,7 +99,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.thetaLineEdit.setCompleter(thetaCompleter)
         # self.thetaLineEdit.textChanged.connect(self.onThetaPVChange)
         self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
-        self.thetaLineEdit.setFixedWidth(122.5)
+        self.thetaLineEdit.setFixedWidth(123)
         self.thetaLineEdit.setVisible(False)
 
 
@@ -108,27 +108,27 @@ class FileTableWidget(QtWidgets.QWidget):
         self.imageTag = QtWidgets.QComboBox()
         self.imageTag.activated.connect(self.getDataTag)
         self.imageTag.activated.connect(self.setup_element_list)
-        self.imageTag.setFixedWidth(122.5)
+        self.imageTag.setFixedWidth(123)
 
         dataTag_label = QtWidgets.QLabel('data tag')
         dataTag_label.setFixedWidth(90)
         self.dataTag = QtWidgets.QComboBox()
         # self.dataTag.currentIndexChanged.connect(self.getDataTag)
         self.dataTag.currentIndexChanged.connect(self.setup_element_list)
-        self.dataTag.setFixedWidth(122.5)
+        self.dataTag.setFixedWidth(123)
 
         self.elementTag_label = QtWidgets.QLabel('Elements:')
         self.elementTag_label.setFixedWidth(90)
 
         self.elementTag = QtWidgets.QComboBox()
         self.elementTag.currentIndexChanged.connect(self.element_tag_changed)
-        self.elementTag.setFixedWidth(122.5)
+        self.elementTag.setFixedWidth(123)
 
         quant_label = QtWidgets.QLabel('quant options:')
         quant_label.setFixedWidth(90)
         self.quantTag = QtWidgets.QComboBox()
         # self.scalerTag.currentIndexChanged.connect(self.getScalerOptions)
-        self.quantTag.setFixedWidth(122.5)
+        self.quantTag.setFixedWidth(123)
 
         scaler_label = QtWidgets.QLabel('Normalize by:')
         scaler_label.setFixedWidth(90)
@@ -136,12 +136,12 @@ class FileTableWidget(QtWidgets.QWidget):
         self.scalerTag.currentIndexChanged.connect(self.setup_scaler_list)
         # self.imageTag.activated.connect(self.setup_scaler_list())
 
-        self.scalerTag.setFixedWidth(122.5)
+        self.scalerTag.setFixedWidth(123)
 
         self.saveDataBtn = QtWidgets.QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
         # self.saveDataBtn.setEnabled(False)
-        self.saveDataBtn.setFixedWidth(220.5)
+        self.saveDataBtn.setFixedWidth(221)
 
         message_label = QtWidgets.QLabel('Messages:')
         self.message = QtWidgets.QTextEdit()
@@ -608,7 +608,7 @@ class FileTableWidget(QtWidgets.QWidget):
             rows = []
             for i in self.fileTableView.selectionModel().selection().indexes():
                 rows += [i.row()]
-            menu = QtGui.QMenu()
+            menu = QMenu()
             check_action = menu.addAction("Check")
             uncheck_action = menu.addAction("Uncheck")
             action = menu.exec_(self.fileTableView.mapToGlobal(pos))
@@ -620,7 +620,7 @@ class FileTableWidget(QtWidgets.QWidget):
             rows = []
             for i in self.elementTableView.selectionModel().selection().indexes():
                 rows += [i.row()]
-            menu = QtGui.QMenu()
+            menu = QMenu()
             check_action = menu.addAction("Check")
             uncheck_action = menu.addAction("Uncheck")
             action = menu.exec_(self.elementTableView.mapToGlobal(pos))

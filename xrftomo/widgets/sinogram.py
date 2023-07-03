@@ -40,6 +40,7 @@
 
 import xrftomo
 from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5.QtWidgets import *
 from PyQt5.QtCore import pyqtSignal
 import pyqtgraph
 import numpy as np
@@ -58,10 +59,10 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def initUI(self):
         button1size = 250       #long button (1 column)
-        button2size = 122.5     #mid button (2 column)
+        button2size = 123     #mid button (2 column)
         button33size = 78.3
         button3size = 73.3      #small button (almost third)
-        button4size = 58.75     #textbox size (less than a third)
+        button4size = 59     #textbox size (less than a third)
         self.ViewControl = xrftomo.SinogramControlsWidget()
         self.sinoView = xrftomo.SinogramView()
         self.imageView = xrftomo.ImageView()
@@ -988,7 +989,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def alignFromText2_params(self):
         ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
-        fileName = QtGui.QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt) ;; NPY (*.npy)")
+        fileName = QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt) ;; NPY (*.npy)")
 
         if fileName[0] == "":
             return

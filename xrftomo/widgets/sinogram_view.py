@@ -57,7 +57,6 @@ class SinogramView(pyqtgraph.GraphicsLayoutWidget):
     def initUI(self):
         self.p1 = self.addPlot()
         self.projView = pyqtgraph.ImageItem()
-        self.projView.rotate(0)
         self.p1.addItem(self.projView)
         self.p1.items[0].scene().sigMouseMoved.connect(self.mouseMoved)
         self.p1.items[0].scene().sigMouseClicked.connect(self.mouseClick)

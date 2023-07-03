@@ -40,6 +40,7 @@
 
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtWidgets import *
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import tomopy
@@ -109,7 +110,7 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 	def reconstructAll(self, data, element_names, center, method, beta, delta, iters, thetas,start_idx):
 		print("This will take a while")
-		save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+		save_path = QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
 		num_elements = data.shape[0]
 		for i in range(num_elements):
 			print("running reconstruction for:", element_names[i])

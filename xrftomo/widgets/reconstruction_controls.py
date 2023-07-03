@@ -50,10 +50,10 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
     def initUI(self):
         button1size = 270       #long button (1 column)
         button12size = 200       #2/3 column button
-        button2size = 142.5     #mid button (2 column)
-        button33size = 98.3
-        button3size = 93.3      #small button (almost third)
-        button4size = 78.75     #textbox size (less than a third)
+        button2size = 143     #mid button (2 column)
+        button33size = 98
+        button3size = 93      #small button (almost third)
+        button4size = 79     #textbox size (less than a third)
 
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setFixedWidth(button1size)

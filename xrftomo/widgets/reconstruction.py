@@ -39,6 +39,7 @@
 
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtWidgets import *
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import pyqtgraph
@@ -346,7 +347,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         recon_dict = self.recon_dict.copy()
         if self.ViewControl.recon_save.isChecked():
             try: #promps for directory and subdir folder
-                save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+                save_path = QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
                 # save_path = '/Users/marinf/Downloads/test_recon'
                 if save_path == "":
                     raise IOError

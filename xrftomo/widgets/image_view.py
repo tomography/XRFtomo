@@ -72,7 +72,7 @@ class ImageView(pyqtgraph.GraphicsLayoutWidget):
         # custom_vb.invertY(True)
         self.p1 = self.addPlot(viewBox = custom_vb, enableMouse = False)
         self.projView = pyqtgraph.ImageItem(axisOrder = "row-major")
-        self.projView.rotate(0)
+
         self.projView.iniX = 0
         self.projView.iniY = 0
         self.ROI = pyqtgraph.ROI([self.projView.iniX, self.projView.iniY], [10, 10], scaleSnap = True)

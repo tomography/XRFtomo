@@ -51,10 +51,10 @@ class SinogramControlsWidget(QtWidgets.QWidget):
     def initUI(self):
          #__________Main control window for Alignment Tab__________
         button1size = 270       #long button (1 column)
-        button2size = 142.5     #mid button (2 column)
-        button33size = 98.3
-        button3size = 93.3      #small button (almost third)
-        button4size = 78.75     #textbox size (less than a third)
+        button2size = 143     #mid button (2 column)
+        button33size = 98
+        button3size = 93      #small button (almost third)
+        button4size = 79     #textbox size (less than a third)
 
 
         self.combo1 = QtWidgets.QComboBox(self)
@@ -543,10 +543,10 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
     def stack1UI(self):
         button1size = 250       #long button (1 column)
-        button2size = 122.5     #mid button (2 column)
+        button2size = 123     #mid button (2 column)
         button33size = 78.3
         button3size = 73.3      #small button (almost third)
-        button4size = 58.75     #textbox size (less than a third)
+        button4size = 59     #textbox size (less than a third)
 
         #options for tomopy center-finding algorithm
         slice_label = QtWidgets.QLabel("slice index")
@@ -619,10 +619,10 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
     def stack2UI(self):
         button1size = 250       #long button (1 column)
-        button2size = 122.5     #mid button (2 column)
+        button2size = 123     #mid button (2 column)
         button33size = 78.3
         button3size = 73.3      #small button (almost third)
-        button4size = 58.75     #textbox size (less than a third)
+        button4size = 59     #textbox size (less than a third)
 
         modes = ["Mean","Median", "Local"]
         self.ave_mode = QtWidgets.QComboBox()

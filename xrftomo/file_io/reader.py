@@ -169,8 +169,6 @@ def read_projection(fname, element, hdf_tag, roi_tag, channel_tag):
     return projections[find_index(elements, element)]
 
 
-
-
 def read_theta(path_files, theta_index, hdf_tag):
     """
     Reads hdf file and returns theta

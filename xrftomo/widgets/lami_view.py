@@ -55,7 +55,7 @@ class LamiView(pyqtgraph.GraphicsLayoutWidget):
     def initUI(self):
         self.p1 = self.addPlot(enableMouse = False)
         self.projView = pyqtgraph.ImageItem()
-        self.projView.rotate(-90)
+        # self.projView.rotate(-90))
         self.p1.addItem(self.projView)
         self.p1.scene().sigMouseMoved.connect(self.mouseMoved)
         self.p1.scene().sceneRectChanged.connect(self.windowResize)

@@ -272,7 +272,7 @@ class SinogramActions(QtWidgets.QWidget):
         col_number: int
         '''
         num_projections = data.shape[1]
-        regShift = np.zeros(sinogramData.shape[0], dtype=np.int)
+        regShift = np.zeros(sinogramData.shape[0], dtype="int")
         sinogramData[col_number * 10:col_number * 10 + 10, :] = np.roll(sinogramData[col_number * 10:col_number * 10 + 10, :], shift_number, axis=1)
         regShift[col_number] += shift_number
         for i in range(num_projections):
@@ -1298,8 +1298,8 @@ class SinogramActions(QtWidgets.QWidget):
             x_shifts[j] = xxshift
             y_shifts[j] = yyshift
 
-        hotspotXPos = np.zeros(num_projections, dtype=np.int)
-        hotspotYPos = np.zeros(num_projections, dtype=np.int)
+        hotspotXPos = np.zeros(num_projections, dtype="int")
+        hotspotYPos = np.zeros(num_projections, dtype="int")
         for i in range(num_projections):
             hotspotYPos[i] = int(round(hs_y_pos[i]))
             hotspotXPos[i] = int(round(hs_x_pos[i]))
@@ -1389,9 +1389,9 @@ class SinogramActions(QtWidgets.QWidget):
         self.posMat = posMat
 
         num_projections = data.shape[1]
-        hs_x_pos = np.zeros(num_projections, dtype=np.int)
-        hs_y_pos = np.zeros(num_projections, dtype=np.int)
-        hs_array = np.zeros([num_projections, y_size//2*2, x_size//2*2], dtype=np.int)
+        hs_x_pos = np.zeros(num_projections, dtype="int")
+        hs_y_pos = np.zeros(num_projections, dtype="int")
+        hs_array = np.zeros([num_projections, y_size//2*2, x_size//2*2], dtype="int")
 
         for i in range(num_projections):
             hs_x_pos[i] = int(round(self.posMat[hs_group, i, 0]))
@@ -1412,9 +1412,9 @@ class SinogramActions(QtWidgets.QWidget):
                 x1 = hs_x_pos[i] + x_size//2
                 hs_array[i, :, :] = data[element, i, (data.shape[2] - y1):(data.shape[2] - y0), x0:x1]
 
-        hotSpotX = np.zeros(num_projections, dtype=np.int)
-        hotSpotY = np.zeros(num_projections, dtype=np.int)
-        new_hs_array = np.zeros(hs_array.shape, dtype=np.int)
+        hotSpotX = np.zeros(num_projections, dtype="int")
+        hotSpotY = np.zeros(num_projections, dtype="int")
+        new_hs_array = np.zeros(hs_array.shape, dtype="int")
         new_hs_array[...] = hs_array[...]
         firstPosOfHotSpot = 0
 

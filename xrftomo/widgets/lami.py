@@ -39,6 +39,7 @@
 
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtWidgets import *
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import pyqtgraph
@@ -134,12 +135,13 @@ class LaminographyWidget(QtWidgets.QWidget):
 
         self.setLayout(hb2)
 
+
     def file_browse(self):
         try:  # promps for directory and subdir folder
             if os.path.exists(self.h5_dir):
-                save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", self.h5_dir)
+                save_path = QFileDialog.getExistingDirectory(self, "Open Folder", self.h5_dir)
             else:
-                save_path = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+                save_path = QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
             # save_path = '/Users/marinf/Downloads/test_recon'
             if save_path == "":
                 raise IOError

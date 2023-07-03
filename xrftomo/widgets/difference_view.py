@@ -57,7 +57,7 @@ class differenceView(pyqtgraph.GraphicsLayoutWidget):
         custom_vb = xrftomo.CustomViewBox()
         self.p1 = self.addPlot(viewBox = custom_vb, enableMouse = False)
         self.projView = pyqtgraph.ImageItem()
-        self.projView.rotate(-90)
+        # self.projView.rotate(-90))
         self.p1.addItem(self.projView)
         self.p1.vb = custom_vb
 

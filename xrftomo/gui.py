@@ -40,13 +40,15 @@
 
 
 from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5.QtWidgets import *
+
 # from matplotlib.figure import Figure
 import xrftomo
 import xrftomo.config as config
 from scipy import stats
-import pandas as pd
+# import pandas as pd
 import numpy as np
-import seaborn as sns
+# import seaborn as sns
 import matplotlib.pyplot as plt
 import sys
 import matplotlib
@@ -61,118 +63,127 @@ from skimage import io
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
-class xrftomoGui(QtGui.QMainWindow):
+class xrftomoGui(QMainWindow):
     def __init__(self, app, params):
-        super(QtGui.QMainWindow, self).__init__()
+        super(QMainWindow, self).__init__()
         self.params = params
         self.param_list = {}
         self.app = app
+
+
+
         # self.get_values_from_params()
         self.initUI()
 
     def initUI(self):
-        exitAction = QtGui.QAction('Exit', self)
+        try:
+            import tomocupy
+            self.tcp_installed = True
+        except:
+            self.tcp_installed = False
+
+        exitAction = QAction('Exit', self)
         exitAction.triggered.connect(self.close)
         exitAction.setShortcut('Ctrl+Q')
 
-        closeAction = QtGui.QAction('Quit', self)
+        closeAction = QAction('Quit', self)
         closeAction.triggered.connect(sys.exit)
         closeAction.setShortcut('Ctrl+X')
 
-        openH5Action = QtGui.QAction('open h5 file', self)
+        openH5Action = QAction('open h5 file', self)
         openH5Action.triggered.connect(self.openH5)
 
-        openExchangeAction = QtGui.QAction('open exchange file', self)
+        openExchangeAction = QAction('open exchange file', self)
         openExchangeAction.triggered.connect(self.openExchange)
 
-        openTiffAction = QtGui.QAction('open tiff files', self)
+        openTiffAction = QAction('open tiff files', self)
         openTiffAction.triggered.connect(self.openTiffs)
 
-        openStackAction = QtGui.QAction('open tiff stack', self)
+        openStackAction = QAction('open tiff stack', self)
         openStackAction.triggered.connect(self.openStack)
 
-        openThetaAction = QtGui.QAction('open thetas file', self)
+        openThetaAction = QAction('open thetas file', self)
         openThetaAction.triggered.connect(self.openThetas)
 
-        #openTiffFolderAction = QtGui.QAction("Open Tiff Folder", self)
+        #openTiffFolderAction = QAction("Open Tiff Folder", self)
         #openTiffFolderAction.triggered.connect(self.openTiffFolder)
 
-        saveProjectionAction = QtGui.QAction('Projections', self)
+        saveProjectionAction = QAction('Projections', self)
         saveProjectionAction.triggered.connect(self.saveProjections)
 
-        # saveHotSpotPosAction = QtGui.QAction('save hotspot positions',self)
+        # saveHotSpotPosAction = QAction('save hotspot positions',self)
         # saveHotSpotPosAction.triggered.connect(self.save_hotspot_positions)
 
-        saveSinogramAction = QtGui.QAction('Sinogram', self)
+        saveSinogramAction = QAction('Sinogram', self)
         saveSinogramAction.triggered.connect(self.saveSinogram)
 
-        saveSinogram2Action = QtGui.QAction('Sinogram stack', self)
+        saveSinogram2Action = QAction('Sinogram stack', self)
         saveSinogram2Action.triggered.connect(self.saveSinogram2)
 
-        saveReconstructionAction = QtGui.QAction('Reconstruction', self)
+        saveReconstructionAction = QAction('Reconstruction', self)
         saveReconstructionAction.triggered.connect(self.saveReconstruction)
 
-        saveRecon2npyAction = QtGui.QAction("recon as npy", self)
+        saveRecon2npyAction = QAction("recon as npy", self)
         saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
 
-        # saveReconArray2npyAction = QtGui.QAction("reconArr as npy", self)
+        # saveReconArray2npyAction = QAction("reconArr as npy", self)
         # saveReconArray2npyAction.triggered.connect(self.saveReconArray2npy)
 
-        saveToHDFAction = QtGui.QAction('as HDF file', self)
+        saveToHDFAction = QAction('as HDF file', self)
         saveToHDFAction.triggered.connect(self.saveToHDF)
 
-        saveThetasAction = QtGui.QAction('Angle information to .txt', self)
+        saveThetasAction = QAction('Angle information to .txt', self)
         saveThetasAction.triggered.connect(self.saveThetas)
 
-        saveToNumpyAction = QtGui.QAction("as Numpy file", self)
+        saveToNumpyAction = QAction("as Numpy file", self)
         saveToNumpyAction.triggered.connect(self.saveToNumpy)
 
-        saveAlignemtInfoAction = QtGui.QAction("Alignment", self)
+        saveAlignemtInfoAction = QAction("Alignment", self)
         saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
 
-        saveCorrAnalysisAction = QtGui.QAction("Corelation Analysis", self)
+        saveCorrAnalysisAction = QAction("Corelation Analysis", self)
         saveCorrAnalysisAction.triggered.connect(self.saveCorrAlsys)
 
 
 
-        runTransRecAction = QtGui.QAction("Transmission Recon", self)
+        runTransRecAction = QAction("Transmission Recon", self)
         #runTransRecAction.triggered.connect(self.runTransReconstruct)
 
-        # selectImageTagAction = QtGui.QAction("Select Image Tag", self)
+        # selectImageTagAction = QAction("Select Image Tag", self)
         #selectImageTagAction.triggered.connect(self.selectImageTag)
 
-        undoAction = QtGui.QAction('Undo (Ctrl+Z)', self)
+        undoAction = QAction('Undo (Ctrl+Z)', self)
         undoAction.triggered.connect(self.undo)
         undoAction.setShortcut('Ctrl+Z')
 
-        preferencesAction = QtGui.QAction("exit preferences")
+        preferencesAction = QAction("exit preferences")
 
-        setAspectratio = QtGui.QAction("lock aspect ratio",self)
+        setAspectratio = QAction("lock aspect ratio",self)
         setAspectratio.setCheckable(True)
         setAspectratio.triggered.connect(self.toggle_aspect_ratio)
 
-        restoreAction = QtGui.QAction("Restore", self)
+        restoreAction = QAction("Restore", self)
         restoreAction.triggered.connect(self.restore)
 
-        keyMapAction = QtGui.QAction('key map settings', self)
+        keyMapAction = QAction('key map settings', self)
         keyMapAction.triggered.connect(self.keyMapSettings)
 
-        configAction = QtGui.QAction('load configuration settings', self)
+        configAction = QAction('load configuration settings', self)
         configAction.triggered.connect(self.configSettings)
 
 
 
 
-        # matcherAction = QtGui.QAction("match template", self)
+        # matcherAction = QAction("match template", self)
         #matcherAction.triggered.connect(self.match_window)
 
-        # saveHotSpotPosAction = QtGui.QAction("Save Hot Spot Pos", self)
+        # saveHotSpotPosAction = QAction("Save Hot Spot Pos", self)
         #saveHotSpotPosAction.triggered.connect(self.saveHotSpotPos)
 
-        wienerAction = QtGui.QAction("Wiener", self)
+        wienerAction = QAction("Wiener", self)
         #wienerAction.triggered.connect(self.ipWiener)
 
-        # externalImageRegAction = QtGui.QAction("External Image Registaration", self)
+        # externalImageRegAction = QAction("External Image Registaration", self)
         #externalImageRegAction.triggered.connect(self.externalImageReg)
 
         ###
@@ -292,61 +303,61 @@ class xrftomoGui(QtGui.QMainWindow):
         self.editMenu.addAction(restoreAction)
         self.editMenu.setDisabled(True)
 
-        analysis = QtGui.QMenu('Analysis', self)
-        corrElemAction = QtGui.QAction('Correlate Elements', self)
-        analysis.addAction(corrElemAction)
-        corrElemAction.triggered.connect(self.corrElem)
+        analysis = QMenu('Analysis', self)
+        # corrElemAction = QAction('Correlate Elements', self)
+        # analysis.addAction(corrElemAction)
+        # corrElemAction.triggered.connect(self.corrElem)
 
-        scatterPlotAction = QtGui.QAction('Scatter Plot', self)
+        scatterPlotAction = QAction('Scatter Plot', self)
         analysis.addAction(scatterPlotAction)
         scatterPlotAction.triggered.connect(self.scatterPlot)
 
-        scatterPlotReconAction = QtGui.QAction('Scatter Plot Recon', self)
+        scatterPlotReconAction = QAction('Scatter Plot Recon', self)
         analysis.addAction(scatterPlotReconAction)
         scatterPlotReconAction.triggered.connect(self.scatterPlotRecon)
 
-        projWinAction = QtGui.QAction('reprojection', self)
+        projWinAction = QAction('reprojection', self)
         analysis.addAction(projWinAction)
         projWinAction.triggered.connect(self.projWindow)
 
-        pixelDistanceAction = QtGui.QAction('spatial analysis', self)
+        pixelDistanceAction = QAction('spatial analysis', self)
         analysis.addAction(pixelDistanceAction)
         pixelDistanceAction.triggered.connect(self.pixDistanceWindow)
 
-        layerDensityAction = QtGui.QAction('onion analysis', self)
+        layerDensityAction = QAction('onion analysis', self)
         analysis.addAction(layerDensityAction)
         layerDensityAction.triggered.connect(self.onionWindow)
 
 
-        hardwareSelect = QtGui.QMenu("select recon hardware", self)
-        ag = QtGui.QActionGroup(hardwareSelect)
+        hardwareSelect = QMenu("select recon hardware", self)
+        ag = QActionGroup(hardwareSelect)
         ag.setExclusive(True)
-        self.CPU = ag.addAction(QtGui.QAction('CPU', hardwareSelect, checkable=True))
+        self.CPU = ag.addAction(QAction('CPU', hardwareSelect, checkable=True))
         hardwareSelect.addAction(self.CPU)
         self.CPU.setChecked(True)
         self.CPU.triggered.connect(self.hardwareSelectChanged)
 
-        self.GPU = ag.addAction(QtGui.QAction('GPU', hardwareSelect, checkable=True))
+        self.GPU = ag.addAction(QAction('GPU', hardwareSelect, checkable=True))
         hardwareSelect.addAction(self.GPU)
         self.GPU.triggered.connect(self.hardwareSelectChanged)
 
-        subPixShift = QtGui.QMenu("shift step size", self)
-        ag = QtGui.QActionGroup(subPixShift)
+        subPixShift = QMenu("shift step size", self)
+        ag = QActionGroup(subPixShift)
         ag.setExclusive(True)
-        self.subPix_1 = ag.addAction(QtGui.QAction('1', subPixShift, checkable=True))
+        self.subPix_1 = ag.addAction(QAction('1', subPixShift, checkable=True))
         subPixShift.addAction(self.subPix_1)
         self.subPix_1.setChecked(True)
         self.subPix_1.triggered.connect(self.subPixShiftChanged)
 
-        self.subPix_05 = ag.addAction(QtGui.QAction('2', subPixShift, checkable=True))
+        self.subPix_05 = ag.addAction(QAction('2', subPixShift, checkable=True))
         subPixShift.addAction(self.subPix_05)
         self.subPix_05.triggered.connect(self.subPixShiftChanged)
 
-        self.subPix_025 = ag.addAction(QtGui.QAction('5', subPixShift, checkable=True))
+        self.subPix_025 = ag.addAction(QAction('5', subPixShift, checkable=True))
         subPixShift.addAction(self.subPix_025)
         self.subPix_025.triggered.connect(self.subPixShiftChanged)
 
-        self.subPix_01 = ag.addAction(QtGui.QAction('10', subPixShift, checkable=True))
+        self.subPix_01 = ag.addAction(QAction('10', subPixShift, checkable=True))
         subPixShift.addAction(self.subPix_01)
         self.subPix_01.triggered.connect(self.subPixShiftChanged)
 
@@ -1742,7 +1753,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
     def openFolder(self):
         try:
-            folderName = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+            folderName = QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
         except IndexError:
             print("no folder has been selected")
         except OSError:
@@ -1751,7 +1762,7 @@ class xrftomoGui(QtGui.QMainWindow):
 
     def openH5(self):
         currentDir = self.fileTableWidget.dirLineEdit.text()
-        files = QtGui.QFileDialog.getOpenFileNames(self, "Open h5", QtCore.QDir.currentPath(), "h5 (*.h5*)" )
+        files = QFileDialog.getOpenFileNames(self, "Open h5", QtCore.QDir.currentPath(), "h5 (*.h5*)" )
         if files[0] == '' or files[0] == []:
             return
 
@@ -1775,7 +1786,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.toolsMenu.setDisabled(True)
 
     def openExchange(self):
-        fname = QtGui.QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
+        fname = QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
         if fname[0] == '':
             return
         data, self.elements, thetas = xrftomo.read_exchange_file(fname)
@@ -1788,7 +1799,7 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def openTiffs(self):
-        files = QtGui.QFileDialog.getOpenFileNames(self, "Open Tiffs", QtCore.QDir.currentPath(), "TIFF (*.tiff *.tif)" )
+        files = QFileDialog.getOpenFileNames(self, "Open Tiffs", QtCore.QDir.currentPath(), "TIFF (*.tiff *.tif)" )
         if files[0] == '' or files[0] == []:
             return
 
@@ -1816,7 +1827,7 @@ class xrftomoGui(QtGui.QMainWindow):
         return
 
     def openStack(self):
-        file = QtGui.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "tiff (*.tiff)" )
+        file = QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "tiff (*.tiff)" )
         if file[0] == '':
             return
         im = io.imread(file[0])
@@ -1839,7 +1850,9 @@ class xrftomoGui(QtGui.QMainWindow):
         self.tab_widget.setTabEnabled(1, True)
         self.tab_widget.setTabEnabled(2, True)
         self.tab_widget.setTabEnabled(3, True)
-        self.tab_widget.setTabEnabled(4, True)
+        if self.tcp_installed: self.tab_widget.setTabEnabled(4, True)
+
+
         self.afterConversionMenu.setDisabled(False)
         self.editMenu.setDisabled(False)
         self.toolsMenu.setDisabled(False)
@@ -1847,7 +1860,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.fileTableWidget.message.setText("Angle information loaded.")
 
     def openThetas(self):
-        file = QtGui.QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "text (*.txt)" )
+        file = QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "text (*.txt)" )
         if file[0] == '':
             return
 
@@ -1934,7 +1947,7 @@ class xrftomoGui(QtGui.QMainWindow):
             self.tab_widget.setTabEnabled(1, True)
             self.tab_widget.setTabEnabled(2, True)
             self.tab_widget.setTabEnabled(3, True)
-            self.tab_widget.setTabEnabled(4, True)
+            if self.tcp_installed: self.tab_widget.setTabEnabled(4, True)
             self.afterConversionMenu.setDisabled(False)
             self.editMenu.setDisabled(False)
             self.toolsMenu.setDisabled(False)
@@ -2095,8 +2108,8 @@ class xrftomoGui(QtGui.QMainWindow):
             self.updateScatter()
 
         self.centers = [100,100,self.data.shape[3]//2]
-        self.x_shifts = np.zeros(self.data.shape[1], dtype=np.int)
-        self.y_shifts = np.zeros(self.data.shape[1], dtype=np.int)
+        self.x_shifts = np.zeros(self.data.shape[1], dtype="int")
+        self.y_shifts = np.zeros(self.data.shape[1], dtype="int")
         self.original_data = self.data.copy()
         self.original_fnames = self.fnames.copy()
         self.original_thetas = self.thetas.copy()
@@ -2116,7 +2129,7 @@ class xrftomoGui(QtGui.QMainWindow):
         self.tab_widget.setTabEnabled(1,True)
         self.tab_widget.setTabEnabled(2,True)
         self.tab_widget.setTabEnabled(3,True)
-        self.tab_widget.setTabEnabled(4,True)
+        if self.tcp_installed: self.tab_widget.setTabEnabled(4, True)
         self.afterConversionMenu.setDisabled(False)
         self.editMenu.setDisabled(False)
         self.toolsMenu.setDisabled(False)
@@ -2366,8 +2379,8 @@ class xrftomoGui(QtGui.QMainWindow):
             self.data = self.original_data.copy()
             self.thetas = self.original_thetas.copy()
             self.fnames = self.original_fnames.copy()
-            self.x_shifts = np.zeros(self.data.shape[1], dtype=np.int)
-            self.y_shifts = np.zeros(self.data.shape[1], dtype=np.int)
+            self.x_shifts = np.zeros(self.data.shape[1], dtype="int")
+            self.y_shifts = np.zeros(self.data.shape[1], dtype="int")
             self.centers = [100,100,self.data.shape[3]//2]
             self.sinogramWidget.x_padding_hist = [0]
             self.sinogramWidget.y_padding_hist = [0]
@@ -2476,44 +2489,44 @@ class xrftomoGui(QtGui.QMainWindow):
 
 
 
-    def corrElem(self):
-        self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
-        
-        data = self.data
-        #normalize data
-        # nom_data = self.normData(data)
-        # errMat = np.zeros((data.shape[0],data.shape[0]))
-        # simMat = np.zeros((data.shape[0],data.shape[0]))
-        self.rMat = np.zeros((data.shape[0],data.shape[0]))
-        for i in range(data.shape[0]):      #elemA
-            for j in range(data.shape[0]):  #elemB
-                elemA = data[i]
-                elemB = data[j]
-                # corr = np.mean(signal.correlate(elemA, elemB, method='direct', mode='same') / (data.shape[1]*data.shape[2]*data.shape[3]))
-                rval = self.compare(elemA, elemB)
-                # errMat[i,j]= err
-                # simMat[i,j]= sim
-                self.rMat[i,j]= rval
-
-        sns.set(style="white")
-
-        # Generate a mask for the upper triangle
-        mask = np.zeros_like(self.rMat, dtype=np.bool)
-        mask[np.triu_indices_from(mask,1)] = True
-
-        # Set up the matplotlib figure
-        self.analysis_figure, ax = plt.subplots(figsize=(11, 9))
-
-        # Generate a custom diverging colormap
-        cmap = sns.diverging_palette(220, 10, as_cmap=True)
-
-        # Draw the heatmap with the mask and correct aspect ratio
-        d = pd.DataFrame(data=self.rMat, columns=self.elements, index=self.elements)
-        sns.heatmap(d, mask=mask, annot=True, cmap=cmap, vmax=self.rMat.max(), center=0,
-                    square=True, linewidths=.5, cbar_kws={"shrink": .5})
-        self.analysis_figure.show()
-
-        self.app.restoreOverrideCursor()
+    # def corrElem(self):
+    #     self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+    #
+    #     data = self.data
+    #     #normalize data
+    #     # nom_data = self.normData(data)
+    #     # errMat = np.zeros((data.shape[0],data.shape[0]))
+    #     # simMat = np.zeros((data.shape[0],data.shape[0]))
+    #     self.rMat = np.zeros((data.shape[0],data.shape[0]))
+    #     for i in range(data.shape[0]):      #elemA
+    #         for j in range(data.shape[0]):  #elemB
+    #             elemA = data[i]
+    #             elemB = data[j]
+    #             # corr = np.mean(signal.correlate(elemA, elemB, method='direct', mode='same') / (data.shape[1]*data.shape[2]*data.shape[3]))
+    #             rval = self.compare(elemA, elemB)
+    #             # errMat[i,j]= err
+    #             # simMat[i,j]= sim
+    #             self.rMat[i,j]= rval
+    #
+    #     sns.set(style="white")
+    #
+    #     # Generate a mask for the upper triangle
+    #     mask = np.zeros_like(self.rMat, dtype=np.bool)
+    #     mask[np.triu_indices_from(mask,1)] = True
+    #
+    #     # Set up the matplotlib figure
+    #     self.analysis_figure, ax = plt.subplots(figsize=(11, 9))
+    #
+    #     # Generate a custom diverging colormap
+    #     cmap = sns.diverging_palette(220, 10, as_cmap=True)
+    #
+    #     # Draw the heatmap with the mask and correct aspect ratio
+    #     d = pd.DataFrame(data=self.rMat, columns=self.elements, index=self.elements)
+    #     sns.heatmap(d, mask=mask, annot=True, cmap=cmap, vmax=self.rMat.max(), center=0,
+    #                 square=True, linewidths=.5, cbar_kws={"shrink": .5})
+    #     self.analysis_figure.show()
+    #
+    #     self.app.restoreOverrideCursor()
         return self.rMat
 
     # def normData(self,data):
@@ -2594,6 +2607,6 @@ class xrftomoGui(QtGui.QMainWindow):
             self.on_save_as()
 
 def main(params):
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     mainWindow = xrftomoGui(app, params)
     sys.exit(app.exec_())

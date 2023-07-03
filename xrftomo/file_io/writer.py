@@ -64,7 +64,7 @@ class SaveOptions(object):
 		x_shift = list(x_shift)
 		y_shift = list(y_shift)
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			savedir = QFileDialog.getSaveFileName()[0]
 			if savedir == "":
 				raise IOError
 
@@ -86,7 +86,7 @@ class SaveOptions(object):
 
 	def save_scatter_plot(self, fig):
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			savedir = QFileDialog.getSaveFileName()[0]
 			if savedir == "":
 				raise IOError	
 			if str(savedir).rfind(".png") == -1:
@@ -101,7 +101,7 @@ class SaveOptions(object):
 	def save_thetas(self, fnames, thetas):
 		num_files = len(fnames)
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			savedir = QFileDialog.getSaveFileName()[0]
 			if savedir == "":
 				raise IOError
 
@@ -123,7 +123,7 @@ class SaveOptions(object):
 		save projections as tiffs
 		'''
 		try:
-			savedir = QtGui.QFileDialog.getExistingDirectory()
+			savedir = QFileDialog.getExistingDirectory()
 			if savedir == "":
 				raise IOError
 
@@ -146,7 +146,7 @@ class SaveOptions(object):
 			if savedir == "":
 				raise IOError
 			if savedir == None:
-				savedir = QtGui.QFileDialog.getSaveFileName()[0]
+				savedir = QFileDialog.getSaveFileName()[0]
 			if index == -1:
 				recon = tomopy.circ_mask(recon, axis=0)
 				dxchange.writer.write_tiff_stack(recon, fname=savedir)
@@ -166,7 +166,7 @@ class SaveOptions(object):
 			if savedir == "":
 				raise IOError
 			if savedir == None:
-				savedir = QtGui.QFileDialog.getSaveFileName()[0]
+				savedir = QFileDialog.getSaveFileName()[0]
 			if index == -1:
 				recon = tomopy.circ_mask(recon, axis=0)
 				np.save(savedir, recon)
@@ -180,7 +180,7 @@ class SaveOptions(object):
 			if savedir == "":
 				raise IOError
 			if savedir == None:
-				savedir = QtGui.QFileDialog.getSaveFileName()[0]
+				savedir = QFileDialog.getSaveFileName()[0]
 			if index == -1:
 				np.save(savedir, recon_array)
 			return
@@ -195,7 +195,7 @@ class SaveOptions(object):
 		saves sinogram or array of sinograms for each row
 		'''
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			savedir = QFileDialog.getSaveFileName()[0]
 			if savedir == "":
 				raise IOError
 
@@ -215,7 +215,7 @@ class SaveOptions(object):
 		saves sinogram or array of sinograms for each row
 		'''
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			savedir = QFileDialog.getSaveFileName()[0]
 			if savedir == "":
 				raise IOError
 
@@ -246,7 +246,7 @@ class SaveOptions(object):
 
 		'''
 		try:
-			fname = QtGui.QFileDialog.getSaveFileName()[0]
+			fname = QFileDialog.getSaveFileName()[0]
 			if fname == "":
 				raise IOError
 
@@ -295,7 +295,7 @@ class SaveOptions(object):
 	def save_numpy_array(self, data, thetas, elements):
 
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			savedir = QFileDialog.getSaveFileName()[0]
 			if savedir == "":
 				raise IOError
 
@@ -312,7 +312,7 @@ class SaveOptions(object):
 	def save_correlation_analysis(self, elements, rMat):
 		num_elements = len(elements)
 		try:
-			savedir = QtGui.QFileDialog.getSaveFileName()[0]
+			savedir = QFileDialog.getSaveFileName()[0]
 			if savedir == "":
 				raise IOError
 
