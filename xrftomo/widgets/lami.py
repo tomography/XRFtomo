@@ -88,18 +88,15 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.hist.setImageItem(self.ReconView.projView)
         self.h5_dir = "/".join(self.parent.fileTableWidget.dirLineEdit.text().split("/")[:-1])+"/"
         truncated_dir = "~/"+"/".join(self.h5_dir.split("/")[-4:])
-        self.ViewControl.browse.setText(truncated_dir)
         self.ViewControl.elem.currentIndexChanged.connect(self.elementChanged)
+        self.ViewControl.method.currentIndexChanged.connect(self.method_changed)
+        self.ViewControl.browse.setText(truncated_dir)
         self.ViewControl.browse.clicked.connect(self.file_browse)
         self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
-        self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
+        # self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
         self.ViewControl.rec_btn.clicked.connect(self.reconstruct_params)
-        self.ViewControl.lami_angle.textChanged.connect(self.validate_params)
-        self.ViewControl.axis_center.textChanged.connect(self.validate_params)
-        self.ViewControl.center_search_width.textChanged.connect(self.validate_params)
-        self.ViewControl.thresh.textChanged.connect(self.validate_params)
 
         self.x_shifts = None
         self.y_shifts = None
@@ -136,6 +133,18 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.setLayout(hb2)
 
 
+    def method_changed(self):
+        if self.ViewControl.method.currentIndex() == 0:
+            self.ViewControl.scroll.setEnbled(False)
+            self.ViewControl.browse.setEnabled(False)
+            # self.ViewControl.generate.setEnabled(False)
+        elif self.ViewControl.method.currentIndex() == 1:
+            self.ViewControl.scroll.setEnbled(True)
+            self.ViewControl.browse.setEnabled(True)
+            # self.ViewControl.generate.setEnabled(True)
+        else:
+            pass
+        return
     def file_browse(self):
         try:  # promps for directory and subdir folder
             if os.path.exists(self.h5_dir):
@@ -157,7 +166,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.h5_dir = save_path
         truncated_dir = "~/"+"/".join(self.h5_dir.split("/")[-4:])
         self.ViewControl.browse.setText(truncated_dir)
-
 
     def updatePanel(self,x,y):
         self.lbl2.setText(str(x))
@@ -183,7 +191,14 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.elem.addItem(j)
             self.recon_dict[j] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
-        self.ViewControl.axis_center.setText(str(self.data.shape[3]//2))
+        self.ViewControl.__dict__["reconstruction-type"].item3.setChecked(True)
+        self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
+        self.ViewControl.__dict__["lamino-angle"].item3.setChecked(True)
+        self.ViewControl.__dict__["rotation-axis"].item2.setText(str(self.data.shape[3]//2))
+        self.ViewControl.__dict__["rotation-axis"].item3.setChecked(True)
+        self.ViewControl.__dict__["lamino-search-width"].item2.setText("20")
+        self.ViewControl.__dict__["lamino-search-width"].item3.setChecked(True)
+
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
 
@@ -195,7 +210,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         element = self.ViewControl.elem.currentIndex()
         self.updateElementSlot(element)
         self.elementChangedSig.emit(element)
-
 
     def ySizeChanged(self, ySize):
         self.ViewControl.start_indx.setText('0')
@@ -232,8 +246,6 @@ class LaminographyWidget(QtWidgets.QWidget):
 
     def get_recon_stats(self):
         element = self.elements[self.ViewControl.elem.currentIndex()]
-
-        #TODO: get curent reconstruction from recon_dict
         recon = self.recon_dict[element]
         zero_index = np.where(abs(self.thetas) == abs(self.thetas).min())[0][0]
         middle_index = self.sld.value()
@@ -290,8 +302,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         except:
             print("run reconstruction first")
 
-
-
     def updateElementSlot(self, element):
         self.ViewControl.elem.setCurrentIndex(element)
 
@@ -309,8 +319,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         filter_type = None
         fname = self.h5_dir
 
-
-        lower_thresh = eval(self.ViewControl.thresh.text())
+        # lower_thresh = eval(self.ViewControl.thresh.text())
         data = self.data
         num_xsections = data.shape[2]
         recon_dict = self.recon_dict.copy()

@@ -78,6 +78,7 @@ class LaminographyActions(QtWidgets.QWidget):
 			recon = self.lam(data, thetas, tiltangle, interpolation="nearest_neighbor")
 
 		elif method == 1:
+			#TODO: get selected tomocupy options.
 			pass
 
 			# os.system("echo Hello from the other side!")

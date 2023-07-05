@@ -66,7 +66,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl = xrftomo.SinogramControlsWidget()
         self.sinoView = xrftomo.SinogramView()
         self.imageView = xrftomo.ImageView()
-        self.diffView = xrftomo.differenceView()
+        # self.diffView = xrftomo.differenceView()
         self.actions = xrftomo.SinogramActions()
         self.x_padding_hist = [0]
         self.y_padding_hist = [0]
@@ -75,7 +75,7 @@ class SinogramWidget(QtWidgets.QWidget):
 
         self.view_options = QtWidgets.QComboBox()
         self.view_options.setFixedWidth(button2size)
-        for j in ["sinogram view", "projection view", "difference view"]:
+        for j in ["sinogram view", "projection view"]:
             self.view_options.addItem(j)
 
         self.sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)    #sino slider
@@ -90,7 +90,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.hist.setMaximumWidth(120)
         self.hist.setImageItem(self.sinoView.projView)
         self.hist.setImageItem(self.imageView.projView)
-        self.hist.setImageItem(self.diffView.projView)
+        # self.hist.setImageItem(self.diffView.projView)
         self.data = np.ndarray(shape=(1, 10, 10, 10), dtype=float)
         self.x_shifts = None
         self.y_shifts = None
@@ -149,7 +149,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.fit_y.clicked.connect(self.fitY_params)
         self.ViewControl.clear_data.clicked.connect(self.clrHotspot_params)
 
-        self.diffView.keyPressSig.connect(self.keyProcess)
+        # self.diffView.keyPressSig.connect(self.keyProcess)
         self.imageView.keyPressSig.connect(self.keyProcess)
 
         self.ViewControl.fit_line.setEnabled(False)
@@ -232,7 +232,7 @@ class SinogramWidget(QtWidgets.QWidget):
         hb0.addWidget(self.sld3)
 
         vb = QtWidgets.QVBoxLayout()
-        vb.addWidget(self.diffView)
+        # vb.addWidget(self.diffView)
         vb.addLayout(hb0)
 
         self.stack3.setLayout(vb)

@@ -71,20 +71,6 @@ class LaminographyControlsWidget(QWidget):
         self.browse = QPushButton("file path: /")
         self.browse.setFixedWidth(button1size)
 
-        # recon_set_lbl = QLabel("reconstruction set")
-        # recon_set_lbl.setFixedWidth(button2size)
-        # self.recon_set = QComboBox(self)
-        # self.recon_set.setFixedWidth(button2size)
-        # self.recon_set.setToolTip("reconstruction group")
-
-        recon_options_lbl = QLabel("reconstruction options")
-        recon_options_lbl.setFixedWidth(button2size)
-        self.recon_options = QComboBox(self)
-        self.recon_options.setFixedWidth(button2size)
-        options = ["step","try","full"]
-        for k in range(len(options)):
-            self.recon_options.addItem(options[k])
-
         self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
 
 
@@ -95,26 +81,10 @@ class LaminographyControlsWidget(QWidget):
         # self.scroll.setFixedWidth(button1size)
         self.populate_scroll_area()
 
-
-        lami_angle_lbl = QLabel("laminography angle")
-        lami_angle_lbl.setFixedWidth(button2size)
-        self.lami_angle = QLineEdit("18.25")
-        self.lami_angle.setFixedWidth(button2size)
-
-        axis_center_lbl = QLabel("rotation axis center (x)")
-        axis_center_lbl.setFixedWidth(button2size)
-        self.axis_center = QLineEdit("0")
-        self.axis_center.setFixedWidth(button2size)
-
-        center_search_lbl = QLabel("center search width")
-        center_search_lbl.setFixedWidth(button2size)
-        self.center_search_width = QLineEdit("20")
-        self.center_search_width.setFixedWidth(button2size)
-
-        thresh_lbl = QLabel("Lower Threshold")
-        thresh_lbl.setFixedWidth(button2size)
-        self.thresh = QLineEdit("0.0")
-        self.thresh.setFixedWidth(button2size)
+        # thresh_lbl = QLabel("Lower Threshold")
+        # thresh_lbl.setFixedWidth(button2size)
+        # self.thresh = QLineEdit("0.0")
+        # self.thresh.setFixedWidth(button2size)
 
         self.rec_btn = QPushButton('Reconstruct')
         self.rec_btn.setFixedWidth(button2size)
@@ -122,40 +92,34 @@ class LaminographyControlsWidget(QWidget):
         self.lbl.setFixedWidth(button3size)
         self.rmHotspotBtn = QPushButton('remove hotspot')
         self.rmHotspotBtn.setFixedWidth(button2size)
-        self.setThreshBtn = QPushButton('set L-threshold')
-        self.setThreshBtn.setFixedWidth(button2size)
         self.recon_stats = QPushButton("recon stats")
         self.recon_stats.setFixedWidth(button2size)
         self.recon_all = QCheckBox("reconstruct all elements")
         self.recon_all.setChecked(False)
 
-        # recon_set_box = QHBoxLayout()
-        # recon_set_box.addWidget(recon_set_lbl)
-        # recon_set_box.addWidget(self.recon_set)
-
         browse_box = QHBoxLayout()
         browse_box.addWidget(browse_lbl)
         browse_box.addWidget(self.browse)
 
-        recon_options_box = QHBoxLayout()
-        recon_options_box.addWidget(recon_options_lbl)
-        recon_options_box.addWidget(self.recon_options)
+        # recon_options_box = QHBoxLayout()
+        # recon_options_box.addWidget(recon_options_lbl)
+        # recon_options_box.addWidget(self.recon_options)
+        #
+        # lami_angle_box = QHBoxLayout()
+        # lami_angle_box.addWidget(lami_angle_lbl)
+        # lami_angle_box.addWidget(self.lami_angle)
+        #
+        # axis_center_box = QHBoxLayout()
+        # axis_center_box.addWidget(axis_center_lbl)
+        # axis_center_box.addWidget(self.axis_center)
+        #
+        # search_widthBox = QHBoxLayout()
+        # search_widthBox.addWidget(center_search_lbl)
+        # search_widthBox.addWidget(self.center_search_width)
 
-        lami_angle_box = QHBoxLayout()
-        lami_angle_box.addWidget(lami_angle_lbl)
-        lami_angle_box.addWidget(self.lami_angle)
-
-        axis_center_box = QHBoxLayout()
-        axis_center_box.addWidget(axis_center_lbl)
-        axis_center_box.addWidget(self.axis_center)
-
-        search_widthBox = QHBoxLayout()
-        search_widthBox.addWidget(center_search_lbl)
-        search_widthBox.addWidget(self.center_search_width)
-
-        threshBox = QHBoxLayout()
-        threshBox.addWidget(thresh_lbl)
-        threshBox.addWidget(self.thresh)
+        # threshBox = QHBoxLayout()
+        # threshBox.addWidget(thresh_lbl)
+        # threshBox.addWidget(self.thresh)
 
         reconBox = QHBoxLayout()
         reconBox.addWidget(self.rec_btn)
@@ -163,7 +127,6 @@ class LaminographyControlsWidget(QWidget):
 
         postReconBox = QHBoxLayout()
         postReconBox.addWidget(self.rmHotspotBtn)
-        postReconBox.addWidget(self.setThreshBtn)
 
         vb = QVBoxLayout()
         vb.addWidget(self.elem)
@@ -173,57 +136,62 @@ class LaminographyControlsWidget(QWidget):
         vb.addWidget(self.lbl)
         vb.addWidget(self.scroll)
 
-        vb.addLayout(recon_options_box)
-        vb.addLayout(lami_angle_box)
-        vb.addLayout(axis_center_box)
-        vb.addLayout(search_widthBox)
-        vb.addLayout(threshBox)
+        # vb.addLayout(recon_options_box)
+        # vb.addLayout(lami_angle_box)
+        # vb.addLayout(axis_center_box)
+        # vb.addLayout(search_widthBox)
+        # vb.addLayout(threshBox)
         vb.addLayout(reconBox)
         vb.addLayout(postReconBox)
         self.setLayout(vb)
 
     def populate_scroll_area(self):
+        self.line_names = []
         try:
             import tomocupy
             self.tcp_installed = True
             item_dict = self.op_parser()
+            self.line_names = list(item_dict.keys())
+            num_lines = len(self.line_names)
 
+            for key in item_dict.keys():
+                attrs = item_dict[key]
+                setattr(self, key, Line(key, attrs))
         except:
             self.tcp_installed = False
             print("tomocupy not installed")
             return
 
-        #item_dict[option] =  {type, description}
-        self.widget = QWidget()                 # Widget that contains the collection of Vertical Box
-        self.vbox = QVBoxLayout()               # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
-        num_items = len(item_dict)
-        for key in item_dict.keys():
-            # op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
-            #[label] [text input / combobox] [QFileDialog*] [enable]
-            lbl = QLabel(key)
-            lbl.setToolTip(item_dict[key][2])
+        self.scroll_widget = QWidget()                 # Widget that contains the collection of Vertical Box
+        vbox = QVBoxLayout()               # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+        for i in range(num_lines):
+            line = self.__dict__[self.line_names[i]]
+            line.objectName = self.line_names[i]
+            vbox.addWidget(line)
+        vbox.setSpacing(0)
+        vbox.setContentsMargins(0,0,0,0)
 
-            if item_dict[key][0]:
-                dialog_btn = QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+        self.scroll_widget.setLayout(vbox)
+        self.scroll.setWidget(self.scroll_widget)
 
-            elif item_dict[key][1]:
-                dialog_btn = QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
+        # lami_angle_lbl = QLabel("laminography angle")
+        # lami_angle_lbl.setFixedWidth(button2size)
+        # self.lami_angle = QLineEdit("18.25")
+        # self.lami_angle.setFixedWidth(button2size)
 
-            else:
-                pass
+        # axis_center_lbl = QLabel("rotation axis center (x)")
+        # axis_center_lbl.setFixedWidth(button2size)
+        # self.axis_center = QLineEdit("0")
+        # self.axis_center.setFixedWidth(button2size)
 
-            #TODO: create comoboboxes if NOT (PATH or FILE), else create QLineEdit(Disabled)
-            #TODO: set currentindex to default value
-
-
-
-            self.vbox.addWidget(object)
-        self.widget.setLayout(self.vbox)
-        self.scroll.setWidget(self.widget)
+        # center_search_lbl = QLabel("center search width")
+        # center_search_lbl.setFixedWidth(button2size)
+        # self.center_search_width = QLineEdit("20")
+        # self.center_search_width.setFixedWidth(button2size)
 
     def op_parser(self):
         result = subprocess.check_output(["tomocupy", "recon_steps", "-h"]).decode().split("options:")[1]
-        options = result.split("--")[1::]
+        options = result.split("--")[2::]
         op_tmp = [i.replace("                       ","") for i in options]
         op_tmp = [i.replace("\r\n","") for i in op_tmp]
         op_tmp = [i.replace("  "," ") for i in op_tmp]
@@ -278,3 +246,61 @@ class LaminographyControlsWidget(QWidget):
         for idx, key in enumerate(keys):
             op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
         return op_dict
+
+
+class Line(QtWidgets.QWidget):
+    def __init__(self, name, attrs):
+        super(Line, self).__init__()
+        self.attrs = attrs
+
+        hbox = QHBoxLayout()
+
+        # op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
+        #[QFileDilog / Label] [text input / combobox]  [enable]
+
+        if attrs[0]:
+            self.item1 = QPushButton(name)
+            self.item1.clicked.connect(self.get_path)
+            self.item2 = QLineEdit(attrs[4])
+        elif attrs[1]:
+            self.item1 = QPushButton(name)
+            self.item1.clicked.connect(self.get_file)
+            self.item2 = QLineEdit(attrs[4])
+        elif attrs[3] is None:
+            self.item1 = QLabel(name)
+            self.item2 = QLineEdit("")
+            self.item2.setToolTip(str(attrs[2]))
+        else:
+            self.item1 = QLabel(name)
+            self.item1.setToolTip(attrs[2])
+            self.item2 = QComboBox()
+            self.item2.setToolTip(str(attrs[2]))
+            for option in attrs[3]:
+                self.item2.addItem(option)
+        #TODO: set currentndex to default value
+
+        self.item3 = QPushButton("+")
+        # item3.setChecked(False)
+        self.item3.setCheckable(True)
+        self.item3.setObjectName(str(name))
+        self.item3.setToolTip(str(attrs[2]))
+
+        self.item1.setFixedWidth(120)
+        self.item2.setFixedWidth(120)
+        self.item3.setFixedWidth(25)
+        hbox.addWidget(self.item1)
+        hbox.addWidget(self.item2)
+        hbox.addWidget(self.item3)
+        hbox.setSpacing(0)
+        hbox.setContentsMargins(0,0,0,0)
+        self.setLayout(hbox)
+        self.setContentsMargins(0,0,0,0)
+    def get_file(self):
+        sender = self.sender
+        file = QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath())
+        pass
+
+    def get_path(self):
+        sender = self.sender
+        path = QFileDialog.getExistingDirectory(self, "Open Directory", QtCore.QDir.currentPath())
+        pass
