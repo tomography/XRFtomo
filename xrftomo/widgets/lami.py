@@ -46,6 +46,7 @@ import pyqtgraph
 import numpy as np
 import scipy.ndimage
 import os
+import h5py
 import shutil
 
 from matplotlib import pyplot as plt
@@ -92,8 +93,8 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.ViewControl.method.currentIndexChanged.connect(self.method_changed)
         self.ViewControl.browse.setText(truncated_dir)
         self.ViewControl.browse.clicked.connect(self.file_browse)
+        self.ViewControl.generate.clicked.connect(self.generate_structure)
         self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
-        # self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
         self.ViewControl.rec_btn.clicked.connect(self.reconstruct_params)
@@ -105,6 +106,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.recon_dict = {}
         self.data = None
         self.data_original = None
+        self.method_changed()
 
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(lbl1)
@@ -132,14 +134,13 @@ class LaminographyWidget(QtWidgets.QWidget):
 
         self.setLayout(hb2)
 
-
     def method_changed(self):
         if self.ViewControl.method.currentIndex() == 0:
-            self.ViewControl.scroll.setEnbled(False)
+            self.ViewControl.scroll_widget.setEnabled(False)
             self.ViewControl.browse.setEnabled(False)
             # self.ViewControl.generate.setEnabled(False)
         elif self.ViewControl.method.currentIndex() == 1:
-            self.ViewControl.scroll.setEnbled(True)
+            self.ViewControl.scroll_widget.setEnabled(True)
             self.ViewControl.browse.setEnabled(True)
             # self.ViewControl.generate.setEnabled(True)
         else:
@@ -166,6 +167,25 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.h5_dir = save_path
         truncated_dir = "~/"+"/".join(self.h5_dir.split("/")[-4:])
         self.ViewControl.browse.setText(truncated_dir)
+
+    def generate_structure(self):
+        parent_dir = self.h5_dir
+        rec = "tomocupy_rec"
+        data = "tomocupy_data"
+
+        # Paths
+        path_rec = os.path.join(parent_dir, rec)
+        path_data = os.path.join(parent_dir, data)
+
+        try:
+            os.makedirs(path_rec, exist_ok=True)
+            os.makedirs(path_data, exist_ok=True)
+            print("Directory '%s' created successfully" % rec)
+            print("Directory '%s' created successfully" % data)
+        except OSError as error:
+            print("Directory '%s' created successfully" % rec)
+            print("Directory '%s' created successfully" % data)
+            return
 
     def updatePanel(self,x,y):
         self.lbl2.setText(str(x))
@@ -198,6 +218,12 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.ViewControl.__dict__["rotation-axis"].item3.setChecked(True)
         self.ViewControl.__dict__["lamino-search-width"].item2.setText("20")
         self.ViewControl.__dict__["lamino-search-width"].item3.setChecked(True)
+        self.ViewControl.__dict__["fbp-filter"].item2.setCurrentIndex(1)
+        self.ViewControl.__dict__["fbp-filter"].item3.setChecked(True)
+        self.ViewControl.__dict__["minus-log"].item2.setText("False")
+        self.ViewControl.__dict__["minus-log"].item3.setChecked(True)
+        self.ViewControl.__dict__["file-name"].item2.setText("")
+        self.ViewControl.__dict__["file-name"].item3.setChecked(True)
 
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
@@ -311,18 +337,12 @@ class LaminographyWidget(QtWidgets.QWidget):
         elements = [self.ViewControl.elem.currentIndex()]
         method = self.ViewControl.method.currentIndex()
         thetas = self.thetas
-        recon_option = self.ViewControl.recon_options.currentText()
-        lami_angle = eval(self.ViewControl.lami_angle.text())
-        axis_center = eval(self.ViewControl.axis_center.text())
-        search_width = eval(self.ViewControl.center_search_width.text())
-        minus_log = None
-        filter_type = None
-        fname = self.h5_dir
-
-        # lower_thresh = eval(self.ViewControl.thresh.text())
+        lami_angle = eval(self.ViewControl.__dict__["lamino-angle"].item2.text())
+        parent_dir = self.h5_dir
         data = self.data
         num_xsections = data.shape[2]
         recon_dict = self.recon_dict.copy()
+        command_string = self.get_command_string()
 
         if not self.check_savepath_exists():
             print("save path invalid or insufficient permissions")
@@ -333,13 +353,13 @@ class LaminographyWidget(QtWidgets.QWidget):
             num_elements = self.ViewControl.elem.count()
             elements = [i for i in range(num_elements)]
 
-        for element in elements:
-            self.ViewControl.elem.setCurrentIndex(element)    #required to properly update recon_dict
+        for element_idx in elements:
+            element = self.parent.elements[element_idx]
+            self.ViewControl.elem.setCurrentIndex(element_idx)    #required to properly update recon_dict
             recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
-            print("working fine")
             for i in range(num_xsections):
-                recons = self.actions.reconstruct(data, element, lami_angle, method, thetas, axis_center, fname=fname, rec_op=recon_option, search_width=search_width, recon_type=None, filter_type=filter_type, minus_log=minus_log)
-            recon_dict[self.ViewControl.elem.itemText(element)] = np.array(recons)
+                recons = self.actions.reconstruct(data, element_idx, element, lami_angle, method, thetas, parent_dir=parent_dir, command_string=command_string)
+            recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons),
             self.recon = np.array(recons)
 
         self.update_recon_image()
@@ -347,6 +367,27 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.reconChangedSig.emit(self.recon)
         self.reconArrChangedSig.emit(recon_dict)
         return
+
+    def get_command_string(self):
+        options = []
+        values = []
+        command = "tomocupy recon_steps"
+
+        for line in self.ViewControl.line_names:
+            line_object = self.ViewControl.__dict__[line]
+            if line_object.item3.isChecked():
+                options.append(line)
+                command += " --{}".format(line)
+                if isinstance(line_object.item2, QComboBox):
+                    value = line_object.item2.currentText()
+                    values.append(value)
+                    command += " {}".format(value)
+                elif isinstance(line_object.item2, QLineEdit):
+                    value = line_object.item2.text()
+                    values.append(value)
+                    command += " {}".format(value)
+
+        return command
 
     def validate_params(self,sender):
         valid = False
@@ -362,10 +403,10 @@ class LaminographyWidget(QtWidgets.QWidget):
 
     def check_savepath_exists(self):
         if os.path.exists(self.h5_dir):
-            if not os.path.exists(self.h5_dir+"/data/"):
-                os.mkdir(self.h5_dir+"/data/")
-            if not os.path.exists(self.h5_dir+"/lami_recons/"):
-                os.mkdir(self.h5_dir + "/lami_recons/")
+            if not os.path.exists(self.h5_dir+"/tomocupy_rec/"):
+                os.mkdir(self.h5_dir+"/tomocupy_rec/")
+            if not os.path.exists(self.h5_dir+"/tomocupy_data/"):
+                os.mkdir(self.h5_dir + "/tomocupy_data/")
         else:
             return False
         return True

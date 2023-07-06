@@ -47,6 +47,7 @@ import matplotlib.pyplot as plt
 from scipy.fftpack import fftshift, ifftshift, fft, ifft, fft2, ifft2
 from scipy import interpolate
 import numpy as np
+import h5py
 import subprocess
 from skimage import exposure
 
@@ -64,13 +65,13 @@ class LaminographyActions(QtWidgets.QWidget):
 		super(LaminographyActions, self).__init__()
 		self.writer = xrftomo.SaveOptions()
 
-	def reconstruct(self, data, element, tiltangle, method, thetas, center, fname=None, rec_op="steps", search_width=20, recon_type=None, filter_type="shepp", minus_log=False):
+	def reconstruct(self, data, element_idx, element, tiltangle, method, thetas, parent_dir=None, command_string=None):
 		'''
 		load data for reconstruction and load variables for reconstruction
 		make it sure that data doesn't have infinity or nan as one of
 		entries
 		'''
-		recData = data[element, :, :, :]
+		recData = data[element_idx, :, :, :]
 		recData[recData == np.inf] = True
 		recData[np.isnan(recData)] = True
 
@@ -78,21 +79,29 @@ class LaminographyActions(QtWidgets.QWidget):
 			recon = self.lam(data, thetas, tiltangle, interpolation="nearest_neighbor")
 
 		elif method == 1:
-			#TODO: get selected tomocupy options.
-			pass
+			#TODO: create h5s
+			rec = "tomocupy_rec"
+			data = "tomocupy_data"
 
-			# os.system("echo Hello from the other side!")
-			"tomocupy recon_{} \
-			--file-name {} \
-			--lamino-angle {} \
-			--center-search-width {} \
-			--rotation-axis {} \
-			--reconstruction-type {} \
-			--fbp-filter {} \
-			--minus-log {}".format(rec_op, fname, tiltangle, search_width, center, recon_type, filter_type, minus_log)
+			path_rec = os.path.join(parent_dir, rec)
+			path_data = os.path.join(parent_dir, data)
+			elem_h5_path = os.path.join(path_data, element)
+			data = recData
+			const = data[0, 0, 0]
+			data = np.pad(data, ((0, 0), (0, 0), (0, 2)), mode='edge')
+			data_dark = np.zeros([1, data.shape[1], data.shape[2]], dtype='float32')
+			data_white = np.ones([1, data.shape[1], data.shape[2]], dtype='float32') * const
 
-			# result = subprocess.run(["ls", "-l"])
-			recon = None
+			with h5py.File(f'{elem_h5_path}.h5', 'w') as fid:
+				fid.create_dataset('exchange/data', data=data)
+				fid.create_dataset('exchange/data_white', data=data_white)
+				fid.create_dataset('exchange/data_dark', data=data_dark)
+				fid.create_dataset('exchange/theta', data=thetas)
+
+			# command_list = command_string.split(" ")
+			# result = subprocess.run(command_list)
+			# TODO: read result into memory
+			# recon = np.open("....")
 
 		if np.isinf(recon).max():
 			print("WARNING: inf values found in reconstruction, consider reconstructing with less iterations")

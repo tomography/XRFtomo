@@ -66,25 +66,18 @@ class LaminographyControlsWidget(QWidget):
         for k in range(len(methodname)):
             self.method.addItem(methodname[k])
 
-        #TODO: get h5 working directory and go one level up.
         browse_lbl = QLabel("data path: ")
         self.browse = QPushButton("file path: /")
         self.browse.setFixedWidth(button1size)
 
         self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
-
-
-        #Scroll Area Properties
-        # self.scroll.setVerticalScrollBarPolicy(ScrollBarAlwaysOn)
-        # self.scroll.setHorizontalScrollBarPolicy(ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
-        # self.scroll.setFixedWidth(button1size)
         self.populate_scroll_area()
 
-        # thresh_lbl = QLabel("Lower Threshold")
-        # thresh_lbl.setFixedWidth(button2size)
-        # self.thresh = QLineEdit("0.0")
-        # self.thresh.setFixedWidth(button2size)
+        generate_lbl = QLabel("Generate folder structure in data path")
+        generate_lbl.setFixedWidth(button2size)
+        self.generate = QPushButton("generate")
+        self.generate.setFixedWidth(button3size)
 
         self.rec_btn = QPushButton('Reconstruct')
         self.rec_btn.setFixedWidth(button2size)
@@ -101,25 +94,9 @@ class LaminographyControlsWidget(QWidget):
         browse_box.addWidget(browse_lbl)
         browse_box.addWidget(self.browse)
 
-        # recon_options_box = QHBoxLayout()
-        # recon_options_box.addWidget(recon_options_lbl)
-        # recon_options_box.addWidget(self.recon_options)
-        #
-        # lami_angle_box = QHBoxLayout()
-        # lami_angle_box.addWidget(lami_angle_lbl)
-        # lami_angle_box.addWidget(self.lami_angle)
-        #
-        # axis_center_box = QHBoxLayout()
-        # axis_center_box.addWidget(axis_center_lbl)
-        # axis_center_box.addWidget(self.axis_center)
-        #
-        # search_widthBox = QHBoxLayout()
-        # search_widthBox.addWidget(center_search_lbl)
-        # search_widthBox.addWidget(self.center_search_width)
-
-        # threshBox = QHBoxLayout()
-        # threshBox.addWidget(thresh_lbl)
-        # threshBox.addWidget(self.thresh)
+        generate_box = QHBoxLayout()
+        generate_box.addWidget(generate_lbl)
+        generate_box.addWidget(self.generate)
 
         reconBox = QHBoxLayout()
         reconBox.addWidget(self.rec_btn)
@@ -132,15 +109,10 @@ class LaminographyControlsWidget(QWidget):
         vb.addWidget(self.elem)
         vb.addWidget(self.method)
         vb.addLayout(browse_box)
+        vb.addLayout(generate_box)
         vb.addWidget(self.recon_all)
         vb.addWidget(self.lbl)
         vb.addWidget(self.scroll)
-
-        # vb.addLayout(recon_options_box)
-        # vb.addLayout(lami_angle_box)
-        # vb.addLayout(axis_center_box)
-        # vb.addLayout(search_widthBox)
-        # vb.addLayout(threshBox)
         vb.addLayout(reconBox)
         vb.addLayout(postReconBox)
         self.setLayout(vb)
