@@ -63,6 +63,11 @@ SECTIONS['file-io'] = {
         'type': str,
         'help': "Path of the last used directory",
         'metavar': 'PATH'},
+    'file-extension': {
+        'default': '.h5',
+        'type': str,
+        'help': "file extension of last files used",
+        'metavar': 'PATH'},
     'image-tag': {
         'default': 'MAPS',
         'type': str,

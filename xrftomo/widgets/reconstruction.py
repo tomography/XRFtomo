@@ -90,10 +90,10 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.hist.setImageItem(self.ReconView.projView)
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
-        self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
+        self.ViewControl.combo1.currentIndexChanged.connect(self.update_recon_set)
         self.ViewControl.btn.clicked.connect(self.reconstruct_params)
         self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
-        self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
+        # self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
 
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
@@ -152,18 +152,18 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.clear()
         self.ViewControl.method.clear()
-        self.ViewControl.recon_set.clear()
-        self.ViewControl.recon_set.disconnect()
+        # self.ViewControl.recon_set.clear()
+        # self.ViewControl.recon_set.disconnect()
         methodname = ["mlem", "gridrec", "art", "pml_hybrid", "pml_quad", "fbp", "sirt", "tv"]
         for j in self.elements:
             self.ViewControl.combo1.addItem(j)
         for k in range(len(methodname)):
             self.ViewControl.method.addItem(methodname[k])
         for l in self.elements:
-            self.ViewControl.recon_set.addItem(l)
+            # self.ViewControl.recon_set.addItem(l)
             self.recon_dict[l] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
-        self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
+        # self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
 
@@ -189,7 +189,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
     def updateReconSlot(self,element):
         element = self.ViewControl.combo1.currentIndex()
-        self.ViewControl.recon_set.setCurrentIndex(element)
+        # self.ViewControl.recon_set.setCurrentIndex(element)
 
     def call_reconMultiply(self):
         '''
@@ -277,11 +277,11 @@ class ReconstructionWidget(QtWidgets.QWidget):
         recon = self.actions.remove_hotspots(recon)
         self.update_recon_image()
 
-    def set_thresh_params(self):
-        recon = self.recon
-        threshold = float(self.ViewControl.lThresh.text())
-        recon = self.actions.setThreshold(threshold,recon)
-        self.update_recon_image()
+    # def set_thresh_params(self):
+    #     recon = self.recon
+    #     threshold = float(self.ViewControl.lThresh.text())
+    #     recon = self.actions.setThreshold(threshold,recon)
+    #     self.update_recon_image()
 
     def update_recon_dict(self, recon):
         elem = self.ViewControl.combo1.currentText()
@@ -295,9 +295,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
             print("array shape missmatch. array_dict possibly updated elsewhere ")
         return
 
-    def recon_combobox_changed(self):
-        elem = self.ViewControl.recon_set.currentText()
-        element = self.ViewControl.recon_set.currentIndex()
+    def update_recon_set(self):
+        elem = self.ViewControl.combo1.currentText()
+        element = self.ViewControl.combo1.currentIndex()
         self.updateElementSlot(element)
         self.elementChangedSig.emit(element)
         try:

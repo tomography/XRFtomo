@@ -66,18 +66,26 @@ class LaminographyControlsWidget(QWidget):
         for k in range(len(methodname)):
             self.method.addItem(methodname[k])
 
-        browse_lbl = QLabel("data path: ")
+        self.browse_lbl = QLabel("data path: ")
         self.browse = QPushButton("file path: /")
         self.browse.setFixedWidth(button1size)
 
         self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
+        self.scroll2 = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
+
         self.scroll.setWidgetResizable(True)
+        self.scroll2.setWidgetResizable(True)
         self.populate_scroll_area()
 
-        generate_lbl = QLabel("Generate folder structure in data path")
-        generate_lbl.setFixedWidth(button2size)
+        self.generate_lbl = QLabel("Generate folder structure in data path")
+        self.generate_lbl.setFixedWidth(button12size)
         self.generate = QPushButton("generate")
         self.generate.setFixedWidth(button3size)
+
+        self.show_ops = QPushButton("show more")
+        self.show_ops.setCheckable(True)
+        self.show_ops.setChecked(False)
+        self.show_ops.setFixedWidth(button3size)
 
         self.rec_btn = QPushButton('Reconstruct')
         self.rec_btn.setFixedWidth(button2size)
@@ -91,11 +99,11 @@ class LaminographyControlsWidget(QWidget):
         self.recon_all.setChecked(False)
 
         browse_box = QHBoxLayout()
-        browse_box.addWidget(browse_lbl)
+        browse_box.addWidget(self.browse_lbl)
         browse_box.addWidget(self.browse)
 
         generate_box = QHBoxLayout()
-        generate_box.addWidget(generate_lbl)
+        generate_box.addWidget(self.generate_lbl)
         generate_box.addWidget(self.generate)
 
         reconBox = QHBoxLayout()
@@ -111,8 +119,10 @@ class LaminographyControlsWidget(QWidget):
         vb.addLayout(browse_box)
         vb.addLayout(generate_box)
         vb.addWidget(self.recon_all)
+        vb.addWidget(self.show_ops)
         vb.addWidget(self.lbl)
         vb.addWidget(self.scroll)
+        vb.addWidget(self.scroll2)
         vb.addLayout(reconBox)
         vb.addLayout(postReconBox)
         self.setLayout(vb)
@@ -129,37 +139,42 @@ class LaminographyControlsWidget(QWidget):
             for key in item_dict.keys():
                 attrs = item_dict[key]
                 setattr(self, key, Line(key, attrs))
+
+            self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+            vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+            for i in range(num_lines):
+                line = self.__dict__[self.line_names[i]]
+                line.objectName = self.line_names[i]
+                vbox.addWidget(line)
+            vbox.setSpacing(0)
+            vbox.setContentsMargins(0, 0, 0, 0)
+
+            self.scroll_widget.setLayout(vbox)
+            self.scroll.setWidget(self.scroll_widget)
         except:
             self.tcp_installed = False
-            print("tomocupy not installed")
-            return
+            print("tomocupy not installed, using CPU settings")
 
-        self.scroll_widget = QWidget()                 # Widget that contains the collection of Vertical Box
-        vbox = QVBoxLayout()               # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
-        for i in range(num_lines):
-            line = self.__dict__[self.line_names[i]]
-            line.objectName = self.line_names[i]
+        line_names = ["fbp-filter", "rotation-axis", "lamino-angle"]
+        # op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
+        item_dict = {}
+        item_dict["fbp-filter"] = [False, False, "filter choice", ["ramp","shepp"], "shepp"]
+        item_dict["rotation-axis"] = [False, False, "rotation axis given by x-position", None, ""]
+        item_dict["lamino-angle"] = [False, False, "laminography tilt angle", None, "18.25"]
+        for key in line_names:
+            attrs = item_dict[key]
+            setattr(self, key, Line(key, attrs))
+        self.scroll_widget2 = QWidget()  # Widget that contains the collection of Vertical Box
+        vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+        for i in range(len(line_names)):
+            line = self.__dict__[line_names[i]]
+            line.objectName = line_names[i]
             vbox.addWidget(line)
         vbox.setSpacing(0)
-        vbox.setContentsMargins(0,0,0,0)
+        vbox.setContentsMargins(0, 0, 0, 0)
 
-        self.scroll_widget.setLayout(vbox)
-        self.scroll.setWidget(self.scroll_widget)
-
-        # lami_angle_lbl = QLabel("laminography angle")
-        # lami_angle_lbl.setFixedWidth(button2size)
-        # self.lami_angle = QLineEdit("18.25")
-        # self.lami_angle.setFixedWidth(button2size)
-
-        # axis_center_lbl = QLabel("rotation axis center (x)")
-        # axis_center_lbl.setFixedWidth(button2size)
-        # self.axis_center = QLineEdit("0")
-        # self.axis_center.setFixedWidth(button2size)
-
-        # center_search_lbl = QLabel("center search width")
-        # center_search_lbl.setFixedWidth(button2size)
-        # self.center_search_width = QLineEdit("20")
-        # self.center_search_width.setFixedWidth(button2size)
+        self.scroll_widget2.setLayout(vbox)
+        self.scroll2.setWidget(self.scroll_widget2)
 
     def op_parser(self):
         result = subprocess.check_output(["tomocupy", "recon_steps", "-h"]).decode().split("options:")[1]

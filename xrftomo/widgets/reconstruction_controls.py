@@ -59,11 +59,11 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.combo1.setFixedWidth(button1size)
         self.method = QtWidgets.QComboBox(self)
         self.method.setFixedWidth(button1size)
-        self.recon_set = QtWidgets.QComboBox(self)
-        self.recon_set.setFixedWidth(button2size)
-        self.recon_set.setToolTip("reconstruction group")
-        recon_set_lbl = QtWidgets.QLabel("reconstruction set")
-        recon_set_lbl.setFixedWidth(button2size)
+        # self.recon_set = QtWidgets.QComboBox(self)
+        # self.recon_set.setFixedWidth(button2size)
+        # self.recon_set.setToolTip("reconstruction group")
+        # recon_set_lbl = QtWidgets.QLabel("reconstruction set")
+        # recon_set_lbl.setFixedWidth(button2size)
 
 
         self.btn = QtWidgets.QPushButton('Reconstruct')
@@ -72,8 +72,8 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.lbl.setFixedWidth(button3size)
         self.rmHotspotBtn = QtWidgets.QPushButton('remove hotspot')
         self.rmHotspotBtn.setFixedWidth(button2size)
-        self.setThreshBtn = QtWidgets.QPushButton('set L-threshold')
-        self.setThreshBtn.setFixedWidth(button2size)
+        # self.setThreshBtn = QtWidgets.QPushButton('set L-threshold')
+        # self.setThreshBtn.setFixedWidth(button2size)
         self.recon_stats = QtWidgets.QPushButton("recon stats")
         self.recon_stats.setFixedWidth(button2size)
 
@@ -146,9 +146,9 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.minText.setVisible(False)
 
 
-        recon_setBox = QtWidgets.QHBoxLayout()
-        recon_setBox.addWidget(recon_set_lbl)
-        recon_setBox.addWidget(self.recon_set)
+        # recon_setBox = QtWidgets.QHBoxLayout()
+        # recon_setBox.addWidget(recon_set_lbl)
+        # recon_setBox.addWidget(self.recon_set)
 
 
         startBox = QtWidgets.QHBoxLayout()
@@ -195,13 +195,13 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         postReconBox = QtWidgets.QHBoxLayout()
         # postReconBox.addWidget(self.equalizeBtn)
         postReconBox.addWidget(self.rmHotspotBtn)
-        postReconBox.addWidget(self.setThreshBtn)
+        # postReconBox.addWidget(self.setThreshBtn)
 
 
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)
         vb.addWidget(self.method)
-        vb.addLayout(recon_setBox)
+        # vb.addLayout(recon_setBox)
         vb.addLayout(endBox)
         vb.addLayout(startBox)
         vb.addLayout(midBox)

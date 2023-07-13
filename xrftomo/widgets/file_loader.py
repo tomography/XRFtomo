@@ -55,6 +55,7 @@ class FileTableWidget(QtWidgets.QWidget):
         self.auto_load_settings = eval(self.parent.params.load_settings)
         self.auto_theta_pv = self.parent.params.theta_pv
         self.auto_input_path = self.parent.params.input_path
+        self.auto_extension = self.parent.params.file_extension
         self.auto_image_tag = self.parent.params.image_tag
         self.auto_data_tag = self.parent.params.data_tag
         self.auto_element_tag = self.parent.params.element_tag
@@ -84,7 +85,7 @@ class FileTableWidget(QtWidgets.QWidget):
         dirLabel = QtWidgets.QLabel('Directory:')
         self.dirLineEdit = QtWidgets.QLineEdit(self.auto_input_path)
         self.dirLineEdit.returnPressed.connect(self.onLoadDirectory)
-        self.extLineEdit = QtWidgets.QLineEdit('.h5')
+        self.extLineEdit = QtWidgets.QLineEdit(self.auto_extension)
         self.extLineEdit.setMaximumSize(50, 30)
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
         # self.dirBrowseBtn = QtWidgets.QPushButton('Browse')
@@ -231,18 +232,19 @@ class FileTableWidget(QtWidgets.QWidget):
         self.version = 0
 
         #specify file extension by 'majority rule' for a given directory
-        if files == None:
-            try:
-                filenames = os.listdir(self.dirLineEdit.text())
-                ext = "."+self.extLineEdit.text().split(".")[1]
+        # if files == None:
+        #     try:
+        #         filenames = os.listdir(self.dirLineEdit.text())
+        #         ext = "."+self.extLineEdit.text().split(".")[1]
+        #
+        #     except FileNotFoundError:
+        #         self.message.setText("directory probably not mounted")
+        #         return
+        #
+        # else:
+        #     pass
 
-            except FileNotFoundError:
-                self.message.setText("directory probably not mounted")
-                return
-
-        else:
-            pass
-
+        ext = self.extLineEdit.text()
 
         #TODO: get filetablemodel to accept only the selected files and not all files in the directory.
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
@@ -654,16 +656,14 @@ class FileTableWidget(QtWidgets.QWidget):
 
         files = [files[j] for j in k if files_bool[j]==True]
 
-
-        
         path_files = [self.fileTableModel.directory + '/' + s for s in files]
-
 
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
 
         #update auto-load parameters
         self.parent.params.input_path = self.dirLineEdit.text()
+        self.parent.params.file_extension = self.extLineEdit.text()
         self.parent.params.theta_pv = self.thetaLineEdit.text()
         self.parent.params.image_tag = self.imgTags[self.imageTag.currentIndex()]
         self.parent.params.data_tag = self.dataTag.currentText()

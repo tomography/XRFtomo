@@ -2145,7 +2145,7 @@ class xrftomoGui(QMainWindow):
         self.tab_widget.removeTab(4)
         self.tab_widget.insertTab(1, self.imageProcessWidget, "Pre Processing")
         self.tab_widget.insertTab(2, self.sinogramWidget, "Alignment")
-        self.tab_widget.insertTab(3, self.reconstructionWidget, "Reconstruction")
+        self.tab_widget.insertTab(3, self.reconstructionWidget, "Tomography")
         self.tab_widget.insertTab(4, self.laminographyWidget, "Laminography")
 
     def init_widgets(self):

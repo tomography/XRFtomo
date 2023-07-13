@@ -53,7 +53,6 @@ from matplotlib import pyplot as plt
 # from matplotlib.pyplot import figure, draw, pause, close
 import time
 
-
 class LaminographyWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, name='elementChangedSig')
     sldRangeChanged = pyqtSignal(int, np.ndarray, np.ndarray, name='sldRangeChanged')
@@ -94,6 +93,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.ViewControl.browse.setText(truncated_dir)
         self.ViewControl.browse.clicked.connect(self.file_browse)
         self.ViewControl.generate.clicked.connect(self.generate_structure)
+        self.ViewControl.show_ops.clicked.connect(self.show_options)
         self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
@@ -107,6 +107,8 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.data = None
         self.data_original = None
         self.method_changed()
+        self.show_options()
+
 
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(lbl1)
@@ -134,15 +136,36 @@ class LaminographyWidget(QtWidgets.QWidget):
 
         self.setLayout(hb2)
 
+
+    def show_options(self):
+        if self.ViewControl.show_ops.isChecked() and self.ViewControl.show_ops.isVisible():
+            self.ViewControl.show_ops.setText("show less")
+            for child in self.ViewControl.scroll.children():
+                child.setVisible(False)
+
+        elif not self.ViewControl.show_ops.isChecked() and self.ViewControl.show_ops.isVisible():
+            self.ViewControl.show_ops.setText("show more")
+            for child in self.ViewControl.scroll.children():
+                child.setVisible(True)
+
     def method_changed(self):
         if self.ViewControl.method.currentIndex() == 0:
-            self.ViewControl.scroll_widget.setEnabled(False)
-            self.ViewControl.browse.setEnabled(False)
-            # self.ViewControl.generate.setEnabled(False)
+            self.ViewControl.scroll.setVisible(False)
+            self.ViewControl.scroll2.setVisible(True)
+            self.ViewControl.browse.setVisible(False)
+            self.ViewControl.generate.setVisible(False)
+            self.ViewControl.generate_lbl.setVisible(False)
+            self.ViewControl.browse_lbl.setVisible(False)
+            self.ViewControl.show_ops.setVisible(False)
+
         elif self.ViewControl.method.currentIndex() == 1:
-            self.ViewControl.scroll_widget.setEnabled(True)
-            self.ViewControl.browse.setEnabled(True)
-            # self.ViewControl.generate.setEnabled(True)
+            self.ViewControl.scroll.setVisible(True)
+            self.ViewControl.scroll2.setVisible(False)
+            self.ViewControl.browse.setVisible(True)
+            self.ViewControl.generate.setVisible(True)
+            self.ViewControl.generate_lbl.setVisible(True)
+            self.ViewControl.browse_lbl.setVisible(True)
+            self.ViewControl.show_ops.setVisible(True)
         else:
             pass
         return
@@ -355,6 +378,8 @@ class LaminographyWidget(QtWidgets.QWidget):
 
         for element_idx in elements:
             element = self.parent.elements[element_idx]
+            #TODO: edit file-name to match current element.h5 file path.
+            # self.ViewControl.__dict__["file-name"].item2.setText("")
             self.ViewControl.elem.setCurrentIndex(element_idx)    #required to properly update recon_dict
             recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
             for i in range(num_xsections):
