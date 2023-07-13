@@ -5,7 +5,6 @@ pyqtgraph
 setuptools
 pyqt
 tomopy
-tomocupy
 scikit-image
 scipy
 numpy

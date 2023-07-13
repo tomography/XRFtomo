@@ -1,6 +1,6 @@
 
 {% set name = "XRFtomo" %}
-{% set version = "1.0.9" %}
+{% set version = "1.1.0" %}
 {% set repo = "fabricioSMarin" %}
 #tomography
 #fabricioSMarin
@@ -30,7 +30,6 @@ requirements:
     - setuptools
     - pyqt
     - tomopy
-    - tomocupy
     - scikit-image
     - scipy
     - numpy

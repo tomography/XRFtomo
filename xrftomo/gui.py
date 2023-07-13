@@ -398,7 +398,7 @@ class xrftomoGui(QMainWindow):
         self.helpMenu.addAction(configAction)
 
         self.afterConversionMenu.setDisabled(True)
-        version = "1.0.9"
+        version = "1.1.0"
         add = 0
         if sys.platform == "win32":
             add = 50
