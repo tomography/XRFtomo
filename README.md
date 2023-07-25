@@ -9,8 +9,8 @@ Pre-requisites
 
 Install Anaconda3 and create a python 3.6 conda environment:
 
-    $ conda create -n py36 python=3.6
-    $ source activate py36
+    $ conda create -n xrf
+    $ source activate xrf
     
 add conda channels:
 
