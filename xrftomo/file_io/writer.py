@@ -54,6 +54,7 @@ import dxfile.dxtomo as dx
 import numpy as np
 from skimage import io
 
+#TODO: use standard h5py commands ot replace dxchange
 class SaveOptions(object):
 	def save_alignemnt_information(self,fnames, x_shift, y_shift, centers):
 		'''

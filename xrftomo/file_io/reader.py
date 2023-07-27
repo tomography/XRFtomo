@@ -55,6 +55,8 @@ import h5py
 from skimage import io
 import csv
 import os
+#TODO: use standard h5py commands ot replace dxchange
+
 
 __author__ = "Francesco De Carlo, Fabricio S. Marin"
 __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
