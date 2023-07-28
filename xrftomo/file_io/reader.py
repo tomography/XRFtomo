@@ -147,8 +147,8 @@ def read_projection(fname, element, data_tag, element_tag):
     projection = img[data_tag][idx]
     return projection
 
-def load_thetas(path_files, data_tag, version, *thetaPV):
-    
+def load_thetas(path_files, *thetaPV):
+
     if version == 0:
         return load_thetas_legacy(path_files, thetaPV[0])
 
@@ -214,7 +214,6 @@ def load_thetas_file(path_file):
             thetas = readCSV[0]
             fnames = readCSV[1]
             return fnames, thetas
-
     else:
         return 
 
@@ -276,7 +275,6 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag):
 
     data[np.isnan(data)] = 0.0001
     data[data == np.inf] = 0.0001
-
     return data
 
 def read_tiffs(fnames):

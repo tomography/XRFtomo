@@ -116,9 +116,14 @@ class FileTableWidget(QWidget):
         self.element_menu.triggered.connect(self.element_menu.show)
         self.element_menu.show()
 
+        theta_menu_lbl = QLabel("theta tag")
+        theta_menu_lbl.setFixedWidth(90)
+        self.theta_menu = QMenu()
+        self.theta_menu.setFixedSize(123,25)
+        self.theta_menu.triggered.connect(self.theta_menu.show)
+        self.theta_menu.show()
+
         self.saveDataBtn = QPushButton('Save to Memory')
-        # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
-        # self.saveDataBtn.setEnabled(False)
         self.saveDataBtn.setFixedWidth(221)
 
         message_label = QLabel('Messages:')
@@ -126,7 +131,6 @@ class FileTableWidget(QWidget):
         self.message.setReadOnly(True)
         self.message.setMaximumHeight(20)
         self.message.setText('')
-
 
         hBox0 = QHBoxLayout()
         hBox0.addWidget(data_menu_lbl)
@@ -143,6 +147,11 @@ class FileTableWidget(QWidget):
         hBox2.addWidget(self.thetaLineEdit)
         hBox2.setAlignment(Qt.AlignLeft)
 
+        hBox3 = QHBoxLayout()
+        hBox3.addWidget(theta_menu_lbl)
+        hBox3.addWidget(self.theta_menu)
+        hBox3.setAlignment(Qt.AlignLeft)
+
         hBox7 = QHBoxLayout()
         hBox7.addWidget(self.saveDataBtn)
         hBox7.setAlignment(Qt.AlignLeft)
@@ -151,21 +160,19 @@ class FileTableWidget(QWidget):
         vBox1.addLayout(hBox0)
         vBox1.addLayout(hBox1)
         vBox1.addLayout(hBox2)
+        vBox1.addLayout(hBox3)
         vBox1.addLayout(hBox7)
-        # vBox1.setFixedWidth(275)
 
         layout0 = QHBoxLayout()
         layout0.addWidget(dirLabel)
         layout0.addWidget(self.dirLineEdit)
         layout0.addWidget(self.extLineEdit)
-        # layout0.addWidget(self.dirBrowseBtn)
 
         layout1 = QHBoxLayout()
         layout1.addLayout(vBox1)
         layout1.addWidget(self.fileTableView)
         layout1.addWidget(self.elementTableView)
 
-        layout2 = QHBoxLayout()
         layout2 = QHBoxLayout()
         layout2.addWidget(message_label)
         layout2.addWidget(self.message)
@@ -205,27 +212,12 @@ class FileTableWidget(QWidget):
                 self.populate_element_menu(self.img, self.element_menu_name)
                 self.element_menu_name.setTitle(self.auto_element_tag)
 
+                self.theta_menu_name = self.theta_menu.addMenu("theta")
+                self.populate_theta_menu(self.img, self.theta_menu_name)
+                self.theta_menu_name.setTitle(self.auto_theta_tag)
+
                 self.element_tag_changed()
-                # self.setup_scaler_list()
                 self.onThetaUpdate()
-
-                try: #set auto_load options here:
-
-                    elem_indx = self.elementTags[self.imageTag.currentIndex()].index(self.auto_element_tag)
-                    self.elementTag.setCurrentIndex(elem_indx)
-                    self.element_tag = self.elementTag.currentText()
-                    self.element_tag_changed()
-
-                    quant_indx = self.quantTags.index(self.auto_quant_tag)
-                    self.quantTag.setCurrentIndex(quant_indx)
-
-                    scaler_indx = self.scalerTags.index(self.auto_scaler_tag)
-                    self.scalerTag.setCurrentIndex(scaler_indx)
-
-                except:
-                    pass
-                self.elementTag.currentIndexChanged.connect(self.element_tag_changed)
-                # self.scalerTag.currentIndexChanged.connect(self.scaler_tag_changed)
 
             except KeyError:
                 pass
@@ -238,21 +230,7 @@ class FileTableWidget(QWidget):
                     self.elementTableModel.arrayData.pop()
                 self.elementTableModel.arrayData[0].element_name = "Channel_1"
                 self.elementTableModel.arrayData[0].use = True
-            else:
-                pass
-
-            self.imageTag.setEnabled(False)
-            self.dataTag.setEnabled(False)
-            self.scalerTag.setEnabled(False)
             self.message.setText("Load angle information using txt or csv file")
-            pass
-        return
-
-    def rename_menu(self):
-        name = self.sender().text()
-        self.data_menu_name.setTitle(name)
-        self.data_menu_name.setFixedSize(123,25)
-        self.data_menu_name.show()
         return
 
     def populate_data_menu(self, obj, menu):
@@ -279,6 +257,18 @@ class FileTableWidget(QWidget):
                 sub_action.triggered.connect(self.update_element_tag)
         return menu
 
+    def populate_theta_menu(self, obj, menu):
+        keys = obj.keys()
+        for key in keys:
+            if isinstance(obj[key],h5py.Group):
+                sub_menu = menu.addMenu(key)
+                self.populate_theta_menu(obj[key], sub_menu)
+            elif isinstance(obj[key],h5py.Dataset):
+                sub_action = QAction(key,self)
+                menu.addAction(sub_action)
+                sub_action.triggered.connect(self.update_theta_tag)
+        return menu
+
     def update_data_path(self):
         name0 = self.sender().associatedWidgets()[0].title()
         name1 = ""
@@ -293,6 +283,7 @@ class FileTableWidget(QWidget):
         self.data_menu.show()
 
     def update_element_tag(self):
+        #TODO: datase.name gives you tree path, no need to do the hack stuff below.
         name0 = self.sender().associatedWidgets()[0].title()
         name1 = ""
         if isinstance(self.sender(), QAction):
@@ -305,9 +296,45 @@ class FileTableWidget(QWidget):
         self.element_menu.setFixedSize(123,25)
         self.element_menu.show()
 
+    def update_theta_tag(self):
+        #TODO: figure out how to string together h5 tree tags
+        name0 = self.sender().associatedWidgets()[0].title()
+        name1 = ""
+        if isinstance(self.sender(), QAction):
+            name1 = self.sender().text()
+        elif isinstance(self.sender(), QMenu):
+            name1 = self.sender().title()
+        print("{}/{}".format(name0,name1))
+        self.theta_tag = "{}/{}".format(name0,name1)
+        dataset = self.img[self.theta_tag]
+        # dataset = np.array(self.img[dataset.name][:])
+        dataset = np.array(dataset).astype('U13')
+        daatset_list = dataset.tolist()
+        self.create_table(dataset)
+        #TODO: use QTableWidget to display dataset
+
+        # try_pvs = ["2xfm:m58.VAL"]
+        # for pv in try_pvs:
+        #     idx = np.where(dataset == pv)
+
+        self.theta_menu_name.setTitle(self.theta_tag)
+        self.theta_menu.setFixedSize(123,25)
+        self.theta_menu.show()
+
+    def create_table(self, dataset):
+        self.tablewidget = QTableWidget()
+        numcols = len(dataset[0])  # ( to get number of columns, count number of values in first row( first row is data[0]))
+        numrows = len(dataset)
+
+        self.tablewidget.setColumnCount(numcols)
+        self.tablewidget.setRowCount(numrows)
+        for row in range(numrows):
+            for column in range(numcols):
+                self.tablewidget.setItem(row, column, QTableWidgetItem((dataset[row][column])))
+        self.tablewidget.show()
+        #TODO: whem item clicked, update the PV name on self.theta_tag and close self.tablewidget.
+
     def getElements(self):
-        #TODO: do not ise img_tags
-        # img_tag = self.imageTag.currentText()
         element_tag = self.element_tag
         element_list = list(self.img[element_tag])
         element_list = [x.decode("utf-8") for x in element_list]
@@ -317,9 +344,7 @@ class FileTableWidget(QWidget):
             if self.elementTableModel.arrayData[i].use:
                 element_names.append(self.elementTableModel.arrayData[i].element_name)
                 element_idxs.append(i)
-
         return element_names, element_idxs
-
 
     def element_tag_changed(self):
         element_tag = self.element_tag
@@ -340,59 +365,14 @@ class FileTableWidget(QWidget):
             data[i] = data[i]/scalers
         data[np.isnan(data)] = 0.0001
         data[data == np.inf] = 0.0001
-        # for i in range(num_elements):
-        #     norm_median = np.median(data[i, :, :, :])
-        #     norm_mean = np.mean(data[i, :, :, :])
-        #     norm_std = np.std(data[i, :, :, :])
-        #     elem_max = np.max(data[i, :, :, :])
-        #     norm_max = 3*norm_std + norm_mean
-        #     for j in range(num_files):
-        #         median_arr = np.ones_like(data[i,j])*norm_mean
-        #         data[i,j] = [data[i,j] <= norm_max]*data[i,j,:,:]
-        #         data[i,j] = data[i,j] + [data[i,j] == 1]*np.ones_like(data[i,j])*norm_max
         return data
 
-    def checkVersion(self):
-        #temporary definition of 'version'
-        exchange_bool = list(self.img)
-
-        try:
-            theta_exists = self.img[list(self.img)[0]]["theta"][()]
-            self.version = 1
-        except:
-            print("checking file version... No version info available")
-            self.version = 0
-
-        # if self.parent.forceLegacy.isChecked():
-        #     self.version=0
-
-        #Temporary hardcode version to 0 (legacy import mode)
-        #self.version = 0
-
-        # TODO: the auto_load_settings line will override non-legacy version, not good.
-        # if self.auto_load_settings[0]:
-        #     self.version = 0
-        # try:
-            # TODO: there may no longer be a legacy checkbox
-            # if self.parent.legacy_chbx.isChecked():
-            #     self.version = 0
-            # if not self.parent.legacy_chbx.isChecked():
-            #     self.version = 1
-        # except:
-        #     #checkboxes not yet defined
-        #     pass
-        return self.version
-
     def onThetaUpdate(self):
-        # version defines file format and how to read thetas from it.
+        #TODO: figure out how to get the theta PV string-path from extraPVs or from the symbolic link.
         path_files = self.fileTableModel.getAllFiles()
-        #get path_files list
         thetaPV = self.thetaLineEdit.text()
-        #TODO: check to see if thetas is available under exchange tag, if not, load in
-        #legacy mode or just check under MAPS, or throw a warning (prompt user to enable
-        #debug tools and enter PV otherweise load thetas file.
         try:
-            thetas = load_thetas(path_files, self.imgTags[self.imageTag.currentIndex()], self.version, thetaPV)
+            thetas = load_thetas(path_files, thetaPV)
         except:
             thetas=[]
             self.message.setText("directory probably not mounted.")
@@ -480,6 +460,7 @@ class FileTableWidget(QWidget):
 
         self.parent.clear_all()
         try:
+            #TODO: fix this
             data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, quant_tag, scaler_tag, scaler_idx)
         except:
             self.message.setText("invalid image/data/element tag combination. Load failed")
