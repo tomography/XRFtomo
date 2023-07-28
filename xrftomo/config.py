@@ -68,15 +68,10 @@ SECTIONS['file-io'] = {
         'type': str,
         'help': "file extension of last files used",
         'metavar': 'PATH'},
-    'image-tag': {
-        'default': 'MAPS',
+    'data-path': {
+        'default': 'MAPS/XRF_fits',
         'type': str,
-        'help': "image tag for h5 file",
-        'metavar': 'PATH'},
-    'data-tag': {
-        'default': 'XRF_roi',
-        'type': str,
-        'help': "data tag for h5 file",
+        'help': "data path for h5 file",
         'metavar': 'PATH'},
     'element-tag': {
         'default': 'channel_names',

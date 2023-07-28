@@ -1736,18 +1736,7 @@ class xrftomoGui(QMainWindow):
     def debugMode(self):
         self.fileTableWidget.thetaLabel.setVisible(True)
         self.fileTableWidget.thetaLineEdit.setVisible(True)
-        self.fileTableWidget.elementTag.setVisible(True)
-        self.fileTableWidget.elementTag_label.setVisible(True)
-        # self.imageProcessWidget.ViewControl.Equalize.setVisible(True)
         self.imageProcessWidget.ViewControl.invert.setVisible(True)
-
-
-        #
-        # self.btn3.setVisible(False) #phase corr
-        # # self.btn5.setVisible(False)
-        # # self.btn6.setVisible(False)
-        # self.btn9.setVisible(False) #adjust sino
-        # self.rot_axis.setVisible(False) #rot axis
 
         return
 
@@ -2129,7 +2118,7 @@ class xrftomoGui(QMainWindow):
         self.tab_widget.setTabEnabled(1,True)
         self.tab_widget.setTabEnabled(2,True)
         self.tab_widget.setTabEnabled(3,True)
-        if self.tcp_installed: self.tab_widget.setTabEnabled(4, True)
+        self.tab_widget.setTabEnabled(4, True)
         self.afterConversionMenu.setDisabled(False)
         self.editMenu.setDisabled(False)
         self.toolsMenu.setDisabled(False)

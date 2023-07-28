@@ -65,7 +65,7 @@ class LaminographyActions(QtWidgets.QWidget):
 		super(LaminographyActions, self).__init__()
 		self.writer = xrftomo.SaveOptions()
 
-	def reconstruct(self, data, element_idx, element, tiltangle, method, thetas, parent_dir=None, command_string=None):
+	def reconstruct(self, data, element_idx, element, tiltangle, center_axis, method, thetas, parent_dir=None, command_string=None):
 		'''
 		load data for reconstruction and load variables for reconstruction
 		make it sure that data doesn't have infinity or nan as one of
@@ -76,7 +76,7 @@ class LaminographyActions(QtWidgets.QWidget):
 		recData[np.isnan(recData)] = True
 
 		if method == 0:
-			recon = self.lam(data, thetas, tiltangle, interpolation="nearest_neighbor")
+			recon = self.lam(recData, thetas, tiltangle, center_axis, interpolation="nearest_neighbor")
 
 		elif method == 1:
 			#TODO: create h5s
@@ -245,7 +245,7 @@ class LaminographyActions(QtWidgets.QWidget):
 
 			return data
 
-	def lam(self, stack, thetas, tiltangle, interpolation="nearest_neighbor"):
+	def lam(self, stack, thetas, tiltangle, center_axis, interpolation="nearest_neighbor"):
 		# stack[theta,y,x]
 		stack = self.filter(stack)
 		theta = np.deg2rad(thetas)
@@ -258,7 +258,6 @@ class LaminographyActions(QtWidgets.QWidget):
 
 		for itheta in range(M):
 			data = stack[itheta]
-
 
 			[Z, X, Y] = np.mgrid[0:nz, 0:n, 0:n]
 			zpr = Z-nz/2
@@ -352,7 +351,6 @@ class LaminographyActions(QtWidgets.QWidget):
 			tmp = np.pad(data, ((0, 0), (0, 0), (ne // 2 - n // 2, ne // 2 - n // 2)), mode='edge')
 			w = w * np.exp(-2 * np.pi * 1j * t)  # center fix
 			tmp = np.fft.irfft(w * np.fft.rfft(tmp, axis=2), axis=2).astype('float32')
-			# TODO: cannot broadcast input array from shape [r,y,x-1] to [r,y,x]
 			try:
 				data[:] = tmp[:, :, ne // 2 - n // 2:ne // 2 + n // 2]
 			except:

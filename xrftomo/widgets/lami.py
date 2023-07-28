@@ -234,19 +234,30 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.elem.addItem(j)
             self.recon_dict[j] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
-        self.ViewControl.__dict__["reconstruction-type"].item3.setChecked(True)
-        self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
-        self.ViewControl.__dict__["lamino-angle"].item3.setChecked(True)
-        self.ViewControl.__dict__["rotation-axis"].item2.setText(str(self.data.shape[3]//2))
-        self.ViewControl.__dict__["rotation-axis"].item3.setChecked(True)
-        self.ViewControl.__dict__["lamino-search-width"].item2.setText("20")
-        self.ViewControl.__dict__["lamino-search-width"].item3.setChecked(True)
-        self.ViewControl.__dict__["fbp-filter"].item2.setCurrentIndex(1)
-        self.ViewControl.__dict__["fbp-filter"].item3.setChecked(True)
-        self.ViewControl.__dict__["minus-log"].item2.setText("False")
-        self.ViewControl.__dict__["minus-log"].item3.setChecked(True)
-        self.ViewControl.__dict__["file-name"].item2.setText("")
-        self.ViewControl.__dict__["file-name"].item3.setChecked(True)
+        if self.parent.tcp_installed:
+            self.ViewControl.__dict__["reconstruction-type"].item3.setChecked(True)
+            self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
+            self.ViewControl.__dict__["lamino-angle"].item3.setChecked(True)
+            self.ViewControl.__dict__["rotation-axis"].item2.setText(str(self.data.shape[3]//2))
+            self.ViewControl.__dict__["rotation-axis"].item3.setChecked(True)
+            self.ViewControl.__dict__["lamino-search-width"].item2.setText("20")
+            self.ViewControl.__dict__["lamino-search-width"].item3.setChecked(True)
+            self.ViewControl.__dict__["fbp-filter"].item2.setCurrentIndex(1)
+            self.ViewControl.__dict__["fbp-filter"].item3.setChecked(True)
+            self.ViewControl.__dict__["minus-log"].item2.setText("False")
+            self.ViewControl.__dict__["minus-log"].item3.setChecked(True)
+            self.ViewControl.__dict__["file-name"].item2.setText("")
+            self.ViewControl.__dict__["file-name"].item3.setChecked(True)
+        else:
+            self.ViewControl.method.clear()
+            self.ViewControl.method.addItem("lamni-fbp(cpu)")
+            self.ViewControl.__dict__["fbp-filter"].item2.setCurrentIndex(1)
+            self.ViewControl.__dict__["fbp-filter"].item3.setChecked(True)
+            self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
+            self.ViewControl.__dict__["lamino-angle"].item3.setChecked(True)
+            self.ViewControl.__dict__["rotation-axis"].item2.setText(str(self.data.shape[3]//2))
+            self.ViewControl.__dict__["rotation-axis"].item3.setChecked(True)
+
 
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
@@ -318,10 +329,8 @@ class LaminographyWidget(QtWidgets.QWidget):
     def update_recon_dict(self, recon):
         elem = self.ViewControl.elem.currentText()
         #recon could be a partial reconstruction, account for this by indexing the Y range as well
-        ymin = int(eval(self.ViewControl.start_indx.text()))
-        ymax = int(eval(self.ViewControl.end_indx.text()))
         try:
-            self.recon_dict[elem][ymin:ymax,:] = recon
+            self.recon_dict[elem]= recon
         except ValueError:
             self.recon_dict[elem] = recon
             print("array shape missmatch. array_dict possibly updated elsewhere ")
@@ -343,10 +352,7 @@ class LaminographyWidget(QtWidgets.QWidget):
     def update_recon_image(self):
         index = self.sld.value()
         self.lcd.display(index)
-
         try:
-            self.ViewControl.maxText.setText(str(self.recon[index, :, :].max()))
-            self.ViewControl.minText.setText(str(self.recon[index, :, :].min()))
             self.ReconView.projView.setImage(self.recon[index, :, :])
         except:
             print("run reconstruction first")
@@ -361,9 +367,9 @@ class LaminographyWidget(QtWidgets.QWidget):
         method = self.ViewControl.method.currentIndex()
         thetas = self.thetas
         lami_angle = eval(self.ViewControl.__dict__["lamino-angle"].item2.text())
+        lami_angle = 90-lami_angle
         parent_dir = self.h5_dir
-        data = self.data
-        num_xsections = data.shape[2]
+        data = self.data.copy()
         recon_dict = self.recon_dict.copy()
         command_string = self.get_command_string()
 
@@ -372,7 +378,6 @@ class LaminographyWidget(QtWidgets.QWidget):
             return
 
         if self.ViewControl.recon_all.isChecked():
-            #element is an index, so get list of indices.
             num_elements = self.ViewControl.elem.count()
             elements = [i for i in range(num_elements)]
 
@@ -382,8 +387,7 @@ class LaminographyWidget(QtWidgets.QWidget):
             # self.ViewControl.__dict__["file-name"].item2.setText("")
             self.ViewControl.elem.setCurrentIndex(element_idx)    #required to properly update recon_dict
             recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
-            for i in range(num_xsections):
-                recons = self.actions.reconstruct(data, element_idx, element, lami_angle, method, thetas, parent_dir=parent_dir, command_string=command_string)
+            recons = self.actions.reconstruct(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir, command_string=command_string)
             recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons),
             self.recon = np.array(recons)
 

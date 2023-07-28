@@ -106,19 +106,12 @@ class ElementTableModel(QtCore.QAbstractTableModel):
         else:
             return QtCore.QVariant()
 
-    def loadElementNames(self, filePath, image_tag, element_tag):
-        if filePath is None:
-            return
+    def loadElementNames(self, elements):
         self.arrayData = []
         topLeft = self.index(0, 0)
         self.layoutAboutToBeChanged.emit()
-        try:
-            hFile = h5py.File(filePath, 'r')
-            elements = hFile["{}/{}".format(image_tag,element_tag)]
-            for i in range(len(elements)):
-                self.arrayData += [TableArrayItem(elements[i].decode('UTF-8'))]
-        except:
-            pass
+        for element in elements:
+            self.arrayData += [TableArrayItem(element)]
         bottomRight = self.index(len(self.arrayData), len(self.columns))
         self.layoutChanged.emit()
         self.dataChanged.emit(topLeft, bottomRight)
