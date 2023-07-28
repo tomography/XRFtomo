@@ -41,7 +41,6 @@
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from PyQt5.QtGui import *
 import xrftomo
 import h5py
 import numpy as np
@@ -117,20 +116,6 @@ class FileTableWidget(QWidget):
         self.element_menu.triggered.connect(self.element_menu.show)
         self.element_menu.show()
 
-        quant_label = QLabel('quant options:')
-        quant_label.setFixedWidth(90)
-        self.quantTag = QComboBox()
-        # self.scalerTag.currentIndexChanged.connect(self.getScalerOptions)
-        self.quantTag.setFixedWidth(123)
-
-        scaler_label = QLabel('Normalize by:')
-        scaler_label.setFixedWidth(90)
-        self.scalerTag = QComboBox()
-        self.scalerTag.currentIndexChanged.connect(self.setup_scaler_list)
-        # self.imageTag.activated.connect(self.setup_scaler_list())
-
-        self.scalerTag.setFixedWidth(123)
-
         self.saveDataBtn = QPushButton('Save to Memory')
         # self.saveDataBtn.clicked.connect(self.onSaveDataInMemory)
         # self.saveDataBtn.setEnabled(False)
@@ -158,16 +143,6 @@ class FileTableWidget(QWidget):
         hBox2.addWidget(self.thetaLineEdit)
         hBox2.setAlignment(Qt.AlignLeft)
 
-        hBox5 = QHBoxLayout()
-        hBox5.addWidget(quant_label)
-        hBox5.addWidget(self.quantTag)
-        hBox5.setAlignment(Qt.AlignLeft)
-
-        hBox6 = QHBoxLayout()
-        hBox6.addWidget(scaler_label)
-        hBox6.addWidget(self.scalerTag)
-        hBox6.setAlignment(Qt.AlignLeft)
-
         hBox7 = QHBoxLayout()
         hBox7.addWidget(self.saveDataBtn)
         hBox7.setAlignment(Qt.AlignLeft)
@@ -176,8 +151,6 @@ class FileTableWidget(QWidget):
         vBox1.addLayout(hBox0)
         vBox1.addLayout(hBox1)
         vBox1.addLayout(hBox2)
-        vBox1.addLayout(hBox5)
-        vBox1.addLayout(hBox6)
         vBox1.addLayout(hBox7)
         # vBox1.setFixedWidth(275)
 
@@ -203,17 +176,11 @@ class FileTableWidget(QWidget):
         mainLayout.addLayout(layout2)
 
         self.setLayout(mainLayout)
-        # self.dataTag.currentIndexChanged.connect(self.getElementList)
-
         try:
             self.onLoadDirectory()
         except:
             print("Invalid directory or file; Try a new folder or remove problematic files.")
         self.onThetaUpdate()
-
-
-
-
 
     def onLoadDirectory(self, files = None):
         self.version = 0
@@ -239,8 +206,7 @@ class FileTableWidget(QWidget):
                 self.element_menu_name.setTitle(self.auto_element_tag)
 
                 self.element_tag_changed()
-                self.setup_quant_list()
-                self.setup_scaler_list()
+                # self.setup_scaler_list()
                 self.onThetaUpdate()
 
                 try: #set auto_load options here:
@@ -339,8 +305,6 @@ class FileTableWidget(QWidget):
         self.element_menu.setFixedSize(123,25)
         self.element_menu.show()
 
-        self.element_tag_changed()
-
     def getElements(self):
         #TODO: do not ise img_tags
         # img_tag = self.imageTag.currentText()
@@ -364,68 +328,6 @@ class FileTableWidget(QWidget):
         self.elementTableModel.loadElementNames(elements)
         self.elementTableModel.setAllChecked(False)
         self.elementTableModel.setChecked(self.auto_selected_elements, (True))
-        return
-
-    def setup_quant_list(self):
-        #TODO: do not use img_tag
-        self.quantTag.clear()
-        quant_indx = self.imageTag.currentIndex()
-        if quant_indx == -1:
-            return
-        try:
-            # #filtering  drop-down menu to inlcude only relevant entries.
-            img_tag = self.imgTags[quant_indx]
-            self.quantTags = list(self.img[img_tag])
-            self.quantTags = list(filter(lambda k: 'quant' in k, self.quantTags))
-            self.quantTags = list(filter(lambda k: 'names' not in k, self.quantTags))
-            self.quantTags.insert(0,"None")
-        except:
-            print("no qaunts found")
-            return
-        try:
-            for i in range(len(self.quantTags)):
-                self.quantTag.addItem(self.quantTags[i])
-            self.quantTag.setCurrentIndex(0)
-        except:
-            return
-        return
-
-    def setup_scaler_list(self):
-        self.message.clear()
-        tmpscalerTags = {}
-        #TODO: change this to not us use imgTags
-        num_image_tags = len(self.imgTags)
-        for i in range(num_image_tags):      #get scaler tags
-            tmpscalerTags[i] = list(self.img[self.imgTags[i]])
-            tmpscalerTags[i] = list(filter(lambda k: 'scaler' in k, tmpscalerTags[i]))
-            tmpscalerTags[i] = list(filter(lambda k: 'names'  in k, tmpscalerTags[i]))
-        try:
-            self.scalerTag.disconnect()
-        except TypeError:
-            pass
-
-        self.scalerTag.clear()
-        scaler_indx = self.imageTag.currentIndex()
-        if scaler_indx == -1:
-            return
-        try:
-            # #filtering  drop-down menu to inlcude only relevant entries.
-            # TODO: change this to not us use imgTags
-            img_tag = self.imgTags[scaler_indx]
-            scaler_tag = tmpscalerTags[scaler_indx][0]
-            self.scalerTags = list(self.img[img_tag][scaler_tag])
-            self.scalerTags = [x.decode("utf-8") for x in self.scalerTags]
-            self.scalerTags.insert(0, "None")
-        except:
-            print("no scalers found")
-            return
-        try:
-            for i in range(len(self.scalerTags)):
-                self.scalerTag.addItem(self.scalerTags[i])
-            self.scalerTag.setCurrentIndex(0)
-            self.scaler_tag = self.scalerTag.currentText()
-        except:
-            return
         return
 
     def normalizeData(self, data, scalers, quants):
@@ -551,18 +453,11 @@ class FileTableWidget(QWidget):
         elements = [i.element_name for i in self.elementTableModel.arrayData]
         files_bool = [i.use for i in self.fileTableModel.arrayData]
         elements_bool = [i.use for i in self.elementTableModel.arrayData]
-
         element_tag = self.element_tag
-        quant_tag = self.quantTag.currentText()
-        scaler_tag = self.scalerTag.currentText()
-
         k = np.arange(len(files))
         l = np.arange(len(elements))
-
         files = [files[j] for j in k if files_bool[j]==True]
-
         path_files = [self.fileTableModel.directory + '/' + s for s in files]
-
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
 
@@ -572,10 +467,7 @@ class FileTableWidget(QWidget):
         self.parent.params.theta_pv = self.thetaLineEdit.text()
         self.parent.params.data_path = self.data_path
         self.parent.params.element_tag = self.element_tag
-        self.parent.params.quant_tag = quant_tag
-        self.parent.params.scaler_tag = scaler_tag
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
-        #self.parent.params.detector_tag = self.scaler_option.currentText()
 
         if len(elements) == 0:
             self.message.setText('no element selected.')
@@ -588,19 +480,6 @@ class FileTableWidget(QWidget):
 
         self.parent.clear_all()
         try:
-            scaler_exists = self.img[self.imageTag.currentText()]["scalers"]
-            quant_tag = self.quantTag.currentText()
-            scaler_tag = "scalers"
-            scaler_idx = self.scalerTag.currentIndex()-1
-            if scaler_idx<-1:
-                scaler_idx = -1
-        except:
-            print("no 'scaler' tag found")
-            scaler_tag = None
-            quant_tag = None
-            scaler_idx=-1
-
-        try:
             data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, quant_tag, scaler_tag, scaler_idx)
         except:
             self.message.setText("invalid image/data/element tag combination. Load failed")
@@ -609,10 +488,7 @@ class FileTableWidget(QWidget):
         if data is None or scalers is None:
             return [], [], [], []
         if self.scalerTag.currentText() != 'None':
-            scaler_idx = self.scalerTag.currentIndex()-1
-            quant_option = self.quantTag.currentText()
             elements, element_idxs = self.getElements()
-            data = self.normalizeData(data, scalers, quants)
         self.message.setText('finished loading')
 
         data[np.isnan(data)] = 0.0001

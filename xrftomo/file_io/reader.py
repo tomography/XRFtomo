@@ -63,23 +63,14 @@ __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."
 __version__ = "0.0.1"
 __docformat__ = 'restructuredtext en'
 __all__ = ['find_elements',
-           'read_theta',
            'read_projection',
            'read_channel_names',
            'read_mic_xrf',
            'load_thetas',
            'load_thetas_legacy',
            'load_thetas_new',
-           'read_exchange_file',
            'read_tiffs',
            'load_thetas_file']
-
-def find_index(a_list, element):
-    try:
-        return a_list.index(element)
-    except ValueError:
-        return None
-
 
 def find_elements(channel_names):
     """
@@ -106,7 +97,7 @@ def find_elements(channel_names):
     return elements
 
 
-def read_channel_names(fname, hdf_tag, channel_tag):
+def read_channel_names(fname, element_tag):
     """
     Read the channel names
 
@@ -114,29 +105,20 @@ def read_channel_names(fname, hdf_tag, channel_tag):
     ----------
     fname : str
         String defining the file name
-    hdf_tag : str
-        String defining the hdf5 data_tag name (ex. MAPS)
-    channel_tag : str
-        String defining the hdf5 channel tag name (ex. channel_names)
-
+    element_tag : str
+        String defining the hdf5 channel tag name (ex. MAPS/channel_names)
     Returns
     -------
     channel_names : list
         List of channel names
     
     """
-    try:
-        b_channel_names = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, channel_tag))
-    except:
-        print("File signature not found for {}, check file integrity".format(fname))
-        return []
-    channel_names = []
-    for i, e in enumerate(b_channel_names):
-        channel_names.append(e.decode('utf-8'))
-    return(channel_names)
+    img = h5py.File(fname, "r")
+    element_list = list(img[element_tag])
+    element_list = [x.decode("utf-8") for x in element_list]
+    return(element_list)
 
-
-def read_projection(fname, element, hdf_tag, roi_tag, channel_tag):
+def read_projection(fname, element, data_tag, element_tag):
     """
     Reads a projection for a given element from a single xrf hdf file
 
@@ -146,13 +128,10 @@ def read_projection(fname, element, hdf_tag, roi_tag, channel_tag):
         String defining the file name
     element : str
         String defining the element to select
-    hdf_tag : str
-        String defining the hdf5 data_tag name (ex. MAPS)
-    roi_tag: str
-        data tag for corresponding roi_tag (ex. XRF_roi)
-    channel_tag : str
+    data_tag: str
+        data tag for corresponding dataset (ex. MAPS/XRF_roi)
+    element_tag : str
         String defining the hdf5 channel tag name (ex. channel_names)
-    
 
     Returns
     -------
@@ -160,46 +139,13 @@ def read_projection(fname, element, hdf_tag, roi_tag, channel_tag):
         projection
     
     """
-
-    elements = read_channel_names(fname, hdf_tag, channel_tag)
+    elements = read_channel_names(fname, element_tag)
     if elements == []:
         return
-    print(fname)
-
-    projections = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, roi_tag))
-
-    return projections[find_index(elements, element)]
-
-
-def read_theta(path_files, theta_index, hdf_tag):
-    """
-    Reads hdf file and returns theta
-
-    Parameters
-    ----------
-    path_files: list
-        List of path+filenames
-    theta_index : int
-        Index where theta is saved under in the hdf MAPS/extra_pvs_as_csv tag
-        This is: 2-ID-E: 663; 2-ID-E (prior 2017): *657*; BNP: 8
-    hdf_tag : str
-        String defining the hdf5 data_tag name (ex. MAPS)
-
-    Returns
-    -------
-    ndarray: ndarray
-        1D array [theta]
-    """
-
-    for i in range(len(path_files)):
-        if theta_index == None:
-            theta = float(dxchange.read_hdf5(path_files[i], "{}/theta".format(hdf_tag)))
-            print(theta)
-        else:
-            theta = float(dxchange.read_hdf5(path_files[i], "{}/extra_pvs_as_csv".format(hdf_tag))[theta_index].split(b',')[1])
-            print(theta)
-    return theta
-
+    img = h5py.File(fname, "r")
+    idx = elements.index(element)
+    projection = img[data_tag][idx]
+    return projection
 
 def load_thetas(path_files, data_tag, version, *thetaPV):
     
@@ -272,13 +218,7 @@ def load_thetas_file(path_file):
     else:
         return 
 
-
-
-
-def load_thetas_13(path_files, data_tag):
-    pass
-
-def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, quant_tag=None, scaler_name=None, scaler_idx=-1):
+def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag):
     """
     Converts hdf files to numpy arrays for plotting and manipulation
 
@@ -302,14 +242,12 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, quant_tag=
         4D array [elements, projection, y, x]
     """
 
-    element_names = read_channel_names(path_files[0], hdf_tag, channel_tag)
     max_y, max_x = 0, 0
     num_files = len(path_files)
     num_elements = len(elements)
     #get max dimensons
     for i in range(num_files):
-        #TODO: this errors out when loading h5/C+ after h5/MapsPy.
-        proj = read_projection(path_files[i], element_names[0], hdf_tag, roi_tag, channel_tag)
+        proj = read_projection(path_files[i], elements[0], hdf_tag, roi_tag, channel_tag)
         if proj is None:
             pass
         else:
@@ -319,8 +257,6 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, quant_tag=
                 max_x = proj.shape[1]
 
     data = np.zeros([num_elements,num_files, max_y, max_x])
-    scalers = np.zeros([num_files,max_y,max_x])
-    quants= np.zeros([num_elements,num_files])
     #get data
     for i in range(num_elements):
         for j in range(num_files):
@@ -338,60 +274,10 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag, quant_tag=
                     print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
                     data[i, j] = np.zeros([max_y,max_x])
 
-
-    if scaler_name == None:
-        scalers = np.ones([num_files, max_y, max_x])
-        quants = np.ones([num_elements, num_files])
-
-    else:
-        for j in range(num_files):
-            scaler = read_scaler(path_files[j], hdf_tag, scaler_name)[0][scaler_idx]
-            scaler_x = scaler.shape[1]
-            scaler_y = scaler.shape[0]
-            dx = (max_x-scaler_x)//2
-            dy = (max_y-scaler_y)//2
-            scalers[j,dy:scaler_y+dy, dx:scaler_x+dx] = scaler
-
-        #get quants
-        for i in range(num_elements):
-            for j in range(num_files):
-                element_tag = channel_tag
-                try:
-                    quant = read_quant(path_files[j], elements[i], hdf_tag, quant_tag, element_tag, scaler_idx)
-                    quants[i, j] = quant
-                except:
-                    print("problem reading quant")
-
     data[np.isnan(data)] = 0.0001
     data[data == np.inf] = 0.0001
-    scalers[np.isnan(scalers)] = 1
-    scalers[scalers == np.inf] = 1
-    quants[np.isnan(quants)] = 0.0001
-    quants[quants == np.inf] = 0.0001
 
-    return data, quants, scalers
-
-def read_scaler(fname, hdf_tag, scaler_name):
-    try:
-        scaler_names = read_channel_names(fname, hdf_tag, 'scaler_names')
-        all_scaler = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, 'scalers'))
-    except:
-        scaler_names = read_channel_names(fname, 'MAPS', 'scaler_names')
-        all_scaler = dxchange.read_hdf5(fname, "{}/{}".format('MAPS', 'scalers'))
-        
-    return all_scaler[find_index(scaler_names, scaler_name)]
-
-def read_quant(fname, element, hdf_tag, quant_tag, element_tag, scaler_idx):
-    elements = read_channel_names(fname, hdf_tag, element_tag)
-    elem_idx = find_index(elements,element)
-
-    try:
-        all_quants = dxchange.read_hdf5(fname, "{}/{}".format(hdf_tag, quant_tag))
-        result = all_quants[scaler_idx][0][elem_idx]
-    except:
-        return
-
-    return result
+    return data
 
 def read_tiffs(fnames):
 
@@ -415,16 +301,3 @@ def read_tiffs(fnames):
         data[0,i, dy:img_y+dy, dx:img_x+dx] = im
 
     return data
-
-def read_exchange_file(fname):
-    #self contained data file with all relevant information. 
-    #alignment 
-    #misc parameters:
-    data, elements, thetas = [],[],[]
-    hFile = h5py.File(fname[0])
-    tmp_elements = hFile['exchange']['elements'][()]
-    elements = [x.decode('utf-8') for x in tmp_elements]
-    thetas = hFile['exchange']['theta'][()]
-    data = hFile['exchange']['data'][()]
-    
-    return data, elements, thetas
