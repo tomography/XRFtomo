@@ -67,8 +67,6 @@ __all__ = ['find_elements',
            'read_channel_names',
            'read_mic_xrf',
            'load_thetas',
-           'load_thetas_legacy',
-           'load_thetas_new',
            'read_tiffs',
            'load_thetas_file']
 
@@ -147,41 +145,26 @@ def read_projection(fname, element, data_tag, element_tag):
     projection = img[data_tag][idx]
     return projection
 
-def load_thetas(path_files, *thetaPV):
-
-    if version == 0:
-        return load_thetas_legacy(path_files, thetaPV[0])
-
-    if version == 1:
-        return load_thetas_new(path_files, data_tag)
-
-def load_thetas_legacy( path_files, thetaPV):
-    thetaBytes = thetaPV.encode('ascii')
+def load_thetas(files, theta_tag, method = 1):
     thetas = []
-    for i in range(len(path_files)):
+    if method==1:
+        img = h5py.File(files[0], 'r')
+        pv = theta_tag.split("/")[-1]
+        pvs = img["/".join(theta_tag.split("/")[:-1])]
+        idx = [i.decode("utf-8") for i in pvs].index(pv)
+        img.close()
+
+    for file in files:
         try:
-            hFile = h5py.File(path_files[i], 'r')
-            extra_pvs = hFile['/MAPS/extra_pvs']
-            idx = np.where(extra_pvs[0] == thetaBytes)
-            if len(idx[0]) > 0:
-                thetas.append(float(extra_pvs[1][idx[0][0]]))
-            else:
-                print("warning: multiple instances of the same theta PV name.")
+            if method ==1:
+                img = h5py.File(file, 'r')
+                theta = float(img["/".join(theta_tag.split("/")[:-2])+"/Values"][idx].decode("utf-8"))
+            elif method ==2:
+                theta = float(img[theta_tag][0])
+            thetas.append(theta)
         except:
-            print("error reading thetas positiong for file: {}".format(path_files[i]))
+            print("error reading thetas positiong for file: {}".format(file))
     return thetas
-
-def load_thetas_new(path_files, data_tag):
-    thetas = []
-    for i in range(len(path_files)):
-        try:
-            hFile = h5py.File(path_files[i], "r+")
-            thetas.append(float(hFile[data_tag]['theta'][()]))
-        except:
-            pass
-    return thetas
-
-
 
 def load_thetas_file(path_file):
 
@@ -217,7 +200,7 @@ def load_thetas_file(path_file):
     else:
         return 
 
-def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag):
+def read_mic_xrf(path_files, elements, data_tag, element_tag):
     """
     Converts hdf files to numpy arrays for plotting and manipulation
 
@@ -228,10 +211,8 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag):
     theta_index : int
         Index where theta is saved under in the hdf MAPS/extra_pvs_as_csv tag
         This is: 2-ID-E: 663; 2-ID-E (prior 2017): *657*; BNP: 8
-    hdf_tag : str
-        String defining the hdf5 data_tag name (ex. MAPS)
-    roi_tag: str
-        data tag for corresponding roi_tag (ex. XRF_roi)
+    data_tag: str
+        data tag for corresponding roi_tag (ex. MAPS/XRF_roi)
     channel_tag : str
         String defining the hdf5 channel tag name (ex. channel_names)
 
@@ -246,7 +227,7 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag):
     num_elements = len(elements)
     #get max dimensons
     for i in range(num_files):
-        proj = read_projection(path_files[i], elements[0], hdf_tag, roi_tag, channel_tag)
+        proj = read_projection(path_files[i], elements[0], data_tag, element_tag)
         if proj is None:
             pass
         else:
@@ -259,7 +240,7 @@ def read_mic_xrf(path_files, elements, hdf_tag, roi_tag, channel_tag):
     #get data
     for i in range(num_elements):
         for j in range(num_files):
-            proj = read_projection(path_files[j], elements[i], hdf_tag, roi_tag, channel_tag)
+            proj = read_projection(path_files[j], elements[i], data_tag, element_tag)
             if proj is None:
                 pass
             if proj is not None:

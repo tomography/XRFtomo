@@ -60,7 +60,7 @@ class FileTableWidget(QWidget):
         self.auto_element_tag = self.parent.params.element_tag
         self.auto_quant_tag = self.parent.params.quant_tag
         self.auto_scaler_tag = self.parent.params.scaler_tag
-        self.auto_data_path = self.parent.params.data_path
+        self.auto_data_tag = self.parent.params.data_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
         self.initUI()
@@ -87,20 +87,6 @@ class FileTableWidget(QWidget):
         self.extLineEdit = QLineEdit(self.auto_extension)
         self.extLineEdit.setMaximumSize(50, 30)
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
-        # self.dirBrowseBtn = QPushButton('Browse')
-        # self.dirBrowseBtn.clicked.connect(self.onDirBrowse)
-
-        self.thetaOptions = ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL', '9idbTAU:SM:ST:ActPos']
-        thetaCompleter = QCompleter(self.thetaOptions)
-        self.thetaLabel = QLabel('Theta PV:')
-        self.thetaLabel.setFixedWidth(90)
-        self.thetaLabel.setVisible(False)
-        self.thetaLineEdit = QLineEdit(self.auto_theta_pv)
-        self.thetaLineEdit.setCompleter(thetaCompleter)
-        # self.thetaLineEdit.textChanged.connect(self.onThetaPVChange)
-        self.thetaLineEdit.returnPressed.connect(self.onThetaUpdate)
-        self.thetaLineEdit.setFixedWidth(123)
-        self.thetaLineEdit.setVisible(False)
 
         data_menu_lbl = QLabel("data tag")
         data_menu_lbl.setFixedWidth(90)
@@ -141,11 +127,11 @@ class FileTableWidget(QWidget):
         hBox1.addWidget(element_menu_lbl)
         hBox1.addWidget(self.element_menu)
         hBox1.setAlignment(Qt.AlignLeft)
-
-        hBox2 = QHBoxLayout()
-        hBox2.addWidget(self.thetaLabel)
-        hBox2.addWidget(self.thetaLineEdit)
-        hBox2.setAlignment(Qt.AlignLeft)
+        #
+        # hBox2 = QHBoxLayout()
+        # hBox2.addWidget(self.thetaLabel)
+        # hBox2.addWidget(self.thetaLineEdit)
+        # hBox2.setAlignment(Qt.AlignLeft)
 
         hBox3 = QHBoxLayout()
         hBox3.addWidget(theta_menu_lbl)
@@ -159,7 +145,7 @@ class FileTableWidget(QWidget):
         vBox1 = QVBoxLayout()
         vBox1.addLayout(hBox0)
         vBox1.addLayout(hBox1)
-        vBox1.addLayout(hBox2)
+        # vBox1.addLayout(hBox2)
         vBox1.addLayout(hBox3)
         vBox1.addLayout(hBox7)
 
@@ -187,10 +173,8 @@ class FileTableWidget(QWidget):
             self.onLoadDirectory()
         except:
             print("Invalid directory or file; Try a new folder or remove problematic files.")
-        self.onThetaUpdate()
 
     def onLoadDirectory(self, files = None):
-        self.version = 0
         ext = self.extLineEdit.text()
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         fpath = self.fileTableModel.getFirstCheckedFilePath()
@@ -204,20 +188,25 @@ class FileTableWidget(QWidget):
             try:
                 fpath = self.fileTableModel.getFirstCheckedFilePath()
                 self.img = h5py.File(fpath, "r")
-                self.data_menu_name = self.data_menu.addMenu("data")
-                self.populate_data_menu(self.img, self.data_menu_name)
-                self.data_menu_name.setTitle(self.auto_data_path)
+                self.data_tag = self.data_menu.addMenu("data")
+                self.data_tag.objectName = "data_tag"
+                self.populate_data_menu(self.img, self.data_tag)
+                self.data_tag.setTitle(self.auto_data_tag)
 
-                self.element_menu_name = self.element_menu.addMenu("element")
-                self.populate_element_menu(self.img, self.element_menu_name)
-                self.element_menu_name.setTitle(self.auto_element_tag)
+                self.element_tag = self.element_menu.addMenu("element")
+                self.element_tag.objectName = "element_tag"
+                self.populate_element_menu(self.img, self.element_tag)
+                self.element_tag.setTitle(self.auto_element_tag)
 
-                self.theta_menu_name = self.theta_menu.addMenu("theta")
-                self.populate_theta_menu(self.img, self.theta_menu_name)
-                self.theta_menu_name.setTitle(self.auto_theta_tag)
+                self.theta_tag = self.theta_menu.addMenu("theta")
+                self.populate_theta_menu(self.img, self.theta_tag)
+                self.theta_tag.objectName = "theta_tag"
+                self.theta_tag.setTitle(self.auto_theta_pv)
+
 
                 self.element_tag_changed()
-                self.onThetaUpdate()
+                # self.data_tag_changed()
+                self.theta_tag_changed()
 
             except KeyError:
                 pass
@@ -242,7 +231,7 @@ class FileTableWidget(QWidget):
             elif isinstance(obj[key],h5py.Dataset):
                 sub_action = QAction(key,self)
                 menu.addAction(sub_action)
-                sub_action.triggered.connect(self.update_data_path)
+                sub_action.triggered.connect(self.update_data_tag)
         return menu
 
     def populate_element_menu(self, obj, menu):
@@ -269,70 +258,124 @@ class FileTableWidget(QWidget):
                 sub_action.triggered.connect(self.update_theta_tag)
         return menu
 
-    def update_data_path(self):
-        name0 = self.sender().associatedWidgets()[0].title()
-        name1 = ""
-        if isinstance(self.sender(), QAction):
-            name1 = self.sender().text()
-        elif isinstance(self.sender(), QMenu):
-            name1 = self.sender().title()
-        print("{}/{}".format(name0,name1))
-        self.data_path = "{}/{}".format(name0,name1)
-        self.data_menu_name.setTitle(self.data_path)
+    def update_data_tag(self):
+        self.data_tag.setTitle("data_tag")
+        lvl0 = ""
+        lvl1 = ""
+        lvl2 = ""
+        lvl3 = ""
+        lvl4 = ""
+        try:
+            # hardcoding path to max depth of 4.
+            lvl0 = self.sender().text()
+            lvl1 = self.sender().associatedWidgets()[0].title()
+            lvl2 = self.sender().associatedWidgets()[0].parent().title()
+            lvl3 = self.sender().associatedWidgets()[0].parent().parent().title()
+            lvl4 = self.sender().associatedWidgets()[0].parent().parent().parent().title()
+        except:
+            pass
+        lvl_list = [lvl0, lvl1, lvl2, lvl3, lvl4]
+        lvls = []
+        for i in lvl_list:
+            if i != "data_tag":
+                lvls.insert(0, i)
+            else:
+                break
+        self.data_tag.setTitle("/".join(lvls))
         self.data_menu.setFixedSize(123,25)
         self.data_menu.show()
 
     def update_element_tag(self):
-        #TODO: datase.name gives you tree path, no need to do the hack stuff below.
-        name0 = self.sender().associatedWidgets()[0].title()
-        name1 = ""
-        if isinstance(self.sender(), QAction):
-            name1 = self.sender().text()
-        elif isinstance(self.sender(), QMenu):
-            name1 = self.sender().title()
-        print("{}/{}".format(name0,name1))
-        self.element_tag = "{}/{}".format(name0,name1)
-        self.element_menu_name.setTitle(self.element_tag)
+        self.element_tag.setTitle("element_tag")
+        lvl0 = ""
+        lvl1 = ""
+        lvl2 = ""
+        lvl3 = ""
+        lvl4 = ""
+        try:
+            #hardcoding path to max depth of 4.
+            lvl0 = self.sender().text()
+            lvl1 = self.sender().associatedWidgets()[0].title()
+            lvl2 = self.sender().associatedWidgets()[0].parent().title()
+            lvl3 = self.sender().associatedWidgets()[0].parent().parent().title()
+            lvl4 = self.sender().associatedWidgets()[0].parent().parent().parent().title()
+        except:
+            pass
+        lvl_list = [lvl0, lvl1, lvl2, lvl3, lvl4]
+        lvls = []
+        for i in lvl_list:
+            if i != "element_tag":
+                lvls.insert(0, i)
+            else:
+                break
+        self.element_tag.setTitle("/".join(lvls))
         self.element_menu.setFixedSize(123,25)
         self.element_menu.show()
+        self.element_tag_changed()
 
     def update_theta_tag(self):
-        #TODO: figure out how to string together h5 tree tags
-        name0 = self.sender().associatedWidgets()[0].title()
-        name1 = ""
-        if isinstance(self.sender(), QAction):
-            name1 = self.sender().text()
-        elif isinstance(self.sender(), QMenu):
-            name1 = self.sender().title()
-        print("{}/{}".format(name0,name1))
-        self.theta_tag = "{}/{}".format(name0,name1)
-        dataset = self.img[self.theta_tag]
-        # dataset = np.array(self.img[dataset.name][:])
+        self.theta_tag.setTitle("theta_tag")
+        lvl0 = ""
+        lvl1 = ""
+        lvl2 = ""
+        lvl3 = ""
+        lvl4 = ""
+        try:
+            #hardcoding path to max depth of 4.
+            lvl0 = self.sender().text()
+            lvl1 = self.sender().associatedWidgets()[0].title()
+            lvl2 = self.sender().associatedWidgets()[0].parent().title()
+            lvl3 = self.sender().associatedWidgets()[0].parent().parent().title()
+            lvl4 = self.sender().associatedWidgets()[0].parent().parent().parent().title()
+        except:
+            pass
+        lvl_list = [lvl0, lvl1, lvl2, lvl3, lvl4]
+        lvls = []
+        for i in lvl_list:
+            if i != "theta_tag":
+                lvls.insert(0, i)
+            else:
+                break
+        self.theta_tag.setTitle("/".join(lvls))
+        dataset = self.img[self.theta_tag.title()]
         dataset = np.array(dataset).astype('U13')
-        daatset_list = dataset.tolist()
         self.create_table(dataset)
-        #TODO: use QTableWidget to display dataset
-
-        # try_pvs = ["2xfm:m58.VAL"]
-        # for pv in try_pvs:
-        #     idx = np.where(dataset == pv)
-
-        self.theta_menu_name.setTitle(self.theta_tag)
         self.theta_menu.setFixedSize(123,25)
         self.theta_menu.show()
+        self.theta_tag_changed()
 
     def create_table(self, dataset):
         self.tablewidget = QTableWidget()
-        numcols = len(dataset[0])  # ( to get number of columns, count number of values in first row( first row is data[0]))
-        numrows = len(dataset)
 
-        self.tablewidget.setColumnCount(numcols)
-        self.tablewidget.setRowCount(numrows)
-        for row in range(numrows):
-            for column in range(numcols):
-                self.tablewidget.setItem(row, column, QTableWidgetItem((dataset[row][column])))
+        if dataset.ndim == 1:
+            numcols = 1
+            numrows = len(dataset)
+            self.tablewidget.setColumnCount(numcols)
+            self.tablewidget.setRowCount(numrows)
+            for row in range(numrows):
+                for column in range(numcols):
+                    self.tablewidget.setItem(row, column, QTableWidgetItem((dataset[row])))
+        elif dataset.ndim == 2:
+            numcols = len(dataset[0])  # ( to get number of columns, count number of values in first row( first row is data[0]))
+            numrows = len(dataset)
+            self.tablewidget.setColumnCount(numcols)
+            self.tablewidget.setRowCount(numrows)
+            for row in range(numrows):
+                for column in range(numcols):
+                    self.tablewidget.setItem(row, column, QTableWidgetItem((dataset[row][column])))
+        else:
+            print("more than 2 dimensions")
+            return
         self.tablewidget.show()
-        #TODO: whem item clicked, update the PV name on self.theta_tag and close self.tablewidget.
+        self.tablewidget.itemDoubleClicked.connect(self.clicked_event)
+
+    def clicked_event(self):
+        current_row = self.tablewidget.currentRow()
+        current_column = self.tablewidget.currentColumn()
+        cell_value = self.tablewidget.item(current_row, current_column).text()
+        theta_tag = "{}/{}".format(self.theta_tag.title(),self.tablewidget.currentItem().text())
+        self.theta_tag.setTitle(theta_tag)
+        self.theta_tag_changed()
 
     def getElements(self):
         element_tag = self.element_tag
@@ -347,13 +390,14 @@ class FileTableWidget(QWidget):
         return element_names, element_idxs
 
     def element_tag_changed(self):
-        element_tag = self.element_tag
+        element_tag = self.element_tag.title()
         element_list = list(self.img[element_tag])
         elements = [x.decode("utf-8") for x in element_list]
         self.elementTableModel.loadElementNames(elements)
         self.elementTableModel.setAllChecked(False)
         self.elementTableModel.setChecked(self.auto_selected_elements, (True))
         return
+
 
     def normalizeData(self, data, scalers, quants):
         #normalize
@@ -367,31 +411,18 @@ class FileTableWidget(QWidget):
         data[data == np.inf] = 0.0001
         return data
 
-    def onThetaUpdate(self):
-        #TODO: figure out how to get the theta PV string-path from extraPVs or from the symbolic link.
+    def theta_tag_changed(self):
         path_files = self.fileTableModel.getAllFiles()
-        thetaPV = self.thetaLineEdit.text()
+        theta_tag = self.theta_tag.title()
         try:
-            thetas = load_thetas(path_files, thetaPV)
+            thetas = load_thetas(path_files, theta_tag, 1)
         except:
             thetas=[]
             self.message.setText("directory probably not mounted.")
-        if len(thetas) == 0:
-            for i in self.thetaOptions:
-                try:
-                    thetas = load_thetas(path_files, self.imgTags[self.imageTag.currentIndex()], self.version, i)
-                except:
-                    print("trying theta PV {}".format(i))
-                if len(thetas) >0:
-                    if len(set(thetas)) > 1:
-                        self.thetaLineEdit.setText(i)
-                        break
-                else:
-                    thetas = np.ones(len(path_files))
-
+            return
         self.fileTableModel.update_thetas(thetas)
-        if self.parent.params.sorted_angles == True:
-            self.fileTableView.sortByColumn(1, 0)
+        self.fileTableView.sortByColumn(1, 0)
+        self.message.setText("")
         return
 
     def onFileTableContextMenu(self, pos):
@@ -433,7 +464,8 @@ class FileTableWidget(QWidget):
         elements = [i.element_name for i in self.elementTableModel.arrayData]
         files_bool = [i.use for i in self.fileTableModel.arrayData]
         elements_bool = [i.use for i in self.elementTableModel.arrayData]
-        element_tag = self.element_tag
+        element_tag = self.element_tag.title()
+        data_tag = self.data_tag.title()
         k = np.arange(len(files))
         l = np.arange(len(elements))
         files = [files[j] for j in k if files_bool[j]==True]
@@ -444,9 +476,9 @@ class FileTableWidget(QWidget):
         #update auto-load parameters
         self.parent.params.input_path = self.dirLineEdit.text()
         self.parent.params.file_extension = self.extLineEdit.text()
-        self.parent.params.theta_pv = self.thetaLineEdit.text()
-        self.parent.params.data_path = self.data_path
-        self.parent.params.element_tag = self.element_tag
+        self.parent.params.theta_pv = self.theta_tag.title()
+        self.parent.params.data_tag = self.data_tag.title()
+        self.parent.params.element_tag = self.element_tag.title()
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
 
         if len(elements) == 0:
@@ -461,17 +493,14 @@ class FileTableWidget(QWidget):
         self.parent.clear_all()
         try:
             #TODO: fix this
-            data, quants, scalers = xrftomo.read_mic_xrf(path_files, elements, hdf_tag, data_tag, element_tag, quant_tag, scaler_tag, scaler_idx)
+            data = xrftomo.read_mic_xrf(path_files, elements, data_tag, element_tag)
         except:
             self.message.setText("invalid image/data/element tag combination. Load failed")
             return [], [], [], []
 
-        if data is None or scalers is None:
+        if data is None:
             return [], [], [], []
-        if self.scalerTag.currentText() != 'None':
-            elements, element_idxs = self.getElements()
         self.message.setText('finished loading')
-
         data[np.isnan(data)] = 0.0001
         data[data == np.inf] = 0.0001
 

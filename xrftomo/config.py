@@ -68,7 +68,7 @@ SECTIONS['file-io'] = {
         'type': str,
         'help': "file extension of last files used",
         'metavar': 'PATH'},
-    'data-path': {
+    'data-tag': {
         'default': 'MAPS/XRF_fits',
         'type': str,
         'help': "data path for h5 file",

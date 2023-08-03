@@ -69,9 +69,6 @@ class xrftomoGui(QMainWindow):
         self.params = params
         self.param_list = {}
         self.app = app
-
-
-
         # self.get_values_from_params()
         self.initUI()
 
@@ -1734,8 +1731,8 @@ class xrftomoGui(QMainWindow):
         self.params.load_settings = str(load_settings)
         # return
     def debugMode(self):
-        self.fileTableWidget.thetaLabel.setVisible(True)
-        self.fileTableWidget.thetaLineEdit.setVisible(True)
+        # self.fileTableWidget.thetaLabel.setVisible(True)
+        # self.fileTableWidget.thetaLineEdit.setVisible(True)
         self.imageProcessWidget.ViewControl.invert.setVisible(True)
 
         return
@@ -2298,10 +2295,6 @@ class xrftomoGui(QMainWindow):
         self.reconstructionWidget.sld.setRange(0,0)
         self.laminographyWidget.sld.setValue(0)
         self.laminographyWidget.sld.setRange(0,0)
-        # self.imageProcessWidget.ViewControl.x_sld.setValue(1)
-        # self.imageProcessWidget.ViewControl.x_sld.setRange(1,10)
-        # self.imageProcessWidget.ViewControl.y_sld.setValue(1)
-        # self.imageProcessWidget.ViewControl.y_sld.setRange(1,10)
 
         self.imageProcessWidget.imageView.projView.clear()
         self.sinogramWidget.sinoView.projView.clear()
