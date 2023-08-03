@@ -366,8 +366,8 @@ class LaminographyWidget(QtWidgets.QWidget):
         elements = [self.ViewControl.elem.currentIndex()]
         method = self.ViewControl.method.currentIndex()
         thetas = self.thetas
-        lami_angle = eval(self.ViewControl.__dict__["lamino-angle"].item2.text())
-        lami_angle = 90-lami_angle
+        lami_angle = 90 - eval(self.ViewControl.__dict__["lamino-angle"].item2.text())
+        center_axis = eval(self.ViewControl.__dict__["rotation-axis"].item2.text())
         parent_dir = self.h5_dir
         data = self.data.copy()
         recon_dict = self.recon_dict.copy()
@@ -386,7 +386,6 @@ class LaminographyWidget(QtWidgets.QWidget):
             #TODO: edit file-name to match current element.h5 file path.
             # self.ViewControl.__dict__["file-name"].item2.setText("")
             self.ViewControl.elem.setCurrentIndex(element_idx)    #required to properly update recon_dict
-            recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
             recons = self.actions.reconstruct(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir, command_string=command_string)
             recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons),
             self.recon = np.array(recons)

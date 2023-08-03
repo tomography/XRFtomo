@@ -890,6 +890,10 @@ class SinogramWidget(QtWidgets.QWidget):
         self.alignmentChangedSig.emit(self.x_shifts+x_shifts, self.y_shifts+y_shifts)
         return
 
+    def sine_fitting_params(self):
+        #TODO: sine fitting function
+        "https://stackoverflow.com/questions/16716302/how-do-i-fit-a-sine-curve-to-my-data-with-pylab-and-numpy"
+        pass
     def move2edge_params(self):
         #TODO: if roi checked
 

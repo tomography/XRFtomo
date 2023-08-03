@@ -78,30 +78,20 @@ SECTIONS['file-io'] = {
         'type': str,
         'help': "element tag for h5 file",
         'metavar': 'PATH'},
-    'quant-tag': {
-        'default': 'XRF_roi',
-        'type': str,
-        'help': "data tag for h5 file",
-        'metavar': 'PATH'},
     'sorted-angles': {
         'default': 'True',
         'type': bool,
         'help': "sort interlaced dataset by projection angle",
         'metavar': 'PATH'},
-    'theta-pv': {
-        'default': '2xfm:m53.VAL',
+    'theta-tag': {
+        'default': 'MAPS/Scan/Extra_PVs/Names/2xfm:m58.VAL',
         'type': str,
-        'help': "theta PV name",
-        'choices': ['2xfm:m53.VAL', '2xfm:m36.VAL','2xfm:m58.VAL','9idbTAU:SM:ST:ActPos']},
+        'help': "theta tag holding rotation angle PV",
+        'metavar': 'PATH'},
     'selected-elements': {
         'default': '[0,1]',
         'type': str,
         'help': "list of selected elements indexes"},
-    'scaler-tag': {
-        'default': 'SRcurrent',
-        'type': str,
-        'help': "normalize by this detector",
-        'metavar': 'PATH'}
         }
 
 SECTIONS['reconstruction'] = {

@@ -54,12 +54,10 @@ class FileTableWidget(QWidget):
         self._num_cols = 4
         self._num_row = 4
         self.auto_load_settings = eval(self.parent.params.load_settings)
-        self.auto_theta_pv = self.parent.params.theta_pv
+        self.auto_theta_tag = self.parent.params.theta_tag
         self.auto_input_path = self.parent.params.input_path
         self.auto_extension = self.parent.params.file_extension
         self.auto_element_tag = self.parent.params.element_tag
-        self.auto_quant_tag = self.parent.params.quant_tag
-        self.auto_scaler_tag = self.parent.params.scaler_tag
         self.auto_data_tag = self.parent.params.data_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
@@ -201,7 +199,7 @@ class FileTableWidget(QWidget):
                 self.theta_tag = self.theta_menu.addMenu("theta")
                 self.populate_theta_menu(self.img, self.theta_tag)
                 self.theta_tag.objectName = "theta_tag"
-                self.theta_tag.setTitle(self.auto_theta_pv)
+                self.theta_tag.setTitle(self.auto_theta_tag)
 
 
                 self.element_tag_changed()
@@ -476,7 +474,7 @@ class FileTableWidget(QWidget):
         #update auto-load parameters
         self.parent.params.input_path = self.dirLineEdit.text()
         self.parent.params.file_extension = self.extLineEdit.text()
-        self.parent.params.theta_pv = self.theta_tag.title()
+        self.parent.params.theta_tag = self.theta_tag.title()
         self.parent.params.data_tag = self.data_tag.title()
         self.parent.params.element_tag = self.element_tag.title()
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
