@@ -57,6 +57,9 @@ from skimage import exposure
 #TODO: create frame to put in QtCombobox, QLineEdit, and button (for FILE or PATH) for EACH option.
 #TODO: for each Option, edit QLine edit to the default.
 #TODO: for PATH and File for specific options, set the default values.
+
+#TODO: Look into astra toolbox
+
 class LaminographyActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
 	fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
@@ -147,7 +150,6 @@ class LaminographyActions(QtWidgets.QWidget):
 			plt.legend(('projection', 'reprojection'), loc=1)
 			plt.title("MSE:{}\nScale Factor: {}".format(np.round(mse, 4),sf))
 			figA.show()
-
 		return err, mse
 
 	def recon_stats(self,recon, middle_index, projection, show_plots = False):
@@ -188,7 +190,6 @@ class LaminographyActions(QtWidgets.QWidget):
 			plt.legend(('projection', 'reprojection'), loc=1)
 			plt.title("MSE:{}\nScale Factor: {}".format(np.round(mse, 4), sf))
 			figA.show()
-
 		return err, mse
 
 	def setThreshold(self,threshold,recon):
@@ -309,8 +310,8 @@ class LaminographyActions(QtWidgets.QWidget):
 			if interpolation == 'nearest_neighbor':
 				# Nearest neighbor
 				reconstructed += data[
-					((((v > 0) & (v < nz)) * v)).astype(np.int),
-					((((u > 0) & (u < n)) * u)).astype(np.int)]
+					((((v > 0) & (v < nz)) * v)).astype(int),
+					((((u > 0) & (u < n)) * u)).astype(int)]
 			elif interpolation == 'cubic':
 				# Cubic interpolation
 				[gY, gX] = np.mgrid[0:nz, 0:n]
@@ -322,9 +323,7 @@ class LaminographyActions(QtWidgets.QWidget):
 				reconstructed += interpolate.griddata((gY.ravel(), gX.ravel()), data.ravel(), ((v, u)), method='linear', fill_value=0.0)
 			else:
 				pass
-
 		return reconstructed
-
 
 	def filter(self, data, bpfilter=3):
 		center = data.shape[1] / 2

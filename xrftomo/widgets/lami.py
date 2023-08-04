@@ -110,6 +110,16 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.show_options()
 
 
+        for line in self.ViewControl.line_names:
+            self.ViewControl.__dict__[line].setVisible(False)
+        self.ViewControl.__dict__["reconstruction-type"].setVisible(True)
+        self.ViewControl.__dict__["lamino-angle"].setVisible(True)
+        self.ViewControl.__dict__["rotation-axis"].setVisible(True)
+        self.ViewControl.__dict__["lamino-search-width"].setVisible(True)
+        self.ViewControl.__dict__["fbp-filter"].setVisible(True)
+        self.ViewControl.__dict__["minus-log"].setVisible(True)
+        self.ViewControl.__dict__["file-name"].setVisible(True)
+
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(lbl1)
         hb0.addWidget(self.lbl2)
@@ -140,13 +150,20 @@ class LaminographyWidget(QtWidgets.QWidget):
     def show_options(self):
         if self.ViewControl.show_ops.isChecked() and self.ViewControl.show_ops.isVisible():
             self.ViewControl.show_ops.setText("show less")
-            for child in self.ViewControl.scroll.children():
-                child.setVisible(False)
+            for line in self.ViewControl.line_names:
+                self.ViewControl.__dict__[line].setVisible(True)
 
         elif not self.ViewControl.show_ops.isChecked() and self.ViewControl.show_ops.isVisible():
             self.ViewControl.show_ops.setText("show more")
-            for child in self.ViewControl.scroll.children():
-                child.setVisible(True)
+            for line in self.ViewControl.line_names:
+                self.ViewControl.__dict__[line].setVisible(False)
+            self.ViewControl.__dict__["reconstruction-type"].setVisible(True)
+            self.ViewControl.__dict__["lamino-angle"].setVisible(True)
+            self.ViewControl.__dict__["rotation-axis"].setVisible(True)
+            self.ViewControl.__dict__["lamino-search-width"].setVisible(True)
+            self.ViewControl.__dict__["fbp-filter"].setVisible(True)
+            self.ViewControl.__dict__["minus-log"].setVisible(True)
+            self.ViewControl.__dict__["file-name"].setVisible(True)
 
     def method_changed(self):
         if self.ViewControl.method.currentIndex() == 0:
@@ -234,16 +251,17 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.elem.addItem(j)
             self.recon_dict[j] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
+        self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
+        self.ViewControl.__dict__["lamino-angle"].item3.setChecked(True)
+        self.ViewControl.__dict__["fbp-filter"].item2.setCurrentIndex(1)
+        self.ViewControl.__dict__["fbp-filter"].item3.setChecked(True)
+        self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
+        self.ViewControl.__dict__["lamino-angle"].item3.setChecked(True)
+        self.ViewControl.__dict__["rotation-axis"].item2.setText(str(self.data.shape[3] // 2))
+        self.ViewControl.__dict__["rotation-axis"].item3.setChecked(True)
+
         if self.parent.tcp_installed:
             self.ViewControl.__dict__["reconstruction-type"].item3.setChecked(True)
-            self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
-            self.ViewControl.__dict__["lamino-angle"].item3.setChecked(True)
-            self.ViewControl.__dict__["rotation-axis"].item2.setText(str(self.data.shape[3]//2))
-            self.ViewControl.__dict__["rotation-axis"].item3.setChecked(True)
-            self.ViewControl.__dict__["lamino-search-width"].item2.setText("20")
-            self.ViewControl.__dict__["lamino-search-width"].item3.setChecked(True)
-            self.ViewControl.__dict__["fbp-filter"].item2.setCurrentIndex(1)
-            self.ViewControl.__dict__["fbp-filter"].item3.setChecked(True)
             self.ViewControl.__dict__["minus-log"].item2.setText("False")
             self.ViewControl.__dict__["minus-log"].item3.setChecked(True)
             self.ViewControl.__dict__["file-name"].item2.setText("")
@@ -251,13 +269,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         else:
             self.ViewControl.method.clear()
             self.ViewControl.method.addItem("lamni-fbp(cpu)")
-            self.ViewControl.__dict__["fbp-filter"].item2.setCurrentIndex(1)
-            self.ViewControl.__dict__["fbp-filter"].item3.setChecked(True)
-            self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
-            self.ViewControl.__dict__["lamino-angle"].item3.setChecked(True)
-            self.ViewControl.__dict__["rotation-axis"].item2.setText(str(self.data.shape[3]//2))
-            self.ViewControl.__dict__["rotation-axis"].item3.setChecked(True)
-
 
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
@@ -371,24 +382,33 @@ class LaminographyWidget(QtWidgets.QWidget):
         parent_dir = self.h5_dir
         data = self.data.copy()
         recon_dict = self.recon_dict.copy()
-        command_string = self.get_command_string()
-
-        if not self.check_savepath_exists():
-            print("save path invalid or insufficient permissions")
-            return
 
         if self.ViewControl.recon_all.isChecked():
             num_elements = self.ViewControl.elem.count()
             elements = [i for i in range(num_elements)]
 
-        for element_idx in elements:
-            element = self.parent.elements[element_idx]
-            #TODO: edit file-name to match current element.h5 file path.
-            # self.ViewControl.__dict__["file-name"].item2.setText("")
-            self.ViewControl.elem.setCurrentIndex(element_idx)    #required to properly update recon_dict
-            recons = self.actions.reconstruct(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir, command_string=command_string)
-            recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons),
-            self.recon = np.array(recons)
+        elif method == 0:
+            for element_idx in elements:
+                element = self.parent.elements[element_idx]
+                self.ViewControl.elem.setCurrentIndex(element_idx)  # required to properly update recon_dict
+                recons = self.actions.reconstruct(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir)
+                recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons),
+                self.recon = np.array(recons)
+
+        if method ==1:
+            command_string = self.get_command_string()
+            if not self.check_savepath_exists():
+                print("save path invalid or insufficient permissions")
+                return
+
+            for element_idx in elements:
+                element = self.parent.elements[element_idx]
+                #TODO: edit file-name to match current element.h5 file path.
+                # self.ViewControl.__dict__["file-name"].item2.setText("")
+                self.ViewControl.elem.setCurrentIndex(element_idx)    #required to properly update recon_dict
+                recons = self.actions.reconstruct(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir, command_string=command_string)
+                recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons),
+                self.recon = np.array(recons)
 
         self.update_recon_image()
         self.update_recon_dict(self.recon)

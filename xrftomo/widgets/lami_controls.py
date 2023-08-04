@@ -129,32 +129,6 @@ class LaminographyControlsWidget(QWidget):
 
     def populate_scroll_area(self):
         self.line_names = []
-        try:
-            import tomocupy
-            self.tcp_installed = True
-            item_dict = self.op_parser()
-            self.line_names = list(item_dict.keys())
-            num_lines = len(self.line_names)
-
-            for key in item_dict.keys():
-                attrs = item_dict[key]
-                setattr(self, key, Line(key, attrs))
-
-            self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
-            vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
-            for i in range(num_lines):
-                line = self.__dict__[self.line_names[i]]
-                line.objectName = self.line_names[i]
-                vbox.addWidget(line)
-            vbox.setSpacing(0)
-            vbox.setContentsMargins(0, 0, 0, 0)
-
-            self.scroll_widget.setLayout(vbox)
-            self.scroll.setWidget(self.scroll_widget)
-        except:
-            self.tcp_installed = False
-            print("tomocupy not installed, using CPU settings")
-
         line_names = ["fbp-filter", "rotation-axis", "lamino-angle"]
         # op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
         item_dict = {}
@@ -175,6 +149,30 @@ class LaminographyControlsWidget(QWidget):
 
         self.scroll_widget2.setLayout(vbox)
         self.scroll2.setWidget(self.scroll_widget2)
+        try:
+            import tomocupy
+            self.tcp_installed = True
+            item_dict = self.op_parser()
+            self.line_names = list(item_dict.keys())
+            num_lines = len(self.line_names)
+
+            for key in item_dict.keys():
+                attrs = item_dict[key]
+                setattr(self, key, Line(key, attrs))
+
+            self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+            self.vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+            for i in range(num_lines):
+                line = self.__dict__[self.line_names[i]]
+                line.objectName = self.line_names[i]
+                self.vbox.addWidget(line)
+            self.vbox.setSpacing(0)
+            self.vbox.setContentsMargins(0, 0, 0, 0)
+            self.scroll_widget.setLayout(self.vbox)
+            self.scroll.setWidget(self.scroll_widget)
+        except:
+            self.tcp_installed = False
+            print("tomocupy not installed, using CPU settings")
 
     def op_parser(self):
         result = subprocess.check_output(["tomocupy", "recon_steps", "-h"]).decode().split("options:")[1]
