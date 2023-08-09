@@ -663,16 +663,11 @@ class xrftomoGui(QMainWindow):
         self.elem1_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
         self.elem2_options_recon.currentIndexChanged.connect(self.updateScatterRecon)
         self.recon_sld.valueChanged.connect(self.updateScatterRecon)
-        # self.width_sld.valueChanged.connect(self.updateWidth)
-        # self.width_sld.valueChanged.connect(self.updateInnerScatter)
         self.scatterWidgetRecon.mousePressSig.connect(self.updateInnerScatterRecon)
         self.scatterWidgetRecon.roiDraggedSig.connect(self.updateInnerScatterRecon)
         self.apply_globally_recon.clicked.connect(self.sendRecon)
         self.slope_value_recon.returnPressed.connect(self.slopeEnteredRecon)
         self.first_run_recon = True
-
-
-
 
         #_______________________ projecion compare window ______________________ win 3
         self.projection_window = QtWidgets.QWidget()

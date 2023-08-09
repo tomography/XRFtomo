@@ -46,15 +46,13 @@ Module for importing raw data files.
 """
 
 from __future__ import (absolute_import, division, print_function, unicode_literals)
-import dxchange
-from PyQt5 import QtGui
+from PyQt5.QtWidgets import *
 import tomopy
 import os
 import dxfile.dxtomo as dx
 import numpy as np
 from skimage import io
 
-#TODO: use standard h5py commands ot replace dxchange
 class SaveOptions(object):
 	def save_alignemnt_information(self,fnames, x_shift, y_shift, centers):
 		'''
@@ -150,7 +148,7 @@ class SaveOptions(object):
 				savedir = QFileDialog.getSaveFileName()[0]
 			if index == -1:
 				recon = tomopy.circ_mask(recon, axis=0)
-				dxchange.writer.write_tiff_stack(recon, fname=savedir)
+				io.imsave(savedir+".tiff",recon)
 			if index != -1:
 				recon = tomopy.circ_mask(recon, axis=0)
 				indx = "0000"

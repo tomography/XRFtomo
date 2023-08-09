@@ -50,6 +50,7 @@ import numpy as np
 import h5py
 import subprocess
 from skimage import exposure
+import time
 
 #TODO: add multiple viewing angles for reconstruction.
 #TODO: create parser and organize tomocupy options, defaults
@@ -68,7 +69,7 @@ class LaminographyActions(QtWidgets.QWidget):
 		super(LaminographyActions, self).__init__()
 		self.writer = xrftomo.SaveOptions()
 
-	def reconstruct(self, data, element_idx, element, tiltangle, center_axis, method, thetas, parent_dir=None, command_string=None):
+	def reconstruct_cpu(self, data, element_idx, element, tiltangle, center_axis, method, thetas, parent_dir=None):
 		'''
 		load data for reconstruction and load variables for reconstruction
 		make it sure that data doesn't have infinity or nan as one of
@@ -112,6 +113,54 @@ class LaminographyActions(QtWidgets.QWidget):
 			recon[recon == np.inf] = 0.001
 
 		return recon
+
+	def reconstruct_gpu(self, data, element_idx, element, thetas, parent_dir=None, command_string=None):
+		'''
+		load data for reconstruction and load variables for reconstruction
+		make it sure that data doesn't have infinity or nan as one of
+		entries
+		'''
+
+		# TODO: run GPU reconstruction, add a "WAIT status until recon.status is DONE. Then read in recon file and set it to var recons.
+
+		data_path = "tomocupy_data"
+
+		path_data = os.path.join(parent_dir, data_path)
+		elem_h5_path = os.path.join(path_data, element)
+		data = data[element_idx]
+		const = data[0, 0, 0]
+		if data.shape[2]%2:
+			data = data[:, :, :-1]
+		data = np.pad(data, ((0, 0), (0, 0), (0, 2)), mode='edge')
+
+		data_dark = np.zeros([1, data.shape[1], data.shape[2]], dtype='float32')
+		data_white = np.ones([1, data.shape[1], data.shape[2]], dtype='float32') * const
+
+		with h5py.File(f'{elem_h5_path}.h5', 'w') as fid:
+			fid.create_dataset('exchange/data', data=data)
+			fid.create_dataset('exchange/data_white', data=data_white)
+			fid.create_dataset('exchange/data_dark', data=data_dark)
+			fid.create_dataset('exchange/theta', data=thetas)
+
+		if command_string is None:
+			return
+
+		p1 = subprocess.Popen(command_string, shell=True)
+		p1.wait()
+		#TODO: wait a few more seconds for file writing to complete.
+		time.sleep(3)
+		recons = self.get_recon_tiffs(parent_dir, element)[0]
+
+		return recons
+
+	def get_recon_tiffs(self, parent_dir, element):
+		#TODO: The Try-center option saves to a different directory. Consider hardcoding the path.
+		files = os.listdir(parent_dir + "tomocupy_data_rec/{}_rec".format(element))
+		files=  [file for file in files if file.endswith(".tiff")]
+		files = sorted(files, key=lambda x:x[-10:])
+		path_files = [parent_dir + "tomocupy_data_rec/{}_rec/".format(element) + file for file in files]
+		recons = xrftomo.read_tiffs(path_files)
+		return recons
 
 	def assessRecon(self,recon, data, thetas,show_plots=False):
 		#TODO: make sure cros-section index does not exceed the data height

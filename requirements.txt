@@ -1,5 +1,4 @@
 python
-dxchange
 matplotlib
 pyqtgraph
 setuptools

@@ -71,10 +71,8 @@ class LaminographyControlsWidget(QWidget):
         self.browse.setFixedWidth(button1size)
 
         self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
-        self.scroll2 = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
 
         self.scroll.setWidgetResizable(True)
-        self.scroll2.setWidgetResizable(True)
         self.populate_scroll_area()
 
         self.generate_lbl = QLabel("Generate folder structure in data path")
@@ -122,36 +120,21 @@ class LaminographyControlsWidget(QWidget):
         vb.addWidget(self.show_ops)
         vb.addWidget(self.lbl)
         vb.addWidget(self.scroll)
-        vb.addWidget(self.scroll2)
         vb.addLayout(reconBox)
         vb.addLayout(postReconBox)
         self.setLayout(vb)
 
     def populate_scroll_area(self):
-        self.line_names = []
-        line_names = ["fbp-filter", "rotation-axis", "lamino-angle"]
-        # op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
-        item_dict = {}
-        item_dict["fbp-filter"] = [False, False, "filter choice", ["ramp","shepp"], "shepp"]
-        item_dict["rotation-axis"] = [False, False, "rotation axis given by x-position", None, ""]
-        item_dict["lamino-angle"] = [False, False, "laminography tilt angle", None, "18.25"]
-        for key in line_names:
-            attrs = item_dict[key]
-            setattr(self, key, Line(key, attrs))
-        self.scroll_widget2 = QWidget()  # Widget that contains the collection of Vertical Box
-        vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
-        for i in range(len(line_names)):
-            line = self.__dict__[line_names[i]]
-            line.objectName = line_names[i]
-            vbox.addWidget(line)
-        vbox.setSpacing(0)
-        vbox.setContentsMargins(0, 0, 0, 0)
+        #TODO: Two scroll widgets cannot share the same widget (i.e lamino-angle) so you have to show/hide only relevant options depending on method.
 
-        self.scroll_widget2.setLayout(vbox)
-        self.scroll2.setWidget(self.scroll_widget2)
         try:
             import tomocupy
             self.tcp_installed = True
+        except:
+            self.tcp_installed = False
+            print("tomocupy not installed, using CPU settings")
+
+        if self.tcp_installed:
             item_dict = self.op_parser()
             self.line_names = list(item_dict.keys())
             num_lines = len(self.line_names)
@@ -170,10 +153,29 @@ class LaminographyControlsWidget(QWidget):
             self.vbox.setContentsMargins(0, 0, 0, 0)
             self.scroll_widget.setLayout(self.vbox)
             self.scroll.setWidget(self.scroll_widget)
-        except:
-            self.tcp_installed = False
-            print("tomocupy not installed, using CPU settings")
 
+        else:
+            line_names = ["fbp-filter", "rotation-axis", "lamino-angle"]
+            self.line_names = line_names
+            item_dict = {}
+            item_dict["fbp-filter"] = [False, False, "filter choice", ["ramp","shepp"], "shepp"]
+            item_dict["rotation-axis"] = [False, False, "rotation axis given by x-position", None, ""]
+            item_dict["lamino-angle"] = [False, False, "laminography tilt angle", None, "18.25"]
+            for key in line_names:
+                attrs = item_dict[key]
+                setattr(self, key, Line(key, attrs))
+            self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+            self.vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+            for i in range(len(line_names)):
+                line = self.__dict__[line_names[i]]
+                line.objectName = line_names[i]
+                self.vbox.addWidget(line)
+            self.vbox.setSpacing(0)
+            self.vbox.setContentsMargins(0, 0, 0, 0)
+            self.scroll_widget.setLayout(self.vbox)
+            self.scroll.setWidget(self.scroll_widget)
+
+        return
     def op_parser(self):
         result = subprocess.check_output(["tomocupy", "recon_steps", "-h"]).decode().split("options:")[1]
         options = result.split("--")[2::]

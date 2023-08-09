@@ -48,15 +48,12 @@ Module for importing raw data files.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import dxchange
-import numpy as np 
+import numpy as np
 import xrftomo
 import h5py
 from skimage import io
 import csv
 import os
-#TODO: use standard h5py commands ot replace dxchange
-
 
 __author__ = "Francesco De Carlo, Fabricio S. Marin"
 __copyright__ = "Copyright (c) 2018, UChicago Argonne, LLC."

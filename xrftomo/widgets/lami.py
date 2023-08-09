@@ -89,6 +89,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.h5_dir = "/".join(self.parent.fileTableWidget.dirLineEdit.text().split("/")[:-1])+"/"
         truncated_dir = "~/"+"/".join(self.h5_dir.split("/")[-4:])
         self.ViewControl.elem.currentIndexChanged.connect(self.elementChanged)
+        self.ViewControl.elem.currentIndexChanged.connect(self.recon_combobox_changed)
         self.ViewControl.method.currentIndexChanged.connect(self.method_changed)
         self.ViewControl.browse.setText(truncated_dir)
         self.ViewControl.browse.clicked.connect(self.file_browse)
@@ -107,18 +108,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.data = None
         self.data_original = None
         self.method_changed()
-        self.show_options()
-
-
-        for line in self.ViewControl.line_names:
-            self.ViewControl.__dict__[line].setVisible(False)
-        self.ViewControl.__dict__["reconstruction-type"].setVisible(True)
-        self.ViewControl.__dict__["lamino-angle"].setVisible(True)
-        self.ViewControl.__dict__["rotation-axis"].setVisible(True)
-        self.ViewControl.__dict__["lamino-search-width"].setVisible(True)
-        self.ViewControl.__dict__["fbp-filter"].setVisible(True)
-        self.ViewControl.__dict__["minus-log"].setVisible(True)
-        self.ViewControl.__dict__["file-name"].setVisible(True)
 
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(lbl1)
@@ -146,14 +135,13 @@ class LaminographyWidget(QtWidgets.QWidget):
 
         self.setLayout(hb2)
 
-
     def show_options(self):
-        if self.ViewControl.show_ops.isChecked() and self.ViewControl.show_ops.isVisible():
+        if self.ViewControl.show_ops.isChecked() and self.parent.tcp_installed:
             self.ViewControl.show_ops.setText("show less")
             for line in self.ViewControl.line_names:
                 self.ViewControl.__dict__[line].setVisible(True)
 
-        elif not self.ViewControl.show_ops.isChecked() and self.ViewControl.show_ops.isVisible():
+        elif not self.ViewControl.show_ops.isChecked() and self.parent.tcp_installed:
             self.ViewControl.show_ops.setText("show more")
             for line in self.ViewControl.line_names:
                 self.ViewControl.__dict__[line].setVisible(False)
@@ -164,25 +152,28 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.__dict__["fbp-filter"].setVisible(True)
             self.ViewControl.__dict__["minus-log"].setVisible(True)
             self.ViewControl.__dict__["file-name"].setVisible(True)
+        return
 
     def method_changed(self):
         if self.ViewControl.method.currentIndex() == 0:
-            self.ViewControl.scroll.setVisible(False)
-            self.ViewControl.scroll2.setVisible(True)
             self.ViewControl.browse.setVisible(False)
             self.ViewControl.generate.setVisible(False)
             self.ViewControl.generate_lbl.setVisible(False)
             self.ViewControl.browse_lbl.setVisible(False)
             self.ViewControl.show_ops.setVisible(False)
+            for line in self.ViewControl.line_names:
+                self.ViewControl.__dict__[line].setVisible(False)
+            self.ViewControl.__dict__["lamino-angle"].setVisible(True)
+            self.ViewControl.__dict__["rotation-axis"].setVisible(True)
+            self.ViewControl.__dict__["fbp-filter"].setVisible(True)
 
         elif self.ViewControl.method.currentIndex() == 1:
-            self.ViewControl.scroll.setVisible(True)
-            self.ViewControl.scroll2.setVisible(False)
             self.ViewControl.browse.setVisible(True)
             self.ViewControl.generate.setVisible(True)
             self.ViewControl.generate_lbl.setVisible(True)
             self.ViewControl.browse_lbl.setVisible(True)
             self.ViewControl.show_ops.setVisible(True)
+            self.show_options()
         else:
             pass
         return
@@ -251,8 +242,6 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.elem.addItem(j)
             self.recon_dict[j] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
-        self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
-        self.ViewControl.__dict__["lamino-angle"].item3.setChecked(True)
         self.ViewControl.__dict__["fbp-filter"].item2.setCurrentIndex(1)
         self.ViewControl.__dict__["fbp-filter"].item3.setChecked(True)
         self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
@@ -264,15 +253,16 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.__dict__["reconstruction-type"].item3.setChecked(True)
             self.ViewControl.__dict__["minus-log"].item2.setText("False")
             self.ViewControl.__dict__["minus-log"].item3.setChecked(True)
-            self.ViewControl.__dict__["file-name"].item2.setText("")
+            self.ViewControl.__dict__["file-name"].item2.setText(self.h5_dir)
             self.ViewControl.__dict__["file-name"].item3.setChecked(True)
+            self.ViewControl.__dict__["lamino-search-width"].item2.setText("20")
+            self.ViewControl.__dict__["lamino-search-width"].item3.setChecked(True)
         else:
             self.ViewControl.method.clear()
             self.ViewControl.method.addItem("lamni-fbp(cpu)")
 
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
-
         self.sld.setRange(0, self.y_range - 1)
         self.lcd.display(0)
         return
@@ -391,23 +381,22 @@ class LaminographyWidget(QtWidgets.QWidget):
             for element_idx in elements:
                 element = self.parent.elements[element_idx]
                 self.ViewControl.elem.setCurrentIndex(element_idx)  # required to properly update recon_dict
-                recons = self.actions.reconstruct(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir)
+                recons = self.actions.reconstruct_cpu(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir)
                 recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons),
                 self.recon = np.array(recons)
 
         if method ==1:
-            command_string = self.get_command_string()
             if not self.check_savepath_exists():
                 print("save path invalid or insufficient permissions")
                 return
 
             for element_idx in elements:
                 element = self.parent.elements[element_idx]
-                #TODO: edit file-name to match current element.h5 file path.
-                # self.ViewControl.__dict__["file-name"].item2.setText("")
+                command_string = self.get_command_string(element)
+
                 self.ViewControl.elem.setCurrentIndex(element_idx)    #required to properly update recon_dict
-                recons = self.actions.reconstruct(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir, command_string=command_string)
-                recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons),
+                recons = self.actions.reconstruct_gpu(data, element_idx, element, thetas, parent_dir=self.h5_dir, command_string=command_string)
+                recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons)
                 self.recon = np.array(recons)
 
         self.update_recon_image()
@@ -416,7 +405,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.reconArrChangedSig.emit(recon_dict)
         return
 
-    def get_command_string(self):
+    def get_command_string(self, element):
         options = []
         values = []
         command = "tomocupy recon_steps"
@@ -434,6 +423,8 @@ class LaminographyWidget(QtWidgets.QWidget):
                     value = line_object.item2.text()
                     values.append(value)
                     command += " {}".format(value)
+                if line == "file-name":
+                    command += "tomocupy_data/{}.h5".format(element)
 
         return command
 
