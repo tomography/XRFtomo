@@ -236,41 +236,41 @@ class SaveOptions(object):
 		except Exception as e:
 			print(e)
 
-	def save_dxhdf(self, data, element_names, thetas):
-		'''
-		saves all selected information to a new data exchange hdf5 file following the 
-		dxfile definition at http://dxfile.readthedocs.io/
-
-		uncomment import dxfile.dxtomo as dx
-
-		'''
-		try:
-			fname = QFileDialog.getSaveFileName()[0]
-			if fname == "":
-				raise IOError
-
-			experimenter_affiliation="Argonne National Laboratory" 
-			instrument_name="2-ID-E XRF"  
-			sample_name = "test data set"
-
-			# Open DataExchange file
-			f = dx.File(fname, mode='w')
-			 
-			# Write the Data Exchange HDF5 file.
-			f.add_entry(dx.Entry.experimenter(affiliation={'value': experimenter_affiliation}))
-			f.add_entry(dx.Entry.instrument(name={'value': instrument_name}))
-			f.add_entry(dx.Entry.sample(name={'value': sample_name}))
-
-			f.add_entry(dx.Entry.data(data={'value': data, 'units':'ug/cm^2'}))
-			f.add_entry(dx.Entry.data(theta={'value': thetas, 'units':'degrees'}))
-
-			# file_names = [x.encode('utf-8') for x in file_names]
-			# f.add_entry(dx.Entry.data(fnames={'value': file_names, 'units':'none'}))
-
-			element_names = [x.encode('utf-8') for x in element_names]
-			f.add_entry(dx.Entry.data(elements={'value': element_names, 'units':'none'}))
-
-			f.close()
+	# def save_dxhdf(self, data, element_names, thetas):
+	# 	'''
+	# 	saves all selected information to a new data exchange hdf5 file following the
+	# 	dxfile definition at http://dxfile.readthedocs.io/
+	#
+	# 	uncomment import dxfile.dxtomo as dx
+	#
+	# 	'''
+	# 	try:
+	# 		fname = QFileDialog.getSaveFileName()[0]
+	# 		if fname == "":
+	# 			raise IOError
+	#
+	# 		experimenter_affiliation="Argonne National Laboratory"
+	# 		instrument_name="2-ID-E XRF"
+	# 		sample_name = "test data set"
+	#
+	# 		# Open DataExchange file
+	# 		f = dx.File(fname, mode='w')
+	#
+	# 		# Write the Data Exchange HDF5 file.
+	# 		f.add_entry(dx.Entry.experimenter(affiliation={'value': experimenter_affiliation}))
+	# 		f.add_entry(dx.Entry.instrument(name={'value': instrument_name}))
+	# 		f.add_entry(dx.Entry.sample(name={'value': sample_name}))
+	#
+	# 		f.add_entry(dx.Entry.data(data={'value': data, 'units':'ug/cm^2'}))
+	# 		f.add_entry(dx.Entry.data(theta={'value': thetas, 'units':'degrees'}))
+	#
+	# 		# file_names = [x.encode('utf-8') for x in file_names]
+	# 		# f.add_entry(dx.Entry.data(fnames={'value': file_names, 'units':'none'}))
+	#
+	# 		element_names = [x.encode('utf-8') for x in element_names]
+	# 		f.add_entry(dx.Entry.data(elements={'value': element_names, 'units':'none'}))
+	#
+	# 		f.close()
 
 		except IOError:
 				print("ERROR saving sinogram stack")

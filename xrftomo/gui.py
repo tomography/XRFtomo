@@ -126,8 +126,8 @@ class xrftomoGui(QMainWindow):
         # saveReconArray2npyAction = QAction("reconArr as npy", self)
         # saveReconArray2npyAction.triggered.connect(self.saveReconArray2npy)
 
-        saveToHDFAction = QAction('as HDF file', self)
-        saveToHDFAction.triggered.connect(self.saveToHDF)
+        # saveToHDFAction = QAction('as HDF file', self)
+        # saveToHDFAction.triggered.connect(self.saveToHDF)
 
         saveThetasAction = QAction('Angle information to .txt', self)
         saveThetasAction.triggered.connect(self.saveThetas)
@@ -386,7 +386,7 @@ class xrftomoGui(QMainWindow):
         self.afterConversionMenu.addAction(saveSinogramAction)
         self.afterConversionMenu.addAction(saveSinogram2Action)
         self.afterConversionMenu.addAction(saveThetasAction)
-        self.afterConversionMenu.addAction(saveToHDFAction)
+        # self.afterConversionMenu.addAction(saveToHDFAction)
         self.afterConversionMenu.addAction(saveToNumpyAction)
         self.afterConversionMenu.addAction(saveCorrAnalysisAction)
 
@@ -2028,12 +2028,12 @@ class xrftomoGui(QMainWindow):
     #         print("reconstructed data does not exist")
     #     return
 
-    def saveToHDF(self):
-        try:
-            self.writer.save_dxhdf(self.data, self.elements, self.thetas)
-        except AttributeError:
-            print("projection data do not exist")
-        return 
+    # def saveToHDF(self):
+    #     try:
+    #         self.writer.save_dxhdf(self.data, self.elements, self.thetas)
+    #     except AttributeError:
+    #         print("projection data do not exist")
+    #     return
 
     def saveThetas(self):
         try:
