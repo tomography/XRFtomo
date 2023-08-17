@@ -42,24 +42,17 @@
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWidgets import *
 
-# from matplotlib.figure import Figure
+
 import xrftomo
 import xrftomo.config as config
 from scipy import stats
-# import pandas as pd
-import numpy as np
-# import seaborn as sns
 import matplotlib.pyplot as plt
-import sys
-import matplotlib
 from os.path import expanduser
 from skimage import measure
 from matplotlib.pyplot import *
 from scipy import ndimage as ndi
 from skimage.morphology import remove_small_objects
 from skimage import io
-
-
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
@@ -1146,6 +1139,14 @@ class xrftomoGui(QMainWindow):
             print("method not connected")
         self.recons_list_w4.clear()
         try:
+            #TODO: tried running spatial analysis without reconstructing, it failed. fix this
+            """line 1149, in updateDistanceHisto self.recon_sld_w4.setRange(0, len(self.recon_dict[list(self.recon_dict.keys())[0]]) - 1)
+            IndexError: list
+            index
+            out
+            of
+            range"""
+
             self.recon_sld_w4.setRange(0, len(self.recon_dict[list(self.recon_dict.keys())[0]])-1)
         except TypeError:
             print("run reconstruction first")
@@ -1417,6 +1418,7 @@ class xrftomoGui(QMainWindow):
     def updateScatterRecon(self):
         if self.first_run_recon:
             try:
+                #TODO: ran scatterplot without reconstructing, it failed
                 self.scatterWidget.ROI.endpoints[1].setPos(self.recon.shape[1], self.recon.shape[1])
                 e1 = 0
                 e2 = 0
