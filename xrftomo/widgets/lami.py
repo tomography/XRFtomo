@@ -273,9 +273,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.elementChangedSig.emit(element)
 
     def ySizeChanged(self, ySize):
-        self.ViewControl.start_indx.setText('0')
-        self.ViewControl.end_indx.setText(str(ySize))
-        self.ViewControl.mid_indx.setText(str(ySize//2))
         self.sld.setValue(0)
         self.sld.setMaximum(ySize)
         for key in self.recon_dict.keys():
@@ -288,20 +285,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         return
 
     def update_y_range(self):
-        start_indx = int(self.ViewControl.start_indx.text())
-        end_indx = int(self.ViewControl.end_indx.text())
-        if end_indx >self.data.shape[2]:
-            end_indx = self.data.shape[2]
-            self.ViewControl.end_indx.setText(str(end_indx))
-        if end_indx <= 0:
-            end_indx = self.data.shape[2]
-            self.ViewControl.end_indx.setText(str(end_indx))
-        if start_indx >=end_indx:
-            self.ViewControl.start_indx.setText(str(end_indx-1))
-        if start_indx < 0:
-            self.ViewControl.start_indx.setText(str(0))
-
-        self.sld.setRange(0, end_indx-start_indx - 1)
+        self.sld.setRange(0, self.data.shape[2])
         self.sld.setValue(0)
         self.lcd.display(0)
 

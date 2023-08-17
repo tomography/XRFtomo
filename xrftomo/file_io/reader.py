@@ -148,7 +148,7 @@ def load_thetas(files, theta_tag, method = 1):
         img = h5py.File(files[0], 'r')
         pv = theta_tag.split("/")[-1]
         pvs = img["/".join(theta_tag.split("/")[:-1])]
-        idx = [i.decode("utf-8") for i in pvs].index(pv)
+        idx = [i for i, s in enumerate(pvs) if pv in s.decode("utf8")][0]
         img.close()
 
     for file in files:
@@ -160,7 +160,13 @@ def load_thetas(files, theta_tag, method = 1):
                 theta = float(img[theta_tag][0])
             thetas.append(theta)
         except:
-            print("error reading thetas positiong for file: {}".format(file))
+            try:
+                #TODO: this is stupid, we need to standardize h5 file structure
+                theta = float(img["/".join(theta_tag.split("/")[:-1])][idx].decode("utf-8").split(",")[-1])
+                thetas.append(theta)
+            except:
+                pass
+            print("error reading thetas position for file: {}".format(file))
     return thetas
 
 def load_thetas_file(path_file):

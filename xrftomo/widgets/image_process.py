@@ -62,8 +62,9 @@ class ImageProcessWidget(QtWidgets.QWidget):
     refreshSig = pyqtSignal(name='refreshSig')
     padSig = pyqtSignal(int, int, name="padSig")
 
-    def __init__(self):
+    def __init__(self, parent):
         super(ImageProcessWidget, self).__init__()
+        self.parent = parent
         self.thetas = []
         self.initUI()
 
@@ -105,21 +106,15 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
-        # self.ViewControl.combo2.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         self.ViewControl.padBtn.clicked.connect(self.ViewControl.padding_options.show)
         self.ViewControl.run_padding.clicked.connect(self.pad_params)
-        # self.ViewControl.filter_center.clicked.connect(self.filcen_params)
-        # self.ViewControl.setBackground.clicked.connect(self.pasteBG_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.downsample.clicked.connect(self.downsample_params)
         self.ViewControl.invert.clicked.connect(self.invert_params)
-        # self.ViewControl.histogramButton.clicked.connect(self.histogram)
 
         self.imageView.keyPressSig.connect(self.keyProcess)
-        # self.actions.dataSig.connect(self.send_data)
-        # self.actions.thetaSig.connect(self.send_thetas)
         self.sld.valueChanged.connect(self.imageSliderChanged)
 
         self.x_shifts = None
@@ -413,7 +408,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def downsample_params(self):
         data = self.data[:,:,::2,::2]
         self.dataChangedSig.emit(data)
-        pass
+        return
 
     def background_value_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -447,6 +442,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.imageView.p1.items[2].setValue(0)
         self.imageView.p1.items[3].setValue(0)
         self.imageView.ROI.setPos([0, 0], finish=False)
+        self.parent.prevTab = 1
         self.refreshSig.emit()
 
     # def copyBG_params(self,*img):

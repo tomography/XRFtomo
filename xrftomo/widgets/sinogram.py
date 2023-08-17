@@ -53,8 +53,9 @@ class SinogramWidget(QtWidgets.QWidget):
     sinoChangedSig = pyqtSignal(np.ndarray, name="sinoChangedSig")
     restoreSig = pyqtSignal(name="restoreSig")
 
-    def __init__(self):
+    def __init__(self, parent):
         super(SinogramWidget, self).__init__()
+        self.parent = parent
         self.initUI()
 
     def initUI(self):
@@ -141,17 +142,12 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.freq.returnPressed.connect(self.updateSinoPlot)
         self.ViewControl.phase.returnPressed.connect(self.updateSinoPlot)
         self.ViewControl.offst.returnPressed.connect(self.updateSinoPlot)
-
         self.ViewControl.set2line.clicked.connect(self.fit_curve)
-
         self.ViewControl.fit_line.clicked.connect(self.fitLine_params)
         self.ViewControl.fit_sine.clicked.connect(self.fitSine_params)
         self.ViewControl.fit_y.clicked.connect(self.fitY_params)
         self.ViewControl.clear_data.clicked.connect(self.clrHotspot_params)
-
-        # self.diffView.keyPressSig.connect(self.keyProcess)
         self.imageView.keyPressSig.connect(self.keyProcess)
-
         self.ViewControl.fit_line.setEnabled(False)
         self.ViewControl.fit_sine.setEnabled(False)
         self.ViewControl.fit_y.setEnabled(False)

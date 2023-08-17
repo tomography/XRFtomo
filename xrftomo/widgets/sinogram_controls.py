@@ -38,9 +38,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
 ###########################################################################
 
-
 from PyQt5 import QtCore, QtWidgets
-
 
 class SinogramControlsWidget(QtWidgets.QWidget):
 
@@ -55,7 +53,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         button33size = 98
         button3size = 93      #small button (almost third)
         button4size = 79     #textbox size (less than a third)
-
 
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setFixedWidth(button1size)
@@ -104,7 +101,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.phase.setFixedWidth(button4size)
         self.offst = QtWidgets.QLineEdit("0")
         self.offst.setFixedWidth(button4size)
-
         self.freq_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.freq_sld.setFixedWidth(button4size)
         self.amp_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
@@ -113,14 +109,14 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.phase_sld.setFixedWidth(button4size)
         self.offst_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.offst_sld.setFixedWidth(button4size)
-        freq_lbl = QtWidgets.QLabel("frequency")
-        freq_lbl.setFixedWidth(button4size)
-        amp_lbl = QtWidgets.QLabel("amplitude")
-        amp_lbl.setFixedWidth(button4size)
-        phase_lbl = QtWidgets.QLabel("phase")
-        phase_lbl.setFixedWidth(button4size)
-        offst_lbl = QtWidgets.QLabel("DC offset")
-        offst_lbl.setFixedWidth(button4size)
+        self.freq_lbl = QtWidgets.QLabel("frequency")
+        self.freq_lbl.setFixedWidth(button4size)
+        self.amp_lbl = QtWidgets.QLabel("amplitude")
+        self.amp_lbl.setFixedWidth(button4size)
+        self.phase_lbl = QtWidgets.QLabel("phase")
+        self.phase_lbl.setFixedWidth(button4size)
+        self.offst_lbl = QtWidgets.QLabel("DC offset")
+        self.offst_lbl.setFixedWidth(button4size)
         self.set2line = QtWidgets.QPushButton("set2line")
         self.set2line.setFixedWidth(button1size)
 
@@ -147,6 +143,23 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.fit_y.setVisible(False)
         self.clear_data.setVisible(False)
         self.fit_sine.setVisible(False)
+        self.rot_axis.setVisible(False)
+
+        self.freq.setVisible(False)
+        self.amp.setVisible(False)
+        self.phase.setVisible(False)
+        self.offst.setVisible(False)
+        self.freq_sld.setVisible(False)
+        self.amp_sld.setVisible(False)
+        self.phase_sld.setVisible(False)
+        self.offst_sld.setVisible(False)
+        self.freq_lbl.setVisible(False)
+        self.amp_lbl.setVisible(False)
+        self.phase_lbl.setVisible(False)
+        self.offst_lbl.setVisible(False)
+        self.set2line.setVisible(False)
+        self.btn6.setVisible(False)
+        self.opflow.setVisible(False)
 
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(self.xcorsino)
@@ -190,22 +203,22 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         hb9.addWidget(self.clear_data)
 
         hb10 = QtWidgets.QHBoxLayout()
-        hb10.addWidget(freq_lbl)
+        hb10.addWidget(self.freq_lbl)
         hb10.addWidget(self.freq)
         hb10.addWidget(self.freq_sld)
 
         hb11 = QtWidgets.QHBoxLayout()
-        hb11.addWidget(amp_lbl)
+        hb11.addWidget(self.amp_lbl)
         hb11.addWidget(self.amp)
         hb11.addWidget(self.amp_sld)
 
         hb12 = QtWidgets.QHBoxLayout()
-        hb12.addWidget(phase_lbl)
+        hb12.addWidget(self.phase_lbl)
         hb12.addWidget(self.phase)
         hb12.addWidget(self.phase_sld)
 
         hb13 = QtWidgets.QHBoxLayout()
-        hb13.addWidget(offst_lbl)
+        hb13.addWidget(self.offst_lbl)
         hb13.addWidget(self.offst)
         hb13.addWidget(self.offst_sld)
 

@@ -157,7 +157,10 @@ class FileTableModel(QtCore.QAbstractTableModel):
         bottomRight = self.index(len(self.arrayData), self.COL_THETA)
         try:
             for i in range(len(self.arrayData)):
-                self.arrayData[i].theta = thetas[i]
+                if len(thetas) == 0:
+                    self.arrayData[i].theta = -1
+                else:
+                    self.arrayData[i].theta = thetas[i]
         except:
             print("something is off here")
         self.dataChanged.emit(topLeft, bottomRight)

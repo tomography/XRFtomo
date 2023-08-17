@@ -59,8 +59,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
     reconChangedSig = pyqtSignal(np.ndarray, name='reconChangedSig')
     reconArrChangedSig = pyqtSignal(dict, name='reconArrChangedSig')
 
-    def __init__(self):
+    def __init__(self, parent):
         super(ReconstructionWidget, self).__init__()
+        self.parent = parent
         self.initUI()
 
     def initUI(self):

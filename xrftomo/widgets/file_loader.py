@@ -90,22 +90,21 @@ class FileTableWidget(QWidget):
         data_menu_lbl.setFixedWidth(90)
         self.data_menu = QMenu()
         self.data_menu.setFixedSize(123,25)
-        self.data_menu.triggered.connect(self.data_menu.show)
-        self.data_menu.show()
+        # self.data_menu.setDisabled(True)
+        # self.data_menu.triggered.connect(self.data_menu.show)
+        self.data_menu.aboutToHide.connect(self.menu_event)
 
         element_menu_lbl = QLabel("element tag")
         element_menu_lbl.setFixedWidth(90)
         self.element_menu = QMenu()
         self.element_menu.setFixedSize(123,25)
-        self.element_menu.triggered.connect(self.element_menu.show)
-        self.element_menu.show()
+        self.element_menu.aboutToHide.connect(self.menu_event)
 
         theta_menu_lbl = QLabel("theta tag")
         theta_menu_lbl.setFixedWidth(90)
         self.theta_menu = QMenu()
         self.theta_menu.setFixedSize(123,25)
-        self.theta_menu.triggered.connect(self.theta_menu.show)
-        self.theta_menu.show()
+        self.theta_menu.aboutToHide.connect(self.menu_event)
 
         self.saveDataBtn = QPushButton('Save to Memory')
         self.saveDataBtn.setFixedWidth(221)
@@ -125,11 +124,6 @@ class FileTableWidget(QWidget):
         hBox1.addWidget(element_menu_lbl)
         hBox1.addWidget(self.element_menu)
         hBox1.setAlignment(Qt.AlignLeft)
-        #
-        # hBox2 = QHBoxLayout()
-        # hBox2.addWidget(self.thetaLabel)
-        # hBox2.addWidget(self.thetaLineEdit)
-        # hBox2.setAlignment(Qt.AlignLeft)
 
         hBox3 = QHBoxLayout()
         hBox3.addWidget(theta_menu_lbl)
@@ -172,7 +166,22 @@ class FileTableWidget(QWidget):
         except:
             print("Invalid directory or file; Try a new folder or remove problematic files.")
 
+    def menu_event(self):
+        if not self.data_menu.isVisible():
+            self.data_menu.setHidden(False)
+            self.data_menu.show()
+        if not self.element_menu.isVisible():
+            self.element_menu.setHidden(False)
+            self.element_menu.show()
+        if not self.theta_menu.isVisible():
+            self.theta_menu.setHidden(False)
+            self.theta_menu.show()
+        return
+
     def onLoadDirectory(self, files = None):
+        self.data_menu.clear()
+        self.element_menu.clear()
+        self.theta_menu.clear()
         ext = self.extLineEdit.text()
         self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
         fpath = self.fileTableModel.getFirstCheckedFilePath()
@@ -180,6 +189,7 @@ class FileTableWidget(QWidget):
         if fpath == None:
             self.message.setText('Invalid directory')
             return
+
         self.fileTableModel.setAllChecked(True)
 
         if ".h5" in ext:
@@ -201,9 +211,14 @@ class FileTableWidget(QWidget):
                 self.theta_tag.objectName = "theta_tag"
                 self.theta_tag.setTitle(self.auto_theta_tag)
 
+                tags_exist = self.check_auto_tags()
+                if tags_exist:
+                    pass
+                else:
+                    return
+                # self.data_tag_changed()
 
                 self.element_tag_changed()
-                # self.data_tag_changed()
                 self.theta_tag_changed()
 
             except KeyError:
@@ -219,6 +234,20 @@ class FileTableWidget(QWidget):
                 self.elementTableModel.arrayData[0].use = True
             self.message.setText("Load angle information using txt or csv file")
         return
+
+    def check_auto_tags(self):
+        data_tag_exists = self.auto_data_tag in self.img
+        element_tag_exists = self.auto_element_tag in self.img
+        # theta_tag_exists = self.auto_theta_tag in self.img
+
+        if data_tag_exists and element_tag_exists:
+            return True
+        else:
+            default = list(self.img.keys())[0]
+            self.data_tag.setTitle(default)
+            self.element_tag.setTitle(default)
+            self.theta_tag.setTitle(default)
+            return False
 
     def populate_data_menu(self, obj, menu):
         keys = obj.keys()
@@ -334,7 +363,11 @@ class FileTableWidget(QWidget):
                 lvls.insert(0, i)
             else:
                 break
-        self.theta_tag.setTitle("/".join(lvls))
+        theta_tag = "/".join(lvls)
+        theta_tag = theta_tag.strip(",")
+        self.theta_tag.setTitle(theta_tag)
+        #TODO: errors here when incompatible tags selected
+        #TODO: clear menu items when loading new data
         dataset = self.img[self.theta_tag.title()]
         dataset = np.array(dataset).astype('U13')
         self.create_table(dataset)
@@ -372,8 +405,11 @@ class FileTableWidget(QWidget):
         current_column = self.tablewidget.currentColumn()
         cell_value = self.tablewidget.item(current_row, current_column).text()
         theta_tag = "{}/{}".format(self.theta_tag.title(),self.tablewidget.currentItem().text())
+        theta_tag = theta_tag.strip(",")
         self.theta_tag.setTitle(theta_tag)
         self.theta_tag_changed()
+        self.tablewidget.close()
+
 
     def getElements(self):
         element_tag = self.element_tag
@@ -388,12 +424,16 @@ class FileTableWidget(QWidget):
         return element_names, element_idxs
 
     def element_tag_changed(self):
-        element_tag = self.element_tag.title()
-        element_list = list(self.img[element_tag])
-        elements = [x.decode("utf-8") for x in element_list]
-        self.elementTableModel.loadElementNames(elements)
-        self.elementTableModel.setAllChecked(False)
-        self.elementTableModel.setChecked(self.auto_selected_elements, (True))
+        try:
+            element_tag = self.element_tag.title()
+            element_list = list(self.img[element_tag])
+            elements = [x.decode("utf-8") for x in element_list]
+            self.elementTableModel.loadElementNames(elements)
+            self.elementTableModel.setAllChecked(False)
+            self.elementTableModel.setChecked(self.auto_selected_elements, (True))
+            self.message.setText("")
+        except:
+            self.message.setText("invalid tag option")
         return
 
 
@@ -414,13 +454,14 @@ class FileTableWidget(QWidget):
         theta_tag = self.theta_tag.title()
         try:
             thetas = load_thetas(path_files, theta_tag, 1)
+            self.message.setText("")
         except:
             thetas=[]
-            self.message.setText("directory probably not mounted.")
-            return
+            self.message.setText("directory probably not mounted or incorrect theta tag")
+
         self.fileTableModel.update_thetas(thetas)
         self.fileTableView.sortByColumn(1, 0)
-        self.message.setText("")
+
         return
 
     def onFileTableContextMenu(self, pos):

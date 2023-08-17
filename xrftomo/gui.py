@@ -83,8 +83,8 @@ class xrftomoGui(QMainWindow):
         openH5Action = QAction('open h5 file', self)
         openH5Action.triggered.connect(self.openH5)
 
-        openExchangeAction = QAction('open exchange file', self)
-        openExchangeAction.triggered.connect(self.openExchange)
+        # openExchangeAction = QAction('open exchange file', self)
+        # openExchangeAction.triggered.connect(self.openExchange)
 
         openTiffAction = QAction('open tiff files', self)
         openTiffAction.triggered.connect(self.openTiffs)
@@ -185,9 +185,9 @@ class xrftomoGui(QMainWindow):
         # if theta_auto_completes is None:
         #     theta_auto_completes = []
         self.fileTableWidget = xrftomo.FileTableWidget(self)
-        self.imageProcessWidget = xrftomo.ImageProcessWidget()
-        self.sinogramWidget = xrftomo.SinogramWidget()
-        self.reconstructionWidget = xrftomo.ReconstructionWidget()
+        self.imageProcessWidget = xrftomo.ImageProcessWidget(self)
+        self.sinogramWidget = xrftomo.SinogramWidget(self)
+        self.reconstructionWidget = xrftomo.ReconstructionWidget(self)
         self.laminographyWidget = xrftomo.LaminographyWidget(self)
         self.scatterWidget = xrftomo.ScatterView()
         self.scatterWidgetRecon = xrftomo.ScatterView()
@@ -259,7 +259,7 @@ class xrftomoGui(QMainWindow):
         self.tab_widget.setTabEnabled(3,False)
         self.tab_widget.setTabEnabled(4,False)
 
-        self.tab_widget.currentChanged.connect(self.onTabChanged)
+        # self.tab_widget.currentChanged.connect(self.onTabChanged)
         self.fileTableWidget.saveDataBtn.clicked.connect(self.updateImages)
 
         self.vl.addWidget(self.tab_widget)
@@ -273,7 +273,7 @@ class xrftomoGui(QMainWindow):
         menubar.setNativeMenuBar(False)
         self.fileMenu = menubar.addMenu(' &File')
         self.fileMenu.addAction(openH5Action)
-        self.fileMenu.addAction(openExchangeAction)
+        # self.fileMenu.addAction(openExchangeAction)
         self.fileMenu.addAction(openTiffAction)
         self.fileMenu.addAction(openStackAction)
         self.fileMenu.addAction(openThetaAction)
@@ -870,10 +870,6 @@ class xrftomoGui(QMainWindow):
         self.first_run_w5 = True
         self.onion_layers = None
 
-
-
-
-
     def updateOnion(self):
         if self.first_run_w5:
             e1 = 0
@@ -921,20 +917,7 @@ class xrftomoGui(QMainWindow):
             depth_mask = self.onion_layers == (i+1)
             total_signal[i] = np.sum(img*depth_mask)
 
-
-        #generate histogram
-        # Creating histogram 
-        # fig, axs = plt.subplots(1, 1, figsize =(10, 7), tight_layout = True)
-        # #calculate number of bins based on max value
-        x = (np.arange(num_layers)+1)*eval(self.layer_depth_w5.text())
-        # axs.bar(x, total_signal,width=10)
-        # axs.set_title("Desnity as a function of depth")
-        # axs.set_xlabel("distance (micron)")
-        # axs.set_ylabel("total signal ug/cm^3")
-        #    Show plot
-        # fig.show()
         self.miniHisto_w5.barView.setOpts(x=x,height=total_signal, width=9)
-
         return
 
     def createOnion(self):
@@ -943,9 +926,7 @@ class xrftomoGui(QMainWindow):
         threshold = eval(self.elem1_thresh_w5.text())
         img = self.recon_dict[self.elem1_list_w5.currentText(), self.recon_sld_w5.value()]
         self.onion_slice, self.onion_layers = self.peel_onion(img,threshold,layer_depth)
-
         self.miniReconWidget_w5.reconView.setImage(self.onion_slice)
-
         pass
 
     def peel_onion(self, data, data_thresh, layer_depth):
@@ -1728,10 +1709,21 @@ class xrftomoGui(QMainWindow):
         self.params.load_settings = str(load_settings)
         # return
     def debugMode(self):
-        # self.fileTableWidget.thetaLabel.setVisible(True)
-        # self.fileTableWidget.thetaLineEdit.setVisible(True)
-        self.imageProcessWidget.ViewControl.invert.setVisible(True)
-
+        self.sinogramWidget.ViewControl.freq.setVisible(True)
+        self.sinogramWidget.ViewControl.amp.setVisible(True)
+        self.sinogramWidget.ViewControl.phase.setVisible(True)
+        self.sinogramWidget.ViewControl.offst.setVisible(True)
+        self.sinogramWidget.ViewControl.freq_sld.setVisible(True)
+        self.sinogramWidget.ViewControl.amp_sld.setVisible(True)
+        self.sinogramWidget.ViewControl.phase_sld.setVisible(True)
+        self.sinogramWidget.ViewControl.offst_sld.setVisible(True)
+        self.sinogramWidget.ViewControl.freq_lbl.setVisible(True)
+        self.sinogramWidget.ViewControl.amp_lbl.setVisible(True)
+        self.sinogramWidget.ViewControl.phase_lbl.setVisible(True)
+        self.sinogramWidget.ViewControl.offst_lbl.setVisible(True)
+        self.sinogramWidget.ViewControl.set2line.setVisible(True)
+        self.sinogramWidget.ViewControl.btn6.setVisible(False)
+        self.sinogramWidget.ViewControl.opflow.setVisible(False)
         return
 
     def openFolder(self):
@@ -1767,19 +1759,6 @@ class xrftomoGui(QMainWindow):
         self.afterConversionMenu.setDisabled(True)
         self.editMenu.setDisabled(True)
         self.toolsMenu.setDisabled(True)
-
-    def openExchange(self):
-        fname = QFileDialog.getOpenFileName(self, "Open Folder", QtCore.QDir.currentPath())
-        if fname[0] == '':
-            return
-        data, self.elements, thetas = xrftomo.read_exchange_file(fname)
-
-        sort_angle_index = np.argsort(thetas)
-        self.thetas= thetas[sort_angle_index]
-        self.data = data[:,sort_angle_index,:,:]
-        self.fnames = ["projection {}".format(x) for x in self.thetas]
-        self.updateImages(True)
-        return
 
     def openTiffs(self):
         files = QFileDialog.getOpenFileNames(self, "Open Tiffs", QtCore.QDir.currentPath(), "TIFF (*.tiff *.tif)" )
@@ -1955,18 +1934,18 @@ class xrftomoGui(QMainWindow):
         return string_list
 
 
-    def onTabChanged(self, index):
-        if self.prevTab == self.TAB_FILE:
-            self.loadImages()
-        elif self.prevTab == self.TAB_IMAGE_PROC:
-            pass
-        elif self.prevTab == self.TAB_SINOGRAM:
-            pass
-        elif self.prevTab == self.TAB_RECONSTRUCTION:
-            pass
-        elif self.prevTab == self.TAB_LAMINOGRAPHY:
-            pass
-        self.prevTab = index
+    # def onTabChanged(self, index):
+    #     if self.prevTab == self.TAB_FILE:
+    #         self.loadImages()
+    #     elif self.prevTab == self.TAB_IMAGE_PROC:
+    #         pass
+    #     elif self.prevTab == self.TAB_SINOGRAM:
+    #         pass
+    #     elif self.prevTab == self.TAB_RECONSTRUCTION:
+    #         pass
+    #     elif self.prevTab == self.TAB_LAMINOGRAPHY:
+    #         pass
+    #     self.prevTab = index
 
     # def saveScatterPlot(self):
     #     try:
@@ -2065,6 +2044,7 @@ class xrftomoGui(QMainWindow):
     # def reset_widgets(self):
 
     def updateImages(self, from_open=False):
+        self.prevTab = self.tab_widget.currentIndex()
         self.data_history = []
         self.x_shifts_history = []
         self.y_shifts_history = []
@@ -2122,14 +2102,22 @@ class xrftomoGui(QMainWindow):
         self.refreshUI()
 
     def refreshUI(self):
+        # try:
+        #     self.tab_widget.currentChanged.disconnect()
+        # except:
+        #     pass
+
+        self.tab_widget.removeTab(0)
         self.tab_widget.removeTab(1)
         self.tab_widget.removeTab(2)
         self.tab_widget.removeTab(3)
         self.tab_widget.removeTab(4)
+        self.tab_widget.insertTab(0, self.fileTableWidget, "Files")
         self.tab_widget.insertTab(1, self.imageProcessWidget, "Pre Processing")
         self.tab_widget.insertTab(2, self.sinogramWidget, "Alignment")
         self.tab_widget.insertTab(3, self.reconstructionWidget, "Tomography")
         self.tab_widget.insertTab(4, self.laminographyWidget, "Laminography")
+        self.tab_widget.setCurrentIndex(self.prevTab)
 
     def init_widgets(self):
         self.imageProcessWidget.data = self.data
@@ -2308,15 +2296,7 @@ class xrftomoGui(QMainWindow):
         self.reconstructionWidget.recon = None
         self.laminographyWidget.data = None
         self.laminographyWidget.recon = None
-        #move focus to first tab
-        
         self.refreshUI()
-
-        #clear element drowpdown
-        #clear slice index under reconstruction (maye harmless to leave alone)        
-
-        # self.update_sino([])
-
         return
 
     def undo(self):
