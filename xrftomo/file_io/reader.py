@@ -167,6 +167,21 @@ def load_thetas(files, theta_tag, method = 1):
             except:
                 pass
             print("error reading thetas position for file: {}".format(file))
+
+    if method == 3:
+        for file in files:
+            img = h5py.File(file, 'r')
+            try:
+                theta = float(img["MAPS/extra_pvs_as_csv/"][657].decode("utf-8").split(",")[-1])
+                thetas.append(theta)
+            except:
+                print("trying other pv path")
+            try:
+                theta = float(img["MAPS/Scan/Extra_PVs/Values/"][591].decode("utf-8"))
+                thetas.append(theta)
+            except:
+                print("trying other pv path")
+
     return thetas
 
 def load_thetas_file(path_file):

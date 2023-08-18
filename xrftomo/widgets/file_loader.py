@@ -219,7 +219,12 @@ class FileTableWidget(QWidget):
                 # self.data_tag_changed()
 
                 self.element_tag_changed()
-                self.theta_tag_changed()
+                thetas_loaded = self.try_theta()
+                if not thetas_loaded:
+                    self.theta_tag_changed()
+
+                # self.theta_tag_changed()
+
 
             except KeyError:
                 pass
@@ -235,6 +240,15 @@ class FileTableWidget(QWidget):
             self.message.setText("Load angle information using txt or csv file")
         return
 
+    def try_theta(self):
+        success = False
+        path_files = self.fileTableModel.getAllFiles()
+        thetas = load_thetas(path_files, "dummy", 3)
+        self.fileTableModel.update_thetas(thetas)
+        self.fileTableView.sortByColumn(1, 0)
+        if max(thetas) - min(thetas) > 5:
+            success = True
+        return success
     def check_auto_tags(self):
         data_tag_exists = self.auto_data_tag in self.img
         element_tag_exists = self.auto_element_tag in self.img
