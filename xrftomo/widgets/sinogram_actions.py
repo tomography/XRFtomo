@@ -110,7 +110,7 @@ class SinogramActions(QtWidgets.QWidget):
         return data
 
 
-    def runCenterOfMass(self, element, data, thetas, weighted = True, shift_y = False):
+    def runCenterOfMass(self, element, data):
         '''
         Center of mass alignment
         Variables
@@ -121,54 +121,27 @@ class SinogramActions(QtWidgets.QWidget):
             4D xrf dataset ndarray [elements, theta, y,x]
         thetas: ndarray
             sorted projection angle list
-        weighted: bool
-            run center of mass or weighted center of mass
-        shift_y: bool
-            align in y as well as x
         '''
         num_projections = data.shape[1]
         view_center_x = data.shape[3]//2
         view_center_y = data.shape[2]//2
 
-        x_shifts = []
-        y_shifts = []
         w_x_shifts = []
         w_y_shifts = []
-        tmp_lst = []
-        if weighted:
-            for i in range(num_projections):
-                image = data[element, i]
-                threshold_value = filters.threshold_otsu(image)
-                labeled_foreground = (image > threshold_value).astype(int)
-                properties = regionprops(labeled_foreground, image)
-                #TODO: if input image is blank, WCoM will fail, create an exception case.
-                weighted_center_of_mass = properties[0].weighted_centroid
-                w_x_shifts.append(int(round(view_center_x - weighted_center_of_mass[1])))
-                w_y_shifts.append(int(round(view_center_y - weighted_center_of_mass[0])))
-                data = self.shiftProjection(data, w_x_shifts[i], 0, i)
-                if shift_y:
-                    data = self.shiftProjection(data, 0, w_y_shifts[i], i)
+        for i in range(num_projections):
+            image = data[element, i]
+            threshold_value = filters.threshold_otsu(image)
+            labeled_foreground = (image > threshold_value).astype(int)
+            properties = regionprops(labeled_foreground, image)
+            #TODO: if input image is blank, WCoM will fail, create an exception case.
+            weighted_center_of_mass = properties[0].weighted_centroid
+            w_x_shifts.append(int(round(view_center_x - weighted_center_of_mass[1])))
+            w_y_shifts.append(int(round(view_center_y - weighted_center_of_mass[0])))
+            data = self.shiftProjection(data, w_x_shifts[i], 0, i)
+            data = self.shiftProjection(data, 0, w_y_shifts[i], i)
 
-            if not shift_y:
-                w_y_shifts = np.asarray(w_y_shifts)*0
-            return data, np.asarray(w_x_shifts), -np.asarray(w_y_shifts)
+        return data, np.asarray(w_x_shifts), -np.asarray(w_y_shifts)
 
-        if not weighted:
-            for i in range(num_projections):
-                image = data[element, i]
-                threshold_value = filters.threshold_otsu(image)
-                labeled_foreground = (image > threshold_value).astype(int)
-                properties = regionprops(labeled_foreground, image)
-                center_of_mass = properties[0].centroid
-                x_shifts.append(int(round(view_center_x -center_of_mass[1])))
-                y_shifts.append(int(round(view_center_y - center_of_mass[0])))
-                data = self.shiftProjection(data, x_shifts[i], 0, i)
-                if shift_y:
-                    data = self.shiftProjection(data, 0, y_shifts[i], i)
-
-            if not shift_y:
-                y_shifts = np.asarray(y_shifts)*0
-            return data, np.asarray(x_shifts), -np.asarray(y_shifts)
 
     def shift_all(self, data, x_shifts, y_shifts = None):
         for idx in range(len(x_shifts)):

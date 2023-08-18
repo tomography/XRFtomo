@@ -62,12 +62,8 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.combo3.setFixedWidth(button2size)
 
         self.roi = QtWidgets.QCheckBox("constrain registration to roi")
-        # self.chbx_group = QtWidgets.QButtonGroup()
         self.constrain_x = QtWidgets.QCheckBox("constrain x-axis")
         self.constrain_y = QtWidgets.QCheckBox("constrain y-axis")
-        # self.chbx_group.addButton(self.constrain_x)
-        # self.chbx_group.addButton(self.constrain_y)
-        # self.chbx_group.setExclusive(True)
         self.xcorsino = QtWidgets.QPushButton('xcor sino')
         self.xcorsino.setFixedWidth(button2size)
         self.xcorry = QtWidgets.QPushButton('sum y row.')
@@ -480,48 +476,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb20.addWidget(self.run_move2edge)
 
         self.move2edge.setLayout(vb20)
-
-        #__________Popup window for center of mass button__________
-
-
-        self.com_options = QtWidgets.QWidget()
-        self.com_options.resize(275,300)
-        self.com_options.setWindowTitle('Center of mass options')
-
-        self.weighted_com_checkbox = QtWidgets.QCheckBox("weighted center of mass")
-        self.weighted_com_checkbox.setChecked(True)
-
-        self.com_checkbox = QtWidgets.QCheckBox("center of mass")
-        self.com_checkbox.setChecked(False)
-
-        self.shiftX_checkbox = QtWidgets.QCheckBox("shift in x only")
-        self.shiftX_checkbox.setChecked(True)
-
-        self.shiftXY_checkbox = QtWidgets.QCheckBox("shift in x and y")
-        self.shiftXY_checkbox.setChecked(False)
-
-        button_group1 = QtWidgets.QButtonGroup(self)
-        button_group1.addButton(self.weighted_com_checkbox)
-        button_group1.addButton(self.com_checkbox)
-        button_group1.setExclusive(True)
-
-        button_group2 = QtWidgets.QButtonGroup(self)
-        button_group2.addButton(self.shiftX_checkbox)
-        button_group2.addButton(self.shiftXY_checkbox)
-        button_group2.setExclusive(True)
-
-        self.run_com = QtWidgets.QPushButton("Run center of mass")
-        self.run_com.setFixedWidth(button1size)
-
-        vb30 = QtWidgets.QVBoxLayout()
-        vb30.addWidget(self.weighted_com_checkbox)
-        vb30.addWidget(self.com_checkbox)
-        vb30.addWidget(self.shiftX_checkbox)
-        vb30.addWidget(self.shiftXY_checkbox)
-        vb30.addWidget(self.run_com)
-
-        self.com_options.setLayout(vb30)
-
 
         #__________Popup window for center-find button__________   
 

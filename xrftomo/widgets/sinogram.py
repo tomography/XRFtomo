@@ -99,8 +99,8 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data = None
         self.sinogramData = None
 
-        self.ViewControl.btn1.clicked.connect(self.ViewControl.com_options.show)
-        self.ViewControl.run_com.clicked.connect(self.centerOfMass_params)
+        # self.ViewControl.btn1.clicked.connect(self.ViewControl.com_options.show)
+        self.ViewControl.btn1.clicked.connect(self.centerOfMass_params)
         self.ViewControl.xcorsino.clicked.connect(self.xcorsino_params)
         self.ViewControl.opflow.clicked.connect(self.opFlow_params)
         self.ViewControl.fitPeaks.clicked.connect(self.fitPeaks_params)
@@ -750,13 +750,11 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def centerOfMass_params(self):
         element, row, data, thetas = self.get_params()
-        wcom = self.ViewControl.weighted_com_checkbox.isChecked()
-        shiftXY = self.ViewControl.shiftXY_checkbox.isChecked()
         if self.ViewControl.roi.isChecked():
             roi_data = self.get_roi_data(data)
-            dummy , x_shifts, y_shifts = self.actions.runCenterOfMass(element, roi_data, thetas, wcom, shiftXY)
+            dummy , x_shifts, y_shifts = self.actions.runCenterOfMass(element, roi_data)
         else:
-            dummy, x_shifts, y_shifts = self.actions.runCenterOfMass(element, data, thetas, wcom, shiftXY)
+            dummy, x_shifts, y_shifts = self.actions.runCenterOfMass(element, data)
 
         x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)

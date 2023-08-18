@@ -95,58 +95,39 @@ class xrftomoGui(QMainWindow):
         openThetaAction = QAction('open thetas file', self)
         openThetaAction.triggered.connect(self.openThetas)
 
-        #openTiffFolderAction = QAction("Open Tiff Folder", self)
-        #openTiffFolderAction.triggered.connect(self.openTiffFolder)
+        self.saveProjectionAction = QAction('Projections', self)
+        self.saveProjectionAction.triggered.connect(self.saveProjections)
 
-        saveProjectionAction = QAction('Projections', self)
-        saveProjectionAction.triggered.connect(self.saveProjections)
+        self.saveSinogramAction = QAction('Sinogram', self)
+        self.saveSinogramAction.triggered.connect(self.saveSinogram)
 
-        # saveHotSpotPosAction = QAction('save hotspot positions',self)
-        # saveHotSpotPosAction.triggered.connect(self.save_hotspot_positions)
+        self.saveSinogram2Action = QAction('Sinogram stack', self)
+        self.saveSinogram2Action.triggered.connect(self.saveSinogram2)
 
-        saveSinogramAction = QAction('Sinogram', self)
-        saveSinogramAction.triggered.connect(self.saveSinogram)
+        self.saveReconstructionAction = QAction('Reconstruction', self)
+        self.saveReconstructionAction.triggered.connect(self.saveReconstruction)
 
-        saveSinogram2Action = QAction('Sinogram stack', self)
-        saveSinogram2Action.triggered.connect(self.saveSinogram2)
+        self.saveRecon2npyAction = QAction("recon as npy", self)
+        self.saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
+        self.saveRecon2npyAction.setVisible(False)
 
-        saveReconstructionAction = QAction('Reconstruction', self)
-        saveReconstructionAction.triggered.connect(self.saveReconstruction)
+        self.saveThetasAction = QAction('Angle information to .txt', self)
+        self.saveThetasAction.triggered.connect(self.saveThetas)
 
-        saveRecon2npyAction = QAction("recon as npy", self)
-        saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
+        self.saveToNumpyAction = QAction("as Numpy file", self)
+        self.saveToNumpyAction.triggered.connect(self.saveToNumpy)
+        self.saveToNumpyAction.setVisible(False)
 
-        # saveReconArray2npyAction = QAction("reconArr as npy", self)
-        # saveReconArray2npyAction.triggered.connect(self.saveReconArray2npy)
+        self.saveAlignemtInfoAction = QAction("Alignment", self)
+        self.saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
 
-        # saveToHDFAction = QAction('as HDF file', self)
-        # saveToHDFAction.triggered.connect(self.saveToHDF)
-
-        saveThetasAction = QAction('Angle information to .txt', self)
-        saveThetasAction.triggered.connect(self.saveThetas)
-
-        saveToNumpyAction = QAction("as Numpy file", self)
-        saveToNumpyAction.triggered.connect(self.saveToNumpy)
-
-        saveAlignemtInfoAction = QAction("Alignment", self)
-        saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
-
-        saveCorrAnalysisAction = QAction("Corelation Analysis", self)
-        saveCorrAnalysisAction.triggered.connect(self.saveCorrAlsys)
-
-
-
-        runTransRecAction = QAction("Transmission Recon", self)
-        #runTransRecAction.triggered.connect(self.runTransReconstruct)
-
-        # selectImageTagAction = QAction("Select Image Tag", self)
-        #selectImageTagAction.triggered.connect(self.selectImageTag)
+        self.saveCorrAnalysisAction = QAction("Corelation Analysis", self)
+        self.saveCorrAnalysisAction.triggered.connect(self.saveCorrAlsys)
+        self.saveCorrAnalysisAction.setVisible(False)
 
         undoAction = QAction('Undo (Ctrl+Z)', self)
         undoAction.triggered.connect(self.undo)
         undoAction.setShortcut('Ctrl+Z')
-
-        preferencesAction = QAction("exit preferences")
 
         setAspectratio = QAction("lock aspect ratio",self)
         setAspectratio.setCheckable(True)
@@ -155,26 +136,13 @@ class xrftomoGui(QMainWindow):
         restoreAction = QAction("Restore", self)
         restoreAction.triggered.connect(self.restore)
 
-        keyMapAction = QAction('key map settings', self)
-        keyMapAction.triggered.connect(self.keyMapSettings)
+        self.keyMapAction = QAction('key map settings', self)
+        self.keyMapAction.triggered.connect(self.keyMapSettings)
+        self.keyMapAction.setVisible(False)
 
-        configAction = QAction('load configuration settings', self)
-        configAction.triggered.connect(self.configSettings)
-
-
-
-
-        # matcherAction = QAction("match template", self)
-        #matcherAction.triggered.connect(self.match_window)
-
-        # saveHotSpotPosAction = QAction("Save Hot Spot Pos", self)
-        #saveHotSpotPosAction.triggered.connect(self.saveHotSpotPos)
-
-        wienerAction = QAction("Wiener", self)
-        #wienerAction.triggered.connect(self.ipWiener)
-
-        # externalImageRegAction = QAction("External Image Registaration", self)
-        #externalImageRegAction.triggered.connect(self.externalImageReg)
+        self.configAction = QAction('load configuration settings', self)
+        self.configAction.triggered.connect(self.configSettings)
+        self.configAction.setVisible(False)
 
         ###
         self.frame = QtWidgets.QFrame()
@@ -273,51 +241,47 @@ class xrftomoGui(QMainWindow):
         menubar.setNativeMenuBar(False)
         self.fileMenu = menubar.addMenu(' &File')
         self.fileMenu.addAction(openH5Action)
-        # self.fileMenu.addAction(openExchangeAction)
         self.fileMenu.addAction(openTiffAction)
         self.fileMenu.addAction(openStackAction)
         self.fileMenu.addAction(openThetaAction)
-        ##self.fileMenu.addAction(openFileAction)
-        #self.fileMenu.addAction(openFolderAction)
-        #self.fileMenu.addAction(openTiffFolderAction)
         self.fileMenu.addAction(exitAction)
         self.fileMenu.addAction(closeAction)
 
         self.editMenu = menubar.addMenu(" &Edit")
         self.editMenu.addAction(undoAction)
-        self.editMenu.addAction(preferencesAction)
-        # self.editMenu.addAction(matcherAction)
-        # self.editMenu.addAction(saveHotSpotPosAction)
-        # self.editMenu.addAction(alignHotSpotPosAction)
-        # self.editMenu.addAction(externalImageRegAction)
         self.editMenu.addAction(restoreAction)
         self.editMenu.setDisabled(True)
 
         analysis = QMenu('Analysis', self)
-        # corrElemAction = QAction('Correlate Elements', self)
-        # analysis.addAction(corrElemAction)
-        # corrElemAction.triggered.connect(self.corrElem)
+        #TODO: find way to correlate elements without addind seaborn or new dependency
+        # self.corrElemAction = QAction('Correlate Elements', self)
+        # analysis.addAction(self.corrElemAction)
+        # self.corrElemAction.triggered.connect(self.corrElem)
+        # self.corrElemAction.setVisible(False)
 
-        scatterPlotAction = QAction('Scatter Plot', self)
-        analysis.addAction(scatterPlotAction)
-        scatterPlotAction.triggered.connect(self.scatterPlot)
+        self.scatterPlotAction = QAction('Scatter Plot', self)
+        analysis.addAction(self.scatterPlotAction)
+        self.scatterPlotAction.triggered.connect(self.scatterPlot)
+        self.scatterPlotAction.setVisible(False)
 
-        scatterPlotReconAction = QAction('Scatter Plot Recon', self)
-        analysis.addAction(scatterPlotReconAction)
-        scatterPlotReconAction.triggered.connect(self.scatterPlotRecon)
+        self.scatterPlotReconAction = QAction('Scatter Plot Recon', self)
+        analysis.addAction(self.scatterPlotReconAction)
+        self.scatterPlotReconAction.triggered.connect(self.scatterPlotRecon)
+        self.scatterPlotReconAction.setVisible(False)
 
-        projWinAction = QAction('reprojection', self)
-        analysis.addAction(projWinAction)
-        projWinAction.triggered.connect(self.projWindow)
+        self.projWinAction = QAction('reprojection', self)
+        analysis.addAction(self.projWinAction)
+        self.projWinAction.triggered.connect(self.projWindow)
 
-        pixelDistanceAction = QAction('spatial analysis', self)
-        analysis.addAction(pixelDistanceAction)
-        pixelDistanceAction.triggered.connect(self.pixDistanceWindow)
+        self.pixelDistanceAction = QAction('spatial analysis', self)
+        analysis.addAction(self.pixelDistanceAction)
+        self.pixelDistanceAction.triggered.connect(self.pixDistanceWindow)
+        self.pixelDistanceAction.setVisible(False)
 
-        layerDensityAction = QAction('onion analysis', self)
-        analysis.addAction(layerDensityAction)
-        layerDensityAction.triggered.connect(self.onionWindow)
-
+        self.layerDensityAction = QAction('onion analysis', self)
+        analysis.addAction(self.layerDensityAction)
+        self.layerDensityAction.triggered.connect(self.onionWindow)
+        self.layerDensityAction.setVisible(False)
 
         hardwareSelect = QMenu("select recon hardware", self)
         ag = QActionGroup(hardwareSelect)
@@ -362,30 +326,25 @@ class xrftomoGui(QMainWindow):
         self.toolsMenu.addMenu(subPixShift)
         self.toolsMenu.setDisabled(True)
 
-        self.settingsMenu = menubar.addMenu(" &Settings")
-        # self.settingsMenu.addAction(hardwareSelect)
-
         self.viewMenu = menubar.addMenu(" &View")
         self.viewMenu.addAction(setAspectratio)
         self.viewMenu.setDisabled(True)
 
         self.afterConversionMenu = menubar.addMenu(' &Save')
-        self.afterConversionMenu.addAction(saveProjectionAction)
-        # self.afterConversionMenu.addAction(saveHotSpotPosAction)
-        self.afterConversionMenu.addAction(saveReconstructionAction)
-        self.afterConversionMenu.addAction(saveRecon2npyAction)
-        # self.afterConversionMenu.addAction(saveReconArray2npyAction)
-        self.afterConversionMenu.addAction(saveAlignemtInfoAction)
-        self.afterConversionMenu.addAction(saveSinogramAction)
-        self.afterConversionMenu.addAction(saveSinogram2Action)
-        self.afterConversionMenu.addAction(saveThetasAction)
-        # self.afterConversionMenu.addAction(saveToHDFAction)
-        self.afterConversionMenu.addAction(saveToNumpyAction)
-        self.afterConversionMenu.addAction(saveCorrAnalysisAction)
+        self.afterConversionMenu.addAction(self.saveProjectionAction)
+        self.afterConversionMenu.addAction(self.saveReconstructionAction)
+        self.afterConversionMenu.addAction(self.saveRecon2npyAction)
+        self.afterConversionMenu.addAction(self.saveAlignemtInfoAction)
+        self.afterConversionMenu.addAction(self.saveSinogramAction)
+        self.afterConversionMenu.addAction(self.saveSinogram2Action)
+        self.afterConversionMenu.addAction(self.saveThetasAction)
+        self.afterConversionMenu.addAction(self.saveToNumpyAction)
+        self.afterConversionMenu.addAction(self.saveCorrAnalysisAction)
 
         self.helpMenu = menubar.addMenu(' &Help')
-        self.helpMenu.addAction(keyMapAction)
-        self.helpMenu.addAction(configAction)
+        self.helpMenu.addAction(self.keyMapAction)
+        self.helpMenu.addAction(self.configAction)
+        self.helpMenu.setVisible(False)
 
         self.afterConversionMenu.setDisabled(True)
         version = "1.1.0"
@@ -1733,6 +1692,20 @@ class xrftomoGui(QMainWindow):
         self.reconstructionWidget.ViewControl.betaName.setVisible(True)
         self.reconstructionWidget.ViewControl.deltaName.setVisible(True)
         self.reconstructionWidget.ViewControl.lThreshLbl.setVisible(True)
+
+        self.scatterPlotAction.setVisible(True)
+        self.scatterPlotReconAction.setVisible(True)
+        self.layerDensityAction.setVisible(True)
+        self.pixelDistanceAction.setVisible(True)
+        self.corrElemAction.setVisible(True)
+
+        self.saveCorrAnalysisAction.setVisible(True)
+        self.saveRecon2npyAction.setVisible(True)
+        self.saveToNumpyAction.setVisible(True)
+
+        self.configAction.setVisible(True)
+        self.keyMapAction.setVisible(True)
+        self.helpMenu.setVisible(True)
         return
 
     def openFolder(self):
@@ -2384,9 +2357,6 @@ class xrftomoGui(QMainWindow):
     def onionWindow(self):
         self.onion_window.show()
         self.updateOnion()
-
-
-
 
     def xy_power(self):
 
