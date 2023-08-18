@@ -62,6 +62,12 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.combo3.setFixedWidth(button2size)
 
         self.roi = QtWidgets.QCheckBox("constrain registration to roi")
+        # self.chbx_group = QtWidgets.QButtonGroup()
+        self.constrain_x = QtWidgets.QCheckBox("constrain x-axis")
+        self.constrain_y = QtWidgets.QCheckBox("constrain y-axis")
+        # self.chbx_group.addButton(self.constrain_x)
+        # self.chbx_group.addButton(self.constrain_y)
+        # self.chbx_group.setExclusive(True)
         self.xcorsino = QtWidgets.QPushButton('xcor sino')
         self.xcorsino.setFixedWidth(button2size)
         self.xcorry = QtWidgets.QPushButton('sum y row.')
@@ -160,6 +166,9 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.set2line.setVisible(False)
         self.btn6.setVisible(False)
         self.opflow.setVisible(False)
+        self.xcorsino.setVisible(False)
+        self.xcorrdy.setVisible(False)
+        self.center.setVisible(False)
 
         hb0 = QtWidgets.QHBoxLayout()
         hb0.addWidget(self.xcorsino)
@@ -251,20 +260,17 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb3.addWidget(self.combo1)
         # vb3.addWidget(self.combo2)
         vb3.addWidget(self.roi)
+        vb3.addWidget(self.constrain_x)
+        vb3.addWidget(self.constrain_y)
         vb3.addLayout(vb1)
         vb3.addLayout(vb2)
         vb3.addLayout(sinoctrls)
         # self.setFixedWidth(button1size)
 
         self.btn3.setVisible(False) #phase corr
-        # self.btn5.setVisible(False)
-        # self.btn6.setVisible(False)
         self.btn9.setVisible(False) #adjust sino
         self.rot_axis.setVisible(False) #rot axis
-
         self.setLayout(vb3)
-
-
 
     #__________Popup window for iterative alignment__________
 

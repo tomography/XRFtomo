@@ -1722,8 +1722,17 @@ class xrftomoGui(QMainWindow):
         self.sinogramWidget.ViewControl.phase_lbl.setVisible(True)
         self.sinogramWidget.ViewControl.offst_lbl.setVisible(True)
         self.sinogramWidget.ViewControl.set2line.setVisible(True)
-        self.sinogramWidget.ViewControl.btn6.setVisible(False)
-        self.sinogramWidget.ViewControl.opflow.setVisible(False)
+        self.sinogramWidget.ViewControl.btn6.setVisible(True)
+        self.sinogramWidget.ViewControl.opflow.setVisible(True)
+        self.sinogramWidget.ViewControl.xcorsino.setVisible(True)
+        self.sinogramWidget.ViewControl.xcorrdy.setVisible(True)
+        self.sinogramWidget.ViewControl.center.setVisible(True)
+
+        self.reconstructionWidget.ViewControl.mid_lbl.setVisible(True)
+        self.reconstructionWidget.ViewControl.mid_indx.setVisible(True)
+        self.reconstructionWidget.ViewControl.betaName.setVisible(True)
+        self.reconstructionWidget.ViewControl.deltaName.setVisible(True)
+        self.reconstructionWidget.ViewControl.lThreshLbl.setVisible(True)
         return
 
     def openFolder(self):

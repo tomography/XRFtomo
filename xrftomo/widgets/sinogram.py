@@ -107,14 +107,12 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.btn2.clicked.connect(self.crossCorrelate_params)
         self.ViewControl.xcorry.clicked.connect(self.xcorry_params)
         self.ViewControl.xcorrdy.clicked.connect(self.xcorrdy_params)
-        self.ViewControl.btn3.clicked.connect(self.phaseCorrelate_params)
         self.ViewControl.btn6.clicked.connect(self.ViewControl.iter_parameters.show)
         self.ViewControl.run_iter_align.clicked.connect(self.iter_align_params)
         self.ViewControl.btn7.clicked.connect(self.alignFromText2_params)
         self.ViewControl.btn5.clicked.connect(self.ViewControl.move2edge.show)
         self.ViewControl.run_move2edge.clicked.connect(self.move2edge_params)
         self.ViewControl.btn9.clicked.connect(self.ViewControl.sino_manip.show)
-        self.ViewControl.run_sino_adjust.clicked.connect(self.adjust_sino_params)
         self.ViewControl.move2center.clicked.connect(self.move2center_params)
         self.ViewControl.find_center_1.clicked.connect(self.center_tomopy_params)
         self.ViewControl.find_center_2.clicked.connect(self.center_Vacek_params)
@@ -152,6 +150,8 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.fit_sine.setEnabled(False)
         self.ViewControl.fit_y.setEnabled(False)
         self.ViewControl.clear_data.setEnabled(False)
+        self.ViewControl.constrain_x.clicked.connect(self.contrain_checked)
+        self.ViewControl.constrain_y.clicked.connect(self.contrain_checked)
 
         self.stack1 = QtWidgets.QWidget()
         self.stack2 = QtWidgets.QWidget()
@@ -189,7 +189,6 @@ class SinogramWidget(QtWidgets.QWidget):
         palette.setColor(palette.Dark, QtGui.QColor(0, 0, 0))
         # set the palette
         self.lcd.setPalette(palette)
-
         self.updateSinoPlot()
 
     def stack1UI(self):
@@ -202,7 +201,6 @@ class SinogramWidget(QtWidgets.QWidget):
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.sinoView)
         vb.addLayout(hb0)
-
         self.stack1.setLayout(vb)
 
     def stack2UI(self):
@@ -215,9 +213,7 @@ class SinogramWidget(QtWidgets.QWidget):
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.imageView)
         vb.addLayout(hb0)
-
         self.stack2.setLayout(vb)
-
 
     def stack3UI(self):
 
@@ -228,23 +224,11 @@ class SinogramWidget(QtWidgets.QWidget):
         hb0.addWidget(self.sld3)
 
         vb = QtWidgets.QVBoxLayout()
-        # vb.addWidget(self.diffView)
         vb.addLayout(hb0)
-
         self.stack3.setLayout(vb)
 
     def display(self,i):
         self.Stack.setCurrentIndex(i)
-
-        # if i == 1:
-
-        #     self.ViewControl.hotspot_mode_chbx.setVisible(True)
-        #     self.ViewControl.hotspot_lbl.setVisible(True)
-        #     self.ViewControl.combo3.setVisible(True)
-        #     self.ViewControl.fit_line.setVisible(True)
-        #     self.ViewControl.fit_y.setVisible(True)
-        #     self.ViewControl.clear_data.setVisible(True)
-        # else:
         self.ViewControl.hotspot_mode_chbx.setVisible(False)
         self.ViewControl.hotspot_lbl.setVisible(False)
         self.ViewControl.combo3.setVisible(False)
@@ -252,6 +236,13 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.fit_y.setVisible(False)
         self.ViewControl.clear_data.setVisible(False)
         #change slider range and label here depending on i
+
+    def contrain_checked(self):
+        last_status = self.sender().isChecked()
+        self.ViewControl.constrain_x.setChecked(False)
+        self.ViewControl.constrain_y.setChecked(False)
+        self.sender().setChecked(last_status)
+        return
 
     def keyProcess(self, command):
         index = self.sld3.value()
@@ -307,7 +298,6 @@ class SinogramWidget(QtWidgets.QWidget):
         if command == "Next":
             self.hotspot_event(1)
             return
-
 
     def showImgProcess(self):
         self.posMat = np.zeros((5,int(self.data.shape[1]),2))
@@ -390,8 +380,6 @@ class SinogramWidget(QtWidgets.QWidget):
         angle = round(self.thetas[index],3)
         self.lcd3.display(angle)
         self.sld3.setValue(index)
-        # self.updateDiffImage(index)
-
 
     def updateSinoPlot(self, thetas= None):
 
@@ -412,11 +400,10 @@ class SinogramWidget(QtWidgets.QWidget):
         except:
             print("eval enter int or float")
 
-
         self.curve = amp*np.sin((freq*np.array(thetas) * np.pi / 180) - phase ) + middl + offst
         self.sinoView.p1.clearPlots()
         self.sinoView.p1.plot(thetas,self.curve, pen=pyqtgraph.mkPen(color='c'))
-
+        return
         
     def fit_curve(self):
         try:
@@ -437,7 +424,6 @@ class SinogramWidget(QtWidgets.QWidget):
             return
         pass
 
-
     def updateDiffImage(self, index):
         element = self.ViewControl.combo1.currentIndex()
         x_index = int(self.data.shape[3] * 0.1)
@@ -448,23 +434,12 @@ class SinogramWidget(QtWidgets.QWidget):
         bi_polar_color_map = pyqtgraph.ColorMap(position, colors)
         lookup_table = bi_polar_color_map.getLookupTable(0.0, 1.0, 256)
 
-
-        # if index < self.data.shape[1]-1:
-        #     img = self.data[element, index] - self.data[element, index+1]
-        #     img = img[y_index:-y_index, x_index:-x_index]
-        # else:
-        #     img = self.data[element, index] - self.data[element, 0]
-        #     img = img[x_index:-x_index, y_index:-y_index]
-
         if index < self.data.shape[1]-1:
             img = self.data[element, index]/2 + self.data[element, index+1]/2
             img = img[y_index:-y_index, x_index:-x_index]
         else:
             img = self.data[element, index]/2 + self.data[element, 0]/2
             img = img[x_index:-x_index, y_index:-y_index]
-
-        # self.diffView.projView.setImage(img, border='w')
-        # self.diffView.projView.setLookupTable(lookup_table)
 
 
     def updateSliderSlot(self, index):
@@ -509,10 +484,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.elementChanged()
         self.sld.setRange(1, self.data.shape[2])
         self.lcd.display(1)
-
-
-
-
+        return
 
     def sinoSliderChanged(self):
         index = self.sld.value()
@@ -563,7 +535,22 @@ class SinogramWidget(QtWidgets.QWidget):
 
     def fitLine_params(self):
         element, x_size, y_size, hs_group, posMat, data = self.get_params_imgView()
-        data, x_shifts, y_shifts = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
+
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            dummy, x_shifts, y_shifts = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, roi_data)
+        else:
+            dummy, x_shifts, y_shifts = self.actions.hotspot2line(element, x_size, y_size, hs_group, posMat, data)
+
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
+        if self.ViewControl.constrain_x.isChecked():
+            x_shifts = np.zeros_like(x_shifts)
+        if self.ViewControl.constrain_y.isChecked():
+            y_shifts =np.zeros_like(y_shifts)
+
+        data = self.actions.shift_all(data, x_shifts, y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts - y_shifts)
         self.ViewControl.clear_data.setEnabled(True)
@@ -572,7 +559,21 @@ class SinogramWidget(QtWidgets.QWidget):
     def fitSine_params(self):
         element, x_size, y_size, hs_group, posMat, data = self.get_params_imgView()
         thetas = self.thetas
-        data, x_shifts, y_shifts = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data, thetas)
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            dummy, x_shifts, y_shifts = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, roi_data)
+        else:
+            dummy, x_shifts, y_shifts = self.actions.hotspot2sine(element, x_size, y_size, hs_group, posMat, data)
+
+        x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
+        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+
+        if self.ViewControl.constrain_x.isChecked():
+            x_shifts = np.zeros_like(x_shifts)
+        if self.ViewControl.constrain_y.isChecked():
+            y_shifts =np.zeros_like(y_shifts)
+
+        data = self.actions.shift_all(data, x_shifts, y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts +y_shifts)
         self.ViewControl.clear_data.setEnabled(True)
@@ -581,6 +582,18 @@ class SinogramWidget(QtWidgets.QWidget):
     def fitY_params(self):
         element, x_size, y_size, hs_group, posMat, data = self.get_params_imgView()
         data, y_shifts = self.actions.setY(element, x_size, y_size, hs_group, posMat, data)
+
+        if self.ViewControl.roi.isChecked():
+            roi_data = self.get_roi_data(data)
+            dummy, y_shifts = self.actions.setY(element, x_size, y_size, hs_group, posMat, roi_data)
+        else:
+            dummy, y_shifts = self.actions.setY(element, x_size, y_size, hs_group, posMat, roi_data)
+
+        if self.ViewControl.constrain_y.isChecked():
+            y_shifts =np.zeros_like(y_shifts)
+
+        x_shifts = np.zeros_like(self.x_shifts)
+        data = self.actions.shift_all(data, x_shifts, y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts + y_shifts)
         self.ViewControl.clear_data.setEnabled(True)
@@ -736,21 +749,24 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def centerOfMass_params(self):
-        #TODO: if roi checked, get partial data and get shifts based on partial data, then adjust full data based on shifts
-        #TODO: alignment methods should just output shifts, and nother function to apply shifts should be separate
         element, row, data, thetas = self.get_params()
         wcom = self.ViewControl.weighted_com_checkbox.isChecked()
         shiftXY = self.ViewControl.shiftXY_checkbox.isChecked()
         if self.ViewControl.roi.isChecked():
             roi_data = self.get_roi_data(data)
-            roi_data , x_shifts, y_shifts = self.actions.runCenterOfMass(element, roi_data, thetas, wcom, shiftXY)
-            data = self.actions.shift_all(data,x_shifts,y_shifts)
+            dummy , x_shifts, y_shifts = self.actions.runCenterOfMass(element, roi_data, thetas, wcom, shiftXY)
         else:
-            data, x_shifts, y_shifts = self.actions.runCenterOfMass(element, data, thetas, wcom, shiftXY)
+            dummy, x_shifts, y_shifts = self.actions.runCenterOfMass(element, data, thetas, wcom, shiftXY)
 
         x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
+        if self.ViewControl.constrain_x.isChecked():
+            x_shifts = np.zeros_like(x_shifts)
+        if self.ViewControl.constrain_y.isChecked():
+            y_shifts =np.zeros_like(y_shifts)
+
+        data = self.actions.shift_all(data, x_shifts, y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
@@ -780,20 +796,22 @@ class SinogramWidget(QtWidgets.QWidget):
 
         if self.ViewControl.roi.isChecked():
             roi_data = self.get_roi_data(data)
-            roi_data , x_shifts, y_shifts = self.actions.runFitPeaks(element, roi_data)
-            data = self.actions.shift_all(data,x_shifts,y_shifts)
+            dummy , x_shifts, y_shifts = self.actions.runFitPeaks(element, roi_data)
         else:
-            data, x_shifts, y_shifts = self.actions.runFitPeaks(element, data)
+            dummy, x_shifts, y_shifts = self.actions.runFitPeaks(element, data)
 
-        #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
         x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
-        #TODO: add a post-alignment function to validate shifts based on image size
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
+        if self.ViewControl.constrain_x.isChecked():
+            x_shifts = np.zeros_like(x_shifts)
+        if self.ViewControl.constrain_y.isChecked():
+            y_shifts =np.zeros_like(y_shifts)
+
+        data = self.actions.shift_all(data, x_shifts, y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
-        pass
-
+        return
 
     def shiftEvent_params(self, shift_dir, col_number):
         sinoData = self.sinogramData
@@ -807,21 +825,23 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def crossCorrelate_params(self):
-        #TODO: if roi checked
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
         if self.ViewControl.roi.isChecked():
             roi_data = self.get_roi_data(data)
-            roi_data , x_shifts, y_shifts = self.actions.crossCorrelate2(element, roi_data)
-            data = self.actions.shift_all(data,x_shifts,y_shifts)
+            dummy , x_shifts, y_shifts = self.actions.crossCorrelate2(element, roi_data)
         else:
-            data, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
+            dummy, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
 
-        #TODO: add a function to check discontinuities in aligment values spcifically for xcor.
         x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
-        #TODO: add a post-alignment function to validate shifts based on image size
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
+        if self.ViewControl.constrain_x.isChecked():
+            x_shifts = np.zeros_like(x_shifts)
+        if self.ViewControl.constrain_y.isChecked():
+            y_shifts =np.zeros_like(y_shifts)
+
+        data = self.actions.shift_all(data, x_shifts, y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
@@ -831,15 +851,19 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         if self.ViewControl.roi.isChecked():
             roi_data = self.get_roi_data(data)
-            roi_data, x_shifts, y_shifts = self.actions.xcor_dysum(element, roi_data)
-            data = self.actions.shift_all(data,x_shifts,y_shifts)
+            dummy, x_shifts, y_shifts = self.actions.xcor_dysum(element, roi_data)
         else:
-            data, x_shifts, y_shifts = self.actions.xcor_dysum(element, data)
+            dummy, x_shifts, y_shifts = self.actions.xcor_dysum(element, data)
 
-        data, x_shifts, y_shifts = self.actions.xcor_dysum(element, data)
         x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
+        if self.ViewControl.constrain_x.isChecked():
+            x_shifts = np.zeros_like(x_shifts)
+        if self.ViewControl.constrain_y.isChecked():
+            y_shifts =np.zeros_like(y_shifts)
+
+        data = self.actions.shift_all(data, x_shifts, y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
@@ -850,14 +874,19 @@ class SinogramWidget(QtWidgets.QWidget):
 
         if self.ViewControl.roi.isChecked():
             roi_data = self.get_roi_data(data)
-            roi_data , x_shifts, y_shifts = self.actions.xcor_ysum(element, roi_data)
-            data = self.actions.shift_all(data,x_shifts,y_shifts)
+            dummy , x_shifts, y_shifts = self.actions.xcor_ysum(element, roi_data)
         else:
-            data, x_shifts, y_shifts = self.actions.xcor_ysum(element, data)
+            dummy, x_shifts, y_shifts = self.actions.xcor_ysum(element, data)
 
         x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
+        if self.ViewControl.constrain_x.isChecked():
+            x_shifts = np.zeros_like(x_shifts)
+        if self.ViewControl.constrain_y.isChecked():
+            y_shifts =np.zeros_like(y_shifts)
+
+        data = self.actions.shift_all(data,x_shifts,y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
@@ -868,78 +897,47 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         if self.ViewControl.roi.isChecked():
             roi_data = self.get_roi_data(data)
-            roi_data , x_shifts = self.actions.xcor_sino(element, layer, roi_data)
-            data = self.actions.shift_all(data,x_shifts)
+            dummy , x_shifts = self.actions.xcor_sino(element, layer, roi_data)
         else:
-            data, x_shifts = self.actions.xcor_sino(element, layer, data)
+            dummy, x_shifts = self.actions.xcor_sino(element, layer, data)
 
         x_shifts = self.actions.validate_alignment(data, x_shifts)
-        self.dataChangedSig.emit(self.data)
+        y_shifts = np.zeros_like(self.y_shifts)
+        data = self.actions.shift_all(data,x_shifts,y_shifts)
+        self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts)
         pass
-
-    def phaseCorrelate_params(self):
-        data = self.data
-        element = self.ViewControl.combo1.currentIndex()
-        data, x_shifts, y_shifts = self.actions.phaseCorrelate(element, data)
-        self.dataChangedSig.emit(data)
-        self.alignmentChangedSig.emit(self.x_shifts+x_shifts, self.y_shifts+y_shifts)
-        return
 
     def sine_fitting_params(self):
         #TODO: sine fitting function
         "https://stackoverflow.com/questions/16716302/how-do-i-fit-a-sine-curve-to-my-data-with-pylab-and-numpy"
         pass
     def move2edge_params(self):
-        #TODO: if roi checked
-
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
-
         valid = self.ViewControl.validate_parameters()
         if not valid:
             return
-
         if self.ViewControl.bottom_checkbox.isChecked():
             loc=0
         else: 
             loc=1
 
         threshold = int(self.ViewControl.threshold_textbox.text())
-
         if self.ViewControl.roi.isChecked():
             roi_data = self.get_roi_data(data)
             y_shifts, roi_data = self.actions.align2edge(element, roi_data, loc, threshold)
-            data = self.actions.shift_all(data,np.zeros_like(y_shifts),y_shifts)
-
         else:
-            y_shifts, data = self.actions.align2edge(element, data, loc, threshold)
+            y_shifts, dummy = self.actions.align2edge(element, data, loc, threshold)
 
+        if self.ViewControl.constrain_y.isChecked():
+            y_shifts =np.zeros_like(y_shifts)
+
+        x_shifts = np.zeros_like(self.x_shifts)
+        data = self.actions.shift_all(data,x_shifts,y_shifts)
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts+y_shifts)
         return
-
-        
-    def adjust_sino_params(self):
-        sinogramData = self.sinogramData
-        data = self.data
-        element = self.ViewControl.combo1.currentIndex()
-
-        valid = self.ViewControl.validate_parameters()
-        if not valid:
-            return
-        shift = int(self.ViewControl.shift_textbox.text())
-        slope = int(self.ViewControl.slope_adjust_textbox.text())
-            
-        x_shifts, data, self.sinogramData = self.actions.slope_adjust(sinogramData, data, shift, slope)
-        x_shifts, dummy = self.actions.validate_alignment(data,x_shifts,self.y_shifts)
-        self.dataChangedSig.emit(data)
-        self.alignmentChangedSig.emit(self.x_shifts+x_shifts, self.y_shifts)
-        return
-
-    # def matchTermplate_params(self):
-    #     self.actions.matchTemmplate()
-    #     pass
 
     def iter_align_params(self):
         data = self.data
@@ -981,12 +979,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.alignmentChangedSig.emit(self.x_shifts+x_shifts, self.y_shifts+y_shifts)
         return
 
-        #save parameters 
-        #run iterative alignment
-        ##maybe put this entire function within 'iter_align_params'
-
-        pass
-
     def alignFromText2_params(self):
         ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
         fileName = QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt) ;; NPY (*.npy)")
@@ -1005,10 +997,6 @@ class SinogramWidget(QtWidgets.QWidget):
         self.dataChangedSig.emit(data)
         self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
-
-    # def alignfromHotspotxt_params(self):
-    #     self.actions.alignfromHotspotxt()
-    #     pass
 
     def get_params(self):
         element = self.ViewControl.combo1.currentIndex()

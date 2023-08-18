@@ -164,23 +164,14 @@ class ReconstructionWidget(QtWidgets.QWidget):
             # self.ViewControl.recon_set.addItem(l)
             self.recon_dict[l] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
-        # self.ViewControl.recon_set.currentIndexChanged.connect(self.recon_combobox_changed)
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
-
-        # self.ViewControl.centerTextBox.setText(str(self.centers[2]))
-        self.ViewControl.mulBtn.setEnabled(False)
-        self.ViewControl.divBtn.setEnabled(False)
         self.ViewControl.end_indx.setText((str(self.data.shape[2])))
         self.ViewControl.mid_indx.setText((str(self.data.shape[2]//2)))
 
         self.sld.setRange(0, self.y_range - 1)
         self.lcd.display(0)
         return
-
-
-
-
 
     def elementChanged(self):
         element = self.ViewControl.combo1.currentIndex()
