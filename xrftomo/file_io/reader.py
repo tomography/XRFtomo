@@ -155,10 +155,21 @@ def load_thetas(files, theta_tag, method = 1):
         try:
             if method ==1:
                 img = h5py.File(file, 'r')
-                theta = float(img["/".join(theta_tag.split("/")[:-2])+"/Values"][idx].decode("utf-8"))
+                try:
+                    # TODO: some files do not have extra_pvs tag within the mda folder causng this method to fail even if
+                    # previous files succeeded;. Try except will then try the legacy h5 structure which will also fail.
+                    theta = float(img["/".join(theta_tag.split("/")[:-2])+"/Values"][idx].decode("utf-8"))
+                    thetas.append(theta)
+                except:
+                    if len(thetas)>2:
+                        print("problem with {}".format(file))
+                        pass
+                    else:
+                        break
+
             elif method ==2:
                 theta = float(img[theta_tag][0])
-            thetas.append(theta)
+                thetas.append(theta)
         except:
             try:
                 #TODO: this is stupid, we need to standardize h5 file structure
