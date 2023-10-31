@@ -40,8 +40,7 @@
 
 
 from PyQt5 import QtCore, QtWidgets
-
-
+from PyQt5.QtWidgets import *
 class ReconstructionControlsWidget(QtWidgets.QWidget):
     def __init__(self):
         super(ReconstructionControlsWidget, self).__init__()
@@ -57,114 +56,67 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
 
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setFixedWidth(button1size)
-        self.method = QtWidgets.QComboBox(self)
-        self.method.setFixedWidth(button1size)
 
-        self.btn = QtWidgets.QPushButton('Reconstruct')
-        self.btn.setFixedWidth(button2size)
-        self.lbl = QtWidgets.QLabel("")
-        self.lbl.setFixedWidth(button3size)
-        self.rmHotspotBtn = QtWidgets.QPushButton('remove hotspot')
-        self.rmHotspotBtn.setFixedWidth(button2size)
-        self.recon_stats = QtWidgets.QPushButton("recon stats")
-        self.recon_stats.setFixedWidth(button2size)
+        self.populate_scroll_area()
 
-        self.start_lbl = QtWidgets.QLabel("bottom row")
-        self.start_lbl.setFixedWidth(button12size)
-        self.start_indx = QtWidgets.QLineEdit("0")
-        self.start_indx.setFixedWidth(button4size)
-        self.end_lbl = QtWidgets.QLabel("top row")
-        self.end_lbl.setFixedWidth(button12size)
-        self.end_indx = QtWidgets.QLineEdit("0")
-        self.end_indx.setFixedWidth(button4size)
-        self.mid_lbl = QtWidgets.QLabel("middle row")
-        self.mid_lbl.setFixedWidth(button12size)
-        self.mid_indx = QtWidgets.QLineEdit("-1")
-        self.mid_indx.setFixedWidth(button4size)
-        self.mid_indx.setDisabled(True)
-
-        self.recon_all = QtWidgets.QCheckBox("reconstruct all elements")
-        self.recon_all.setChecked(False)
-        self.recon_save = QtWidgets.QCheckBox("reconstruct & save simultaneously")
-        self.recon_save.setChecked(False)
-
-        self.itersName = QtWidgets.QLabel("Iteration")
-        self.itersName.setFixedWidth(button12size)
-        self.betaName = QtWidgets.QLabel("Beta")
-        self.betaName.setFixedWidth(button2size)
-        self.deltaName = QtWidgets.QLabel("Delta")
-        self.deltaName.setFixedWidth(button2size)
-        self.lThreshLbl = QtWidgets.QLabel("Lower Threshold")
-        self.lThreshLbl.setFixedWidth(button2size)
-
-        self.iters = QtWidgets.QLineEdit("10")
-        self.iters.setFixedWidth(button4size)
-        self.beta = QtWidgets.QLineEdit("1")
-        self.beta.setFixedWidth(button2size)
-        self.delta = QtWidgets.QLineEdit("0.01")
-        self.delta.setFixedWidth(button2size)
-        self.lThresh = QtWidgets.QLineEdit("0.0")
-        self.lThresh.setFixedWidth(button2size)
-
-        self.maxText = QtWidgets.QLineEdit()
-        self.maxText.setFixedWidth(button2size)
-        self.maxText.setVisible(False)
-        self.minText = QtWidgets.QLineEdit()
-        self.minText.setFixedWidth(button2size)
-        self.minText.setVisible(False)
-
-        self.mid_lbl.setVisible(False)
-        self.mid_indx.setVisible(False)
-        self.betaName.setVisible(False)
-        self.deltaName.setVisible(False)
-        self.lThreshLbl.setVisible(False)
+        self.middle_row_lbl.setVisible(False)
+        self.middle_row_lbl.setVisible(False)
+        self.beta_lbl.setVisible(False)
+        self.delta_lbl.setVisible(False)
+        self.lower_thresh_lbl.setVisible(False)
         self.beta.setVisible(False)
         self.delta.setVisible(False)
-        self.lThresh.setVisible(False)
-
-        startBox = QtWidgets.QHBoxLayout()
-        startBox.addWidget(self.start_lbl)
-        startBox.addWidget(self.start_indx)
-        endBox = QtWidgets.QHBoxLayout()
-        endBox.addWidget(self.end_lbl)
-        endBox.addWidget(self.end_indx)
-        midBox = QtWidgets.QHBoxLayout()
-        midBox.addWidget(self.mid_lbl)
-        midBox.addWidget(self.mid_indx)
-
-        itersBox = QtWidgets.QHBoxLayout()
-        itersBox.addWidget(self.itersName)
-        itersBox.addWidget(self.iters)
-        betaBox = QtWidgets.QHBoxLayout()
-        betaBox.addWidget(self.betaName)
-        betaBox.addWidget(self.beta)
-        deltaBox = QtWidgets.QHBoxLayout()
-        deltaBox.addWidget(self.deltaName)
-        deltaBox.addWidget(self.delta)
-        threshBox = QtWidgets.QHBoxLayout()
-        threshBox.addWidget(self.lThreshLbl)
-        threshBox.addWidget(self.lThresh)
-        reconBox = QtWidgets.QHBoxLayout()
-        reconBox.addWidget(self.btn)
-        reconBox.addWidget(self.recon_stats)
-
-        postReconBox = QtWidgets.QHBoxLayout()
-        postReconBox.addWidget(self.rmHotspotBtn)
+        self.lower_thresh.setVisible(False)
 
         vb = QtWidgets.QVBoxLayout()
         vb.addWidget(self.combo1)
-        vb.addWidget(self.method)
-        vb.addLayout(endBox)
-        vb.addLayout(startBox)
-        vb.addLayout(midBox)
-        vb.addLayout(itersBox)
-        vb.addWidget(self.recon_all)
-        vb.addWidget(self.recon_save)
-        vb.addWidget(self.lbl)
-        vb.addLayout(betaBox)
-        vb.addLayout(deltaBox)
-        vb.addLayout(threshBox)
-        vb.addLayout(reconBox)
-        vb.addLayout(postReconBox)
+        vb.addWidget(self.recon_scroll)
 
         self.setLayout(vb)
+    def populate_scroll_area(self):
+        self.recon_scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
+        self.recon_scroll.setWidgetResizable(True)
+        item_dict = {} #[type(button, file, path, dropdown), descriptions[idx], choices[idx],defaults[idx]]
+        item_dict["method"] = ["dropdown", "reconstruction methods"]
+        item_dict["top_row"] = ["label", "index of top cross section to reconstruct"]
+        item_dict["middle_row"] = ["label", "index of top middle cross section to reconstruct"]
+        item_dict["bottom_row"] = ["label", "index of lower middle cross section to reconstruct"]
+        item_dict["iteration"] = ["label", "number of reconsturction iteration"]
+        item_dict["recon_all"] = ["checkbox", "reconstruct all loaded elements"]
+        item_dict["recon_save"] = ["checkbox", "reconstruct and save simultaneously"]
+        item_dict["beta"] = ["label", "mlem parameter"]
+        item_dict["delta"] = ["label", "mlem parameter"]
+        item_dict["lower_thresh"] = ["label", "cut-off display value"]
+        item_dict["reconstruct"] = ["button", "run reconstruction"]
+        item_dict["recon_stats"] = ["button", "show reconstruction statisticks"]
+        item_dict["remove_hotspot"] = ["button", "remove hotspots from reconstruction"]
+
+        vb_recon = QVBoxLayout()
+        for key in item_dict.keys():
+            widget_type = item_dict[key][0]
+            attrs = item_dict[key]
+            if widget_type == "dropdown":
+                setattr(self, key, QComboBox())
+                vb_recon.addWidget(self.__dict__[key])
+            elif widget_type == "label":
+                line = QHBoxLayout()
+                lbl = key + "_lbl"
+                setattr(self, lbl, QLabel(key))
+                setattr(self, key, QLineEdit(""))
+                line.addWidget(self.__dict__[lbl])
+                line.addWidget(self.__dict__[key])
+                vb_recon.addLayout(line)
+            if widget_type == "checkbox":
+                setattr(self, key, QCheckBox(attrs[1]))
+                vb_recon.addWidget(self.__dict__[key])
+            elif widget_type == "button":
+                setattr(self, key, QPushButton(key))
+                vb_recon.addWidget(self.__dict__[key])
+                self.__dict__[key].setToolTip(attrs[1])
+
+        self.recon_scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+        vb_recon.setSpacing(0)
+        vb_recon.setContentsMargins(0, 0, 0, 0)
+        self.recon_scroll_widget.setLayout(vb_recon)
+        self.recon_scroll.setWidget(self.recon_scroll_widget)
+        return

@@ -40,6 +40,7 @@
 
 
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import *
 
 class ImageProcessControlsWidget(QtWidgets.QWidget):
 
@@ -56,70 +57,23 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         button3size = 93      #small button (almost third)
         button4size = 79     #textbox size (less than a third)
 
+        self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
+        self.scroll.setWidgetResizable(True)
+        self.populate_scroll_area()
+
         self.combo1 = QtWidgets.QComboBox()
         self.combo1.setFixedWidth(button1size)
         self.combo2 = QtWidgets.QComboBox()
         self.combo2.setFixedWidth(button1size)
-        # self.combo3 = QtWidgets.QComboBox(self)
-        # self.combo3.setFixedWidth(button2size)
-
-        self.padBtn = QtWidgets.QPushButton("pad edges")
-        self.padBtn.setFixedWidth(button2size)
-        self.cropBtn = QtWidgets.QPushButton("Crop")
-        self.cropBtn.setFixedWidth(button2size)
-        # self.filter_center = QtWidgets.QPushButton("filter")
-        # self.filter_center.setFixedWidth(button2size)
-        # self.setBackground = QtWidgets.QPushButton("Paste")
-        # self.setBackground.setFixedWidth(button2size)
-        self.deleteProjection = QtWidgets.QPushButton("remove img")
-        self.deleteProjection.setFixedWidth(button2size)
-        self.rm_hotspot = QtWidgets.QPushButton("Remove hotspot")
-        self.rm_hotspot.setFixedWidth(button2size)
-        self.downsample = QtWidgets.QPushButton("downsample")
-        self.downsample.setFixedWidth(button2size)
-        self.invert = QtWidgets.QPushButton("invert values")
-        self.invert.setFixedWidth(button2size)
-
-        self.invert.setVisible(False)
-
-        hb10 = QtWidgets.QHBoxLayout()
-        hb10.addWidget(self.downsample)
-        hb10.addWidget(self.invert)
-
-        hb11 = QtWidgets.QHBoxLayout()
-        hb11.addWidget(self.cropBtn)
-        hb11.addWidget(self.padBtn)
-
-        # hb12 = QtWidgets.QHBoxLayout()
-        # hb12.addWidget(self.filter_center)
-        # hb12.addWidget(self.setBackground)
-
-        hb13 = QtWidgets.QHBoxLayout()
-        hb13.addWidget(self.deleteProjection)
-        hb13.addWidget(self.rm_hotspot)
-
-        vb1 = QtWidgets.QVBoxLayout()
-        # vb1.addLayout(hb1)
-        # vb1.addLayout(hb2)
-
-        # vb2 = QtWidgets.QVBoxLayout()
-        # vb2.addLayout(hb3)
-        # vb2.addLayout(hb4)
-        # vb2.addLayout(hb5)
-
-        vb4 = QtWidgets.QVBoxLayout()
-        vb4.addLayout(hb10)
-        vb4.addLayout(hb11)
-        # vb4.addLayout(hb12)
-        vb4.addLayout(hb13)
-
+        vb1 = QtWidgets.QVBoxLayout() #spacer
         vb5 = QtWidgets.QVBoxLayout()
         vb5.addWidget(self.combo1)
         vb5.addWidget(self.combo2)
         vb5.addLayout(vb1)
-        vb5.addLayout(vb4)
-        # vb5.addLayout(vb2)
+        vb5.addWidget(self.scroll)
         self.setLayout(vb5)
+
+        self.invert.setVisible(False)
 
         #__________Popup window for reshape button__________
         self.reshape_options = QtWidgets.QWidget()
@@ -181,6 +135,42 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb30.addWidget(self.run_padding)
 
         self.padding_options.setLayout(vb30)
+
+
+    def populate_scroll_area(self):
+        item_dict = {} #[type(button, file, path, dropdown), descriptions[idx], choices[idx],defaults[idx]]
+        item_dict["downsample"] = ["button", "downsample by 2x", None, None]
+        item_dict["invert"] = ["button", "invert 2d array", None, None]
+        item_dict["cropBtn"] = ["button", "crop to ROI", None, None]
+        item_dict["padBtn"] = ["button", "add 0 pixels ro edge of image", None, None]
+        item_dict["deleteProjection"] = ["button", "exclude form analysis", None, None]
+        item_dict["rm_hotspot"] = ["button", "remove hotspot", None, None]
+
+        self.line_names = list(item_dict.keys())
+        num_lines = len(self.line_names)
+
+        for key in item_dict.keys():
+            attrs = item_dict[key]
+            if attrs[0] == "button":
+                setattr(self, key, QPushButton(key))
+            elif attrs[0] == "file":
+                setattr(self, key, QPushButton(key))
+            elif attrs[0] == "path":
+                setattr(self, key, QPushButton(key))
+            elif attrs[0] == "dropdown":
+                setattr(self, key, QComboBox(key))
+
+        self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+        self.vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+        for i in range(num_lines):
+            line = self.__dict__[self.line_names[i]]
+            line.objectName = self.line_names[i]
+            self.vbox.addWidget(line)
+        self.vbox.setSpacing(0)
+        self.vbox.setContentsMargins(0, 0, 0, 0)
+        self.scroll_widget.setLayout(self.vbox)
+        self.scroll.setWidget(self.scroll_widget)
+        return
 
     def validate_reshape_parameters(self):
         valid = True

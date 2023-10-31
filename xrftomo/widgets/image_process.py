@@ -327,8 +327,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         sps = self.sub_pixel_shift
-        # hs_group = self.ViewControl.combo3.currentIndex()
-        # hs_number = self.sld.value()
+        hs_group = self.ViewControl.hs_group.currentIndex()
+        hs_number = self.sld.value()
         if command == 'A': #previous projection
             self.sld.setValue(self.sld.value() - 1)
             self.imageSliderChanged()

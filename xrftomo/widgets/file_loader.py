@@ -38,7 +38,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
 ###########################################################################
 
-
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import xrftomo
@@ -246,8 +245,11 @@ class FileTableWidget(QWidget):
         thetas = load_thetas(path_files, "dummy", 3)
         self.fileTableModel.update_thetas(thetas)
         self.fileTableView.sortByColumn(1, 0)
-        if max(thetas) - min(thetas) > 5:
-            success = True
+        try:
+            if max(thetas) - min(thetas) > 5:
+                success = True
+        except:
+            print("thetas is None")
         return success
     def check_auto_tags(self):
         data_tag_exists = self.auto_data_tag in self.img

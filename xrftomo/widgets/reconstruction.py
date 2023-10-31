@@ -92,8 +92,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.combo1.currentIndexChanged.connect(self.update_recon_set)
-        self.ViewControl.btn.clicked.connect(self.reconstruct_params)
-        self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
+        self.ViewControl.reconstruct.clicked.connect(self.reconstruct_params)
+        self.ViewControl.remove_hotspot.clicked.connect(self.rm_hotspot_params)
         # self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
 
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
@@ -166,8 +166,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization
-        self.ViewControl.end_indx.setText((str(self.data.shape[2])))
-        self.ViewControl.mid_indx.setText((str(self.data.shape[2]//2)))
+        self.ViewControl.bottom_row.setText((str(self.data.shape[2])))
+        self.ViewControl.middle_row.setText((str(self.data.shape[2]//2)))
 
         self.sld.setRange(0, self.y_range - 1)
         self.lcd.display(0)
@@ -198,9 +198,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.update_recon_image()
 
     def ySizeChanged(self, ySize):
-        self.ViewControl.start_indx.setText('0')
-        self.ViewControl.end_indx.setText(str(ySize))
-        self.ViewControl.mid_indx.setText(str(ySize//2))
+        self.ViewControl.bottom_row.setText('0')
+        self.ViewControl.top_row.setText(str(ySize))
+        self.ViewControl.middle_row.setText(str(ySize//2))
         self.sld.setValue(0)
         self.sld.setMaximum(ySize)
         for key in self.recon_dict.keys():
@@ -213,36 +213,36 @@ class ReconstructionWidget(QtWidgets.QWidget):
         return
 
     def update_y_range(self):
-        start_indx = int(self.ViewControl.start_indx.text())
-        end_indx = int(self.ViewControl.end_indx.text())
-        if end_indx >self.data.shape[2]:
-            end_indx = self.data.shape[2]
-            self.ViewControl.end_indx.setText(str(end_indx))
-        if end_indx <= 0:
-            end_indx = self.data.shape[2]
-            self.ViewControl.end_indx.setText(str(end_indx))
-        if start_indx >=end_indx:
-            self.ViewControl.start_indx.setText(str(end_indx-1))
-        if start_indx < 0:
-            self.ViewControl.start_indx.setText(str(0))
+        top_row = int(self.ViewControl.top_row.text())
+        bottom_row = int(self.ViewControl.bottom_row.text())
+        if bottom_row >self.data.shape[2]:
+            bottom_row = self.data.shape[2]
+            self.ViewControl.bottom_row.setText(str(bottom_row))
+        if bottom_row <= 0:
+            bottom_row = self.data.shape[2]
+            self.ViewControl.bottom_row.setText(str(bottom_row))
+        if top_row >=bottom_row:
+            self.ViewControl.top_row.setText(str(bottom_row-1))
+        if top_row < 0:
+            self.ViewControl.top_row.setText(str(0))
         self.update_middle_index()
 
-        self.sld.setRange(0, end_indx-start_indx - 1)
+        self.sld.setRange(0, bottom_row-top_row - 1)
         self.sld.setValue(0)
         self.lcd.display(0)
 
     def update_middle_index(self):
-        start_indx = int(self.ViewControl.start_indx.text())
-        end_indx = int(self.ViewControl.end_indx.text())
-        mid_indx = int(self.ViewControl.mid_indx.text())
-        if mid_indx == -1:
-            mid_indx = end_indx//2
-        if mid_indx > end_indx:
-            mid_indx = end_indx
-            self.ViewControl.mid_indx.setText(str(mid_indx))
-        if mid_indx < start_indx:
-            mid_indx = start_indx
-            self.ViewControl.mid_indx.setText(str(mid_indx))
+        top_row = int(self.ViewControl.top_row.text())
+        bottom_row = int(self.ViewControl.bottom_row.text())
+        middle_row = int(self.ViewControl.middle_row.text())
+        if middle_row == -1:
+            middle_row = bottom_row//2
+        if middle_row > bottom_row:
+            middle_row = bottom_row
+            self.ViewControl.middle_row.setText(str(middle_row))
+        if middle_row < top_row:
+            middle_row = top_row
+            self.ViewControl.middle_row.setText(str(middle_row))
 
     def get_recon_stats(self):
         element = self.elements[self.ViewControl.combo1.currentIndex()]
@@ -251,7 +251,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         recon = self.recon_dict[element]
         zero_index = np.where(abs(self.thetas) == abs(self.thetas).min())[0][0]
         middle_index = self.sld.value()
-        row_index = int(eval(self.ViewControl.start_indx.text())) + middle_index
+        row_index = int(eval(self.ViewControl.top_row.text())) + middle_index
         data = self.data[self.elements.index(element)][zero_index]
         data = np.flipud(data)[row_index]
         err, mse = self.actions.recon_stats(recon, middle_index, data, True)
@@ -259,9 +259,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
     # def toggle_middle_index(self):
     #     if self.ViewControl.recon_stats.isChecked():
-    #         self.ViewControl.mid_indx.setEnabled(True)
+    #         self.ViewControl.middle_row.setEnabled(True)
     #     else:
-    #         self.ViewControl.mid_indx.setEnabled(False)
+    #         self.ViewControl.middle_row.setEnabled(False)
 
 
     def rm_hotspot_params(self):
@@ -278,8 +278,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
     def update_recon_dict(self, recon):
         elem = self.ViewControl.combo1.currentText()
         #recon could be a partial reconstruction, account for this by indexing the Y range as well
-        ymin = int(eval(self.ViewControl.start_indx.text()))
-        ymax = int(eval(self.ViewControl.end_indx.text()))
+        ymin = int(eval(self.ViewControl.top_row.text()))
+        ymax = int(eval(self.ViewControl.bottom_row.text()))
         try:
             self.recon_dict[elem][ymin:ymax,:] = recon
         except ValueError:
@@ -327,11 +327,11 @@ class ReconstructionWidget(QtWidgets.QWidget):
         delta = float(self.ViewControl.delta.text())
         iters = int(self.ViewControl.iters.text())
         thetas = self.thetas
-        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
-        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
-        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text())) -start_indx - 1
+        bottom_row = int(self.data.shape[2] - eval(self.ViewControl.top_row.text()))
+        top_row = int(self.data.shape[2] - eval(self.ViewControl.bottom_row.text()))
+        middle_row = int(self.data.shape[2] - eval(self.ViewControl.middle_row.text())) -top_row - 1
 
-        data = self.data[:,:,start_indx:end_indx,:]
+        data = self.data[:,:,top_row:bottom_row,:]
         show_stats = self.ViewControl.recon_stats.isChecked()
         num_xsections = data.shape[2]
         recons = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
@@ -373,7 +373,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
                     shutil.rmtree(savepath)
                 os.makedirs(savepath)
 
-            start_idx = int(eval(self.ViewControl.start_indx.text()))
+            start_idx = int(eval(self.ViewControl.top_row.text()))
             print("working fine")
             for i in range(num_xsections):
                 if method ==8:
@@ -402,8 +402,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
             recon_dict[self.ViewControl.combo1.itemText(element)] = np.array(recons)
             self.recon = np.array(recons)
 
-        self.ViewControl.mulBtn.setEnabled(True)
-        self.ViewControl.divBtn.setEnabled(True)
+        # self.ViewControl.mulBtn.setEnabled(True)
+        # self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()
         self.update_recon_dict(self.recon)
         self.reconChangedSig.emit(self.recon)
@@ -421,12 +421,12 @@ class ReconstructionWidget(QtWidgets.QWidget):
         delta = float(self.ViewControl.delta.text())
         iters = int(self.ViewControl.iters.text())
         thetas = self.thetas
-        end_indx = int(self.data.shape[2] - eval(self.ViewControl.start_indx.text()))
-        start_indx = int(self.data.shape[2] - eval(self.ViewControl.end_indx.text()))
-        mid_indx = int(self.data.shape[2] - eval(self.ViewControl.mid_indx.text()))
-        data = self.data[:,:,start_indx:end_indx,:]
+        bottom_row = int(self.data.shape[2] - eval(self.ViewControl.top_row.text()))
+        top_row = int(self.data.shape[2] - eval(self.ViewControl.bottom_row.text()))
+        middle_row = int(self.data.shape[2] - eval(self.ViewControl.middle_row.text()))
+        data = self.data[:,:,top_row:bottom_row,:]
 
-        self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas,start_indx)
+        self.recon = self.actions.reconstructAll(data, element_names, center, method, beta, delta, iters, thetas,top_row)
         self.ViewControl.mulBtn.setEnabled(True)
         self.ViewControl.divBtn.setEnabled(True)
         self.update_recon_image()

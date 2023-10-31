@@ -162,11 +162,12 @@ def load_thetas(files, theta_tag, method = 1):
         except:
             try:
                 #TODO: this is stupid, we need to standardize h5 file structure
+                img = h5py.File(file, 'r')
                 theta = float(img["/".join(theta_tag.split("/")[:-1])][idx].decode("utf-8").split(",")[-1])
                 thetas.append(theta)
             except:
-                pass
-            print("error reading thetas position for file: {}".format(file))
+                print("error reading thetas position for file: {}".format(file))
+                return
 
     if method == 3:
         for file in files:

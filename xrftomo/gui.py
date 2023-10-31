@@ -133,6 +133,10 @@ class xrftomoGui(QMainWindow):
         setAspectratio.setCheckable(True)
         setAspectratio.triggered.connect(self.toggle_aspect_ratio)
 
+        debugMode = QAction("experimental",self)
+        debugMode.setCheckable(True)
+        debugMode.triggered.connect(self.toggleDebugMode)
+
         restoreAction = QAction("Restore", self)
         restoreAction.triggered.connect(self.restore)
 
@@ -328,6 +332,7 @@ class xrftomoGui(QMainWindow):
 
         self.viewMenu = menubar.addMenu(" &View")
         self.viewMenu.addAction(setAspectratio)
+        self.viewMenu.addAction(debugMode)
         self.viewMenu.setDisabled(True)
 
         self.afterConversionMenu = menubar.addMenu(' &Save')
@@ -388,6 +393,8 @@ class xrftomoGui(QMainWindow):
         self.recon_method_chbx = QtWidgets.QCheckBox("Load last-used reconstruction method")
 
         self.toggleDebugMode()
+        if self.params.experimental:
+            self.toggleDebugMode()
 
         file_box = QtWidgets.QVBoxLayout()
         file_box.addWidget(file_lbl)
@@ -435,6 +442,8 @@ class xrftomoGui(QMainWindow):
                 try:
                     child.setChecked(self.checkbox_states[counter])
                 except:
+                    #TODO:  this gets printed several times then crashes
+
                     print("number of checkbox states changed, appending new settings... ")
                     child.setChecked(False)
                     self.checkbox_states.append(False)
@@ -1637,23 +1646,23 @@ class xrftomoGui(QMainWindow):
         return
 
     def toggleDebugMode(self):
-        if self.params.experimental:
-            self.debugMode()
-            self.params.experimental = False
+        self.params.experimental = not self.params.experimental
+        mode = self.params.experimental
+        self.debugMode(mode)
 
     def toggle_aspect_ratio(self, checkbox_state):
         if checkbox_state:
             self.imageProcessWidget.imageView.p1.vb.setAspectLocked(True)
             self.sinogramWidget.sinoView.p1.vb.setAspectLocked(True)
             self.sinogramWidget.imageView.p1.vb.setAspectLocked(True)
-            self.sinogramWidget.diffView.p1.vb.setAspectLocked(True)
+            # self.sinogramWidget.diffView.p1.vb.setAspectLocked(True)
             self.reconstructionWidget.ReconView.p1.vb.setAspectLocked(True)
             self.laminographyWidget.ReconView.p1.vb.setAspectLocked(True)
         else:
             self.imageProcessWidget.imageView.p1.vb.setAspectLocked(False)
             self.sinogramWidget.sinoView.p1.vb.setAspectLocked(False)
             self.sinogramWidget.imageView.p1.vb.setAspectLocked(False)
-            self.sinogramWidget.diffView.p1.vb.setAspectLocked(False)
+            # self.sinogramWidget.diffView.p1.vb.setAspectLocked(False)
             self.reconstructionWidget.ReconView.p1.vb.setAspectLocked(False)
             self.laminographyWidget.ReconView.p1.vb.setAspectLocked(False)
 
@@ -1667,45 +1676,39 @@ class xrftomoGui(QMainWindow):
 
         self.params.load_settings = str(load_settings)
         # return
-    def debugMode(self):
-        self.sinogramWidget.ViewControl.freq.setVisible(True)
-        self.sinogramWidget.ViewControl.amp.setVisible(True)
-        self.sinogramWidget.ViewControl.phase.setVisible(True)
-        self.sinogramWidget.ViewControl.offst.setVisible(True)
-        self.sinogramWidget.ViewControl.freq_sld.setVisible(True)
-        self.sinogramWidget.ViewControl.amp_sld.setVisible(True)
-        self.sinogramWidget.ViewControl.phase_sld.setVisible(True)
-        self.sinogramWidget.ViewControl.offst_sld.setVisible(True)
-        self.sinogramWidget.ViewControl.freq_lbl.setVisible(True)
-        self.sinogramWidget.ViewControl.amp_lbl.setVisible(True)
-        self.sinogramWidget.ViewControl.phase_lbl.setVisible(True)
-        self.sinogramWidget.ViewControl.offst_lbl.setVisible(True)
-        self.sinogramWidget.ViewControl.set2line.setVisible(True)
-        self.sinogramWidget.ViewControl.btn6.setVisible(True)
-        self.sinogramWidget.ViewControl.opflow.setVisible(True)
-        self.sinogramWidget.ViewControl.xcorsino.setVisible(True)
-        self.sinogramWidget.ViewControl.xcorrdy.setVisible(True)
-        self.sinogramWidget.ViewControl.center.setVisible(True)
+    def debugMode(self, mode):
 
-        self.reconstructionWidget.ViewControl.mid_lbl.setVisible(True)
-        self.reconstructionWidget.ViewControl.mid_indx.setVisible(True)
-        self.reconstructionWidget.ViewControl.betaName.setVisible(True)
-        self.reconstructionWidget.ViewControl.deltaName.setVisible(True)
-        self.reconstructionWidget.ViewControl.lThreshLbl.setVisible(True)
+        self.sinogramWidget.ViewControl.iter.setVisible(mode)
+        self.sinogramWidget.ViewControl.pirt.setVisible(mode)
+        self.sinogramWidget.ViewControl.opflow.setVisible(mode)
+        self.sinogramWidget.ViewControl.xcorsino.setVisible(mode)
+        self.sinogramWidget.ViewControl.xcorrdy.setVisible(mode)
+        self.sinogramWidget.ViewControl.center.setVisible(mode)
+        self.sinogramWidget.ViewControl.phasecor.setVisible(mode)
+        self.sinogramWidget.ViewControl.adjust_sino.setVisible(mode)
+        self.sinogramWidget.ViewControl.rot_axis.setVisible(mode)
 
-        self.scatterPlotAction.setVisible(True)
-        self.scatterPlotReconAction.setVisible(True)
-        self.layerDensityAction.setVisible(True)
-        self.pixelDistanceAction.setVisible(True)
-        self.corrElemAction.setVisible(True)
+        self.reconstructionWidget.ViewControl.middle_row_lbl.setVisible(mode)
+        self.reconstructionWidget.ViewControl.middle_row.setVisible(mode)
+        self.reconstructionWidget.ViewControl.beta_lbl.setVisible(mode)
+        self.reconstructionWidget.ViewControl.delta_lbl.setVisible(mode)
+        self.reconstructionWidget.ViewControl.lower_thresh_lbl.setVisible(mode)
+        self.reconstructionWidget.ViewControl.beta.setVisible(mode)
+        self.reconstructionWidget.ViewControl.delta.setVisible(mode)
+        self.reconstructionWidget.ViewControl.lower_thresh.setVisible(mode)
 
-        self.saveCorrAnalysisAction.setVisible(True)
-        self.saveRecon2npyAction.setVisible(True)
-        self.saveToNumpyAction.setVisible(True)
+        self.scatterPlotAction.setVisible(mode)
+        self.scatterPlotReconAction.setVisible(mode)
+        self.layerDensityAction.setVisible(mode)
+        self.pixelDistanceAction.setVisible(mode)
 
-        self.configAction.setVisible(True)
-        self.keyMapAction.setVisible(True)
-        self.helpMenu.setVisible(True)
+        self.saveCorrAnalysisAction.setVisible(mode)
+        self.saveRecon2npyAction.setVisible(mode)
+        self.saveToNumpyAction.setVisible(mode)
+
+        # self.configAction.setVisible(mode)
+        # self.keyMapAction.setVisible(mode)
+        self.helpMenu.setVisible(mode)
         return
 
     def openFolder(self):

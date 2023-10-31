@@ -69,17 +69,13 @@ class LaminographyControlsWidget(QWidget):
         self.browse_lbl = QLabel("data path: ")
         self.browse = QPushButton("file path: /")
         self.browse.setFixedWidth(button1size)
-
         self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
-
         self.scroll.setWidgetResizable(True)
         self.populate_scroll_area()
-
         self.generate_lbl = QLabel("Generate folder structure in data path")
         self.generate_lbl.setFixedWidth(button12size)
         self.generate = QPushButton("generate")
         self.generate.setFixedWidth(button3size)
-
         self.show_ops = QPushButton("show more")
         self.show_ops.setCheckable(True)
         self.show_ops.setChecked(False)

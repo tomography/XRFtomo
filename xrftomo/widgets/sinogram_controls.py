@@ -39,7 +39,7 @@
 ###########################################################################
 
 from PyQt5 import QtCore, QtWidgets
-
+from PyQt5.QtWidgets import *
 class SinogramControlsWidget(QtWidgets.QWidget):
 
     def __init__(self):
@@ -49,6 +49,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
     def initUI(self):
          #__________Main control window for Alignment Tab__________
         button1size = 270       #long button (1 column)
+        button12size = 200
         button2size = 143     #mid button (2 column)
         button33size = 98
         button3size = 93      #small button (almost third)
@@ -56,223 +57,27 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
         self.combo1 = QtWidgets.QComboBox(self)
         self.combo1.setFixedWidth(button1size)
-        # self.combo2 = QtWidgets.QComboBox(self)
-        # self.combo2.setFixedWidth(button1size)
-        self.combo3 = QtWidgets.QComboBox(self)
-        self.combo3.setFixedWidth(button2size)
 
-        self.roi = QtWidgets.QCheckBox("constrain registration to roi")
-        self.constrain_x = QtWidgets.QCheckBox("constrain x-axis")
-        self.constrain_y = QtWidgets.QCheckBox("constrain y-axis")
-        self.xcorsino = QtWidgets.QPushButton('xcor sino')
-        self.xcorsino.setFixedWidth(button2size)
-        self.xcorry = QtWidgets.QPushButton('sum y row.')
-        self.xcorry.setFixedWidth(button2size)
-        self.btn1 = QtWidgets.QPushButton('center of mass')
-        self.btn1.setFixedWidth(button2size)
-        self.xcorrdy = QtWidgets.QPushButton('sum dy row.')
-        self.xcorrdy.setFixedWidth(button2size)
-        self.btn2 = QtWidgets.QPushButton('cross corr.')
-        self.btn2.setFixedWidth(button2size)
-        self.btn3 = QtWidgets.QPushButton('phase corr.')
-        self.btn3.setFixedWidth(button2size)
-        self.btn5 = QtWidgets.QPushButton('move2edge')
-        self.btn5.setFixedWidth(button2size)
-        self.btn6 = QtWidgets.QPushButton('iter align')
-        self.btn6.setFixedWidth(button2size)
-        self.btn7 = QtWidgets.QPushButton('align from txt')
-        self.btn7.setFixedWidth(button2size)
-        self.btn9 = QtWidgets.QPushButton('adjust_sino')
-        self.btn9.setFixedWidth(button2size)
-        self.center = QtWidgets.QPushButton("Find center")
-        self.center.setFixedWidth(button2size)
-        self.opflow = QtWidgets.QPushButton("optical flow")
-        self.opflow.setFixedWidth(button2size)
-        self.rot_axis = QtWidgets.QPushButton("Set rot. axis")
-        self.rot_axis.setFixedWidth(button2size)
-        self.fitPeaks = QtWidgets.QPushButton("fit peaks")
-        self.fitPeaks.setFixedWidth(button2size)
-        self.lbl = QtWidgets.QLabel("")
-        self.lbl.setFixedWidth(button2size)
-
-        self.freq = QtWidgets.QLineEdit("1")
-        self.freq.setFixedWidth(button4size)
-        self.amp = QtWidgets.QLineEdit("10")
-        self.amp.setFixedWidth(button4size)
-        self.phase = QtWidgets.QLineEdit("0")
-        self.phase.setFixedWidth(button4size)
-        self.offst = QtWidgets.QLineEdit("0")
-        self.offst.setFixedWidth(button4size)
-        self.freq_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.freq_sld.setFixedWidth(button4size)
-        self.amp_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.amp_sld.setFixedWidth(button4size)
-        self.phase_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.phase_sld.setFixedWidth(button4size)
-        self.offst_sld = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.offst_sld.setFixedWidth(button4size)
-        self.freq_lbl = QtWidgets.QLabel("frequency")
-        self.freq_lbl.setFixedWidth(button4size)
-        self.amp_lbl = QtWidgets.QLabel("amplitude")
-        self.amp_lbl.setFixedWidth(button4size)
-        self.phase_lbl = QtWidgets.QLabel("phase")
-        self.phase_lbl.setFixedWidth(button4size)
-        self.offst_lbl = QtWidgets.QLabel("DC offset")
-        self.offst_lbl.setFixedWidth(button4size)
-        self.set2line = QtWidgets.QPushButton("set2line")
-        self.set2line.setFixedWidth(button1size)
-
-        for i in range(5):
-            self.combo3.addItem(str(i + 1))
-        self.fit_line = QtWidgets.QPushButton("fit to a line")
-        self.fit_line.setFixedWidth(button2size)
-        self.fit_sine = QtWidgets.QPushButton("fit to sine curve")
-        self.fit_sine.setFixedWidth(button2size)
-        self.fit_y = QtWidgets.QPushButton("set y")
-        self.fit_y.setFixedWidth(button2size)
-        self.clear_data = QtWidgets.QPushButton("Clear data")
-        self.clear_data.setFixedWidth(button2size)
-        self.hotspot_lbl = QtWidgets.QLabel("hotspot group#")
-        self.hotspot_lbl.setFixedWidth(button2size)
-        self.hotspot_mode_chbx = QtWidgets.QCheckBox("enable hotspot mode")
-        self.hotspot_mode_chbx.setFixedWidth(button1size)
-
-        self.hotspot_mode_chbx.setVisible(False)
-        self.hotspot_lbl.setVisible(False)
-        self.combo3.setVisible(False)
-        self.fit_line.setVisible(False)
-        self.fit_sine.setVisible(False)
-        self.fit_y.setVisible(False)
-        self.clear_data.setVisible(False)
-        self.fit_sine.setVisible(False)
-        self.rot_axis.setVisible(False)
-
-        self.freq.setVisible(False)
-        self.amp.setVisible(False)
-        self.phase.setVisible(False)
-        self.offst.setVisible(False)
-        self.freq_sld.setVisible(False)
-        self.amp_sld.setVisible(False)
-        self.phase_sld.setVisible(False)
-        self.offst_sld.setVisible(False)
-        self.freq_lbl.setVisible(False)
-        self.amp_lbl.setVisible(False)
-        self.phase_lbl.setVisible(False)
-        self.offst_lbl.setVisible(False)
-        self.set2line.setVisible(False)
-        self.btn6.setVisible(False)
-        self.opflow.setVisible(False)
-        self.xcorsino.setVisible(False)
-        self.xcorrdy.setVisible(False)
-        self.center.setVisible(False)
-
-        hb0 = QtWidgets.QHBoxLayout()
-        hb0.addWidget(self.xcorsino)
-        hb0.addWidget(self.xcorrdy)
-
-        hb1 = QtWidgets.QHBoxLayout()
-        hb1.addWidget(self.btn1)
-        hb1.addWidget(self.xcorry)
-
-        hb2 = QtWidgets.QHBoxLayout()
-        hb2.addWidget(self.btn2)
-        hb2.addWidget(self.btn5)
-        # hb2.addWidget(self.btn3)
-
-        hb3 = QtWidgets.QHBoxLayout()
-        hb3.addWidget(self.btn6)
-        hb3.addWidget(self.btn7)
-
-        hb4 = QtWidgets.QHBoxLayout()
-        # hb4.addWidget(self.btn5)
-        # hb4.addWidget(self.btn9)
-
-        hb5 = QtWidgets.QHBoxLayout()
-        hb5.addWidget(self.center)
-        hb5.addWidget(self.opflow)
-
-        hb6 = QtWidgets.QHBoxLayout()
-        # hb6.addWidget(self.rot_axis)
-        hb6.addWidget(self.fitPeaks)
-
-        hb65 = QtWidgets.QHBoxLayout()
-        hb65.addWidget(self.hotspot_mode_chbx)
-        hb7 = QtWidgets.QHBoxLayout()
-        hb7.addWidget(self.hotspot_lbl)
-        hb7.addWidget(self.combo3)
-        hb8 = QtWidgets.QHBoxLayout()
-        hb8.addWidget(self.fit_line)
-        hb8.addWidget(self.fit_y)        
-        hb9 = QtWidgets.QHBoxLayout()
-        hb9.addWidget(self.fit_sine)
-        hb9.addWidget(self.clear_data)
-
-        hb10 = QtWidgets.QHBoxLayout()
-        hb10.addWidget(self.freq_lbl)
-        hb10.addWidget(self.freq)
-        hb10.addWidget(self.freq_sld)
-
-        hb11 = QtWidgets.QHBoxLayout()
-        hb11.addWidget(self.amp_lbl)
-        hb11.addWidget(self.amp)
-        hb11.addWidget(self.amp_sld)
-
-        hb12 = QtWidgets.QHBoxLayout()
-        hb12.addWidget(self.phase_lbl)
-        hb12.addWidget(self.phase)
-        hb12.addWidget(self.phase_sld)
-
-        hb13 = QtWidgets.QHBoxLayout()
-        hb13.addWidget(self.offst_lbl)
-        hb13.addWidget(self.offst)
-        hb13.addWidget(self.offst_sld)
-
-        hb14 = QtWidgets.QHBoxLayout()
-        hb14.addWidget(self.set2line)
-
-        vb1 = QtWidgets.QVBoxLayout()
-        vb1.addLayout(hb0)
-        vb1.addLayout(hb1)
-        vb1.addLayout(hb2)
-        vb1.addLayout(hb3)
-        vb1.addLayout(hb4)
-        vb1.addLayout(hb5)
-        vb1.addLayout(hb6)
-
-        vb2 = QtWidgets.QVBoxLayout()
-        vb2.addLayout(hb65)
-        vb2.addLayout(hb7)
-        vb2.addLayout(hb8)
-        vb2.addLayout(hb9)
-
-        sinoctrls = QtWidgets.QVBoxLayout()
-        sinoctrls.addLayout(hb10)
-        sinoctrls.addLayout(hb11)
-        sinoctrls.addLayout(hb12)
-        sinoctrls.addLayout(hb13)
-        sinoctrls.addLayout(hb14)
-
+        self.scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
+        self.scroll.setWidgetResizable(True)
+        self.populate_scroll_area()
         vb3 = QtWidgets.QVBoxLayout()
         vb3.addWidget(self.combo1)
-        # vb3.addWidget(self.combo2)
-        vb3.addWidget(self.roi)
-        vb3.addWidget(self.constrain_x)
-        vb3.addWidget(self.constrain_y)
-        vb3.addLayout(vb1)
-        vb3.addLayout(vb2)
-        vb3.addLayout(sinoctrls)
-        # self.setFixedWidth(button1size)
+        vb3.addWidget(self.scroll)
 
-        self.btn3.setVisible(False) #phase corr
-        self.btn9.setVisible(False) #adjust sino
-        self.rot_axis.setVisible(False) #rot axis
         self.setLayout(vb3)
+
+        #popup window for sinusoid tools
+        self.populate_sine_controls()
+
+        #popup window for hostpot tools
+        self.populate_hs_controls()
 
     #__________Popup window for iterative alignment__________
 
         self.iter_parameters = QtWidgets.QWidget()
         self.iter_parameters.resize(275,400)
-        self.iter_parameters.setWindowTitle('Alignment Parameters')
+        self.iter_parameters.setWindowTitle('Iter Alignment Parameters')
 
         iter_label = QtWidgets.QLabel("iterations")
         iter_label.setFixedWidth(button2size)
@@ -312,12 +117,29 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.center_textbox.setFixedWidth(button2size)
         self.center_textbox.returnPressed.connect(self.validate_parameters)
 
+        recon_alg_label = QtWidgets.QLabel("recon alg")
+        recon_alg_label.setFixedWidth(button2size)
+        align_alg_label = QtWidgets.QLabel("align alg")
+        align_alg_label.setFixedWidth(button2size)
+        self.joint_btn = QtWidgets.QPushButton("joint")
+        self.joint_btn.setFixedWidth(button3size)
+        self.joint_btn.setCheckable(True)
+        self.joint_btn.setChecked(True)
+        self.seq_btn = QtWidgets.QPushButton("seq")
+        self.seq_btn.setFixedWidth(button3size)
+        self.seq_btn.setCheckable(True)
+
         methodname = ["mlem", "art", "pml_hybrid", "pml_quad", "sirt", "tv"]
-        self.algorithm = QtWidgets.QComboBox()
-        self.algorithm.setFixedWidth(button2size)
+        self.recon_alg = QtWidgets.QComboBox()
+        self.recon_alg.setFixedWidth(button2size)
+
+        iter_group = QtWidgets.QButtonGroup(self)
+        iter_group.addButton(self.joint_btn)
+        iter_group.addButton(self.seq_btn)
+        iter_group.setExclusive(True)
 
         for j in methodname:
-            self.algorithm.addItem(j)
+            self.recon_alg.addItem(j)
 
         upsample_factor_label = QtWidgets.QLabel("upsample factor")
         self.upsample_factor_textbox = QtWidgets.QLineEdit("100")
@@ -332,10 +154,8 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.debug_checkbox.setChecked(True)
         self.debug_checkbox.setFixedWidth(button2size)
 
-        self.run_iter_align = QtWidgets.QPushButton("run iterative alignment")
-        self.run_iter_align.setFixedWidth(button1size)
-
-        # self.run_iter_align.clicked.connect(self.iter_align_params)
+        self.run_alignmnet = QtWidgets.QPushButton("run alignment")
+        self.run_alignmnet.setFixedWidth(button1size)
 
         hb00 = QtWidgets.QHBoxLayout()
         hb00.addWidget(iter_label)
@@ -345,7 +165,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         hb01.addWidget(padding_label)
         hb01.addWidget(self.paddingX_textbox)
         hb01.addWidget(self.paddingY_textbox)
-
 
         hb02 = QtWidgets.QHBoxLayout()
         hb02.addWidget(inner_radius_label)
@@ -363,6 +182,15 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         hb05.addWidget(center_label)
         hb05.addWidget(self.center_textbox)
 
+        hb06 = QtWidgets.QHBoxLayout()
+        hb06.addWidget(recon_alg_label)
+        hb06.addWidget(self.recon_alg)
+
+        hb07 = QtWidgets.QHBoxLayout()
+        hb07.addWidget(align_alg_label)
+        hb07.addWidget(self.joint_btn)
+        hb07.addWidget(self.seq_btn)
+
         vb00 = QtWidgets.QVBoxLayout()
         vb00.addLayout(hb00)
         vb00.addLayout(hb01)
@@ -373,8 +201,9 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         vb00.addLayout(hb05)
         vb00.addWidget(self.save_checkbox)
         vb00.addWidget(self.debug_checkbox)
-        vb00.addWidget(self.algorithm)
-        vb00.addWidget(self.run_iter_align)
+        vb00.addLayout(hb06)
+        vb00.addLayout(hb07)
+        vb00.addWidget(self.run_alignmnet)
 
         #parameter setting logic
 
@@ -405,9 +234,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
         self.iter_parameters.setLayout(vb00)
 
-
-
-        #__________Popup window for sinogram adjustmnet button__________
+    #__________Popup window for sinogram adjustmnet button__________
 
 
         self.sino_manip = QtWidgets.QWidget()
@@ -443,7 +270,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.move2edge = QtWidgets.QWidget()
         self.move2edge.resize(275,300)
         self.move2edge.setWindowTitle('shift object to top/bottom edge')
-
 
         self.top_checkbox = QtWidgets.QCheckBox("move to top edge")
         self.top_checkbox.setChecked(True)
@@ -511,8 +337,242 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.center_parameters.setLayout(vbox)
         self.options.currentIndexChanged.connect(self.display)
 
+        #__________Popup window for PIRT button__________
 
+        self.pirt_parameters = QtWidgets.QWidget()
+        self.pirt_parameters.resize(275,300)
+        self.pirt_parameters.setWindowTitle('pirt options')
 
+        params = {}
+        params["ntau"] = ["lineedit", "", "size of the object"]
+        params["ntheta"] = ["lineedit", "", "number of projection anlges"]
+        params["anglefile"] = ["file", "", "hdf5 file containing projection angles"]
+        params["sinofile"] = ["file", "", "hdf5 file containing sinograms"]
+        params["nslices"] = ["lineedit", "1", "number of 3D slices"]
+        params["nsubcomms"] = ["lineedit", "1", "number of concurrent solves"]
+        params["overall_sweeps"] = ["lineedit", "1", "number of sweeps over all slices"]
+        params["alt_outer_its"] = ["lineedit", "15", "number of outer iterations for alternating solve"]
+        params["alt_sample_its"] = ["lineedit", "5", "number of (inner) iterations for sample solve"]
+        params["alt_shifts_its"] = ["lineedit", "2", "number of (inner) iterations for shifts solve"]
+        params["joint_its"] = ["lineedit", "100", "number of iterations for joint solve"]
+        params["matfile"] = ["file", "", "petsc binary file containing the projection matrix"]
+        params["joint"] = ["binary", "False", "enable joint CoR error correction"]
+        params["alternating"] = ["binary", "False", "enable alternating CoR error correction"]
+        params["regularize"] = ["binary", "False", "enable adaptive L1 regularization"]
+        params["combine_mean"] = ["binary", "False", "combine shifts from concurrent solves via their mean"]
+        params["combine_median"] = ["binary", "False", "combine shifts from concurrent solves via their median"]
+        params["synthetic"] = ["binary", "False", "generate sinogram from sample before reconstruction"]
+
+        self.browse_lbl = QLabel("data path: ")
+        self.browse = QPushButton("file path: /")
+        self.browse.setFixedWidth(button1size)
+        self.scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
+        self.scroll.setWidgetResizable(True)
+        # self.populate_pirt_area()
+        self.generate_lbl = QLabel("Generate folder structure in data path")
+        self.generate_lbl.setFixedWidth(button12size)
+        self.generate = QPushButton("generate")
+        self.generate.setFixedWidth(button3size)
+        self.show_ops = QPushButton("show more")
+        self.show_ops.setCheckable(True)
+        self.show_ops.setChecked(False)
+        self.show_ops.setFixedWidth(button3size)
+
+        self.pirt_options = QtWidgets.QComboBox()
+        self.pirt_options.setFixedWidth(button1size)
+
+        vbox = QtWidgets.QVBoxLayout(self)
+        vbox.addWidget(self.pirt_options)
+        self.pirt_parameters.setLayout(vbox)
+        #TODO: create function that creates widgets based on dictionary input.
+
+    def populate_hs_controls(self):
+        self.hs_scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
+        self.hs_scroll.setWidgetResizable(True)
+        line_dict = {}
+        line_dict["hotspot_mode_chbx"] = ["checkbox","enable hotspot selection"]
+        line_dict["hs_group"] = ["dropdown", "hotspot group", 5]
+        line_dict["fit_line"] = ["button","fit to line"]
+        line_dict["fit_sine"] = ["button","fit to sine"]
+        line_dict["fit_y"] = ["button", "fit along Y"]
+        line_dict["clear_data"] = ["button", "clear data"]
+        vb_hs = QVBoxLayout()
+        for key in line_dict.keys():
+            attrs = line_dict[key]
+            if attrs[0] == "dropdown":
+                setattr(self, key, QComboBox())
+                for i in range(5):
+                    self.__dict__[key].addItem(str(i + 1))
+                vb_hs.addWidget(self.__dict__[key])
+            elif attrs[0] == "checkbox":
+                setattr(self, key, QCheckBox(attrs[1]))
+                vb_hs.addWidget(self.__dict__[key])
+            else:
+                setattr(self, key, QPushButton(key))
+                vb_hs.addWidget(self.__dict__[key])
+
+        self.hs_scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+        vb_hs.setSpacing(0)
+        vb_hs.setContentsMargins(0, 0, 0, 0)
+        self.hs_scroll_widget.setLayout(vb_hs)
+        self.hs_scroll.setWidget(self.hs_scroll_widget)
+
+        self.hotspot_parameters = QtWidgets.QWidget()
+        self.hotspot_parameters.resize(275, 400)
+        self.hotspot_parameters.setWindowTitle('hotspot Alignment Parameters')
+        layout = QVBoxLayout()
+        layout.addWidget(self.hs_scroll)
+        self.hotspot_parameters.setLayout(layout)
+        return
+
+    def populate_sine_controls(self):
+        self.sino_scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
+        self.sino_scroll.setWidgetResizable(True)
+        line_dict = {}
+        line_dict["freq"] = ["frequency", "1"]
+        line_dict["amp"] = ["amplitude", "10"]
+        line_dict["phase"] = ["phase", "0"]
+        line_dict["offst"] = ["offset", "0"]
+        line_dict["set2line"] = [None, None]
+        vb_sine = QVBoxLayout()
+        for key in line_dict.keys():
+            attrs = line_dict[key]
+            if attrs[0] != None :
+                line = QHBoxLayout()
+                lbl = key+"_lbl"
+                sld = key+"_sld"
+                setattr(self, lbl, QLabel(attrs[0]))
+                setattr(self,key, QLineEdit(attrs[1]))
+                setattr(self, sld, QSlider())
+                line.addWidget(self.__dict__[lbl])
+                line.addWidget(self.__dict__[key])
+                line.addWidget(self.__dict__[sld])
+                vb_sine.addLayout(line)
+
+            else:
+                setattr(self, key, QPushButton(key))
+                vb_sine.addWidget(self.__dict__[key])
+
+        self.sino_scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+        vb_sine.setSpacing(0)
+        vb_sine.setContentsMargins(0, 0, 0, 0)
+        self.sino_scroll_widget.setLayout(vb_sine)
+        self.sino_scroll.setWidget(self.sino_scroll_widget)
+
+        self.sino_parameters = QtWidgets.QWidget()
+        self.sino_parameters.resize(275, 400)
+        self.sino_parameters.setWindowTitle('sinusoid Alignment Parameters')
+        layout = QVBoxLayout()
+        layout.addWidget(self.sino_scroll)
+        self.sino_parameters.setLayout(layout)
+        return
+
+    def populate_scroll_area(self):
+        item_dict = {}  # [type(button, file, path, dropdown), descriptions[idx], choices[idx],defaults[idx]]
+
+        item_dict["constrain_roi"] = ["checkbox", "constrain registration to ROI"]
+        item_dict["constrain_x"] = ["checkbox", "constrain registration along x"]
+        item_dict["constrain_y"] = ["checkbox", "constrain registration alng y"]
+        item_dict["xcorsino"] = ["button", "cross correlate sinogram slices"]
+        item_dict["xcorry"] = ["button", "cross correlate sums along horizontal direction"]
+        item_dict["xcorrdy"] = ["button", "cross correlate difference of sums along horizontal direction"]
+        item_dict["edge"] = ["button", "cross correlate difference of sums along horizontal direction"]
+        item_dict["com"] = ["button", "center of mass"]
+        item_dict["xcor"] = ["button", "cross correlate"]
+        item_dict["phasecor"] = ["button", "phas correlation"]
+        item_dict["iter"] = ["button", "iterative alignment"]
+        item_dict["pirt"] = ["button", "pirt alignment"]
+        item_dict["aft"] = ["button", "align from text"]
+        item_dict["adjust_sino"] = ["button", "tweak sinogram slope and position"]
+        item_dict["center"] = ["button", "find and move to center of rotation"]
+        item_dict["opflow"] = ["button", "optical flow alignment"]
+        item_dict["rot_axis"] = ["button", "redefine rotation axis"]
+        item_dict["fit_peaks"] = ["button", "align to brightest spot"]
+        item_dict["sinusoid_align"] = ["button", "define and manipulate sinusoid to align sinogram"]
+        item_dict["hotspot_align"] = ["button", "select hostposts as fiducials to create a sine curve"]
+
+        self.line_names = list(item_dict.keys())
+        num_lines = len(self.line_names)
+
+        for key in item_dict.keys():
+            attrs = item_dict[key]
+            if item_dict[key][0] == "checkbox":
+                setattr(self, key, QCheckBox(attrs[1]))
+            elif item_dict[key][0] == "button":
+                setattr(self, key, QPushButton(key))
+                self.__dict__[key].setToolTip(attrs[1])
+
+        self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+        self.vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+        for i in range(num_lines):
+            line = self.__dict__[self.line_names[i]]
+            line.objectName = self.line_names[i]
+            self.vbox.addWidget(line)
+        self.vbox.setSpacing(0)
+        self.vbox.setContentsMargins(0, 0, 0, 0)
+        self.scroll_widget.setLayout(self.vbox)
+        self.scroll.setWidget(self.scroll_widget)
+
+        self.iter.setVisible(False)
+        self.pirt.setVisible(False)
+        self.opflow.setVisible(False)
+        self.xcorsino.setVisible(False)
+        self.xcorrdy.setVisible(False)
+        self.center.setVisible(False)
+        self.phasecor.setVisible(False)
+        self.adjust_sino.setVisible(False)
+        self.rot_axis.setVisible(False)
+
+        return
+
+    def populate_scroll_area2(self):
+        #TODO: Two scroll widgets cannot share the same widget (i.e lamino-angle) so you have to show/hide only relevant options depending on method.
+
+        #TODO: check if PIRT installed
+        self.pirt_installed = True
+
+        """
+        if self.pirt_installed:
+            item_dict = self.op_parser()
+            self.line_names = list(item_dict.keys())
+            num_lines = len(self.line_names)
+
+            for key in item_dict.keys():
+                attrs = item_dict[key]
+                setattr(self, key, Line(key, attrs))
+
+            self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+            self.vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+            for i in range(num_lines):
+                line = self.__dict__[self.line_names[i]]
+                line.objectName = self.line_names[i]
+                self.vbox.addWidget(line)
+            self.vbox.setSpacing(0)
+            self.vbox.setContentsMargins(0, 0, 0, 0)
+            self.scroll_widget.setLayout(self.vbox)
+            self.scroll.setWidget(self.scroll_widget)
+
+        else:
+            line_names = ["fbp-filter", "rotation-axis", "lamino-angle"]
+            self.line_names = line_names
+            item_dict = {}
+            item_dict["fbp-filter"] = [False, False, "filter choice", ["ramp","shepp"], "shepp"]
+            item_dict["rotation-axis"] = [False, False, "rotation axis given by x-position", None, ""]
+            item_dict["lamino-angle"] = [False, False, "laminography tilt angle", None, "18.25"]
+            for key in line_names:
+                attrs = item_dict[key]
+                setattr(self, key, Line(key, attrs))
+            self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+            self.vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+            for i in range(len(line_names)):
+                line = self.__dict__[line_names[i]]
+                line.objectName = line_names[i]
+                self.vbox.addWidget(line)
+            self.vbox.setSpacing(0)
+            self.vbox.setContentsMargins(0, 0, 0, 0)
+            self.scroll_widget.setLayout(self.vbox)
+            self.scroll.setWidget(self.scroll_widget)
+        """
 
     def stack1UI(self):
         button1size = 250       #long button (1 column)

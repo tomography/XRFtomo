@@ -61,7 +61,7 @@ class SinogramActions(QtWidgets.QWidget):
         self.original_data = None
         self.padding = None
 
-    def runFitPeaks(self,element,data):
+    def run_fit_peaks(self,element,data):
         stack = data[element]
         num_proj = stack.shape[0]
         y_midpt = data[element].shape[1]//2
@@ -946,12 +946,10 @@ class SinogramActions(QtWidgets.QWidget):
         x_shifts = np.zeros(num_projections)
         y_shifts = np.zeros(num_projections)
         prj = data[element]
-        # prj = np.sum(data, axis=0)
         prj = tomopy.remove_nan(prj, val=0.0)
         prj[np.where(prj == np.inf)] = 0.0
 
         thetas = thetas*np.pi/180
-        # self.get_iter_paraeters()
 
         prj, sx, sy, conv = tomopy.align_joint(prj, thetas, iters=iters, pad=pad,
                             blur=blur_bool, rin=rin, rout=rout, center=center, algorithm=algorithm,
@@ -960,8 +958,39 @@ class SinogramActions(QtWidgets.QWidget):
         y_shifts = np.round(sy,2)
 
         for i in range(num_projections):
-            # data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(y_shifts[i])), axis=1)
-            # data[:,i,:,:] = np.roll(data[:,i,:,:], int(np.round(x_shifts[i])), axis=2)
+            data = self.shiftProjection(data, x_shifts[i], y_shifts[i], i)
+
+        return x_shifts, y_shifts, data
+    def sequential_align(self, element, data, thetas, pad, blur_bool, rin, rout, center, algorithm, upsample_factor, save_bool, debug_bool, iters=5):
+        '''
+        sequential re-projection algorithm from TomoPy
+        Variables
+        -----------
+        element: int
+            element index
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+        thetas: ndarray
+            sorted projection angle list
+        iters: int
+            number of iterations
+        '''
+        num_projections = data.shape[1]
+        x_shifts = np.zeros(num_projections)
+        y_shifts = np.zeros(num_projections)
+        prj = data[element]
+        prj = tomopy.remove_nan(prj, val=0.0)
+        prj[np.where(prj == np.inf)] = 0.0
+
+        thetas = thetas*np.pi/180
+
+        prj, sx, sy, conv = tomopy.align_seq(prj, thetas, iters=iters, pad=pad,
+                            blur=blur_bool, rin=rin, rout=rout, center=center, algorithm=algorithm,
+                            upsample_factor=upsample_factor, save=save_bool, debug=debug_bool)
+        x_shifts = np.round(sx,2)
+        y_shifts = np.round(sy,2)
+
+        for i in range(num_projections):
             data = self.shiftProjection(data, x_shifts[i], y_shifts[i], i)
 
         return x_shifts, y_shifts, data
@@ -1121,6 +1150,36 @@ class SinogramActions(QtWidgets.QWidget):
 
         pass
 
+    def pirt(self, ntau, ntheta, anglefile,sinofile, matfile, nslices=1, nsubcommms=1, overall_sweeps=1, alt_outer_its=15,
+             lt_sample_its=5, als_shift_its=2, joint_its=100, joint=False, alternating=False, regularize=False,
+             combine_mean=False, combine_median=False, synthetic=False):
+        """mpirun  -np num_mpi_ranks ./pirt \
+        -runtime-option value
+
+        INPUT
+        anglefile.h5
+        └theta
+          └angles       [float64: 100]
+
+        sinofile.h5
+        |sino0
+        │ └sinogram  [float64: 25600]
+        ├sino1
+        │ └sinogram  [float64: 25600]
+        ......
+
+        OUTPUT
+        sol_0.h5
+        ├cor
+        │ ├shifts[float64: 150]
+        │ └sinogram[float64: 76800]
+        └reconstruction
+        └solution[float64: 262144]
+        mpirun -np 4 /home/beams/MARINF/conda/pirt/src/pirt -sinofile /home/beams/MARINF/conda/pirt/tests/data/softwood_512.h5 -anglefile /home/beams/MARINF/conda/pirt/tests/data/theta_150.h5 -ntau 5>
+
+        mpirun -np 4 /path/to/pirt -sinofile /sino/file.h5 -anglefile /angle/file.h5 -ntau 5
+        """
+
 
     def alignmentDone(self):
         '''send message that alignment has been done'''
@@ -1253,7 +1312,6 @@ class SinogramActions(QtWidgets.QWidget):
         self.posMat[1] = posMat[1] + y_size//2
 
         hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, self.posMat, data)
-#****************
         num_projections = data.shape[1]
         y_shifts = np.zeros(num_projections)
         x_shifts = np.zeros(num_projections)
