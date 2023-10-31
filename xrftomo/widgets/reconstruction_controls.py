@@ -73,7 +73,11 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addWidget(self.recon_scroll)
 
         self.setLayout(vb)
+        self.setMaximumWidth(275)
     def populate_scroll_area(self):
+        button1size = 250       #long button (1 column)
+        button2size = 115     #mid button (2 column)
+
         self.recon_scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
         self.recon_scroll.setWidgetResizable(True)
         item_dict = {} #[type(button, file, path, dropdown), descriptions[idx], choices[idx],defaults[idx]]
@@ -81,7 +85,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         item_dict["top_row"] = ["label", "index of top cross section to reconstruct"]
         item_dict["middle_row"] = ["label", "index of top middle cross section to reconstruct"]
         item_dict["bottom_row"] = ["label", "index of lower middle cross section to reconstruct"]
-        item_dict["iteration"] = ["label", "number of reconsturction iteration"]
+        item_dict["iterations"] = ["label", "number of reconsturction iteration"]
         item_dict["recon_all"] = ["checkbox", "reconstruct all loaded elements"]
         item_dict["recon_save"] = ["checkbox", "reconstruct and save simultaneously"]
         item_dict["beta"] = ["label", "mlem parameter"]
@@ -97,20 +101,25 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
             attrs = item_dict[key]
             if widget_type == "dropdown":
                 setattr(self, key, QComboBox())
+                self.__dict__[key].setFixedWidth(button1size)
                 vb_recon.addWidget(self.__dict__[key])
             elif widget_type == "label":
                 line = QHBoxLayout()
                 lbl = key + "_lbl"
                 setattr(self, lbl, QLabel(key))
                 setattr(self, key, QLineEdit(""))
+                self.__dict__[lbl].setFixedWidth(button2size)
+                self.__dict__[key].setFixedWidth(button2size)
                 line.addWidget(self.__dict__[lbl])
                 line.addWidget(self.__dict__[key])
                 vb_recon.addLayout(line)
             if widget_type == "checkbox":
                 setattr(self, key, QCheckBox(attrs[1]))
+                self.__dict__[key].setFixedWidth(button1size)
                 vb_recon.addWidget(self.__dict__[key])
             elif widget_type == "button":
                 setattr(self, key, QPushButton(key))
+                self.__dict__[key].setFixedWidth(button1size)
                 vb_recon.addWidget(self.__dict__[key])
                 self.__dict__[key].setToolTip(attrs[1])
 
@@ -119,4 +128,13 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb_recon.setContentsMargins(0, 0, 0, 0)
         self.recon_scroll_widget.setLayout(vb_recon)
         self.recon_scroll.setWidget(self.recon_scroll_widget)
+
+        self.top_row.setText("0")
+        self.bottom_row.setText("0")
+        self.middle_row.setText("-1")
+        self.iterations.setText("10")
+        self.beta.setText("1")
+        self.delta.setText("0.01")
+        self.lower_thresh.setText("0.0")
+
         return

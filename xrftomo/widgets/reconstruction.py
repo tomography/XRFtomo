@@ -198,8 +198,8 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.update_recon_image()
 
     def ySizeChanged(self, ySize):
-        self.ViewControl.bottom_row.setText('0')
-        self.ViewControl.top_row.setText(str(ySize))
+        self.ViewControl.top_row.setText('0')
+        self.ViewControl.bottom_row.setText(str(ySize))
         self.ViewControl.middle_row.setText(str(ySize//2))
         self.sld.setValue(0)
         self.sld.setMaximum(ySize)
@@ -373,7 +373,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
                     shutil.rmtree(savepath)
                 os.makedirs(savepath)
 
-            start_idx = int(eval(self.ViewControl.top_row.text()))
+            top_row = int(eval(self.ViewControl.top_row.text()))
             print("working fine")
             for i in range(num_xsections):
                 if method ==8:
@@ -394,7 +394,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
                 recons[i] = recon[0]
                 if self.ViewControl.recon_save.isChecked():
-                    self.writer.save_reconstruction(recon, savedir, start_idx+i)
+                    self.writer.save_reconstruction(recon, savedir, top_row+i)
                 err, mse = self.actions.assessRecon(recon, xsection[0,:,0], thetas, show_plots=False)
                 print(mse)
 

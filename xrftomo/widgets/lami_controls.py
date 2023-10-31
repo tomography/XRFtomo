@@ -66,62 +66,70 @@ class LaminographyControlsWidget(QWidget):
         for k in range(len(methodname)):
             self.method.addItem(methodname[k])
 
-        self.browse_lbl = QLabel("data path: ")
-        self.browse = QPushButton("file path: /")
-        self.browse.setFixedWidth(button1size)
+
         self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
         self.scroll.setWidgetResizable(True)
         self.populate_scroll_area()
-        self.generate_lbl = QLabel("Generate folder structure in data path")
-        self.generate_lbl.setFixedWidth(button12size)
-        self.generate = QPushButton("generate")
-        self.generate.setFixedWidth(button3size)
-        self.show_ops = QPushButton("show more")
-        self.show_ops.setCheckable(True)
-        self.show_ops.setChecked(False)
-        self.show_ops.setFixedWidth(button3size)
-
-        self.rec_btn = QPushButton('Reconstruct')
-        self.rec_btn.setFixedWidth(button2size)
-        self.lbl = QLabel("")
-        self.lbl.setFixedWidth(button3size)
-        self.rmHotspotBtn = QPushButton('remove hotspot')
-        self.rmHotspotBtn.setFixedWidth(button2size)
-        self.recon_stats = QPushButton("recon stats")
-        self.recon_stats.setFixedWidth(button2size)
-        self.recon_all = QCheckBox("reconstruct all elements")
-        self.recon_all.setChecked(False)
-
-        browse_box = QHBoxLayout()
-        browse_box.addWidget(self.browse_lbl)
-        browse_box.addWidget(self.browse)
-
-        generate_box = QHBoxLayout()
-        generate_box.addWidget(self.generate_lbl)
-        generate_box.addWidget(self.generate)
-
-        reconBox = QHBoxLayout()
-        reconBox.addWidget(self.rec_btn)
-        reconBox.addWidget(self.recon_stats)
-
-        postReconBox = QHBoxLayout()
-        postReconBox.addWidget(self.rmHotspotBtn)
+        #
+        #
+        # browse_box = QHBoxLayout()
+        # browse_box.addWidget(self.browse_lbl)
+        # browse_box.addWidget(self.browse)
+        #
+        # generate_box = QHBoxLayout()
+        # generate_box.addWidget(self.generate_lbl)
+        # generate_box.addWidget(self.generate)
+        #
+        # reconBox = QHBoxLayout()
+        # reconBox.addWidget(self.rec_btn)
+        # reconBox.addWidget(self.recon_stats)
+        #
+        # postReconBox = QHBoxLayout()
+        # postReconBox.addWidget(self.rmHotspotBtn)
 
         vb = QVBoxLayout()
         vb.addWidget(self.elem)
-        vb.addWidget(self.method)
-        vb.addLayout(browse_box)
-        vb.addLayout(generate_box)
-        vb.addWidget(self.recon_all)
-        vb.addWidget(self.show_ops)
-        vb.addWidget(self.lbl)
+        # vb.addWidget(self.method)
+        # vb.addLayout(browse_box)
+        # vb.addLayout(generate_box)
+        # vb.addWidget(self.recon_all)
+        # vb.addWidget(self.show_ops)
+        # vb.addWidget(self.lbl)
         vb.addWidget(self.scroll)
-        vb.addLayout(reconBox)
-        vb.addLayout(postReconBox)
+        # vb.addLayout(reconBox)
+        # vb.addLayout(postReconBox)
         self.setLayout(vb)
+        self.setMaximumWidth(275)
 
     def populate_scroll_area(self):
         #TODO: Two scroll widgets cannot share the same widget (i.e lamino-angle) so you have to show/hide only relevant options depending on method.
+        # op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
+        #[QFileDilog / Label] [text input / combobox]  [enable]
+        item_dict = {}
+        item_dict["method"] = [["dropdown"], "filter choice", ["lamni-fbp(cpu)","lamni-fbp(gpu)"], "lamni-fbp(cpu)"]
+        item_dict["browse"] = [["label","path"], "location where data is stored", None, ""]
+        item_dict["generate"] = [["label","button"], "generate folder structure in data path", None, None]
+        item_dict["show_ops"] = [["checkbox"], "show additional options", None, False]
+        item_dict["fbp-filter"] = [["label","dropdown"], "filter choice", ["ramp", "shepp"], "shepp"]
+        item_dict["rotation-axis"] = [["label","linedit"], "rotation axis given by x-position", None, ""]
+        item_dict["lamino-angle"] = [["label","linedit"], "laminography tilt angle", None, "18.25"]
+
+        item_dict2 = {}
+        item_dict["recon_all"] = [["checkbox"], "reconstruct all loaded elements", None, False]
+        item_dict["reconstruct"] = [["button"], "run reconstruction", None, None]
+        item_dict["recon_stats"] = [["button"], "show reconstruction statistics", None, None]
+        item_dict["rm_hotspot"] = [["button"], "laminography tilt angle", None, None]
+
+        # self.browse_lbl = QLabel("data path: ")
+        # self.browse = QPushButton("file path: /")
+        # self.generate_lbl = QLabel("Generate folder structure in data path")
+        # self.generate = QPushButton("generate")
+        # self.show_ops = QPushButton("show more")
+
+        # self.rec_btn = QPushButton('Reconstruct')
+        # self.rmHotspotBtn = QPushButton('remove hotspot')
+        # self.recon_stats = QPushButton("recon stats")
+        # self.recon_all = QCheckBox("reconstruct all elements")
 
         try:
             import tomocupy
@@ -131,12 +139,12 @@ class LaminographyControlsWidget(QWidget):
             print("tomocupy not installed, using CPU settings")
 
         if self.tcp_installed:
-            item_dict = self.op_parser()
-            self.line_names = list(item_dict.keys())
+            tomocupy_dict = self.op_parser()
+            self.line_names = list(tomocupy_dict.keys())
             num_lines = len(self.line_names)
 
-            for key in item_dict.keys():
-                attrs = item_dict[key]
+            for key in tomocupy_dict.keys():
+                attrs = tomocupy_dict[key]
                 setattr(self, key, Line(key, attrs))
 
             self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
@@ -151,12 +159,8 @@ class LaminographyControlsWidget(QWidget):
             self.scroll.setWidget(self.scroll_widget)
 
         else:
-            line_names = ["fbp-filter", "rotation-axis", "lamino-angle"]
+            line_names = list(item_dict.keys())
             self.line_names = line_names
-            item_dict = {}
-            item_dict["fbp-filter"] = [False, False, "filter choice", ["ramp","shepp"], "shepp"]
-            item_dict["rotation-axis"] = [False, False, "rotation axis given by x-position", None, ""]
-            item_dict["lamino-angle"] = [False, False, "laminography tilt angle", None, "18.25"]
             for key in line_names:
                 attrs = item_dict[key]
                 setattr(self, key, Line(key, attrs))
@@ -171,6 +175,11 @@ class LaminographyControlsWidget(QWidget):
             self.scroll_widget.setLayout(self.vbox)
             self.scroll.setWidget(self.scroll_widget)
 
+
+
+        self.show_ops.setCheckable(True)
+        self.show_ops.setChecked(False)
+        self.recon_all.setChecked(False)
         return
     def op_parser(self):
         result = subprocess.check_output(["tomocupy", "recon_steps", "-h"]).decode().split("options:")[1]
@@ -192,6 +201,8 @@ class LaminographyControlsWidget(QWidget):
                 default = None
             defaults.append(default)
 
+        #TODO: add is_TYPE variable; "["file","path","dropdown",else] =
+        # [file_btn+linedit, path_btn+linedit,label+dropdown, label,+linedit]
         choices = []
         for i in op_tmp:
             idx_0 = i.find("{")
