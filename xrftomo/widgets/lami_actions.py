@@ -116,47 +116,65 @@ class LaminographyActions(QtWidgets.QWidget):
 		make it sure that data doesn't have infinity or nan as one of
 		entries
 		'''
+		try:
+			# TODO: run GPU reconstruction, add a "WAIT status until recon.status is DONE. Then read in recon file and set it to var recons.
 
-		# TODO: run GPU reconstruction, add a "WAIT status until recon.status is DONE. Then read in recon file and set it to var recons.
+			data_path = "tomocupy_data"
 
-		data_path = "tomocupy_data"
+			path_data = os.path.join(parent_dir, data_path)
+			elem_h5_path = os.path.join(path_data, element)
+			data = data[element_idx]
+			const = data[0, 0, 0]
+			if data.shape[2]%2:
+				data = data[:, :, :-1]
+			data = np.pad(data, ((0, 0), (0, 0), (0, 2)), mode='edge')
 
-		path_data = os.path.join(parent_dir, data_path)
-		elem_h5_path = os.path.join(path_data, element)
-		data = data[element_idx]
-		const = data[0, 0, 0]
-		if data.shape[2]%2:
-			data = data[:, :, :-1]
-		data = np.pad(data, ((0, 0), (0, 0), (0, 2)), mode='edge')
+			data_dark = np.zeros([1, data.shape[1], data.shape[2]], dtype='float32')
+			data_white = np.ones([1, data.shape[1], data.shape[2]], dtype='float32') * const
 
-		data_dark = np.zeros([1, data.shape[1], data.shape[2]], dtype='float32')
-		data_white = np.ones([1, data.shape[1], data.shape[2]], dtype='float32') * const
+			with h5py.File(f'{elem_h5_path}.h5', 'w') as fid:
+				fid.create_dataset('exchange/data', data=data)
+				fid.create_dataset('exchange/data_white', data=data_white)
+				fid.create_dataset('exchange/data_dark', data=data_dark)
+				fid.create_dataset('exchange/theta', data=thetas)
 
-		with h5py.File(f'{elem_h5_path}.h5', 'w') as fid:
-			fid.create_dataset('exchange/data', data=data)
-			fid.create_dataset('exchange/data_white', data=data_white)
-			fid.create_dataset('exchange/data_dark', data=data_dark)
-			fid.create_dataset('exchange/theta', data=thetas)
+			if command_string is None:
+				return
 
-		if command_string is None:
-			return
+			p1 = subprocess.Popen(command_string, shell=True)
+			p1.wait()
+			#TODO: wait a few more seconds for file writing to complete.
+			time.sleep(3)
 
-		p1 = subprocess.Popen(command_string, shell=True)
-		p1.wait()
-		#TODO: wait a few more seconds for file writing to complete.
-		time.sleep(3)
-		recons = self.get_recon_tiffs(parent_dir, element)[0]
+			#TODO: get reconstruction-type from commandsting.
+			ops = command_string.split("--")
+			recon_type = [s for s in ops if "reconstruction-type" in s][0].split(" ")[1]
+			if recon_type == "try":
+				path = parent_dir + "tomocupy_data_rec/try_center/{}/".format(element)
+			elif recon_type == "full":
+				path = parent_dir + "tomocupy_data_rec/{}_rec/".format(element)
+			elif recon_type == "try_lamino":
+				path = parent_dir + "tomocupy_data_rec/try_center/{}/".format(element)
+			else:
+				return None
+			recons = self.get_recon_tiffs(path)[0]
+			return recons
 
-		return recons
+		except:
+			return None
 
-	def get_recon_tiffs(self, parent_dir, element):
-		#TODO: The Try-center option saves to a different directory. Consider hardcoding the path.
-		files = os.listdir(parent_dir + "tomocupy_data_rec/{}_rec".format(element))
-		files=  [file for file in files if file.endswith(".tiff")]
-		files = sorted(files, key=lambda x:x[-10:])
-		path_files = [parent_dir + "tomocupy_data_rec/{}_rec/".format(element) + file for file in files]
-		recons = xrftomo.read_tiffs(path_files)
-		return recons
+	def get_recon_tiffs(self, dir):
+		try:
+			files = os.listdir(dir)
+			files = [file for file in files if file.endswith(".tiff")]
+			files = sorted(files, key=lambda x:x[-10:])
+			path_files = [dir + file for file in files]
+			recons = xrftomo.read_tiffs(path_files)
+			return recons
+
+		except:
+			return None
+
 
 	def assessRecon(self,recon, data, thetas,show_plots=False):
 		#TODO: make sure cros-section index does not exceed the data height

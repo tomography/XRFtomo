@@ -260,7 +260,7 @@ class LaminographyWidget(QtWidgets.QWidget):
 
     def generate_structure(self):
         parent_dir = self.h5_dir
-        rec = "tomocupy_rec"
+        rec = "tomocupy_data_rec"
         data = "tomocupy_data"
 
         # Paths
@@ -439,6 +439,8 @@ class LaminographyWidget(QtWidgets.QWidget):
 
                 self.ViewControl.elem.setCurrentIndex(element_idx)    #required to properly update recon_dict
                 recons = self.actions.reconstruct_gpu(data, element_idx, element, thetas, parent_dir=self.h5_dir, command_string=command_string)
+                if recons is None:
+                    return
                 recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons)
                 self.recon = np.array(recons)
 
@@ -467,7 +469,9 @@ class LaminographyWidget(QtWidgets.QWidget):
                     values.append(value)
                     command += " {}".format(value)
                 if line == "file-name":
-                    command += "tomocupy_data/{}.h5".format(element)
+                    #TODO: full path is not specified here.
+                    path = self.ViewControl.__dict__["file-name"].text()
+                    command += " "+path + "tomocupy_data/{}.h5".format(element)
         return command
 
     def validate_params(self,sender):

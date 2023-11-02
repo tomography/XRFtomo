@@ -93,18 +93,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.hist.setMaximumWidth(120)
         self.hist.setImageItem(self.imageView.projView)
 
-        # self.imgAndHistoWidget.setSizePolicy(QtWidgets.QSizePolicy.setHeightForWidth(True))
-
-        # sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        # sizePolicy.setHorizontalStretch(0)
-        # sizePolicy.setVerticalStretch(0)
-        # sizePolicy.setHeightForWidth(True)
-        # sizePolicy.setWidthForHeight(True)
-        # self.imgAndHistoWidget.setSizePolicy(sizePolicy)
-
-        # self.imgAndHistoWidget.resize(1000, 700)
-
-
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
         self.ViewControl.padBtn.clicked.connect(self.ViewControl.padding_options.show)
@@ -183,9 +171,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.actions.centers = self.centers
         self.posMat = np.zeros((5,int(self.data.shape[1]),2))
         self.imageView.hotSpotNumb = 0
-        # self.ViewControl.x_sld.setRange(1, self.data.shape[3])
-        # self.ViewControl.y_sld.setRange(1, self.data.shape[2])
-
         self.ViewControl.combo1.clear()
         self.ViewControl.combo2.clear()
         for j in self.elements:
@@ -226,7 +211,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         # self.imageView.projView.setImage(self.data[element, index, :, :], border='w')
         self.updatePlot(self.data[element, index, ::-1, :], self.data[element])
         self.imageView.projView.setImage(self.data[element, index, ::-1, :], border='w')
-
 
     def updatePlot(self,img,stack):
         yrange = img.shape[0]
@@ -327,8 +311,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         sps = self.sub_pixel_shift
-        hs_group = self.ViewControl.hs_group.currentIndex()
-        hs_number = self.sld.value()
+        # hs_group = self.ViewControl.hs_group.currentIndex()
+        # hs_number = self.sld.value()
         if command == 'A': #previous projection
             self.sld.setValue(self.sld.value() - 1)
             self.imageSliderChanged()
@@ -377,10 +361,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.dataChangedSig.emit(data)
         if command == 'Delete':
             self.exclude_params()
-        # if command == 'Copy':
-        #     self.copyBG_params(img)
-        # if command == 'Paste':
-        #     data = self.pasteBG_params()
+
 
     def get_params(self):
         element = self.ViewControl.combo1.currentIndex()
@@ -420,12 +401,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.actions.normalize(data, element)
         self.dataChangedSig.emit(data)
 
-    # def equalize_params(self):
-    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-    #     data = self.data
-    #     data = self.actions.equalize(data, element)
-    #     self.dataChangedSig.emit(data)
-
     def invert_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
@@ -445,20 +420,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.parent.prevTab = 1
         self.refreshSig.emit()
 
-    # def copyBG_params(self,*img):
-    #     if type(img[0]) == bool:
-    #         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-    #     self.meanNoise, self.stdNoise = self.actions.copy_background(img)
-    #     return
-
-    # def pasteBG_params(self):
-    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-    #     meanNoise = self.meanNoise
-    #     stdNoise= self.stdNoise
-    #     data = self.data
-    #     data = self.actions.paste_background(data, element, projection, x_pos, y_pos, x_size, y_size, img, meanNoise, stdNoise)
-    #     self.dataChangedSig.emit(data)
-
     def analysis_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         self.actions.noise_analysis(img)
@@ -468,8 +429,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.data
         img = data[element, projection, :,:]
         self.actions.bounding_analysis(img)
-
-
     def pad_params(self):
         data = self.data
         padding_x = int(eval(self.ViewControl.pad_x.text()))
@@ -526,94 +485,3 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.data
         data = self.actions.remove_hotspots(data, element)
         self.dataChangedSig.emit(data)
-
-
-
-
-    # debugging and statistic gathering function, leave commented plz.
-    # def histo_signal(self):
-    #     data = self.data
-    #     element_names = self.element_names
-    #     num_elements = data.shape[0]
-    #     num_projections = data.shape[1]
-    #     histo_arr = np.ndarray(shape=(num_elements,num_projections), dtype=float)
-    #     histo_mean = np.ndarray(shape=(num_elements), dtype=float)
-    #
-    #     for i in range(num_elements):
-    #         for j in range(num_projections):
-    #             histo_arr[i,j] = np.sum(data[i,j])
-    #         histo_mean[i] = np.mean(histo_arr[i])
-    #
-    #     fig = plt.figure(figsize=(5,7))
-    #     #ax1, ax2, ax3 = top right, middle
-    #     ax1 = plt.subplot2grid((3, 3), (0, 0), colspan=3)
-    #     ax2 = plt.subplot2grid((3, 3), (1, 0), colspan=3)
-    #     ax3 = plt.subplot2grid((3, 3), (2, 0), colspan=3)
-    #
-    #     ax1.hist(histo_arr[0], num_projections)
-    #     ax2.hist(histo_arr[1], num_projections)
-    #     ax3.hist(histo_arr[2], num_projections)
-    #
-    #     ax1.set_title(element_names[0])
-    #     ax2.set_title(element_names[1])
-    #     ax3.set_title(element_names[2])
-    #
-    #     for i in range(num_elements):
-    #         print(element_names[i],": ",np.round(histo_mean[i]))
-    #
-    #     print("Fe to Ti: ",np.round(histo_mean[1]/histo_mean[0]))
-    #     print("Ti to Se: ",np.round(histo_mean[0]/histo_mean[2]))
-    #     print("Fe to Se: ",np.round(histo_mean[1]/histo_mean[2]))
-    #     # plt.show()
-    #
-    #     return
-    #
-
-
-    # def histo_params(self):
-    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-    #     data = self.data
-    #     for i in range(data.shape[1]):
-    #         mask = self.actions.create_mask(data[element,i])
-    #         data[element, i], m = self.actions.equalize_hist_ev(data[element,i], 2**16, mask)
-    #     self.dataChangedSig.emit(data)
-
-    # def equalize_colocalization(self, elements, mask = None, nbins = 2**16, eq_hsv = False,
-    #                             global_shift = True, shift_funct = np.median):
-    #     '''
-    #     elements: each element dataset to use for colocalization (up to 3).
-    #     mask: bool or binary masks used to select roi.
-    #     nbins: number of bins used for histogram equalization.
-    #     eq_hsv: equalize the lumination of the colocalization.
-    #     global_shift: global shift each element to match
-    #             (i.e. have the mean of element 1 match the mean of element 2 after colocalization)
-    #     shift_funct: function used for global_shift.
-    #     '''
-    #     rgb = np.zeros((elements[0].shape[0], elements[0].shape[1], 3))
-    #     for i, element in enumerate(elements):
-    #         # Remove inf and nan.
-    #         element[~np.isfinite(element)] = 0
-    #         # Add to RGB image and normalize components.
-    #         rgb[:,:,i] = element/element.max()
-    #         # Equalize the R, G, and B components individually.
-    #         rgb[:,:,i], m = self.equalize_hist_ev(rgb[:,:,i], mask = mask, nbins = nbins,
-    #                                          shift_funct = np.median)
-    #         # Set shift value to zero.
-    #         if global_shift:
-    #             rgb[:,:,i] -= m
-    #
-    #     # shift all values to > 0.
-    #     if global_shift:
-    #         rgb[:,:,0:len(elements)] -= rgb[:,:,0:len(elements)].min()
-    #     if eq_hsv:
-    #         # Convert RGB to HSV and equalize the value. Convert back to RGB.
-    #         hsv = rgb_to_hsv(rgb)
-    #         # Equalize value component of the hsv image
-    #         #hsv[:,:,2] = equalize_hist(hsv[:,:,2], mask = mask, nbins = nbins)
-    #         # OR use CLASqualize value component of the hsv image
-    #         hsv[:,:,2] = exposure.equalize_adapthist(hsv[:,:,2], nbins = nbins, clip_limit = .001)
-    #         rgb = hsv_to_rgb(hsv)
-    #     return rgb
-
-    # # Rotation Center Finding
-
