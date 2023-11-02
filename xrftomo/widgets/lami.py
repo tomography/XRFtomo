@@ -95,10 +95,10 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.ViewControl.browse.clicked.connect(self.file_browse)
         self.ViewControl.generate.clicked.connect(self.generate_structure)
         self.ViewControl.show_ops.clicked.connect(self.show_options)
-        self.ViewControl.rmHotspotBtn.clicked.connect(self.rm_hotspot_params)
+        self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
-        self.ViewControl.rec_btn.clicked.connect(self.reconstruct_params)
+        self.ViewControl.reconstruct.clicked.connect(self.reconstruct_params)
 
         self.x_shifts = None
         self.y_shifts = None
@@ -138,34 +138,70 @@ class LaminographyWidget(QtWidgets.QWidget):
     def show_options(self):
         if self.ViewControl.show_ops.isChecked() and self.parent.tcp_installed:
             self.ViewControl.show_ops.setText("show less")
-            for line in self.ViewControl.line_names:
-                self.ViewControl.__dict__[line].setVisible(True)
+
+            for line in range(self.ViewControl.num_lines):
+                hbox = self.__dict__["ViewControl"].__dict__["line_{}".format(line)]
+                num_widgets = hbox.count()
+                for i in range(num_widgets):
+                    hbox.itemAt(i).widget().setVisible(True)
 
         elif not self.ViewControl.show_ops.isChecked() and self.parent.tcp_installed:
             self.ViewControl.show_ops.setText("show more")
-            for line in self.ViewControl.line_names:
-                self.ViewControl.__dict__[line].setVisible(False)
+            for line in range(self.ViewControl.num_lines):
+                hbox = self.__dict__["ViewControl"].__dict__["line_{}".format(line)]
+                num_widgets = hbox.count()
+                for i in range(num_widgets):
+                    hbox.itemAt(i).widget().setVisible(False)
+
+            self.ViewControl.__dict__["method_lbl"].setVisible(True)
+            self.ViewControl.__dict__["method"].setVisible(True)
+            self.ViewControl.__dict__["browse"].setVisible(True)
+            self.ViewControl.__dict__["browse_lbl"].setVisible(True)
+            self.ViewControl.__dict__["generate"].setVisible(True)
+            self.ViewControl.__dict__["generate_lbl"].setVisible(True)
+            self.ViewControl.__dict__["show_ops"].setVisible(True)
+
+            self.ViewControl.__dict__["reconstruction-type_lbl"].setVisible(True)
             self.ViewControl.__dict__["reconstruction-type"].setVisible(True)
+            self.ViewControl.__dict__["lamino-angle_lbl"].setVisible(True)
             self.ViewControl.__dict__["lamino-angle"].setVisible(True)
+            self.ViewControl.__dict__["rotation-axis_lbl"].setVisible(True)
             self.ViewControl.__dict__["rotation-axis"].setVisible(True)
+            self.ViewControl.__dict__["lamino-search-width_lbl"].setVisible(True)
             self.ViewControl.__dict__["lamino-search-width"].setVisible(True)
+            self.ViewControl.__dict__["fbp-filter_lbl"].setVisible(True)
             self.ViewControl.__dict__["fbp-filter"].setVisible(True)
+            self.ViewControl.__dict__["minus-log_lbl"].setVisible(True)
             self.ViewControl.__dict__["minus-log"].setVisible(True)
             self.ViewControl.__dict__["file-name"].setVisible(True)
+            self.ViewControl.__dict__["file-name_lbl"].setVisible(True)
+
+            self.ViewControl.__dict__["reconstruct"].setVisible(True)
+            self.ViewControl.__dict__["recon_stats"].setVisible(True)
+            self.ViewControl.__dict__["rm_hotspot"].setVisible(True)
+        self.hide_plus()
+        self.show_select_plus()
         return
 
     def method_changed(self):
         if self.ViewControl.method.currentIndex() == 0:
-            self.ViewControl.browse.setVisible(False)
-            self.ViewControl.generate.setVisible(False)
-            self.ViewControl.generate_lbl.setVisible(False)
-            self.ViewControl.browse_lbl.setVisible(False)
-            self.ViewControl.show_ops.setVisible(False)
-            for line in self.ViewControl.line_names:
-                self.ViewControl.__dict__[line].setVisible(False)
+            for line in range(self.ViewControl.num_lines):
+                hbox = self.__dict__["ViewControl"].__dict__["line_{}".format(line)]
+                num_widgets = hbox.count()
+                for i in range(num_widgets):
+                    hbox.itemAt(i).widget().setVisible(False)
+            self.ViewControl.__dict__["method_lbl"].setVisible(True)
+            self.ViewControl.__dict__["method"].setVisible(True)
+            self.ViewControl.__dict__["lamino-angle_lbl"].setVisible(True)
             self.ViewControl.__dict__["lamino-angle"].setVisible(True)
+            self.ViewControl.__dict__["rotation-axis_lbl"].setVisible(True)
             self.ViewControl.__dict__["rotation-axis"].setVisible(True)
+            self.ViewControl.__dict__["fbp-filter_lbl"].setVisible(True)
             self.ViewControl.__dict__["fbp-filter"].setVisible(True)
+            self.ViewControl.__dict__["recon_all"].setVisible(True)
+            self.ViewControl.__dict__["reconstruct"].setVisible(True)
+            self.ViewControl.__dict__["recon_stats"].setVisible(True)
+            self.ViewControl.__dict__["rm_hotspot"].setVisible(True)
 
         elif self.ViewControl.method.currentIndex() == 1:
             self.ViewControl.browse.setVisible(True)
@@ -174,9 +210,32 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.browse_lbl.setVisible(True)
             self.ViewControl.show_ops.setVisible(True)
             self.show_options()
+
         else:
             pass
+        self.hide_plus()
         return
+
+    def hide_plus(self):
+        items = ["method", "browse", "generate", "show_ops", "recon_all", "reconstruct", "recon_stats", "rm_hotspot"]
+        for i in items:
+            widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
+            self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(False)
+    def show_select_plus(self):
+        items = ["reconstruction-type", "rotation-axis", "lamino-search-width", "fbp-filter", "minus-log", "file-name", "lamino-angle"]
+        for i in items:
+            widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
+            self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(True)
+
+    def option_checked(self, option):
+        widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].count()
+        checked = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].itemAt(
+            widx - 1).widget().isChecked()
+        return checked
+    def set_option_checked(self,option):
+        widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].count()
+        checked = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].itemAt(
+            widx - 1).widget().setChecked(True)
     def file_browse(self):
         try:  # promps for directory and subdir folder
             if os.path.exists(self.h5_dir):
@@ -242,21 +301,21 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.elem.addItem(j)
             self.recon_dict[j] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
-        self.ViewControl.__dict__["fbp-filter"].item2.setCurrentIndex(1)
-        self.ViewControl.__dict__["fbp-filter"].item3.setChecked(True)
-        self.ViewControl.__dict__["lamino-angle"].item2.setText("18.25")
-        self.ViewControl.__dict__["lamino-angle"].item3.setChecked(True)
-        self.ViewControl.__dict__["rotation-axis"].item2.setText(str(self.data.shape[3] // 2))
-        self.ViewControl.__dict__["rotation-axis"].item3.setChecked(True)
+        self.ViewControl.__dict__["fbp-filter"].setCurrentIndex(1)
+        self.set_option_checked("fbp-filter")
+        self.ViewControl.__dict__["lamino-angle"].setText("18.25")
+        self.set_option_checked("lamino-angle")
+        self.ViewControl.__dict__["rotation-axis"].setText(str(self.data.shape[3] // 2))
+        self.set_option_checked("rotation-axis")
 
         if self.parent.tcp_installed:
-            self.ViewControl.__dict__["reconstruction-type"].item3.setChecked(True)
-            self.ViewControl.__dict__["minus-log"].item2.setText("False")
-            self.ViewControl.__dict__["minus-log"].item3.setChecked(True)
-            self.ViewControl.__dict__["file-name"].item2.setText(self.h5_dir)
-            self.ViewControl.__dict__["file-name"].item3.setChecked(True)
-            self.ViewControl.__dict__["lamino-search-width"].item2.setText("20")
-            self.ViewControl.__dict__["lamino-search-width"].item3.setChecked(True)
+            self.set_option_checked("reconstruction-type")
+            self.ViewControl.__dict__["minus-log"].setText("False")
+            self.set_option_checked("reconstruction-type")
+            self.ViewControl.__dict__["file-name"].setText(self.h5_dir)
+            self.set_option_checked("file-name")
+            self.ViewControl.__dict__["lamino-search-width"].setText("20")
+            self.set_option_checked("lamino-search-width")
         else:
             self.ViewControl.method.clear()
             self.ViewControl.method.addItem("lamni-fbp(cpu)")
@@ -351,8 +410,8 @@ class LaminographyWidget(QtWidgets.QWidget):
         elements = [self.ViewControl.elem.currentIndex()]
         method = self.ViewControl.method.currentIndex()
         thetas = self.thetas
-        lami_angle = 90 - eval(self.ViewControl.__dict__["lamino-angle"].item2.text())
-        center_axis = eval(self.ViewControl.__dict__["rotation-axis"].item2.text())
+        lami_angle = 90 - eval(self.ViewControl.__dict__["lamino-angle"].text())
+        center_axis = eval(self.ViewControl.__dict__["rotation-axis"].text())
         parent_dir = self.h5_dir
         data = self.data.copy()
         recon_dict = self.recon_dict.copy()
@@ -396,20 +455,19 @@ class LaminographyWidget(QtWidgets.QWidget):
 
         for line in self.ViewControl.line_names:
             line_object = self.ViewControl.__dict__[line]
-            if line_object.item3.isChecked():
+            if self.option_checked(line):
                 options.append(line)
                 command += " --{}".format(line)
-                if isinstance(line_object.item2, QComboBox):
-                    value = line_object.item2.currentText()
+                if isinstance(line_object, QComboBox):
+                    value = line_object.currentText()
                     values.append(value)
                     command += " {}".format(value)
-                elif isinstance(line_object.item2, QLineEdit):
-                    value = line_object.item2.text()
+                elif isinstance(line_object, QLineEdit):
+                    value = line_object.text()
                     values.append(value)
                     command += " {}".format(value)
                 if line == "file-name":
                     command += "tomocupy_data/{}.h5".format(element)
-
         return command
 
     def validate_params(self,sender):

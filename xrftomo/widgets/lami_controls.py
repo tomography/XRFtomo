@@ -51,62 +51,22 @@ class LaminographyControlsWidget(QWidget):
 
     def initUI(self):
         button1size = 270       #long button (1 column)
-        button12size = 200       #2/3 column button
-        button2size = 143     #mid button (2 column)
-        button33size = 98
-        button3size = 93      #small button (almost third)
-        button4size = 79     #textbox size (less than a third)
 
         self.elem = QComboBox(self)
         self.elem.setFixedWidth(button1size)
 
-        self.method = QComboBox(self)
-        self.method.setFixedWidth(button1size)
-        methodname = ["lamni-fbp(cpu)","lamni-fbp(gpu)"]
-        for k in range(len(methodname)):
-            self.method.addItem(methodname[k])
-
-
-        self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
-        self.scroll.setWidgetResizable(True)
         self.populate_scroll_area()
-        #
-        #
-        # browse_box = QHBoxLayout()
-        # browse_box.addWidget(self.browse_lbl)
-        # browse_box.addWidget(self.browse)
-        #
-        # generate_box = QHBoxLayout()
-        # generate_box.addWidget(self.generate_lbl)
-        # generate_box.addWidget(self.generate)
-        #
-        # reconBox = QHBoxLayout()
-        # reconBox.addWidget(self.rec_btn)
-        # reconBox.addWidget(self.recon_stats)
-        #
-        # postReconBox = QHBoxLayout()
-        # postReconBox.addWidget(self.rmHotspotBtn)
-
         vb = QVBoxLayout()
         vb.addWidget(self.elem)
-        # vb.addWidget(self.method)
-        # vb.addLayout(browse_box)
-        # vb.addLayout(generate_box)
-        # vb.addWidget(self.recon_all)
-        # vb.addWidget(self.show_ops)
-        # vb.addWidget(self.lbl)
-        vb.addWidget(self.scroll)
-        # vb.addLayout(reconBox)
-        # vb.addLayout(postReconBox)
+        vb.addWidget(self.lami_scroll)
         self.setLayout(vb)
-        self.setMaximumWidth(275)
+        self.setMaximumWidth(300)
 
     def populate_scroll_area(self):
-        #TODO: Two scroll widgets cannot share the same widget (i.e lamino-angle) so you have to show/hide only relevant options depending on method.
-        # op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
+        #TODO: This function getting called tiwce, figure out why
         #[QFileDilog / Label] [text input / combobox]  [enable]
         item_dict = {}
-        item_dict["method"] = [["dropdown"], "filter choice", ["lamni-fbp(cpu)","lamni-fbp(gpu)"], "lamni-fbp(cpu)"]
+        item_dict["method"] = [["label","dropdown"], "recon method", ["lamni-fbp(cpu)","lamni-fbp(gpu)"], "lamni-fbp(cpu)"]
         item_dict["browse"] = [["label","path"], "location where data is stored", None, ""]
         item_dict["generate"] = [["label","button"], "generate folder structure in data path", None, None]
         item_dict["show_ops"] = [["checkbox"], "show additional options", None, False]
@@ -115,72 +75,124 @@ class LaminographyControlsWidget(QWidget):
         item_dict["lamino-angle"] = [["label","linedit"], "laminography tilt angle", None, "18.25"]
 
         item_dict2 = {}
-        item_dict["recon_all"] = [["checkbox"], "reconstruct all loaded elements", None, False]
-        item_dict["reconstruct"] = [["button"], "run reconstruction", None, None]
-        item_dict["recon_stats"] = [["button"], "show reconstruction statistics", None, None]
-        item_dict["rm_hotspot"] = [["button"], "laminography tilt angle", None, None]
-
-        # self.browse_lbl = QLabel("data path: ")
-        # self.browse = QPushButton("file path: /")
-        # self.generate_lbl = QLabel("Generate folder structure in data path")
-        # self.generate = QPushButton("generate")
-        # self.show_ops = QPushButton("show more")
-
-        # self.rec_btn = QPushButton('Reconstruct')
-        # self.rmHotspotBtn = QPushButton('remove hotspot')
-        # self.recon_stats = QPushButton("recon stats")
-        # self.recon_all = QCheckBox("reconstruct all elements")
+        item_dict2["recon_all"] = [["checkbox"], "reconstruct all loaded elements", None, False]
+        item_dict2["reconstruct"] = [["button"], "run reconstruction", None, None]
+        item_dict2["recon_stats"] = [["button"], "show reconstruction statistics", None, None]
+        item_dict2["rm_hotspot"] = [["button"], "laminography tilt angle", None, None]
 
         try:
             import tomocupy
             self.tcp_installed = True
+            tomocupy_dict = self.op_parser()
+            widget_dict = item_dict | tomocupy_dict | item_dict2
         except:
             self.tcp_installed = False
             print("tomocupy not installed, using CPU settings")
+            widget_dict = item_dict | item_dict2
 
-        if self.tcp_installed:
-            tomocupy_dict = self.op_parser()
-            self.line_names = list(tomocupy_dict.keys())
-            num_lines = len(self.line_names)
-
-            for key in tomocupy_dict.keys():
-                attrs = tomocupy_dict[key]
-                setattr(self, key, Line(key, attrs))
-
-            self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
-            self.vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
-            for i in range(num_lines):
-                line = self.__dict__[self.line_names[i]]
-                line.objectName = self.line_names[i]
-                self.vbox.addWidget(line)
-            self.vbox.setSpacing(0)
-            self.vbox.setContentsMargins(0, 0, 0, 0)
-            self.scroll_widget.setLayout(self.vbox)
-            self.scroll.setWidget(self.scroll_widget)
-
-        else:
-            line_names = list(item_dict.keys())
-            self.line_names = line_names
-            for key in line_names:
-                attrs = item_dict[key]
-                setattr(self, key, Line(key, attrs))
-            self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
-            self.vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
-            for i in range(len(line_names)):
-                line = self.__dict__[line_names[i]]
-                line.objectName = line_names[i]
-                self.vbox.addWidget(line)
-            self.vbox.setSpacing(0)
-            self.vbox.setContentsMargins(0, 0, 0, 0)
-            self.scroll_widget.setLayout(self.vbox)
-            self.scroll.setWidget(self.scroll_widget)
-
-
+        self.lami_scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
+        self.lami_scroll.setWidgetResizable(True)
+        #TODO: the dictionary pop function maks self forget that lami_scroll exists. fix
+        self.create_widgets(widget_dict)
+        self.lami_scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+        self.vb_lami.setSpacing(0)
+        self.vb_lami.setContentsMargins(0, 0, 0, 0)
+        self.lami_scroll_widget.setLayout(self.vb_lami)
+        self.lami_scroll.setWidget(self.lami_scroll_widget)
 
         self.show_ops.setCheckable(True)
         self.show_ops.setChecked(False)
         self.recon_all.setChecked(False)
         return
+
+    def create_widgets(self,item_dict):
+        widgetsizes = [240,115, 50]
+        self.vb_lami = QVBoxLayout()
+        self.num_lines= len(item_dict.keys())
+        self.line_names = []
+        for i, key in enumerate(item_dict.keys()):
+            widget_items = item_dict[key][0]
+            attrs = item_dict[key]
+            widgetsize = widgetsizes[len(widget_items)-1]
+
+            self.line_names.append(key)
+
+            line_num = "line_{}".format(i)
+            setattr(self, line_num, QHBoxLayout())
+            line = self.__dict__[line_num]
+
+            for widget in widget_items:
+                #TODO: add line number and extra button to each line
+                if widget == "dropdown":
+                    setattr(self, key, QComboBox())
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    options = attrs[2]
+                    default = attrs[3]
+                    for option in options:
+                        object.addItem(option)
+                    idx = options.index(default)
+                    object.setCurrentIndex(idx)
+                    line.addWidget(object)
+
+                elif widget == "label":
+                    name = key+"_lbl"
+                    setattr(self, name, QLabel())
+                    object = self.__dict__[name]
+                    object.setFixedWidth(widgetsize)
+                    object.setToolTip(attrs[1])
+                    object.setText(key)
+                    line.addWidget(object)
+
+                elif widget == "linedit":
+                    setattr(self, key, QLineEdit())
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    object.setText(attrs[3])
+                    line.addWidget(object)
+
+                elif widget == "checkbox":
+                    setattr(self, key, QCheckBox(attrs[1]))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    object.setChecked(attrs[3])
+                    line.addWidget(object)
+
+                elif widget == "button":
+                    setattr(self, key, QPushButton(key))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    line.addWidget(object)
+
+                elif widget == "file":
+                    setattr(self, key, QPushButton(key))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    object.setText(attrs[3])
+                    object.clicked.connect(self.get_file)
+                    line.addWidget(object)
+
+                elif widget == "path":
+                    setattr(self, key, QPushButton(key))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    object.setText(attrs[3])
+                    object.clicked.connect(self.get_path)
+                    line.addWidget(object)
+                else:
+                    print("invalid option")
+
+            button_name = "btn_{}".format(i)
+            setattr(self, button_name, QPushButton("+"))
+            line_btn = self.__dict__[button_name]
+            line_btn.setCheckable(True)
+            line_btn.setObjectName(str(button_name))
+            line_btn.setFixedWidth(25)
+            line.addWidget(line_btn)
+            self.vb_lami.addLayout(line)
+
+        return self.vb_lami
+
     def op_parser(self):
         result = subprocess.check_output(["tomocupy", "recon_steps", "-h"]).decode().split("options:")[1]
         options = result.split("--")[2::]
@@ -193,108 +205,60 @@ class LaminographyControlsWidget(QWidget):
         op_tmp = [" ".join(i.split(" ")[1::]).strip(" ") for i in op_tmp]
         default_tmp = [i.split("default: ") for i in op_tmp]
 
-        defaults = []
-        for i in default_tmp:
-            if len(i)>1:
-                default = i[-1].replace(")", "")
+        op_dict = {}
+        for key in keys:
+            op_dict[key] = [None, None, None, None]
+
+        for i, line in enumerate(default_tmp):
+            key = list(op_dict.keys())[i]
+            if len(line)>1:
+                default = line[-1].replace(")", "")
+
             else:
                 default = None
-            defaults.append(default)
+            op_dict[key][3] = default
 
-        #TODO: add is_TYPE variable; "["file","path","dropdown",else] =
-        # [file_btn+linedit, path_btn+linedit,label+dropdown, label,+linedit]
-        choices = []
-        for i in op_tmp:
-            idx_0 = i.find("{")
-            idx_1 = i.find("}")
+        for i, line in enumerate(op_tmp):
+            key = list(op_dict.keys())[i]
+            idx_0 = line.find("{")
+            idx_1 = line.find("}")
             if idx_0 == -1:
-                choices.append(None)
+                choice = None
             else:
-                choices.append(i[idx_0 + 1:idx_1].split(","))
+                choice = line[idx_0 + 1:idx_1].split(",")
+            op_dict[key][2] = choice
 
         op_tmp = [i.split("(default")[0] for i in op_tmp]
         op_tmp = [i.split("}")[::-1][0].strip("") for i in op_tmp]
 
-        descriptions = []
-        is_PATH = []
-        is_FILE = []
-        for i in op_tmp:
-            first = i.split(" ")[0]
+        for i, line in enumerate(op_tmp):
+            key = list(op_dict.keys())[i]
+            first = line.split(" ")[0]
             if first.isupper():
                 if first == "PATH":
-                    is_PATH.append(True)
+                    op_dict[key][0] = ["label", "path"]
+                elif first == "FILE":
+                    op_dict[key][0] = ["label", "file"]
                 else:
-                    is_PATH.append(False)
-                if first == "FILE":
-                    is_FILE.append(True)
-                else:
-                    is_FILE.append(False)
-                desc = " ".join(i.split(" ")[1::]).strip(" ")
-                descriptions.append(desc)
+                    op_dict[key][0] = ["label", "linedit"]
+                desc = " ".join(line.split(" ")[1::]).strip(" ")
+                op_dict[key][1] = desc
             else:
-                is_PATH.append(False)
-                is_FILE.append(False)
-                descriptions.append(i.strip(" "))
+                if op_dict[key][2] is not None:
+                    op_dict[key][0] = ["label", "dropdown"]
+                else:
+                    op_dict[key][0] = ["label", "linedit"]
+                desc = line.strip(" ")
+                op_dict[key][1] = desc
 
-        op_dict = {}
-        for idx, key in enumerate(keys):
-            op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
         return op_dict
 
-
-class Line(QtWidgets.QWidget):
-    def __init__(self, name, attrs):
-        super(Line, self).__init__()
-        self.attrs = attrs
-
-        hbox = QHBoxLayout()
-
-        # op_dict[key] = [is_PATH[idx], is_FILE[idx], descriptions[idx], choices[idx],defaults[idx]]
-        #[QFileDilog / Label] [text input / combobox]  [enable]
-
-        if attrs[0]:
-            self.item1 = QPushButton(name)
-            self.item1.clicked.connect(self.get_path)
-            self.item2 = QLineEdit(attrs[4])
-        elif attrs[1]:
-            self.item1 = QPushButton(name)
-            self.item1.clicked.connect(self.get_file)
-            self.item2 = QLineEdit(attrs[4])
-        elif attrs[3] is None:
-            self.item1 = QLabel(name)
-            self.item2 = QLineEdit("")
-            self.item2.setToolTip(str(attrs[2]))
-        else:
-            self.item1 = QLabel(name)
-            self.item1.setToolTip(attrs[2])
-            self.item2 = QComboBox()
-            self.item2.setToolTip(str(attrs[2]))
-            for option in attrs[3]:
-                self.item2.addItem(option)
-        #TODO: set currentndex to default value
-
-        self.item3 = QPushButton("+")
-        # item3.setChecked(False)
-        self.item3.setCheckable(True)
-        self.item3.setObjectName(str(name))
-        self.item3.setToolTip(str(attrs[2]))
-
-        self.item1.setFixedWidth(120)
-        self.item2.setFixedWidth(120)
-        self.item3.setFixedWidth(25)
-        hbox.addWidget(self.item1)
-        hbox.addWidget(self.item2)
-        hbox.addWidget(self.item3)
-        hbox.setSpacing(0)
-        hbox.setContentsMargins(0,0,0,0)
-        self.setLayout(hbox)
-        self.setContentsMargins(0,0,0,0)
     def get_file(self):
         sender = self.sender
         file = QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath())
-        pass
+        sender().setText(file)
 
     def get_path(self):
         sender = self.sender
         path = QFileDialog.getExistingDirectory(self, "Open Directory", QtCore.QDir.currentPath())
-        pass
+        sender().setText(path)
