@@ -85,28 +85,9 @@ class FileTableWidget(QWidget):
         self.extLineEdit.setMaximumSize(50, 30)
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
 
-        data_menu_lbl = QLabel("data tag")
-        data_menu_lbl.setFixedWidth(90)
-        self.data_menu = QMenu()
-        self.data_menu.setFixedSize(123,25)
-        # self.data_menu.setDisabled(True)
-        # self.data_menu.triggered.connect(self.data_menu.show)
-        self.data_menu.aboutToHide.connect(self.menu_event)
 
-        element_menu_lbl = QLabel("element tag")
-        element_menu_lbl.setFixedWidth(90)
-        self.element_menu = QMenu()
-        self.element_menu.setFixedSize(123,25)
-        self.element_menu.aboutToHide.connect(self.menu_event)
+        self.populate_scroll_area()
 
-        theta_menu_lbl = QLabel("theta tag")
-        theta_menu_lbl.setFixedWidth(90)
-        self.theta_menu = QMenu()
-        self.theta_menu.setFixedSize(123,25)
-        self.theta_menu.aboutToHide.connect(self.menu_event)
-
-        self.saveDataBtn = QPushButton('Save to Memory')
-        self.saveDataBtn.setFixedWidth(221)
 
         message_label = QLabel('Messages:')
         self.message = QTextEdit()
@@ -114,39 +95,13 @@ class FileTableWidget(QWidget):
         self.message.setMaximumHeight(20)
         self.message.setText('')
 
-        hBox0 = QHBoxLayout()
-        hBox0.addWidget(data_menu_lbl)
-        hBox0.addWidget(self.data_menu)
-        hBox0.setAlignment(Qt.AlignLeft)
-
-        hBox1 = QHBoxLayout()
-        hBox1.addWidget(element_menu_lbl)
-        hBox1.addWidget(self.element_menu)
-        hBox1.setAlignment(Qt.AlignLeft)
-
-        hBox3 = QHBoxLayout()
-        hBox3.addWidget(theta_menu_lbl)
-        hBox3.addWidget(self.theta_menu)
-        hBox3.setAlignment(Qt.AlignLeft)
-
-        hBox7 = QHBoxLayout()
-        hBox7.addWidget(self.saveDataBtn)
-        hBox7.setAlignment(Qt.AlignLeft)
-
-        vBox1 = QVBoxLayout()
-        vBox1.addLayout(hBox0)
-        vBox1.addLayout(hBox1)
-        # vBox1.addLayout(hBox2)
-        vBox1.addLayout(hBox3)
-        vBox1.addLayout(hBox7)
-
         layout0 = QHBoxLayout()
         layout0.addWidget(dirLabel)
         layout0.addWidget(self.dirLineEdit)
         layout0.addWidget(self.extLineEdit)
 
         layout1 = QHBoxLayout()
-        layout1.addLayout(vBox1)
+        layout1.addWidget(self.scroll)
         layout1.addWidget(self.fileTableView)
         layout1.addWidget(self.elementTableView)
 
@@ -164,6 +119,60 @@ class FileTableWidget(QWidget):
             self.onLoadDirectory()
         except:
             print("Invalid directory or file; Try a new folder or remove problematic files.")
+
+    def populate_scroll_area(self):
+        self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setMaximumWidth(290)
+
+        item_dict = {}  # [type(button, file, path, dropdown), descriptions[idx], choices[idx],defaults[idx]]
+        item_dict["data_menu"] = [["label","menu"], "downsample by 2x", None, None]
+        item_dict["element_menu"] = [["label","menu"], "invert 2d array", None, None]
+        item_dict["theta_menu"] = [["label","menu"], "crop to ROI", None, None]
+        item_dict["saveDataBtn"] = [["button"], "save to memory", None, None]
+
+        vb_files = QVBoxLayout()
+        widgetsizes = [240, 115, 50]
+        for i, key in enumerate(item_dict.keys()):
+            widget_items = item_dict[key][0]
+            attrs = item_dict[key]
+            widgetsize = widgetsizes[len(widget_items)-1]
+            line_num = "line_{}".format(i)
+            setattr(self, line_num, QHBoxLayout())
+            line = self.__dict__[line_num]
+
+            for widget in widget_items:
+                if widget == "label":
+                    name = key.split("_")[0]+"_tag"
+                    setattr(self, name, QLabel(name))
+                    object = self.__dict__[name]
+                    object.setFixedWidth(widgetsize)
+                    object.setToolTip(attrs[1])
+                    line.addWidget(object)
+
+                elif widget == "menu":
+                    setattr(self, key, QMenu(key))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    object.aboutToHide.connect(self.menu_event)
+                    line.addWidget(object)
+
+                elif widget == "button":
+                    setattr(self, key, QPushButton(key))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    object.setText("save data to memory")
+                    line.addWidget(object)
+                else:
+                    pass
+            vb_files.addLayout(line)
+        # vb_files.setSpacing(0)
+        # vb_files.setContentsMargins(0, 0, 0, 0)
+        self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+        self.scroll_widget.setLayout(vb_files)
+        self.scroll.setWidget(self.scroll_widget)
+
+        return
 
     def menu_event(self):
         if not self.data_menu.isVisible():

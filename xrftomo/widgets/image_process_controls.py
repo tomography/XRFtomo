@@ -72,8 +72,7 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         vb5.addLayout(vb1)
         vb5.addWidget(self.scroll)
         self.setLayout(vb5)
-        self.invert.setVisible(False)
-        self.setMaximumWidth(275)
+        self.setMaximumWidth(290)
 
 
         #__________Popup window for reshape button__________

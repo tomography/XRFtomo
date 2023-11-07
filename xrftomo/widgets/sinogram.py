@@ -825,9 +825,11 @@ class SinogramWidget(QtWidgets.QWidget):
         element = self.ViewControl.combo1.currentIndex()
         if self.ViewControl.constrain_roi.isChecked():
             roi_data = self.get_roi_data(data)
-            dummy , x_shifts, y_shifts = self.actions.crossCorrelate2(element, roi_data)
+            # dummy , x_shifts, y_shifts = self.actions.crossCorrelate2(element, roi_data)
+            x_shifts, y_shifts = self.actions.crossCorrelate(element, roi_data)
         else:
-            dummy, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
+            # dummy, x_shifts, y_shifts = self.actions.crossCorrelate2(element, data)
+            x_shifts, y_shifts = self.actions.crossCorrelate(element, data)
 
         x_shifts = self.actions.discontinuity_check(data,x_shifts,40)
         x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
@@ -843,48 +845,55 @@ class SinogramWidget(QtWidgets.QWidget):
         return
 
     def xcorrdy_params(self):
-        data = self.data
-        element = self.ViewControl.combo1.currentIndex()
-        if self.ViewControl.constrain_roi.isChecked():
-            roi_data = self.get_roi_data(data)
-            dummy, x_shifts, y_shifts = self.actions.xcor_dysum(element, roi_data)
-        else:
-            dummy, x_shifts, y_shifts = self.actions.xcor_dysum(element, data)
+        try:
+            data = self.data
+            element = self.ViewControl.combo1.currentIndex()
+            if self.ViewControl.constrain_roi.isChecked():
+                roi_data = self.get_roi_data(data)
+                dummy, x_shifts, y_shifts = self.actions.xcor_dysum(element, roi_data)
+            else:
+                dummy, x_shifts, y_shifts = self.actions.xcor_dysum(element, data)
 
-        x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
-        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+            x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
+            x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
-        if self.ViewControl.constrain_x.isChecked():
-            x_shifts = np.zeros_like(x_shifts)
-        if self.ViewControl.constrain_y.isChecked():
-            y_shifts =np.zeros_like(y_shifts)
+            if self.ViewControl.constrain_x.isChecked():
+                x_shifts = np.zeros_like(x_shifts)
+            if self.ViewControl.constrain_y.isChecked():
+                y_shifts =np.zeros_like(y_shifts)
 
-        data = self.actions.shift_all(data, x_shifts, y_shifts)
-        self.dataChangedSig.emit(data)
-        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+            data = self.actions.shift_all(data, x_shifts, y_shifts)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+        except Exception as error:
+            print(error)
+
         return
 
     def xcorry_params(self):
-        data = self.data
-        element = self.ViewControl.combo1.currentIndex()
+        try:
+            data = self.data
+            element = self.ViewControl.combo1.currentIndex()
 
-        if self.ViewControl.constrain_roi.isChecked():
-            roi_data = self.get_roi_data(data)
-            dummy , x_shifts, y_shifts = self.actions.xcor_ysum(element, roi_data)
-        else:
-            dummy, x_shifts, y_shifts = self.actions.xcor_ysum(element, data)
+            if self.ViewControl.constrain_roi.isChecked():
+                roi_data = self.get_roi_data(data)
+                dummy , x_shifts, y_shifts = self.actions.xcor_ysum(element, roi_data)
+            else:
+                dummy, x_shifts, y_shifts = self.actions.xcor_ysum(element, data)
 
-        x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
-        x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
+            x_shifts = self.actions.discontinuity_check(data,x_shifts,data.shape[3]//2)
+            x_shifts, y_shifts = self.actions.validate_alignment(data, x_shifts, y_shifts)
 
-        if self.ViewControl.constrain_x.isChecked():
-            x_shifts = np.zeros_like(x_shifts)
-        if self.ViewControl.constrain_y.isChecked():
-            y_shifts =np.zeros_like(y_shifts)
+            if self.ViewControl.constrain_x.isChecked():
+                x_shifts = np.zeros_like(x_shifts)
+            if self.ViewControl.constrain_y.isChecked():
+                y_shifts =np.zeros_like(y_shifts)
 
-        data = self.actions.shift_all(data,x_shifts,y_shifts)
-        self.dataChangedSig.emit(data)
-        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
+        except Exception as error:
+            print(error)
         return
 
     def xcorsino_params(self):
@@ -909,30 +918,33 @@ class SinogramWidget(QtWidgets.QWidget):
         "https://stackoverflow.com/questions/16716302/how-do-i-fit-a-sine-curve-to-my-data-with-pylab-and-numpy"
         pass
     def move2edge_params(self):
-        data = self.data
-        element = self.ViewControl.combo1.currentIndex()
-        valid = self.ViewControl.validate_parameters()
-        if not valid:
-            return
-        if self.ViewControl.bottom_checkbox.isChecked():
-            loc=0
-        else: 
-            loc=1
+        try:
+            data = self.data
+            element = self.ViewControl.combo1.currentIndex()
+            valid = self.ViewControl.validate_parameters()
+            if not valid:
+                return
+            if self.ViewControl.bottom_checkbox.isChecked():
+                loc=0
+            else:
+                loc=1
 
-        threshold = int(self.ViewControl.threshold_textbox.text())
-        if self.ViewControl.constrain_roi.isChecked():
-            roi_data = self.get_roi_data(data)
-            y_shifts, roi_data = self.actions.align2edge(element, roi_data, loc, threshold)
-        else:
-            y_shifts, dummy = self.actions.align2edge(element, data, loc, threshold)
+            threshold = int(self.ViewControl.threshold_textbox.text())
+            if self.ViewControl.constrain_roi.isChecked():
+                roi_data = self.get_roi_data(data)
+                y_shifts, roi_data = self.actions.align2edge(element, roi_data, loc, threshold)
+            else:
+                y_shifts, dummy = self.actions.align2edge(element, data, loc, threshold)
 
-        if self.ViewControl.constrain_y.isChecked():
-            y_shifts =np.zeros_like(y_shifts)
+            if self.ViewControl.constrain_y.isChecked():
+                y_shifts =np.zeros_like(y_shifts)
 
-        x_shifts = np.zeros_like(self.x_shifts)
-        data = self.actions.shift_all(data,x_shifts,y_shifts)
-        self.dataChangedSig.emit(data)
-        self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts+y_shifts)
+            x_shifts = np.zeros_like(self.x_shifts)
+            data = self.actions.shift_all(data,x_shifts,y_shifts)
+            self.dataChangedSig.emit(data)
+            self.alignmentChangedSig.emit(self.x_shifts, self.y_shifts+y_shifts)
+        except Exception as error:
+            print(error)
         return
 
     def iter_align_params(self):

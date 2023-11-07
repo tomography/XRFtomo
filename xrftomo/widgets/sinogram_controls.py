@@ -67,7 +67,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
 
 
         self.setLayout(vb3)
-        self.setMaximumWidth(275)
+        self.setMaximumWidth(290)
 
         #popup window for sinusoid tools
         self.populate_sine_controls()

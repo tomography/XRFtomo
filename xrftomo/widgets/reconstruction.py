@@ -305,8 +305,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.lcd.display(index)
 
         try:
-            self.ViewControl.maxText.setText(str(self.recon[index, :, :].max()))
-            self.ViewControl.minText.setText(str(self.recon[index, :, :].min()))
             self.ReconView.projView.setImage(self.recon[index, :, :])
         except:
             print("run reconstruction first")
@@ -325,7 +323,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
         delta = float(self.ViewControl.delta.text())
-        iters = int(self.ViewControl.iters.text())
+        iters = int(self.ViewControl.iterations.text())
         thetas = self.thetas
         bottom_row = int(self.data.shape[2] - eval(self.ViewControl.top_row.text()))
         top_row = int(self.data.shape[2] - eval(self.ViewControl.bottom_row.text()))
@@ -419,7 +417,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         method = self.ViewControl.method.currentIndex()
         beta = float(self.ViewControl.beta.text())
         delta = float(self.ViewControl.delta.text())
-        iters = int(self.ViewControl.iters.text())
+        iters = int(self.ViewControl.iterations.text())
         thetas = self.thetas
         bottom_row = int(self.data.shape[2] - eval(self.ViewControl.top_row.text()))
         top_row = int(self.data.shape[2] - eval(self.ViewControl.bottom_row.text()))

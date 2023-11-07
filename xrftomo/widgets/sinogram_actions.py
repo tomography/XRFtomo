@@ -85,28 +85,31 @@ class SinogramActions(QtWidgets.QWidget):
 
 
     def runOpFlow(self, element,data):
-        # --- Load the sequence
-        imgs = data[element]
+        try:
+            # --- Load the sequence
+            imgs = data[element]
 
-        image0 = imgs[0]
-        image1 = np.fliplr(imgs[-1])
+            image0 = imgs[0]
+            image1 = np.fliplr(imgs[-1])
 
-        img1_max = image1.max()
-        #need to normalize to 1
-        image0 = image0 / image0.max()
-        image1 = image1 / image1.max()
+            img1_max = image1.max()
+            #need to normalize to 1
+            image0 = image0 / image0.max()
+            image1 = image1 / image1.max()
 
-        # --- Compute the optical flow
-        v, u = optical_flow_tvl1(image0, image1)
+            # --- Compute the optical flow
+            v, u = optical_flow_tvl1(image0, image1)
 
-        # --- Use the estimated optical flow for registration
-        nr, nc = image0.shape
-        row_coords, col_coords = np.meshgrid(np.arange(nr), np.arange(nc),indexing='ij')
-        image1_warp = warp(image1, np.array([row_coords + v, col_coords + u]),mode='nearest')
+            # --- Use the estimated optical flow for registration
+            nr, nc = image0.shape
+            row_coords, col_coords = np.meshgrid(np.arange(nr), np.arange(nc),indexing='ij')
+            image1_warp = warp(image1, np.array([row_coords + v, col_coords + u]),mode='nearest')
 
-        #convert to original scale
-        image1_warp = np.fliplr(image1_warp*img1_max)
-        data[element,-1] = image1_warp
+            #convert to original scale
+            image1_warp = np.fliplr(image1_warp*img1_max)
+            data[element,-1] = image1_warp
+        except Exception as error:
+            print(error)
         return data
 
 
@@ -311,15 +314,11 @@ class SinogramActions(QtWidgets.QWidget):
             if t1 > shape[1] // 2:
                 t1 -= shape[1]
 
-            # data[:, i + 1] = np.roll(data[:, i + 1], t0, axis=1)
-            # data[:, i + 1] = np.roll(data[:, i + 1], t1, axis=2)
-            data = self.shiftProjection(data,t1,t0,i+1)
-
             x_shifts[i + 1] += t1
             y_shifts[i + 1] += t0
 
         self.alignmentDone()
-        return data, x_shifts, -y_shifts
+        return x_shifts, -y_shifts
 
     def crossCorrelate2(self, element, data):
         '''
@@ -768,7 +767,7 @@ class SinogramActions(QtWidgets.QWidget):
             for i in range(data.shape[2]):
                 sino = data[element, :, i, :]
 
-        sino = data[element,:,layer,:]
+        sino = data[element,:,layer,:] #TODO: IndexError: index 283 is out of bounds for axis 2 with size 25
         x_shifts = np.zeros(data.shape[1])
         for i in range(1,sino.shape[0]):
             shift, error, diffphase = phase_cross_correlation(sino[0], sino[i], upsample_factor=100)
@@ -859,7 +858,14 @@ class SinogramActions(QtWidgets.QWidget):
         num_projections = data.shape[1]
         y_shifts = np.zeros(num_projections)
         tmp_data = data[element,:,:,:]
-        bounds = self.get_boundaries(tmp_data,threshold)
+        #masking data
+        img = tmp_data
+        img = img ** 2
+        tsh = np.mean(img) / 10
+        img[img < tsh] = 0
+        img[img > tsh] = 255
+
+        bounds = self.get_boundaries(img,threshold)
         edge = np.asarray(bounds[2+loc])
         translate = -edge
 

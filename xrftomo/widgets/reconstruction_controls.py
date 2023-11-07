@@ -68,7 +68,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         vb.addWidget(self.recon_scroll)
 
         self.setLayout(vb)
-        self.setMaximumWidth(275)
+        self.setMaximumWidth(290)
     def populate_scroll_area(self):
         button1size = 250       #long button (1 column)
         button2size = 115     #mid button (2 column)

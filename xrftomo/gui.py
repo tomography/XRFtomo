@@ -133,20 +133,18 @@ class xrftomoGui(QMainWindow):
         setAspectratio.setCheckable(True)
         setAspectratio.triggered.connect(self.toggle_aspect_ratio)
 
-        debugMode = QAction("experimental",self)
-        debugMode.setCheckable(True)
-        debugMode.triggered.connect(self.toggleDebugMode)
+        self.debugMode = QAction("experimental",self)
+        self.debugMode.setCheckable(True)
+        self.debugMode.triggered.connect(self.toggleDebugMode)
 
         restoreAction = QAction("Restore", self)
         restoreAction.triggered.connect(self.restore)
 
         self.keyMapAction = QAction('key map settings', self)
         self.keyMapAction.triggered.connect(self.keyMapSettings)
-        self.keyMapAction.setVisible(False)
 
         self.configAction = QAction('load configuration settings', self)
         self.configAction.triggered.connect(self.configSettings)
-        self.configAction.setVisible(False)
 
         ###
         self.frame = QtWidgets.QFrame()
@@ -332,7 +330,7 @@ class xrftomoGui(QMainWindow):
 
         self.viewMenu = menubar.addMenu(" &View")
         self.viewMenu.addAction(setAspectratio)
-        self.viewMenu.addAction(debugMode)
+        self.viewMenu.addAction(self.debugMode)
         self.viewMenu.setDisabled(True)
 
         self.afterConversionMenu = menubar.addMenu(' &Save')
@@ -392,9 +390,7 @@ class xrftomoGui(QMainWindow):
         self.iter_align_param_chbx = QtWidgets.QCheckBox("load last iteration preferences")
         self.recon_method_chbx = QtWidgets.QCheckBox("Load last-used reconstruction method")
 
-        self.toggleDebugMode()
-        if self.params.experimental:
-            self.toggleDebugMode()
+        self.toggleDebugMode(self.params.experimental)
 
         file_box = QtWidgets.QVBoxLayout()
         file_box.addWidget(file_lbl)
@@ -1645,10 +1641,16 @@ class xrftomoGui(QMainWindow):
         self.fileTableWidget.onLoadDirectory()
         return
 
-    def toggleDebugMode(self):
-        self.params.experimental = not self.params.experimental
-        mode = self.params.experimental
-        self.debugMode(mode)
+    def toggleDebugMode(self, *mode):
+        mode = mode[0]
+        if mode == False or mode == True:
+            self.set_debugMode(mode)
+            self.debugMode.setChecked(mode)
+        else:
+            self.params.experimental = not self.params.experimental
+            mode = self.params.experimental
+            self.debugMode.setChecked(mode)
+            self.set_debugMode(mode)
 
     def toggle_aspect_ratio(self, checkbox_state):
         if checkbox_state:
@@ -1676,7 +1678,7 @@ class xrftomoGui(QMainWindow):
 
         self.params.load_settings = str(load_settings)
         # return
-    def debugMode(self, mode):
+    def set_debugMode(self, mode):
 
         self.sinogramWidget.ViewControl.iter.setVisible(mode)
         self.sinogramWidget.ViewControl.pirt.setVisible(mode)
@@ -1708,7 +1710,7 @@ class xrftomoGui(QMainWindow):
 
         # self.configAction.setVisible(mode)
         # self.keyMapAction.setVisible(mode)
-        self.helpMenu.setVisible(mode)
+        # self.helpMenu.setVisible(mode)
         return
 
     def openFolder(self):
@@ -1770,7 +1772,7 @@ class xrftomoGui(QMainWindow):
         self.afterConversionMenu.setDisabled(True)
         self.editMenu.setDisabled(True)
         self.toolsMenu.setDisabled(True)
-        # update images seems to have dissappeare.
+        self.update_data(self.data)
         return
 
     def openStack(self):
@@ -1837,9 +1839,11 @@ class xrftomoGui(QMainWindow):
                 return
         try:
             fnames, thetas = xrftomo.load_thetas_file(file[0])
+            num_projections = self.data.shape[1]
+            self.fnames = [self.fileTableWidget.fileTableModel.arrayData[x].filename for x in range(num_projections)]
         except:
             return
-        if not len(thetas)==num_projections:
+        if not len(thetas)==len(fnames):
             self.fileTableWidget.message.setText("nummber of angles different than number of loaded images. ")
             return
 
@@ -1854,7 +1858,7 @@ class xrftomoGui(QMainWindow):
             self.fnames = np.asarray(self.fnames)[sorted_index]
 
         #compare list size first:
-        if len(fnames) != len(self.fnames):
+        if len(fnames) != len(thetas):
             print("number of projections differ from number of loaded angles")
             return
 
@@ -1948,7 +1952,7 @@ class xrftomoGui(QMainWindow):
 
     def saveAlignemnt(self):
         try:
-            self.writer.save_alignemnt_information(self.fnames, self.x_shifts, self.y_shifts, self.centers)
+            self.writer.save_alignment_information(self.fnames, self.x_shifts, self.y_shifts, self.centers)
         except AttributeError:
             print("Alignment data does not exist.")
         return

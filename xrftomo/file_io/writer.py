@@ -53,7 +53,7 @@ import numpy as np
 from skimage import io
 
 class SaveOptions(object):
-	def save_alignemnt_information(self,fnames, x_shift, y_shift, centers):
+	def save_alignment_information(self,fnames, x_shift, y_shift, centers):
 		'''
 		3D array [projection, x, y]
 		fnames 
@@ -132,7 +132,7 @@ class SaveOptions(object):
 					img = data[j, i, :, :]
 					img = img.astype(np.float32)
 					# temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tiff")
-					io.imsave(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[i].split(".")[0]+".tiff", img)
+					io.imsave(path+"/"+element_names[j]+'_'+fnames[i].split(".")[0]+".tiff", img)
 			return
 		except IOError:
 			print("type the header name")

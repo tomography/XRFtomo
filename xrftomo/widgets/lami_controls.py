@@ -60,7 +60,7 @@ class LaminographyControlsWidget(QWidget):
         vb.addWidget(self.elem)
         vb.addWidget(self.lami_scroll)
         self.setLayout(vb)
-        self.setMaximumWidth(300)
+        self.setMaximumWidth(290)
 
     def populate_scroll_area(self):
         #TODO: This function getting called tiwce, figure out why
