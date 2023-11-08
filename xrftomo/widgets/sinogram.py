@@ -933,6 +933,7 @@ class SinogramWidget(QtWidgets.QWidget):
             if self.ViewControl.constrain_roi.isChecked():
                 roi_data = self.get_roi_data(data)
                 y_shifts, roi_data = self.actions.align2edge(element, roi_data, loc, threshold)
+
             else:
                 y_shifts, dummy = self.actions.align2edge(element, data, loc, threshold)
 

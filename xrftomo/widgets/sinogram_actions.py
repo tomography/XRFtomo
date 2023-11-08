@@ -858,19 +858,21 @@ class SinogramActions(QtWidgets.QWidget):
         num_projections = data.shape[1]
         y_shifts = np.zeros(num_projections)
         tmp_data = data[element,:,:,:]
-        #masking data
+        #masking data TODO needs to be calculated for each projection.
         img = tmp_data
-        img = img ** 2
-        tsh = np.mean(img) / 10
-        img[img < tsh] = 0
-        img[img > tsh] = 255
 
-        bounds = self.get_boundaries(img,threshold)
-        edge = np.asarray(bounds[2+loc])
-        translate = -edge
+        for i in tmp_data.shape[0]:
+            img = img[i] ** 2
+            tsh = np.mean(img) * threshold/100
+            img[img < tsh] = 0
+            img[img > tsh] = 255
 
-        # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
-        y_shifts -= translate
+            bounds = self.get_boundaries(img,threshold)
+            edge = np.asarray(bounds[2+loc])
+            translate = -edge
+
+            # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
+            y_shifts -= translate
 
         for i in range(num_projections):
             # data[:,i] = np.roll(data[:,i], int(np.round(translate[i])), axis=1)
