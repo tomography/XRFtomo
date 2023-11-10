@@ -116,6 +116,7 @@ class FileTableWidget(QWidget):
 
         self.setLayout(mainLayout)
         try:
+            #TODO: get files and
             self.onLoadDirectory()
         except:
             print("Invalid directory or file; Try a new folder or remove problematic files.")
@@ -186,24 +187,35 @@ class FileTableWidget(QWidget):
             self.theta_menu.show()
         return
 
-    def onLoadDirectory(self, files = None):
+    def onLoadDirectory(self, fnames=None, path=None):
         self.data_menu.clear()
         self.element_menu.clear()
         self.theta_menu.clear()
         ext = self.extLineEdit.text()
-        self.fileTableModel.loadDirectory(self.dirLineEdit.text(), self.extLineEdit.text())
-        fpath = self.fileTableModel.getFirstCheckedFilePath()
 
-        if fpath == None:
-            self.message.setText('Invalid directory')
-            return
 
+        if path == None:
+            try:
+                path = self.dirLineEdit.text()
+            except:
+                self.message.setText('Invalid directory')
+                return
+        if fnames == None:
+            all_files = [x for x in os.listdir(path)]
+            fileNames = [x for x in all_files if x.split(".")[-1] == ext.split(".")[-1]]
+
+            # TODO: filter files begining with "._"
+            with_ = [x for x in fileNames if x.startswith(".")]
+            without_ = [x for x in fileNames if x not in with_]
+            fnames = [path+"/"+file for file in without_]
+
+        self.fileTableModel.loadDirectory(fnames)
         self.fileTableModel.setAllChecked(True)
 
-        if ".h5" in ext:
+        if "h5" in ext:
             try:
-                fpath = self.fileTableModel.getFirstCheckedFilePath()
-                self.img = h5py.File(fpath, "r")
+
+                self.img = h5py.File(fnames[0], "r")
                 self.data_tag = self.data_menu.addMenu("data")
                 self.data_tag.objectName = "data_tag"
                 self.populate_data_menu(self.img, self.data_tag)
@@ -224,14 +236,11 @@ class FileTableWidget(QWidget):
                     pass
                 else:
                     return
-                # self.data_tag_changed()
 
                 self.element_tag_changed()
                 thetas_loaded = self.try_theta()
                 if not thetas_loaded:
                     self.theta_tag_changed()
-
-                # self.theta_tag_changed()
 
 
             except KeyError:
@@ -533,7 +542,7 @@ class FileTableWidget(QWidget):
         k = np.arange(len(files))
         l = np.arange(len(elements))
         files = [files[j] for j in k if files_bool[j]==True]
-        path_files = [self.fileTableModel.directory + '/' + s for s in files]
+        path_files = [self.fileTableModel.directory + s for s in files]
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
 
@@ -556,7 +565,7 @@ class FileTableWidget(QWidget):
 
         self.parent.clear_all()
         try:
-            #TODO: fix this
+            #TODO: add file upload status: n / total files uploaded
             data = xrftomo.read_mic_xrf(path_files, elements, data_tag, element_tag)
         except:
             self.message.setText("invalid image/data/element tag combination. Load failed")

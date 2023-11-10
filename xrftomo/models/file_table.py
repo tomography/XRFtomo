@@ -131,23 +131,13 @@ class FileTableModel(QtCore.QAbstractTableModel):
         else:
             return QtCore.QVariant()
 
-    def loadDirectory(self, directoryName, ext='*.h5*'):
-        self.directory = directoryName
-        topLeft = self.index(0, 0)
-        self.layoutAboutToBeChanged.emit()
-        all_files = [x for x in os.listdir(directoryName)]
-        fileNames = [x for x in all_files if x.split(".")[-1] == ext.split(".")[-1]]
+    def loadDirectory(self, fnames):
 
-        # TODO: filter files begining with "._"
-        with_ = [x for x in fileNames if x.startswith(".")]
-        without_ = [x for x in fileNames if x not in with_]
-        fileNames = without_
-
-        # fileNames = [os.path.basename(x) for x in glob(directoryName+'/'+ext)]
-        fileNames = sorted(fileNames)
+        fnames = sorted(fnames)
         self.arrayData = []
-        for i in range(len(fileNames)):
-            self.arrayData += [TableArrayItem(fileNames[i])]
+        for i in range(len(fnames)):
+            self.arrayData += [TableArrayItem(fnames[i])]
+        topLeft = self.index(0, 0)
         bottomRight = self.index(len(self.arrayData), len(self.columns))
         self.layoutChanged.emit()
         self.dataChanged.emit(topLeft, bottomRight)
@@ -176,7 +166,7 @@ class FileTableModel(QtCore.QAbstractTableModel):
         path_files = []
         for i in range(len(self.arrayData)):
             if self.arrayData[i].use is True:
-                path_files.append(self.directory+'/'+self.arrayData[i].filename)
+                path_files.append(self.directory+self.arrayData[i].filename)
         return path_files
 
     def setChecked(self, rows, value):

@@ -52,6 +52,7 @@ from skimage.registration import optical_flow_tvl1, optical_flow_ilk
 import scipy.ndimage
 from skimage.registration import phase_cross_correlation
 from scipy.signal import find_peaks
+import matplotlib; matplotlib.use('Qt5Agg')
 
 class SinogramActions(QtWidgets.QWidget):
     def __init__(self):
@@ -147,11 +148,16 @@ class SinogramActions(QtWidgets.QWidget):
 
 
     def shift_all(self, data, x_shifts, y_shifts = None):
-        for idx in range(len(x_shifts)):
-            if y_shifts is None:
-                data = self.shiftProjection(data, x_shifts[idx], 0, idx)
-            else:
-                data = self.shiftProjection(data, x_shifts[idx], y_shifts[idx], idx)
+        num_elements = data.shape[0]
+        num_projections = data.shape[1]
+        if y_shifts is None:
+            for i in range(num_elements):
+                for j in range(num_projections):
+                    data[i,j] = scipy.ndimage.shift(data[i,j], (np.zeros_like(x_shifts)[j],x_shifts[j]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
+        else:
+            for i in range(num_elements):
+                for j in range(num_projections):
+                    data[i,j] = scipy.ndimage.shift(data[i,j],(-y_shifts[j],x_shifts[j]), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
 
         return data
     def shiftProjection(self, data, x, y, index):
@@ -429,37 +435,35 @@ class SinogramActions(QtWidgets.QWidget):
         '''
         num_projections = data.shape[1]
         x_shifts = np.zeros(num_projections)
-        y_shifts = np.zeros(num_projections)
-
-        #
         row_sums = np.array([np.sum(data[element, i],axis=1) for i in range(num_projections)])
         row_sums_orig = np.copy(row_sums)
         dummy = self.multiplot(row_sums_orig)
-        #TODO: will not work if num rows greater than 10 due to the filtering
-        row_sums = scipy.signal.savgol_filter(row_sums, 11, 2, deriv=0, delta=1.0, axis=- 1, mode='interp', cval=0.0)
+        try:
+            row_sums = scipy.signal.savgol_filter(row_sums, 11, 2, deriv=0, delta=1.0, axis=- 1, mode='interp', cval=0.0)
+        except:
+            row_sums = scipy.signal.savgol_filter(row_sums, 3, 2, deriv=0, delta=1.0, axis=- 1, mode='interp', cval=0.0)
 
-        #
         ##push edges
+        #does not work with datasets that has a lot of self-absorbtion,
         y_shifts = self.push_edge(row_sums,1,0.7)
-
-        # # xcor adjacent arrays to remove jitter__________________
-        # for i in range(1, num_projections):
-        #     shift, error, diffphase = phase_cross_correlation(row_sums[i - 1], row_sums[i], upsample_factor=100)
-        #     y_shifts[i:] -= round(shift[0], 2)
-
-        for i in range(len(y_shifts)):
-            row_sums[i] = scipy.ndimage.shift(row_sums[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-            for j in range(data.shape[0]):
-                data[j,i] = scipy.ndimage.shift(data[j,i], (-y_shifts[i], 0), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
-
+        # y_shifts = []
+        # other_arr = np.zeros_like(row_sums)
+        # for i in range(1, row_sums.shape[0]):
+        #     shift, error, diffphase = phase_cross_correlation(row_sums[i-1], row_sums[1], upsample_factor=100)
+        #     y_shifts.append(shift)
+        #     row_sums[i] = scipy.ndimage.shift(row_sums[i], shift, output = None, order = 3, mode = 'grid-wrap', cval = 0.0, prefilter = True)
+        #     other_arr[i] = row_sums[i]/row_sums[i].max()
+        # row_sums = scipy.ndimage.shift(row_sums, y_shifts, output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
 
         dummy = self.multiplot(row_sums)
-
+        # plt.figure()
+        # plt.plot(np.rot90(row_sums))
+        # plt.figure()
+        # plt.plot(np.rot90(other_arr))
 
         plt.show()
-
         self.alignmentDone()
-        return data, x_shifts, y_shifts
+        return x_shifts, y_shifts
 
 
     def push_edge(self, arr, side=0,threshold=0.6):
@@ -526,6 +530,7 @@ class SinogramActions(QtWidgets.QWidget):
 
 
     def xcor_dysum(self, element, data):
+
         '''
         cross correlate row sum of 3D data
         Variables
@@ -546,119 +551,45 @@ class SinogramActions(QtWidgets.QWidget):
         dy_arr = np.zeros((data.shape[1], data.shape[2]))
         tail_head = int(dy_arr.shape[1] * 0.15)
 
-        stack = data[element]
+        stack = np.copy(data[element])
         for i in range(num_projections):
-            plotv = np.sum(data[element, i], axis=1) * yrange * 0.2 / (np.sum(stack, axis=2).max())
+
+            plotv = np.sum(stack[i], axis=1) * yrange * 0.2 / (np.sum(stack, axis=2).max())
             plotv = scipy.signal.savgol_filter(plotv, 11, 2, deriv=0, delta=1.0, axis=- 1, mode='interp', cval=0.0)
             plot_dy = np.gradient(plotv, dy)
             plot_dy = scipy.signal.savgol_filter(plot_dy, 11, 2, deriv=0, delta=1.0, axis=- 1, mode='interp', cval=0.0)
 
             ploty_dy = plot_dy * xrange * 0.1 / plot_dy.max()
-            dy_arr[i]= ploty_dy
+            dy_arr[i]= ploty_dy**2
+            dy_arr[i] = dy_arr[i] / dy_arr[i].max()
         # dy_arr = self.remove_false_peak(dy_arr,4)
         dy_arr_orig = np.copy(dy_arr)
 
         #plot staggered row sums
         dummy = self.multiplot(dy_arr_orig)
-
-        # #filter arrays to smoothen them
-        # peak_list = []
-        # for i in range(len(dy_arr)):
-        #     pks, dummy = find_peaks(dy_arr[i], prominence=(dy_arr[i].max() / 3, dy_arr[i].max()))
-        #     peak_list.append(list(pks))
-        # flat_list = [item for sublist in peak_list for item in sublist]
-        #
-        # sum_dy_sqrd = np.sum(dy_arr, axis=0)**2
-        # peaks, dummy = find_peaks(sum_dy_sqrd, prominence=(sum_dy_sqrd.max() / 5, sum_dy_sqrd.max()))
-        # peak_locs = np.flip(peaks[np.argsort(sum_dy_sqrd[peaks])])
-        # num_peaks = len(peak_locs)
-        #
-        # if num_peaks>1:
-        #     # select 2nd peak
-        #     #TODO: add option to select peak, 0th peak if none selected.
-        #     tail = int(peak_locs[1] - 10)
-        #     head = int(peak_locs[1] + 10)
-        #     if tail <0:
-        #         tail = 0
-        #     if head >dy_arr.shape[1]:
-        #         head = dy_arr.shape[1]-1
-        #     new_dy_arr = np.copy(dy_arr[:,tail:head])
-        # else:
-        #     # select 1st peak
-        #     try:
-        #         tail = int(peak_locs[0] - 10)
-        #         head = int(peak_locs[0] + 10)
-        #         if tail <0:
-        #             tail = 0
-        #         if head >dy_arr.shape[1]:
-        #             head = dy_arr.shape[1]-1
-        #         new_dy_arr = np.copy(dy_arr[:,tail:head])
-        #     except IndexError:
-        #         print("index out of bounds error")
-        #
-        #         return data, np.zeros_like(self.x_shifts), np.zeros_like(self.y_shifts)
-        #     except:
-        #         print("unknown error")
-        #         return data, np.zeros_like(self.x_shifts), np.zeros_like(self.y_shifts)
-        #
-        # # dummy = self.multiplot(dy_arr)
         new_dy_arr = np.copy(dy_arr)
-
-        # #xcor adjacent arrays to remove jitter__________________
-        # for i in range(1, num_projections):
-        #     shift, error, diffphase = phase_cross_correlation(new_dy_arr[i-1], new_dy_arr[i],upsample_factor=100)
-        #     y_shifts[i:]-= round(shift[0],2)
-
-        # #adjust for discontinuities
-        # y_shifts = self.tweak_shifts(y_shifts,new_dy_arr)
-        #
-        # #shift complete array
-        # for i in range(num_projections):
-        #     new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-        # #create new shifts array
-        # y_shifts_2 = np.zeros_like(y_shifts)
-        # #xcor arrays with respect to first array ________________
-        # for i in range(1, num_projections):
-        #     shift, error, diffphase = phase_cross_correlation(new_dy_arr[i-1], new_dy_arr[i],upsample_factor=100)
-        #     y_shifts_2[i] -= round(shift[0],2)
-        #
-        # #adjust for discontinuities
-        # y_shifts_2 = self.tweak_shifts(y_shifts_2,new_dy_arr)
-        #
-        # #add shifts together
-        # y_shifts = y_shifts+y_shifts_2
-
-        # for i in range(num_projections):
-        #     new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts_2[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-
         y_shifts_3 = self.push_edge(new_dy_arr,0,0.80)
-
         y_shifts = y_shifts+y_shifts_3
 
-        # #xcor adjacent arrays to remove jitter__________________
-        # for i in range(1, num_projections):
-        #     shift, error, diffphase = phase_cross_correlation(new_dy_arr[i-1], new_dy_arr[i],upsample_factor=100)
-        #     y_shifts[i:]-= round(shift[0],2)
-
-
-        #plot staggered row sums
-        # dummy = self.multiplot(dy_arr)
         #shift complete array
         for i in range(num_projections):
-            # new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], -y_shifts_3[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-            # new_dy_arr[i] = scipy.ndimage.shift(new_dy_arr[i], y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
             dy_arr[i] = scipy.ndimage.shift(dy_arr[i], -y_shifts[i], output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-            for j in range(data.shape[0]):
-                data[j,i] = scipy.ndimage.shift(data[j,i], (-y_shifts[i], 0), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
-
-
-
+            stack[i] = scipy.ndimage.shift(stack[i], (-y_shifts[i], 0), output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
 
         dummy = self.multiplot(dy_arr)
+
+        plt.figure()
+        plt.plot(np.rot90(dy_arr))
+        plt.plot(np.ones_like(dy_arr)*0.8)
+        plt.figure()
+        plt.plot(np.rot90(dy_arr_orig))
+        plt.plot(np.ones_like(dy_arr)*0.8)
+        plt.figure()
+        plt.plot(y_shifts)
         plt.show()
 
         self.alignmentDone()
-        return data, x_shifts, y_shifts
+        return x_shifts, y_shifts
 
 
     def remove_false_peak(self,arr, N):
@@ -767,15 +698,14 @@ class SinogramActions(QtWidgets.QWidget):
             for i in range(data.shape[2]):
                 sino = data[element, :, i, :]
 
-        sino = data[element,:,layer,:] #TODO: IndexError: index 283 is out of bounds for axis 2 with size 25
+        sino = data[element,:,layer,:] #TODO: IndexError when contrained to ROI
         x_shifts = np.zeros(data.shape[1])
         for i in range(1,sino.shape[0]):
             shift, error, diffphase = phase_cross_correlation(sino[0], sino[i], upsample_factor=100)
             x_shifts[i] = shift[0]
-        for i in range(data.shape[0]):
-            for j in range(data.shape[1]):
-                data[i,j] = scipy.ndimage.shift(data[i,j], (0, x_shifts[j]), output=None, order=3, mode='wrap', cval=0.0, prefilter=True)
-        return data, x_shifts
+
+
+        return x_shifts
 
     def phaseCorrelate(self, element, data):
         '''
@@ -857,29 +787,17 @@ class SinogramActions(QtWidgets.QWidget):
         '''
         num_projections = data.shape[1]
         y_shifts = np.zeros(num_projections)
-        tmp_data = data[element,:,:,:]
-        #masking data TODO needs to be calculated for each projection.
-        img = tmp_data
+        img = data[element,:,:,:]
 
-        for i in tmp_data.shape[0]:
-            img = img[i] ** 2
-            tsh = np.mean(img) * threshold/100
-            img[img < tsh] = 0
-            img[img > tsh] = 255
+        bounds = self.get_boundaries(img,threshold)
+        edge = np.asarray(bounds[2+loc])
+        translate = -edge
 
-            bounds = self.get_boundaries(img,threshold)
-            edge = np.asarray(bounds[2+loc])
-            translate = -edge
-
-            # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
-            y_shifts -= translate
-
-        for i in range(num_projections):
-            # data[:,i] = np.roll(data[:,i], int(np.round(translate[i])), axis=1)
-            data = self.shiftProjection(data, 0, np.round(translate[i],2), i)
+        # self.data = np.roll(data, int(np.round(self.y_shifts)), axis=1)
+        y_shifts -= translate
 
         self.alignmentDone()
-        return y_shifts, data
+        return y_shifts
 
     def get_boundaries(self, data, coeff):
         '''
@@ -1005,10 +923,8 @@ class SinogramActions(QtWidgets.QWidget):
 
     def alignFromText2(self, fileName, data, data_fnames, x_padding=0):
         '''
-        align by reading text file that saved prior image registration
-        alignment info is saved in following format: name of the file, xshift, yshift
-        by locating where the comma(,) is we can extract information:
-        name of the file(string before first comma),
+        align by reading text file in following format: name of the file, xshift, yshift
+        appends shifts to existing alignmet, so reset if you want a clean slate prior to importing txt file.
         yshift(string after first comma before second comma),
         xshift(string after second comma)
         Variables
@@ -1018,15 +934,8 @@ class SinogramActions(QtWidgets.QWidget):
 
         '''
         try:
-            #unalign first, y_axis possibly inverted.
-            num_projections = data.shape[1]
-            x_shifts = self.x_shifts
-            y_shifts = self.y_shifts
-            fnames = []
-            for i in range(num_projections):
-                data = self.shiftProjection(data,-x_shifts[i],y_shifts[i], i)
-
             #read alignment data
+            fnames = []
             file = open(fileName[0], 'r')
             read = file.readlines()
             datacopy = np.zeros(data.shape)
@@ -1272,7 +1181,7 @@ class SinogramActions(QtWidgets.QWidget):
         self.posMat[0] = posMat[0] + x_size//2
         self.posMat[1] = posMat[1] + y_size//2
         hs_x_pos, hs_y_pos, firstPosOfHotSpot, hotSpotX, hotSpotY, data = self.alignment_parameters(element, x_size, y_size, hs_group, posMat, data)
-#****************
+        #****************
         num_projections = data.shape[1]
         y_shifts = np.zeros(num_projections)
         x_shifts = np.zeros(num_projections)

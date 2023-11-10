@@ -138,37 +138,47 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
 
 
     def populate_scroll_area(self):
+        widgetsizes = [240,115, 50]
         item_dict = {} #[type(button, file, path, dropdown), descriptions[idx], choices[idx],defaults[idx]]
-        item_dict["downsample"] = ["button", "downsample by 2x", None, None]
-        item_dict["invert"] = ["button", "invert 2d array", None, None]
-        item_dict["cropBtn"] = ["button", "crop to ROI", None, None]
-        item_dict["padBtn"] = ["button", "add 0 pixels ro edge of image", None, None]
-        item_dict["deleteProjection"] = ["button", "exclude form analysis", None, None]
-        item_dict["rm_hotspot"] = ["button", "remove hotspot", None, None]
+        item_dict["downsample"] = [["button"], "downsample by 2x", None, None]
+        item_dict["invert"] = [["button"], "invert 2d array", None, None]
+        item_dict["cropBtn"] = [["button"], "crop to ROI", None, None]
+        item_dict["padBtn"] = [["button"], "add 0 pixels ro edge of image", None, None]
+        item_dict["deleteProjection"] = [["button"], "exclude form analysis", None, None]
+        item_dict["rm_hotspot"] = [["button"], "remove hotspot", None, None]
+        item_dict["mask"] = [["button","linedit"], "binary thresholding for alignment purposes", None, None]
 
-        self.line_names = list(item_dict.keys())
-        num_lines = len(self.line_names)
-
-        for key in item_dict.keys():
+        v_box = QVBoxLayout()
+        for i, key in enumerate(item_dict.keys()):
+            widget_items = item_dict[key][0]
             attrs = item_dict[key]
-            if attrs[0] == "button":
-                setattr(self, key, QPushButton(key))
-            elif attrs[0] == "file":
-                setattr(self, key, QPushButton(key))
-            elif attrs[0] == "path":
-                setattr(self, key, QPushButton(key))
-            elif attrs[0] == "dropdown":
-                setattr(self, key, QComboBox(key))
+            widgetsize = widgetsizes[len(widget_items)-1]
+
+            line_num = "line_{}".format(i)
+            setattr(self, line_num, QHBoxLayout())
+            line = self.__dict__[line_num]
+
+            for widget in widget_items:
+                if widget == "button":
+                    setattr(self, key, QPushButton(key))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    object.setToolTip(attrs[1])
+                    line.addWidget(object)
+
+                elif widget == "linedit":
+                    name = key+"_lndt"
+                    setattr(self, name, QLineEdit("10"))
+                    object = self.__dict__[name]
+                    object.setFixedWidth(widgetsize)
+                    object.setToolTip(attrs[1])
+                    line.addWidget(object)
+            v_box.addLayout(line)
 
         self.scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
-        self.vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
-        for i in range(num_lines):
-            line = self.__dict__[self.line_names[i]]
-            line.objectName = self.line_names[i]
-            self.vbox.addWidget(line)
-        self.vbox.setSpacing(0)
-        self.vbox.setContentsMargins(0, 0, 0, 0)
-        self.scroll_widget.setLayout(self.vbox)
+        v_box.setSpacing(0)
+        v_box.setContentsMargins(0, 0, 0, 0)
+        self.scroll_widget.setLayout(v_box)
         self.scroll.setWidget(self.scroll_widget)
         return
 

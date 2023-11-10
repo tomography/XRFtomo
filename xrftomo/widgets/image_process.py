@@ -47,7 +47,7 @@ from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 import xrftomo
 
 #TODO: use separate button for background subtraction instead of remove hotspot.
-
+#TODO: make an interactive masking option for alignment reasons. bring back equalize function.
 class ImageProcessWidget(QtWidgets.QWidget):
 
     sliderChangedSig = pyqtSignal(int, name='sliderChangedSig')
@@ -95,6 +95,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.cropBtn.clicked.connect(self.cut_params)
+        self.ViewControl.mask.clicked.connect(self.mask_params)
         self.ViewControl.padBtn.clicked.connect(self.ViewControl.padding_options.show)
         self.ViewControl.run_padding.clicked.connect(self.pad_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
@@ -385,6 +386,22 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data[element] = self.actions.filter(data[element], bpfilter=3)
         self.dataChangedSig.emit(data)
         pass
+
+    def mask_params(self):
+        data = self.data
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        threshold = self.ViewControl.mask_lndt.text()
+        try:
+            threshold = eval(threshold)
+            if threshold <0 or threshold>100:
+                print("threshold outside range: 0-100")
+                return
+            data[element] = self.actions.mask_data(data, element, threshold)
+            self.dataChangedSig.emit(data)
+
+        except Exception as error:
+            print(error)
+        return
 
     def downsample_params(self):
         data = self.data[:,:,::2,::2]

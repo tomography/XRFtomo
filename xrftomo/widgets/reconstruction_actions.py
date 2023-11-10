@@ -229,6 +229,9 @@ class ReconstructionActions(QtWidgets.QWidget):
 
 
 		#TODO: normalize all to 1 to make mse calculation more fair and not dependant on the recon width.
+		#TODO: File "C:\Users\marinf\conda\XRFtomo\xrftomo\widgets\reconstruction_actions.py", line 232, in recon_stats
+    	# if projection.max() > reprojection[middle_index].max():
+		# IndexError: index 11 is out of bounds for axis 0 with size 2
 		if projection.max() > reprojection[middle_index].max():
 			plot_proj = projection / projection.max() * recon.shape[1]
 			plot_repr = reprojection[middle_index] / reprojection[middle_index].max() * recon.shape[1]

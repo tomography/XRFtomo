@@ -254,9 +254,12 @@ class LaminographyControlsWidget(QWidget):
         return op_dict
 
     def get_file(self):
-        sender = self.sender
-        file = QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath())
-        sender().setText(file)
+        try:
+            sender = self.sender
+            file = QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath())
+            sender().setText(file)
+        except:
+            return
 
     def get_path(self):
         sender = self.sender

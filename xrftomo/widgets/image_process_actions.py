@@ -280,6 +280,17 @@ class ImageProcessActions(QtWidgets.QWidget):
 		imgs[imgs>15*std_imgs] = std_imgs
 		data[element] = imgs
 		return data
+	def mask_data(self, data, element, threshold):
+		img = data[element, :, :, :]
+		num_projections = data.shape[1]
+
+		for i in range(num_projections):
+			img[i] = img[i] ** 2
+			tsh = np.mean(img[i]) * threshold / 100
+			img[i][img[i] < tsh] = 0
+			img[i][img[i] > tsh] = 255
+
+		return img
 
 	def create_mask(self, data, mask_thresh=None, scale=.8):
 		# Remove nan values

@@ -1708,9 +1708,6 @@ class xrftomoGui(QMainWindow):
         self.saveRecon2npyAction.setVisible(mode)
         self.saveToNumpyAction.setVisible(mode)
 
-        # self.configAction.setVisible(mode)
-        # self.keyMapAction.setVisible(mode)
-        # self.helpMenu.setVisible(mode)
         return
 
     def openFolder(self):
@@ -1725,16 +1722,19 @@ class xrftomoGui(QMainWindow):
     def openH5(self):
         currentDir = self.fileTableWidget.dirLineEdit.text()
         files = QFileDialog.getOpenFileNames(self, "Open h5", QtCore.QDir.currentPath(), "h5 (*.h5*)" )
-        if files[0] == '' or files[0] == []:
+        files = files[0]
+        if files == '' or files== []:
             return
+        ext = self.fileTableWidget.extLineEdit.text().strip("*.")
+        dir_ending_index = files[0].rfind("/")
+        path = files[0][:dir_ending_index]
+        files = [files[i] for i, file in enumerate(files) if file.split(".")[-1]==ext]
+        fnames = [file.split("/")[-1] for file in files]
 
-        # dir_ending_index = files[0][0].split(".")[0][::-1].find("/")+1
-        dir_ending_index = files[0][0].rfind("/")
-        path = files[0][0][:dir_ending_index]
-        ext = "*."+files[0][0].split(".")[-1]
+
         self.fileTableWidget.dirLineEdit.setText(path)
         self.fileTableWidget.extLineEdit.setText(ext)
-        self.fileTableWidget.onLoadDirectory()
+        self.fileTableWidget.onLoadDirectory(files, path)
         self.clear_all()
         #disable preprocessing, alignment, reconstructions, save, tools and edit, 
         #Clear self.data, history and reset everytihng prior to loading. 

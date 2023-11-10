@@ -340,54 +340,93 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.options.currentIndexChanged.connect(self.display)
 
         #__________Popup window for PIRT button__________
-
+        self.pirt_scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
+        self.pirt_scroll.setWidgetResizable(True)
         self.pirt_parameters = QtWidgets.QWidget()
-        self.pirt_parameters.resize(275,300)
+        self.pirt_parameters.resize(310,300)
         self.pirt_parameters.setWindowTitle('pirt options')
+        widgetsizes = [300, 135, 75]
+        pirt_dict = {}
+        pirt_dict["ntau"] = [["label", "linedit"], "size of the object",None, None]
+        pirt_dict["ntheta"] = [["label", "linedit"], "number of projection anlges", None, None]
+        pirt_dict["anglefile"] = [["label", "file"], "hdf5 file containing projection angles", None, None]
+        pirt_dict["sinofile"] = [["label", "file"], "hdf5 file containing sinograms", None, None]
+        pirt_dict["nslices"] = [["label", "linedit"], "number of 3D slices", None, "1"]
+        pirt_dict["nsubcomms"] = [["label", "linedit"], "number of concurrent solves", None, "1"]
+        pirt_dict["overall_sweeps"] = [["label", "linedit"], "number of sweeps over all slices", None, "1"]
+        pirt_dict["alt_outer_its"] = [["label", "linedit"], "number of outer iterations for alternating solve", None, "15"]
+        pirt_dict["alt_sample_its"] = [["label", "linedit"], "number of (inner) iterations for sample solve", None, "5"]
+        pirt_dict["alt_shifts_its"] = [["label", "linedit"], "number of (inner) iterations for shifts solve", None, "2"]
+        pirt_dict["joint_its"] = [["label", "linedit"], "number of iterations for joint solve",None, "100"]
+        pirt_dict["matfile"] = [["label", "file"], "petsc binary file containing the projection matrix", None, None]
+        pirt_dict["joint"] = [["checkbox"], "enable joint CoR error correction", None, False]
+        pirt_dict["alternating"] = [[ "checkbox"], "enable alternating CoR error correction", None, False]
+        pirt_dict["regularize"] = [[ "checkbox"], "enable adaptive L1 regularization", None, False]
+        pirt_dict["combine_mean"] = [[ "checkbox"], "combine shifts from concurrent solves via their mean", None, False]
+        pirt_dict["combine_median"] = [[ "checkbox"], "combine shifts from concurrent solves via their median", None, False]
+        pirt_dict["synthetic"] = [[ "checkbox"], "generate sinogram from sample before reconstruction", None, False]
+        pirt_dict["run alignment"] = [["button"], "generate sinogram from sample before reconstruction", None, False]
 
-        params = {}
-        params["ntau"] = ["lineedit", "", "size of the object"]
-        params["ntheta"] = ["lineedit", "", "number of projection anlges"]
-        params["anglefile"] = ["file", "", "hdf5 file containing projection angles"]
-        params["sinofile"] = ["file", "", "hdf5 file containing sinograms"]
-        params["nslices"] = ["lineedit", "1", "number of 3D slices"]
-        params["nsubcomms"] = ["lineedit", "1", "number of concurrent solves"]
-        params["overall_sweeps"] = ["lineedit", "1", "number of sweeps over all slices"]
-        params["alt_outer_its"] = ["lineedit", "15", "number of outer iterations for alternating solve"]
-        params["alt_sample_its"] = ["lineedit", "5", "number of (inner) iterations for sample solve"]
-        params["alt_shifts_its"] = ["lineedit", "2", "number of (inner) iterations for shifts solve"]
-        params["joint_its"] = ["lineedit", "100", "number of iterations for joint solve"]
-        params["matfile"] = ["file", "", "petsc binary file containing the projection matrix"]
-        params["joint"] = ["binary", "False", "enable joint CoR error correction"]
-        params["alternating"] = ["binary", "False", "enable alternating CoR error correction"]
-        params["regularize"] = ["binary", "False", "enable adaptive L1 regularization"]
-        params["combine_mean"] = ["binary", "False", "combine shifts from concurrent solves via their mean"]
-        params["combine_median"] = ["binary", "False", "combine shifts from concurrent solves via their median"]
-        params["synthetic"] = ["binary", "False", "generate sinogram from sample before reconstruction"]
+        pirt_v_box = QVBoxLayout()
+        for i, key in enumerate(pirt_dict.keys()):
+            widget_items = pirt_dict[key][0]
+            attrs = pirt_dict[key]
+            widgetsize = widgetsizes[len(widget_items) - 1]
 
-        self.browse_lbl = QLabel("data path: ")
-        self.browse = QPushButton("file path: /")
-        self.browse.setFixedWidth(button1size)
-        self.scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
-        self.scroll.setWidgetResizable(True)
-        # self.populate_pirt_area()
-        self.generate_lbl = QLabel("Generate folder structure in data path")
-        self.generate_lbl.setFixedWidth(button12size)
-        self.generate = QPushButton("generate")
-        self.generate.setFixedWidth(button3size)
-        self.show_ops = QPushButton("show more")
-        self.show_ops.setCheckable(True)
-        self.show_ops.setChecked(False)
-        self.show_ops.setFixedWidth(button3size)
+            pirt_line_num = "pirt_line_{}".format(i)
+            setattr(self, pirt_line_num, QHBoxLayout())
+            pirt_line = self.__dict__[pirt_line_num]
 
-        self.pirt_options = QtWidgets.QComboBox()
-        self.pirt_options.setFixedWidth(button1size)
+            for widget in widget_items:
 
-        vbox = QtWidgets.QVBoxLayout(self)
-        vbox.addWidget(self.pirt_options)
-        self.pirt_parameters.setLayout(vbox)
+                if widget == "file":
+                    setattr(self, key, QPushButton())
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    object.setText(attrs[3])
+                    object.clicked.connect(self.get_file)
+                    pirt_line.addWidget(object)
+                elif widget == "button":
+                    setattr(self, key, QPushButton(key))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    pirt_line.addWidget(object)
+                elif widget == "checkbox":
+                    setattr(self, key, QCheckBox(attrs[1]))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    object.setChecked(attrs[3])
+                    pirt_line.addWidget(object)
+                elif widget == "linedit":
+                    name = key + "_lndt"
+                    setattr(self, name, QLineEdit(attrs[3]))
+                    object = self.__dict__[name]
+                    object.setFixedWidth(widgetsize)
+                    pirt_line.addWidget(object)
+                elif widget == "label":
+                    name = key + "_lbl"
+                    setattr(self, name, QLabel(key))
+                    object = self.__dict__[name]
+                    object.setFixedWidth(widgetsize)
+                    object.setToolTip(attrs[1])
+                    pirt_line.addWidget(object)
+            pirt_v_box.addLayout(pirt_line)
+
+        self.pirt_scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+        pirt_v_box.setSpacing(0)
+        pirt_v_box.setContentsMargins(0, 0, 0, 0)
+        self.pirt_scroll_widget.setLayout(pirt_v_box)
+        self.pirt_scroll.setWidget(self.pirt_scroll_widget)
+        self.pirt_parameters.setLayout(pirt_v_box)
         #TODO: create function that creates widgets based on dictionary input.
 
+    def get_file(self):
+        try:
+            sender = self.sender
+            file = QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath())
+            sender().setText(file)
+        except:
+            return
     def populate_hs_controls(self):
         self.hs_scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
         self.hs_scroll.setWidgetResizable(True)
@@ -473,22 +512,22 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         item_dict = {}  # [type(button, file, path, dropdown), descriptions[idx], choices[idx],defaults[idx]]
 
         item_dict["constrain_roi"] = ["checkbox", "constrain registration to ROI"]
-        item_dict["constrain_x"] = ["checkbox", "constrain registration along x"]
-        item_dict["constrain_y"] = ["checkbox", "constrain registration alng y"]
-        item_dict["xcorsino"] = ["button", "cross correlate sinogram slices"]
-        item_dict["xcorry"] = ["button", "cross correlate sums along horizontal direction"]
-        item_dict["xcorrdy"] = ["button", "cross correlate difference of sums along horizontal direction"]
-        item_dict["edge"] = ["button", "cross correlate difference of sums along horizontal direction"]
-        item_dict["com"] = ["button", "center of mass"]
+        item_dict["constrain_x"] = ["checkbox", "do not shift along x axis"]
+        item_dict["constrain_y"] = ["checkbox", "do not shift along y axis"]
+        item_dict["cross_correlate_sinogram"] = ["button", "cross correlate sinogram slices"]
+        item_dict["y_sum"] = ["button", "cross correlate sums along horizontal direction"]
+        item_dict["dy_sum"] = ["button", "cross correlate difference of sums along horizontal direction"]
+        item_dict["push2edge"] = ["button", "cross correlate difference of sums along horizontal direction"]
+        item_dict["center_of_mass"] = ["button", "center of mass"]
         item_dict["xcor"] = ["button", "cross correlate"]
         item_dict["phasecor"] = ["button", "phas correlation"]
-        item_dict["iter"] = ["button", "iterative alignment"]
+        item_dict["iterative"] = ["button", "iterative alignment"]
         item_dict["pirt"] = ["button", "pirt alignment"]
-        item_dict["aft"] = ["button", "align from text"]
+        item_dict["from_file"] = ["button", "align from text"]
         item_dict["adjust_sino"] = ["button", "tweak sinogram slope and position"]
         item_dict["center"] = ["button", "find and move to center of rotation"]
         item_dict["opflow"] = ["button", "optical flow alignment"]
-        item_dict["rot_axis"] = ["button", "redefine rotation axis"]
+        item_dict["change_rotation_axis"] = ["button", "redefine rotation axis"]
         item_dict["fit_peaks"] = ["button", "align to brightest spot"]
         item_dict["sinusoid_align"] = ["button", "define and manipulate sinusoid to align sinogram"]
         item_dict["hotspot_align"] = ["button", "select hostposts as fiducials to create a sine curve"]
