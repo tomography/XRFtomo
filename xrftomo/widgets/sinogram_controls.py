@@ -554,15 +554,15 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.scroll_widget.setLayout(self.vbox)
         self.scroll.setWidget(self.scroll_widget)
 
-        self.iter.setVisible(False)
+        self.iterative.setVisible(False)
         self.pirt.setVisible(False)
         self.opflow.setVisible(False)
-        self.xcorsino.setVisible(False)
-        self.xcorrdy.setVisible(False)
+        self.cross_correlate_sinogram.setVisible(False)
+        self.dy_sum.setVisible(False)
         self.center.setVisible(False)
         self.phasecor.setVisible(False)
         self.adjust_sino.setVisible(False)
-        self.rot_axis.setVisible(False)
+        self.change_rotation_axis.setVisible(False)
 
         return
 

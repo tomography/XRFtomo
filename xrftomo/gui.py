@@ -1680,15 +1680,15 @@ class xrftomoGui(QMainWindow):
         # return
     def set_debugMode(self, mode):
 
-        self.sinogramWidget.ViewControl.iter.setVisible(mode)
+        self.sinogramWidget.ViewControl.iterative.setVisible(mode)
         self.sinogramWidget.ViewControl.pirt.setVisible(mode)
         self.sinogramWidget.ViewControl.opflow.setVisible(mode)
-        self.sinogramWidget.ViewControl.xcorsino.setVisible(mode)
-        self.sinogramWidget.ViewControl.xcorrdy.setVisible(mode)
+        self.sinogramWidget.ViewControl.cross_correlate_sinogram.setVisible(mode)
+        self.sinogramWidget.ViewControl.dy_sum.setVisible(mode)
         self.sinogramWidget.ViewControl.center.setVisible(mode)
         self.sinogramWidget.ViewControl.phasecor.setVisible(mode)
         self.sinogramWidget.ViewControl.adjust_sino.setVisible(mode)
-        self.sinogramWidget.ViewControl.rot_axis.setVisible(mode)
+        self.sinogramWidget.ViewControl.change_rotation_axis.setVisible(mode)
 
         self.reconstructionWidget.ViewControl.middle_row_lbl.setVisible(mode)
         self.reconstructionWidget.ViewControl.middle_row.setVisible(mode)
