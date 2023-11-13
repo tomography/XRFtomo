@@ -934,6 +934,7 @@ class SinogramActions(QtWidgets.QWidget):
 
         '''
         try:
+            data_fnames = [file.split("/")[-1] for file in data_fnames]
             #read alignment data
             fnames = []
             file = open(fileName[0], 'r')
@@ -967,7 +968,7 @@ class SinogramActions(QtWidgets.QWidget):
                     fnames.append(read[j].split(",")[0])
                     tmp_y.append(round(float(read[j].split(",")[2])))
                     tmp_x.append(round(float(read[j].split(",")[1])))
-                    if fnames[i] in data_fnames:
+                    if fnames[i] in data_fnames[i]:
                         alignment_mask.append(1)
                     else:
                         alignment_mask.append(0)
@@ -982,7 +983,8 @@ class SinogramActions(QtWidgets.QWidget):
 
             y_shifts = list(tmp_y)
             x_shifts = list(tmp_x)
-            data = self.subpixshift_data(data, x_shifts, y_shifts)
+            # data = self.subpixshift_data(data, x_shifts, y_shifts)
+            data = self.shift_all(data, x_shifts, y_shifts)
             # data= scipy.ndimage.shift(data, y_shifts[i], x_shifts[i], output=None, order=3, mode='grid-wrap', cval=0.0, prefilter=True)
 
             file.close()

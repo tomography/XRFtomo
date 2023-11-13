@@ -344,7 +344,7 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.pirt_scroll.setWidgetResizable(True)
         self.pirt_parameters = QtWidgets.QWidget()
         self.pirt_parameters.resize(310,300)
-        self.pirt_parameters.setWindowTitle('pirt options')
+        self.pirt_parameters.setWindowTitle('Parallel Iterative Reconstruction for Tomography')
         widgetsizes = [300, 135, 75]
         pirt_dict = {}
         pirt_dict["ntau"] = [["label", "linedit"], "size of the object",None, None]
