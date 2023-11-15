@@ -37,8 +37,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE   #
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.    #
 ###########################################################################
-
-
+import numpy as np
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWidgets import *
 
@@ -1734,8 +1733,12 @@ class xrftomoGui(QMainWindow):
 
         self.fileTableWidget.dirLineEdit.setText(path)
         self.fileTableWidget.extLineEdit.setText(ext)
-        self.fileTableWidget.onLoadDirectory(files, path)
         self.clear_all()
+        if files == []:
+            print("check file extension")
+            return
+        self.fileTableWidget.onLoadDirectory(files, path)
+
         #disable preprocessing, alignment, reconstructions, save, tools and edit, 
         #Clear self.data, history and reset everytihng prior to loading. 
 
@@ -2308,7 +2311,7 @@ class xrftomoGui(QMainWindow):
 
                 self.update_alignment(self.x_shifts, self.y_shifts)
                 self.update_slider_range(self.thetas)
-                # self.update_y_slider_range(self.data.shape[2])
+                # TODO: reset tomography/lami/recon data
                 self.sinogramWidget.ySizeChanged(self.data.shape[2])
                 index = self.imageProcessWidget.sld.value()
                 self.update_theta(index, self.thetas)
@@ -2330,9 +2333,20 @@ class xrftomoGui(QMainWindow):
             self.x_shifts = np.zeros(self.data.shape[1], dtype="int")
             self.y_shifts = np.zeros(self.data.shape[1], dtype="int")
             self.centers = [100,100,self.data.shape[3]//2]
+            # self.ySizeChangedSig.emit(self.data.shape[2])
+            # self.xSizeChangedSig.emit(self.data.shape[3])
+            # # self.dataChangedSig.emit(data)
+            # TODO: reset tomography/lami/recon data
             self.sinogramWidget.x_padding_hist = [0]
             self.sinogramWidget.y_padding_hist = [0]
             self.update_history(self.data)
+            self.sinogramWidget.ySizeChanged(self.data.shape[2])
+            self.reconstructionWidget.reset_recons()
+            self.laminographyWidget.reset_recons()
+            index = self.imageProcessWidget.sld.value()
+            self.update_theta(index, self.thetas)
+            self.update_filenames(self.fnames, index)
+            self.update_data(self.data)
             self.update_slider_range(self.thetas)
 
         except AttributeError:

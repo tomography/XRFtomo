@@ -274,6 +274,42 @@ class ReconstructionActions(QtWidgets.QWidget):
 			recon[i] = img
 		return recon
 
+	def remove_artifact(self, recon):
+		# plt.figure()
+		radius = int(recon.shape[1] * 0.17)  # 17%
+		threshold = 0.75
+		new_recon = np.zeros_like(recon)
+		masky = self.create_circular_mask(recon.shape[1], recon.shape[1], center=None, radius=radius)
+
+		for i in range(recon.shape[0]):
+			img = recon[i]
+
+			fft_img = np.fft.fftshift(np.fft.fft2(img))
+			fft_img_real = np.log(abs(fft_img))
+			lines = fft_img_real > fft_img_real.max() * threshold
+			center_area = np.copy(fft_img)
+			center_area[np.invert(masky)] = 1
+
+			de_lined = np.copy(fft_img)
+			de_lined[lines] = 1
+			fixed = de_lined + center_area
+
+			new_recon[i] = abs(np.fft.ifft2(fixed))
+		return new_recon
+
+	def create_circular_mask(self, h, w, center=None, radius=None):
+
+		if center is None:  # use the middle of the image
+			center = (int(w / 2), int(h / 2))
+		if radius is None:  # use the smallest distance between the center and image walls
+			radius = min(center[0], center[1], w - center[0], h - center[1])
+
+		Y, X = np.ogrid[:h, :w]
+		dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
+
+		mask = dist_from_center <= radius
+		return mask
+
 	def shiftProjection(self, data, x, y, index):
 		X = int(x//1)
 		Y = int(y//1)

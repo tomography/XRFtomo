@@ -94,6 +94,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.combo1.currentIndexChanged.connect(self.update_recon_set)
         self.ViewControl.reconstruct.clicked.connect(self.reconstruct_params)
         self.ViewControl.remove_hotspot.clicked.connect(self.rm_hotspot_params)
+        self.ViewControl.remove_artifact.clicked.connect(self.rm_artifact_params)
         # self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
 
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
@@ -265,8 +266,15 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
 
     def rm_hotspot_params(self):
+        #NOTE: setting local variable equal to instance variable means whatever changes made to local variable will also apply to instance variable.
+        # they are not isolated! it works in this case, but just be aware.
         recon = self.recon
-        recon = self.actions.remove_hotspots(recon)
+        self.recon = self.actions.remove_hotspots(recon)
+        self.update_recon_image()
+
+    def rm_artifact_params(self):
+        recon = self.recon
+        self.recon = self.actions.remove_artifact(recon)
         self.update_recon_image()
 
     # def set_thresh_params(self):
@@ -275,13 +283,14 @@ class ReconstructionWidget(QtWidgets.QWidget):
     #     recon = self.actions.setThreshold(threshold,recon)
     #     self.update_recon_image()
 
+
     def update_recon_dict(self, recon):
         elem = self.ViewControl.combo1.currentText()
         #recon could be a partial reconstruction, account for this by indexing the Y range as well
         ymin = int(eval(self.ViewControl.top_row.text()))
         ymax = int(eval(self.ViewControl.bottom_row.text()))
         try:
-            self.recon_dict[elem][ymin:ymax,:] = recon
+            self.recon_dict[elem]= recon
         except ValueError:
             self.recon_dict[elem] = recon
             print("array shape missmatch. array_dict possibly updated elsewhere ")
@@ -300,6 +309,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
             print("KeyError")
             #TODO: "loading data twice results in this error, figure out how to re-initialize recon_dict"
 
+
+
+
     def update_recon_image(self):
         index = self.sld.value()
         self.lcd.display(index)
@@ -316,6 +328,12 @@ class ReconstructionWidget(QtWidgets.QWidget):
 
     def updateElementSlot(self, element):
         self.ViewControl.combo1.setCurrentIndex(element)
+
+    def reset_recons(self):
+        elements = self.parent.elements
+        for key in elements:
+            self.recon_dict[key] = np.zeros_like(self.recon)
+        self.recon = np.zeros_like(self.recon)
 
     def reconstruct_params(self):
         element = self.ViewControl.combo1.currentIndex()

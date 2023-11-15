@@ -188,11 +188,13 @@ class FileTableWidget(QWidget):
         return
 
     def onLoadDirectory(self, fnames=None, path=None):
-        self.data_menu.clear()
-        self.element_menu.clear()
-        self.theta_menu.clear()
-        ext = self.extLineEdit.text()
-
+        try:
+            self.data_menu.clear()
+            self.element_menu.clear()
+            self.theta_menu.clear()
+            ext = self.extLineEdit.text()
+        except Exception as error:
+            print(error)
 
         if path == None:
             try:
@@ -200,14 +202,17 @@ class FileTableWidget(QWidget):
             except:
                 self.message.setText('Invalid directory')
                 return
-        if fnames == None:
-            all_files = [x for x in os.listdir(path)]
-            fileNames = [x for x in all_files if x.split(".")[-1] == ext.split(".")[-1]]
+        if fnames == None or fnames == []:
+            fileNames = [x for x in os.listdir(path)]
+            fileNames = [file for file in fileNames if file.split(".")[-1] == ext]
 
             # TODO: filter files begining with "._"
             with_ = [x for x in fileNames if x.startswith(".")]
             without_ = [x for x in fileNames if x not in with_]
             fnames = [path+"/"+file for file in without_]
+            if fileNames == []:
+                print("no valid files, check file extension")
+                return
 
         self.fileTableModel.loadDirectory(fnames)
         self.fileTableModel.setAllChecked(True)
@@ -238,7 +243,11 @@ class FileTableWidget(QWidget):
                     return
 
                 self.element_tag_changed()
-                thetas_loaded = self.try_theta()
+                try:
+                    thetas_loaded = self.try_theta()
+                except Exception as error:
+                    print(error)
+
                 if not thetas_loaded:
                     self.theta_tag_changed()
 
@@ -484,9 +493,10 @@ class FileTableWidget(QWidget):
         return data
 
     def theta_tag_changed(self):
-        path_files = self.fileTableModel.getAllFiles()
-        theta_tag = self.theta_tag.title()
         try:
+            path_files = self.fileTableModel.getAllFiles()
+            theta_tag = self.theta_tag.title()
+
             thetas = load_thetas(path_files, theta_tag, 1)
             self.message.setText("")
         except:

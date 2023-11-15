@@ -444,12 +444,16 @@ class LaminographyWidget(QtWidgets.QWidget):
                 recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons)
                 self.recon = np.array(recons)
 
-        self.update_recon_image()
-        self.update_recon_dict(self.recon)
-        self.reconChangedSig.emit(self.recon)
-        self.reconArrChangedSig.emit(recon_dict)
+        self.update_recon_image()               #get single image from self.recon
+        self.update_recon_dict(self.recon)      #put self.recon into self.recon_dict[element]
+        self.reconChangedSig.emit(self.recon)   #signals to recon tab to update recon image
+        self.reconArrChangedSig.emit(recon_dict) #signls to recon tab to update recon image
         return
-
+    def reset_recons(self):
+        elements = self.parent.elements
+        for key in elements:
+            self.recon_dict[key] = np.zeros_like(self.recon)
+        self.recon = np.zeros_like(self.recon)
     def get_command_string(self, element):
         options = []
         values = []

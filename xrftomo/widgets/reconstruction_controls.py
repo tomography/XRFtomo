@@ -89,6 +89,8 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         item_dict["reconstruct"] = ["button", "run reconstruction"]
         item_dict["recon_stats"] = ["button", "show reconstruction statisticks"]
         item_dict["remove_hotspot"] = ["button", "remove hotspots from reconstruction"]
+        item_dict["remove_artifact"] = ["button", "remove line artifacts"]
+
 
         vb_recon = QVBoxLayout()
         for key in item_dict.keys():
