@@ -94,31 +94,31 @@ class xrftomoGui(QMainWindow):
         openThetaAction = QAction('open thetas file', self)
         openThetaAction.triggered.connect(self.openThetas)
 
-        self.saveProjectionAction = QAction('Projections', self)
-        self.saveProjectionAction.triggered.connect(self.saveProjections)
-
-        self.saveSinogramAction = QAction('Sinogram', self)
-        self.saveSinogramAction.triggered.connect(self.saveSinogram)
-
-        self.saveSinogram2Action = QAction('Sinogram stack', self)
-        self.saveSinogram2Action.triggered.connect(self.saveSinogram2)
-
-        self.saveReconstructionAction = QAction('Reconstruction', self)
-        self.saveReconstructionAction.triggered.connect(self.saveReconstruction)
-
-        self.saveRecon2npyAction = QAction("recon as npy", self)
-        self.saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
-        self.saveRecon2npyAction.setVisible(False)
-
-        self.saveThetasAction = QAction('Angle information to .txt', self)
-        self.saveThetasAction.triggered.connect(self.saveThetas)
-
-        self.saveToNumpyAction = QAction("as Numpy file", self)
-        self.saveToNumpyAction.triggered.connect(self.saveToNumpy)
-        self.saveToNumpyAction.setVisible(False)
-
-        self.saveAlignemtInfoAction = QAction("Alignment", self)
-        self.saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
+        # self.saveProjectionAction = QAction('Projections', self)
+        # self.saveProjectionAction.triggered.connect(self.saveProjections)
+        #
+        # self.saveSinogramAction = QAction('Sinogram', self)
+        # self.saveSinogramAction.triggered.connect(self.saveSinogram)
+        #
+        # self.saveSinogram2Action = QAction('Sinogram stack', self)
+        # self.saveSinogram2Action.triggered.connect(self.saveSinogram2)
+        #
+        # self.saveReconstructionAction = QAction('Reconstruction', self)
+        # self.saveReconstructionAction.triggered.connect(self.saveReconstruction)
+        #
+        # self.saveRecon2npyAction = QAction("recon as npy", self)
+        # self.saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
+        # self.saveRecon2npyAction.setVisible(False)
+        #
+        # self.saveThetasAction = QAction('Angle information to .txt', self)
+        # self.saveThetasAction.triggered.connect(self.saveThetas)
+        #
+        # self.saveToNumpyAction = QAction("as Numpy file", self)
+        # self.saveToNumpyAction.triggered.connect(self.saveToNumpy)
+        # self.saveToNumpyAction.setVisible(False)
+        #
+        # self.saveAlignemtInfoAction = QAction("Alignment", self)
+        # self.saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
 
         self.saveCorrAnalysisAction = QAction("Corelation Analysis", self)
         self.saveCorrAnalysisAction.triggered.connect(self.saveCorrAlsys)
@@ -284,18 +284,6 @@ class xrftomoGui(QMainWindow):
         self.layerDensityAction.triggered.connect(self.onionWindow)
         self.layerDensityAction.setVisible(False)
 
-        hardwareSelect = QMenu("select recon hardware", self)
-        ag = QActionGroup(hardwareSelect)
-        ag.setExclusive(True)
-        self.CPU = ag.addAction(QAction('CPU', hardwareSelect, checkable=True))
-        hardwareSelect.addAction(self.CPU)
-        self.CPU.setChecked(True)
-        self.CPU.triggered.connect(self.hardwareSelectChanged)
-
-        self.GPU = ag.addAction(QAction('GPU', hardwareSelect, checkable=True))
-        hardwareSelect.addAction(self.GPU)
-        self.GPU.triggered.connect(self.hardwareSelectChanged)
-
         subPixShift = QMenu("shift step size", self)
         ag = QActionGroup(subPixShift)
         ag.setExclusive(True)
@@ -332,41 +320,77 @@ class xrftomoGui(QMainWindow):
         self.viewMenu.addAction(self.debugMode)
         self.viewMenu.setDisabled(True)
 
-        #TODO: FINISH THIS SEction
         projections_save = QMenu("Projections", self)
-        ag = QActionGroup(subPixShift)
-        ag.setExclusive(True)
-        self.proj_stack = ag.addAction(QAction('stack.tiff', subPixShift))
-        subPixShift.addAction(self.subPix_1)
-        # self.proj_stack.triggered.connect(self.save_proj_stack)
+        ag = QActionGroup(projections_save)
+        self.proj_stack = ag.addAction(QAction('proj.tiff', projections_save))
+        projections_save.addAction(self.proj_stack)
+        self.proj_stack.triggered.connect(self.save_proj_stack)
+        self.proj_indiv = ag.addAction(QAction('projx.tiff', projections_save))
+        projections_save.addAction(self.proj_indiv)
+        self.proj_stack.triggered.connect(self.save_proj_indiv)
+        self.proj_npy = ag.addAction(QAction('proj.npy', projections_save))
+        projections_save.addAction(self.proj_npy)
+        self.proj_npy.triggered.connect(self.save_proj_npy)
 
-        self.proj_indiv = ag.addAction(QAction('', subPixShift, checkable=True))
-        subPixShift.addAction(self.subPix_05)
-        self.proj_indiv.triggered.connect(self.subPixShiftChanged)
+        recon_save = QMenu("Reconstructions", self)
+        ag = QActionGroup(recon_save)
+        self.recon_stack = ag.addAction(QAction('recon.tiff', recon_save))
+        recon_save.addAction(self.proj_stack)
+        self.recon_stack.triggered.connect(self.save_recon_stack)
+        self.recon_indiv = ag.addAction(QAction('reconx.tiff', recon_save))
+        recon_save.addAction(self.proj_indiv)
+        self.recon_indiv.triggered.connect(self.save_recon_indiv)
+        self.recon_npy = ag.addAction(QAction('recon.npy', recon_save))
+        recon_save.addAction(self.proj_npy)
+        self.recon_npy.triggered.connect(self.save_recon_npy)
 
-        self.subPix_025 = ag.addAction(QAction('5', subPixShift, checkable=True))
-        subPixShift.addAction(self.subPix_025)
-        self.subPix_025.triggered.connect(self.subPixShiftChanged)
+        sino_save = QMenu("Sinograms", self)
+        ag = QActionGroup(sino_save)
+        self.sino_stack = ag.addAction(QAction('sino.tiff', sino_save))
+        sino_save.addAction(self.proj_stack)
+        self.sino_stack.triggered.connect(self.save_sino_stack)
+        self.sino_indiv = ag.addAction(QAction('sinox.tiff', sino_save))
+        sino_save.addAction(self.proj_indiv)
+        self.sino_indiv.triggered.connect(self.save_sino_indiv)
+        self.sino_npy = ag.addAction(QAction('sino.npy', sino_save))
+        sino_save.addAction(self.proj_npy)
+        self.sino_npy.triggered.connect(self.save_sino_npy)
 
-        self.subPix_01 = ag.addAction(QAction('10', subPixShift, checkable=True))
-        subPixShift.addAction(self.subPix_01)
-        self.subPix_01.triggered.connect(self.subPixShiftChanged)
+        align_save = QMenu("Alignment", self)
+        ag = QActionGroup(align_save)
+        self.align_npy = ag.addAction(QAction('align.npy', align_save))
+        align_save.addAction(self.align_npy)
+        self.align_npy.triggered.connect(self.save_align_npy)
+        self.aling_txt = ag.addAction(QAction('align.txt', align_save))
+        self.aling_txt.triggered.connect(self.save_align_txt)
+        align_save.addAction(self.aling_txt)
 
-        #TODO: Finish this section ^^^
 
+        thetas_save = QMenu("thetas", self)
+        ag = QActionGroup(align_save)
+        self.thetas_npy = ag.addAction(QAction('thetas.npy', thetas_save))
+        thetas_save.addAction(self.align_npy)
+        self.thetas_npy.triggered.connect(self.save_thetas_npy)
+        self.thetas_txt = ag.addAction(QAction('thetas.txt', thetas_save))
+        self.thetas_txt.triggered.connect(self.save_thetas_txt)
+        thetas_save.addAction(self.thetas_txt)
 
-
+        h5_save = QMenu("hdf5", self)
+        ag = QActionGroup(h5_save)
+        self.all_hdf5 = ag.addAction(QAction('everything.h5', h5_save))
+        sino_save.addAction(self.all_hdf5)
+        self.all_hdf5.triggered.connect(self.writer.save_hdf5)
 
         self.afterConversionMenu = menubar.addMenu(' &Save')
-        self.afterConversionMenu.addAction(self.saveProjectionAction)
-        self.afterConversionMenu.addAction(self.saveReconstructionAction)
-        self.afterConversionMenu.addAction(self.saveRecon2npyAction)
-        self.afterConversionMenu.addAction(self.saveAlignemtInfoAction)
-        self.afterConversionMenu.addAction(self.saveSinogramAction)
-        self.afterConversionMenu.addAction(self.saveSinogram2Action)
-        self.afterConversionMenu.addAction(self.saveThetasAction)
-        self.afterConversionMenu.addAction(self.saveToNumpyAction)
-        self.afterConversionMenu.addAction(self.saveCorrAnalysisAction)
+        self.afterConversionMenu.addMenu(projections_save)
+        self.afterConversionMenu.addMenu(recon_save)
+        self.afterConversionMenu.addMenu(sino_save)
+        self.afterConversionMenu.addMenu(align_save)
+        self.afterConversionMenu.addMenu(thetas_save)
+        self.afterConversionMenu.addMenu(h5_save)
+        # self.afterConversionMenu.addAction(self.saveThetasAction)
+        # self.afterConversionMenu.addAction(self.saveToNumpyAction)
+        # self.afterConversionMenu.addAction(self.saveCorrAnalysisAction)
 
         self.helpMenu = menubar.addMenu(' &Help')
         self.helpMenu.addAction(self.keyMapAction)
@@ -905,7 +929,8 @@ class xrftomoGui(QMainWindow):
             depth_mask = self.onion_layers == (i+1)
             total_signal[i] = np.sum(img*depth_mask)
 
-        self.miniHisto_w5.barView.setOpts(x=x,height=total_signal, width=9)
+        #TODO: unreferenced variable X
+        # self.miniHisto_w5.barView.setOpts(x=x,height=total_signal, width=9)
         return
 
     def createOnion(self):
@@ -1472,7 +1497,6 @@ class xrftomoGui(QMainWindow):
         except ZeroDivisionError:
             slope = 1
 
-
         x_pos = 1/slope
         y_pos = x_pos*slope
 
@@ -1729,8 +1753,8 @@ class xrftomoGui(QMainWindow):
         self.pixelDistanceAction.setVisible(mode)
 
         self.saveCorrAnalysisAction.setVisible(mode)
-        self.saveRecon2npyAction.setVisible(mode)
-        self.saveToNumpyAction.setVisible(mode)
+        # self.saveRecon2npyAction.setVisible(mode)
+        # self.saveToNumpyAction.setVisible(mode)
 
         return
 
@@ -1971,6 +1995,64 @@ class xrftomoGui(QMainWindow):
     #         print("Run correlation analysis first")
     #     return
 
+    def save_proj_stack(self):
+        self.writer.save_proj_stack(self.fnames, self.data, self.element)
+        pass
+
+    def save_proj_indiv(self):
+        self.writer.save_proj_indiv(self.fnames, self.data, self.element)
+        pass
+
+    def save_proj_npy(self):
+        self.writer.save_proj_npy(self.fnames, self.data, self.element)
+        pass
+
+    def save_recon_stack(self):
+        self.writer.save_recon_stack(self.recon)
+        pass
+
+    def save_recon_indiv(self):
+        self.writer.save_recon_indiv(self.recon)
+        pass
+
+    def save_recon_npy(self):
+        self.writer.save_recon_npy(self.recon)
+        pass
+
+    def save_sino_stack(self):
+        self.writer.save_sino_stack(self.sino)
+        pass
+
+    def save_sino_indiv(self):
+        self.writer.save_sino_indiv(self.sino)
+        pass
+
+    def save_sino_npy(self):
+        self.riter.save_sino_npy(self.sino)
+        pass
+
+    def save_align_npy(self):
+        self.writer.save_align_npy(self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        pass
+
+    def save_align_txt(self):
+        self.save_align_txt(self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        pass
+
+    def save_thetas_npy(self):
+        self.writer.save_thetas_npy(self.fnames, self.thetas)
+        pass
+
+    def save_thetas_txt(self):
+        self.writer.save_thetas_txt(self.fnames, self.thetas)
+        pass
+
+    def save_hdf5(self):
+        self.writer.save_hdf5(self.fnames, self.data, self.thetas, self.elements, self.x_shifts, self.y_shifts, self.centers, self.recons)
+        pass
+
+
+
     def saveCorrAlsys(self):
         try:
             self.writer.save_correlation_analysis(self.elements, self.rMat)
@@ -1980,11 +2062,16 @@ class xrftomoGui(QMainWindow):
 
     def saveAlignemnt(self):
         try:
-            self.writer.save_alignment_information(self.fnames, self.x_shifts, self.y_shifts, self.centers)
+            self.writer.save_align_txt(self.fnames, self.x_shifts, self.y_shifts, self.centers)
         except AttributeError:
             print("Alignment data does not exist.")
         return
-
+    def save_align_npy(self):
+        try:
+            self.writer.save_align_npy(self.fnames, self.x_shifts, self.y_shifts, self.centers)
+        except AttributeError:
+            print("Alignment data does not exist.")
+        return
     def saveProjections(self):
         try:
             self.writer.save_projections(self.fnames, self.data, self.elements)

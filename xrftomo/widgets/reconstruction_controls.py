@@ -53,6 +53,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.combo1.setFixedWidth(button1size)
 
         self.populate_scroll_area()
+        self.remove_artifact_scroll_area()
 
         self.middle_row_lbl.setVisible(False)
         self.middle_row_lbl.setVisible(False)
@@ -135,3 +136,54 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.lower_thresh.setText("0.0")
 
         return
+
+    def remove_artifact_scroll_area(self):
+
+        #__________Popup window for PIRT button__________
+        self.artifact_scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
+        self.artifact_scroll.setWidgetResizable(True)
+        self.artifact_parameters = QtWidgets.QWidget()
+        self.artifact_parameters.resize(240,100)
+        self.artifact_parameters.setWindowTitle('artifact removal parameters')
+        widgetsizes = [300, 135, 75]
+        artifact_dict = {}
+        artifact_dict["ar_diameter"] = [["label", "linedit"], "diameter in percent of overall reconstruction width",None, "34"]
+        artifact_dict["ar_threshold"] = [["label", "linedit"], "threshold used to mask line 'features' in fourier space.", None, "75"]
+        artifact_dict["run_ar"] = [["button"], "run line artifact removal", None, False]
+
+        artifact_v_box = QVBoxLayout()
+        for i, key in enumerate(artifact_dict.keys()):
+            widget_items = artifact_dict[key][0]
+            attrs = artifact_dict[key]
+            widgetsize = widgetsizes[len(widget_items) - 1]
+
+            artifact_line_num = "artifact_line_{}".format(i)
+            setattr(self, artifact_line_num, QHBoxLayout())
+            artifact_line = self.__dict__[artifact_line_num]
+
+            for widget in widget_items:
+                if widget == "button":
+                    setattr(self, key, QPushButton(key))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    artifact_line.addWidget(object)
+                elif widget == "linedit":
+                    setattr(self, key, QLineEdit(attrs[3]))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    artifact_line.addWidget(object)
+                elif widget == "label":
+                    name = key + "_lbl"
+                    setattr(self, name, QLabel(key))
+                    object = self.__dict__[name]
+                    object.setFixedWidth(widgetsize)
+                    object.setToolTip(attrs[1])
+                    artifact_line.addWidget(object)
+            artifact_v_box.addLayout(artifact_line)
+
+        self.artifact_scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+        artifact_v_box.setSpacing(0)
+        artifact_v_box.setContentsMargins(0, 0, 0, 0)
+        self.artifact_scroll_widget.setLayout(artifact_v_box)
+        self.artifact_scroll.setWidget(self.artifact_scroll_widget)
+        self.artifact_parameters.setLayout(artifact_v_box)

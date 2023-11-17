@@ -274,12 +274,13 @@ class ReconstructionActions(QtWidgets.QWidget):
 			recon[i] = img
 		return recon
 
-	def remove_artifact(self, recon):
+	def remove_artifact(self, recon, diameter, threshold):
 		# plt.figure()
-		radius = int(recon.shape[1] * 0.17)  # 17%
-		threshold = 0.75
+		radius = int(recon.shape[1] * diameter/100/2)
+		threshold = threshold/100
 		new_recon = np.zeros_like(recon)
 		masky = self.create_circular_mask(recon.shape[1], recon.shape[1], center=None, radius=radius)
+		idx =int(recon.shape[1]/2)
 
 		for i in range(recon.shape[0]):
 			img = recon[i]
@@ -289,12 +290,17 @@ class ReconstructionActions(QtWidgets.QWidget):
 			lines = fft_img_real > fft_img_real.max() * threshold
 			center_area = np.copy(fft_img)
 			center_area[np.invert(masky)] = 1
-
 			de_lined = np.copy(fft_img)
 			de_lined[lines] = 1
 			fixed = de_lined + center_area
-
 			new_recon[i] = abs(np.fft.ifft2(fixed))
+
+			if i == idx:
+				plt.figure()
+				plt.imshow(fft_img_real)
+				plt.figure()
+				plt.imshow(np.log(abs(fixed)))
+		plt.show()
 		return new_recon
 
 	def create_circular_mask(self, h, w, center=None, radius=None):

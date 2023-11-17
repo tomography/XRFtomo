@@ -53,34 +53,7 @@ import numpy as np
 from skimage import io
 
 class SaveOptions(object):
-	def save_alignment_information(self,fnames, x_shift, y_shift, centers):
-		'''
-		3D array [projection, x, y]
-		fnames 
-		'''
-		num_files = len(x_shift)
-		x_shift = list(x_shift)
-		y_shift = list(y_shift)
-		try:
-			savedir = QFileDialog.getSaveFileName()[0]
-			if savedir == "":
-				raise IOError
 
-			if str(savedir).rfind(".txt") == -1:
-				savedir = str(savedir) + ".txt"
-			print(str(savedir))
-			file = open(savedir, "w")
-			file.writelines("rotation axis, " + str(centers[2]) + "\n")
-			for i in range(num_files):
-				# file.writelines(fnames[i] + ", " + str(x_shift[i]) + ", " + str(y_shift[i]) + "\n")
-				file.writelines("{}, {}, {} \n".format(fnames[i], str(x_shift[i]), str(y_shift[i])))
-			file.close()
-			return
-
-		except IOError:
-			print("choose file please")
-		except Exception as e:
-			print(e)
 
 	def save_scatter_plot(self, fig):
 		try:
@@ -96,8 +69,152 @@ class SaveOptions(object):
 		except Exception as e:
 			print(e)
 
-	def save_thetas(self, fnames, thetas):
-		num_files = len(fnames)
+	def save_proj_stack(self, fnames, data, elements):
+		'''
+		save projections as tiffs
+		'''
+		try:
+			savedir = QFileDialog.getExistingDirectory()
+			if savedir == "":
+				raise IOError
+
+			for j in range(data.shape[0]):  # elemen t index
+				path = savedir
+				os.makedirs(path)
+				img = data[j]
+				io.imsave(path + "/" + elements[j] + "_proj.tiff", img)
+			return
+		except IOError:
+			print("type the header name")
+		except Exception as e:
+			print(e)
+	def save_proj_indiv(self, fnames, data, elements):
+		'''
+		save projections as tiffs
+		'''
+		try:
+			savedir = QFileDialog.getExistingDirectory()
+			if savedir == "":
+				raise IOError
+
+			for j in range(data.shape[0]):			#elemen t index
+				path = savedir + "/" + elements[j]
+				os.makedirs(path)
+				for i in range(data.shape[1]):		#angle index
+					img = data[j, i, :, :]
+					img = img.astype(np.float32)
+					io.imsave(path+"/"+elements[j]+'_'+fnames[i].split(".")[0]+".tiff", img)
+			return
+		except IOError:
+			print("type the header name")
+		except Exception as e:
+			print(e)
+	def save_proj_npy(self, fnames, data, elements):
+		'''
+		save projections as tiffs
+		'''
+		try:
+			savedir = QFileDialog.getExistingDirectory()
+			if savedir == "":
+				raise IOError
+
+			for j in range(data.shape[0]):  # elemen t index
+				stack = data[j]
+				save_name = savedir+"/{}_proj.npy".format(elements[j])
+				np.save(save_name, stack)
+			return
+		except IOError:
+			print("type the header name")
+		except Exception as e:
+			print(e)
+	def save_recon_stack(self, recon):
+		try:
+			savedir = QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
+			io.imsave(savedir+".tiff",recon)
+
+			return
+		except IOError:
+			print("type the header name")
+		except:
+			print("Something went horribly wrong.")
+		pass
+	def save_recon_indiv(self, recon, savedir = None, index=-1):
+		try:
+			if savedir == None:
+				savedir = QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
+			if index == -1:
+				for i in range(recon.shape[0]):
+					# recon = tomopy.circ_mask(recon, axis=0)
+					indx = "0000"
+					recon_index = indx[:-len(str(i))] + str(i)
+					io.imsave(savedir + "_" + str(recon_index) + ".tiff", recon[i])
+
+			else:
+				# recon = tomopy.circ_mask(recon, axis=0)
+				indx = "0000"
+				recon_index = indx[:-len(str(index))]+str(index)
+				io.imsave(savedir+"_"+str(recon_index)+".tiff", recon[0])
+
+			return
+		except IOError:
+			print("type the header name")
+		except:
+			print("Something went horribly wrong.")
+		return
+
+	def save_recon_npy(self, recon_dict):
+		try:
+			savedir = QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
+
+			# recon = tomopy.circ_mask(recon, axis=0)
+			for key in recon_dict:  # elemen t index
+				recon = recon_dict[key]
+				save_name = savedir+"/{}_recon.npy".format(key)
+				np.save(save_name, recon)
+			return
+		except IOError:
+			print("type the header name")
+		except:
+			print("Something went horribly wrong.")
+		pass
+	def save_sino_stack(self, sino):
+		pass
+	def save_sino_indiv(self, sino):
+		pass
+	def save_sino_npy(self, sino):
+		pass
+	def save_align_npy(self, fnames, x_shifts, y_shifts, centers):
+		'''
+		3D array [projection, x, y]
+		fnames
+		'''
+		try:
+			savedir = QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
+			if str(savedir).rfind(".npy") == -1:
+				savedir = str(savedir) + ".npy"
+			data = np.asarray([fnames, x_shifts,y_shifts])
+			np.save(savedir, data)
+			return
+		except IOError:
+			print("choose file please")
+		except Exception as e:
+			print(e)
+	def save_align_txt(self, fnames, x_shifts, y_shifts, centers):
+		'''
+		3D array [projection, x, y]
+		fnames
+		'''
+		num_files = len(x_shifts)
+		x_shift = list(x_shifts)
+		y_shift = list(y_shifts)
 		try:
 			savedir = QFileDialog.getSaveFileName()[0]
 			if savedir == "":
@@ -106,6 +223,41 @@ class SaveOptions(object):
 			if str(savedir).rfind(".txt") == -1:
 				savedir = str(savedir) + ".txt"
 			print(str(savedir))
+			file = open(savedir, "w")
+			file.writelines("rotation axis, " + str(centers[2]) + "\n")
+			for i in range(num_files):
+				file.writelines("{}, {}, {} \n".format(fnames[i], str(x_shift[i]), str(y_shift[i])))
+			file.close()
+			return
+
+		except IOError:
+			print("choose file please")
+		except Exception as e:
+			print(e)
+	def save_thetas_npy(self, fnames, thetas):
+		try:
+			savedir = QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
+
+			if str(savedir).rfind(".npy") == -1:
+				savedir = str(savedir) + ".npy"
+			data = np.asarray([fnames, thetas])
+			np.save(savedir, data)
+			return
+		except IOError:
+			print("type the header name")
+		except Exception as e:
+			print(e)
+	def save_thetas_txt(self, fnames, thetas):
+		num_files = len(fnames)
+		try:
+			savedir = QFileDialog.getSaveFileName()[0]
+			if savedir == "":
+				raise IOError
+
+			if str(savedir).rfind(".txt") == -1:
+				savedir = str(savedir) + ".txt"
 			file = open(savedir, "w")
 			file.writelines("file names, " + "thetas" + "\n")
 			for i in range(num_files):
@@ -116,48 +268,8 @@ class SaveOptions(object):
 			print("type the header name")
 		except Exception as e:
 			print(e)
-	def save_projections(self, fnames, data, element_names):
-		'''
-		save projections as tiffs
-		'''
-		try:
-			savedir = QFileDialog.getExistingDirectory()
-			if savedir == "":
-				raise IOError
-
-			for j in range(data.shape[0]):			#elemen t index
-				path = savedir + "/" + element_names[j]
-				os.makedirs(path)
-				for i in range(data.shape[1]):		#angle index
-					img = data[j, i, :, :]
-					img = img.astype(np.float32)
-					# temp.save(path+"/"+element_names[j]+"_"+str(i)+'_'+fnames[0].split(".")[0]+".tiff")
-					io.imsave(path+"/"+element_names[j]+'_'+fnames[i].split(".")[0]+".tiff", img)
-			return
-		except IOError:
-			print("type the header name")
-		except Exception as e:
-			print(e)
-
-	def save_reconstruction(self, recon, savedir = None, index=-1):
-		try:
-			if savedir == "":
-				raise IOError
-			if savedir == None:
-				savedir = QFileDialog.getSaveFileName()[0]
-			if index == -1:
-				recon = tomopy.circ_mask(recon, axis=0)
-				io.imsave(savedir+".tiff",recon)
-			if index != -1:
-				recon = tomopy.circ_mask(recon, axis=0)
-				indx = "0000"
-				recon_index = indx[:-len(str(index))]+str(index)
-				io.imsave(savedir+"_"+str(recon_index)+".tiff", recon[0])
-			return
-		except IOError:
-			print("type the header name")
-		except: 
-			print("Something went horribly wrong.")
+	def save_hdf5(self, fnames, data, thetas, elements, x_shifts, y_shifts, centers, recons):
+		pass
 
 	def save_recon_2npy(self,recon, savedir=None, index=-1):
 		try:
@@ -173,6 +285,7 @@ class SaveOptions(object):
 			print("type the header name")
 		except Exception as e:
 			print(e)
+
 	def save_recon_array_2npy(self, recon_array, savedir=None, index=-1):
 		try:
 			if savedir == "":

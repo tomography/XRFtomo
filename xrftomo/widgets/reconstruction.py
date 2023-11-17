@@ -94,8 +94,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.combo1.currentIndexChanged.connect(self.update_recon_set)
         self.ViewControl.reconstruct.clicked.connect(self.reconstruct_params)
         self.ViewControl.remove_hotspot.clicked.connect(self.rm_hotspot_params)
-        self.ViewControl.remove_artifact.clicked.connect(self.rm_artifact_params)
-        # self.ViewControl.setThreshBtn.clicked.connect(self.set_thresh_params)
+
+        self.ViewControl.remove_artifact.clicked.connect(self.ViewControl.artifact_parameters.show)
+        self.ViewControl.run_ar.clicked.connect(self.rm_artifact_params)
 
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
@@ -273,9 +274,14 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.update_recon_image()
 
     def rm_artifact_params(self):
-        recon = self.recon
-        self.recon = self.actions.remove_artifact(recon)
-        self.update_recon_image()
+        try:
+            recon = self.recon
+            diameter = eval(self.ViewControl.ar_diameter.text())
+            threshold = eval(self.ViewControl.ar_threshold.text())
+            self.recon = self.actions.remove_artifact(recon, diameter, threshold)
+            self.update_recon_image()
+        except Exception as error:
+            print(error)
 
     # def set_thresh_params(self):
     #     recon = self.recon
@@ -304,7 +310,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         try:
             recon = self.recon_dict[elem]
             self.recon = recon
-            self.update_recon_image()
+            self.image = self.update_recon_image()
         except KeyError:
             print("KeyError")
             #TODO: "loading data twice results in this error, figure out how to re-initialize recon_dict"
