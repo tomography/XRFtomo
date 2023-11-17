@@ -332,6 +332,31 @@ class xrftomoGui(QMainWindow):
         self.viewMenu.addAction(self.debugMode)
         self.viewMenu.setDisabled(True)
 
+        #TODO: FINISH THIS SEction
+        projections_save = QMenu("Projections", self)
+        ag = QActionGroup(subPixShift)
+        ag.setExclusive(True)
+        self.proj_stack = ag.addAction(QAction('stack.tiff', subPixShift))
+        subPixShift.addAction(self.subPix_1)
+        # self.proj_stack.triggered.connect(self.save_proj_stack)
+
+        self.proj_indiv = ag.addAction(QAction('', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_05)
+        self.proj_indiv.triggered.connect(self.subPixShiftChanged)
+
+        self.subPix_025 = ag.addAction(QAction('5', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_025)
+        self.subPix_025.triggered.connect(self.subPixShiftChanged)
+
+        self.subPix_01 = ag.addAction(QAction('10', subPixShift, checkable=True))
+        subPixShift.addAction(self.subPix_01)
+        self.subPix_01.triggered.connect(self.subPixShiftChanged)
+
+        #TODO: Finish this section ^^^
+
+
+
+
         self.afterConversionMenu = menubar.addMenu(' &Save')
         self.afterConversionMenu.addAction(self.saveProjectionAction)
         self.afterConversionMenu.addAction(self.saveReconstructionAction)

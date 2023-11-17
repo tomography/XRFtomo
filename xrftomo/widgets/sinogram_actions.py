@@ -955,7 +955,7 @@ class SinogramActions(QtWidgets.QWidget):
             if len(read[1].split(',')) == 2:
                 for i in range(len(read)-1):
                     j = i + 1
-                    print(str(j))
+
                     fnames.append(str(i))
                     tmp_y.append(round(float(read[j].split(",")[1])))
                     tmp_x.append(round(float(read[j].split(",")[0])))
@@ -965,7 +965,8 @@ class SinogramActions(QtWidgets.QWidget):
                 for i in range(len(read)-1):
                     j = i + 1
                     print(str(j))
-                    fnames.append(read[j].split(",")[0])
+                    fname = read[j].split(",")[0].split("/")[-1]
+                    fnames.append(fname)
                     tmp_y.append(round(float(read[j].split(",")[2])))
                     tmp_x.append(round(float(read[j].split(",")[1])))
                     if fnames[i] in data_fnames[i]:
