@@ -327,7 +327,7 @@ class xrftomoGui(QMainWindow):
         self.proj_stack.triggered.connect(self.save_proj_stack)
         self.proj_indiv = ag.addAction(QAction('projx.tiff', projections_save))
         projections_save.addAction(self.proj_indiv)
-        self.proj_stack.triggered.connect(self.save_proj_indiv)
+        self.proj_indiv.triggered.connect(self.save_proj_indiv)
         self.proj_npy = ag.addAction(QAction('proj.npy', projections_save))
         projections_save.addAction(self.proj_npy)
         self.proj_npy.triggered.connect(self.save_proj_npy)
@@ -335,25 +335,25 @@ class xrftomoGui(QMainWindow):
         recon_save = QMenu("Reconstructions", self)
         ag = QActionGroup(recon_save)
         self.recon_stack = ag.addAction(QAction('recon.tiff', recon_save))
-        recon_save.addAction(self.proj_stack)
+        recon_save.addAction(self.recon_stack)
         self.recon_stack.triggered.connect(self.save_recon_stack)
         self.recon_indiv = ag.addAction(QAction('reconx.tiff', recon_save))
-        recon_save.addAction(self.proj_indiv)
+        recon_save.addAction(self.recon_indiv)
         self.recon_indiv.triggered.connect(self.save_recon_indiv)
         self.recon_npy = ag.addAction(QAction('recon.npy', recon_save))
-        recon_save.addAction(self.proj_npy)
+        recon_save.addAction(self.recon_npy)
         self.recon_npy.triggered.connect(self.save_recon_npy)
 
         sino_save = QMenu("Sinograms", self)
         ag = QActionGroup(sino_save)
         self.sino_stack = ag.addAction(QAction('sino.tiff', sino_save))
-        sino_save.addAction(self.proj_stack)
+        sino_save.addAction(self.sino_stack)
         self.sino_stack.triggered.connect(self.save_sino_stack)
         self.sino_indiv = ag.addAction(QAction('sinox.tiff', sino_save))
-        sino_save.addAction(self.proj_indiv)
+        sino_save.addAction(self.sino_indiv)
         self.sino_indiv.triggered.connect(self.save_sino_indiv)
         self.sino_npy = ag.addAction(QAction('sino.npy', sino_save))
-        sino_save.addAction(self.proj_npy)
+        sino_save.addAction(self.sino_npy)
         self.sino_npy.triggered.connect(self.save_sino_npy)
 
         align_save = QMenu("Alignment", self)
@@ -362,24 +362,23 @@ class xrftomoGui(QMainWindow):
         align_save.addAction(self.align_npy)
         self.align_npy.triggered.connect(self.save_align_npy)
         self.aling_txt = ag.addAction(QAction('align.txt', align_save))
-        self.aling_txt.triggered.connect(self.save_align_txt)
         align_save.addAction(self.aling_txt)
-
+        self.aling_txt.triggered.connect(self.save_align_txt)
 
         thetas_save = QMenu("thetas", self)
         ag = QActionGroup(align_save)
         self.thetas_npy = ag.addAction(QAction('thetas.npy', thetas_save))
-        thetas_save.addAction(self.align_npy)
+        thetas_save.addAction(self.thetas_npy)
         self.thetas_npy.triggered.connect(self.save_thetas_npy)
         self.thetas_txt = ag.addAction(QAction('thetas.txt', thetas_save))
-        self.thetas_txt.triggered.connect(self.save_thetas_txt)
         thetas_save.addAction(self.thetas_txt)
+        self.thetas_txt.triggered.connect(self.save_thetas_txt)
 
         h5_save = QMenu("hdf5", self)
         ag = QActionGroup(h5_save)
         self.all_hdf5 = ag.addAction(QAction('everything.h5', h5_save))
-        sino_save.addAction(self.all_hdf5)
-        self.all_hdf5.triggered.connect(self.writer.save_hdf5)
+        h5_save.addAction(self.all_hdf5)
+        self.all_hdf5.triggered.connect(self.save_hdf5)
 
         self.afterConversionMenu = menubar.addMenu(' &Save')
         self.afterConversionMenu.addMenu(projections_save)
@@ -1996,62 +1995,47 @@ class xrftomoGui(QMainWindow):
     #     return
 
     def save_proj_stack(self):
-        self.writer.save_proj_stack(self.fnames, self.data, self.element)
-        pass
+        self.writer.save_proj_stack(self.data, self.elements)
 
     def save_proj_indiv(self):
-        self.writer.save_proj_indiv(self.fnames, self.data, self.element)
-        pass
+        self.writer.save_proj_indiv(self.data, self.elements)
 
     def save_proj_npy(self):
-        self.writer.save_proj_npy(self.fnames, self.data, self.element)
-        pass
+        self.writer.save_proj_npy(self.data, self.elements)
 
     def save_recon_stack(self):
-        self.writer.save_recon_stack(self.recon)
-        pass
+        self.writer.save_recon_stack(self.recon_dict)
 
     def save_recon_indiv(self):
-        self.writer.save_recon_indiv(self.recon)
-        pass
+        element = self.imageProcessWidget.ViewControl.combo1.currentText()
+        self.writer.save_recon_indiv(self.recon, element)
 
     def save_recon_npy(self):
-        self.writer.save_recon_npy(self.recon)
-        pass
+        self.writer.save_recon_npy(self.recon_dict)
 
     def save_sino_stack(self):
-        self.writer.save_sino_stack(self.sino)
-        pass
+        self.writer.save_sino_stack(self.data, self.elements)
 
     def save_sino_indiv(self):
-        self.writer.save_sino_indiv(self.sino)
-        pass
+        self.writer.save_sino_indiv(self.data, self.elements)
 
     def save_sino_npy(self):
-        self.riter.save_sino_npy(self.sino)
-        pass
+        self.writer.save_sino_npy(self.data, self.elements)
 
     def save_align_npy(self):
-        self.writer.save_align_npy(self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        pass
+        self.writer.save_align_npy(self.fnames, self.x_shifts, self.y_shifts)
 
     def save_align_txt(self):
-        self.save_align_txt(self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        pass
+        self.writer.save_align_txt(self.fnames, self.x_shifts, self.y_shifts)
 
     def save_thetas_npy(self):
         self.writer.save_thetas_npy(self.fnames, self.thetas)
-        pass
 
     def save_thetas_txt(self):
         self.writer.save_thetas_txt(self.fnames, self.thetas)
-        pass
 
     def save_hdf5(self):
-        self.writer.save_hdf5(self.fnames, self.data, self.thetas, self.elements, self.x_shifts, self.y_shifts, self.centers, self.recons)
-        pass
-
-
+        self.writer.save_hdf5(self.fnames, self.data, self.thetas, self.elements, self.recon_dict)
 
     def saveCorrAlsys(self):
         try:
@@ -2060,51 +2044,51 @@ class xrftomoGui(QMainWindow):
             print("Run correlation analysis first")
         return
 
-    def saveAlignemnt(self):
-        try:
-            self.writer.save_align_txt(self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        except AttributeError:
-            print("Alignment data does not exist.")
-        return
-    def save_align_npy(self):
-        try:
-            self.writer.save_align_npy(self.fnames, self.x_shifts, self.y_shifts, self.centers)
-        except AttributeError:
-            print("Alignment data does not exist.")
-        return
-    def saveProjections(self):
-        try:
-            self.writer.save_projections(self.fnames, self.data, self.elements)
-        except AttributeError:
-            print("projection data do not exist")
-        return
-
-    def saveSinogram(self):
-        try:
-            self.writer.save_sinogram(self.sino)
-        except AttributeError:
-            print("sinogram data do not exist")
-        return
-
-    def saveSinogram2(self):
-        try:
-            self.writer.save_sinogram2(self.data, self.elements)
-        except AttributeError:
-            print("sinogram data do not exist")
-        return
-
-    def saveReconstruction(self, recon):
-        try:
-            self.writer.save_reconstruction(self.recon)
-        except AttributeError:
-            print("reconstructed data do not exist")
-        return
-    def saveRecon2npy(self, recon):
-        try:
-            self.writer.save_recon_2npy(self.recon)
-        except AttributeError:
-            print("reconstructed data does not exist")
-        return
+    # def save_align_txt(self):
+    #     try:
+    #         self.writer.save_align_txt(self.fnames, self.x_shifts, self.y_shifts)
+    #     except AttributeError:
+    #         print("Alignment data does not exist.")
+    #     return
+    # def save_align_npy(self):
+    #     try:
+    #         self.writer.save_align_npy(self.fnames, self.x_shifts, self.y_shifts)
+    #     except AttributeError:
+    #         print("Alignment data does not exist.")
+    #     return
+    # def saveProjections(self):
+    #     try:
+    #         self.writer.save_projections(self.fnames, self.data, self.elements)
+    #     except AttributeError:
+    #         print("projection data do not exist")
+    #     return
+    #
+    # def saveSinogram(self):
+    #     try:
+    #         self.writer.save_sinogram(self.sino)
+    #     except AttributeError:
+    #         print("sinogram data do not exist")
+    #     return
+    #
+    # def saveSinogram2(self):
+    #     try:
+    #         self.writer.save_sinogram2(self.data, self.elements)
+    #     except AttributeError:
+    #         print("sinogram data do not exist")
+    #     return
+    #
+    # def saveReconstruction(self, recon):
+    #     try:
+    #         self.writer.save_reconstruction(self.recon)
+    #     except AttributeError:
+    #         print("reconstructed data do not exist")
+    #     return
+    # def saveRecon2npy(self, recon):
+    #     try:
+    #         self.writer.save_recon_2npy(self.recon)
+    #     except AttributeError:
+    #         print("reconstructed data does not exist")
+    #     return
     #
     # def saveReconArray2npy(self, recon):
     #     try:
@@ -2120,25 +2104,25 @@ class xrftomoGui(QMainWindow):
     #         print("projection data do not exist")
     #     return
 
-    def saveThetas(self):
-        try:
-            files = [i.filename for i in self.fileTableWidget.fileTableModel.arrayData]
-            k = np.arange(len(files))
-            thetas = [i.theta for i in self.fileTableWidget.fileTableModel.arrayData]
-            files_bool = [i.use for i in self.fileTableWidget.fileTableModel.arrayData]
-            self.fnames = [files[j] for j in k if files_bool[j]==True]
-            self.thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
-            self.writer.save_thetas(self.fnames, self.thetas)
-        except AttributeError:
-            print("filename or angle information does not exist")
-        return 
-
-    def saveToNumpy(self):
-        try:
-            self.writer.save_numpy_array(self.data, self.thetas, self.elements)
-        except AttributeError:
-            print("data has not been imported first")
-        return
+    # def saveThetas(self):
+    #     try:
+    #         files = [i.filename for i in self.fileTableWidget.fileTableModel.arrayData]
+    #         k = np.arange(len(files))
+    #         thetas = [i.theta for i in self.fileTableWidget.fileTableModel.arrayData]
+    #         files_bool = [i.use for i in self.fileTableWidget.fileTableModel.arrayData]
+    #         self.fnames = [files[j] for j in k if files_bool[j]==True]
+    #         self.thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
+    #         self.writer.save_thetas(self.fnames, self.thetas)
+    #     except AttributeError:
+    #         print("filename or angle information does not exist")
+    #     return
+    #
+    # def saveToNumpy(self):
+    #     try:
+    #         self.writer.save_numpy_array(self.data, self.thetas, self.elements)
+    #     except AttributeError:
+    #         print("data has not been imported first")
+    #     return
 
     def loadImages(self):
         file_array = self.fileTableWidget.fileTableModel.arrayData

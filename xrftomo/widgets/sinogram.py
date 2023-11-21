@@ -723,7 +723,8 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data: ndarray
               4d tomographic data [element, projections, y,x]
         '''
-
+        #TODO: it seems each projection row is duplicated 10X to widen pixel size, this is probbly not very efficient
+        # way to stretch pixel for visualization. instead find a way to adjust aspect ratio.
         if element == -1: # escape if element == -1.
             return
 

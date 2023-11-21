@@ -563,7 +563,6 @@ class SinogramControlsWidget(QtWidgets.QWidget):
         self.phasecor.setVisible(False)
         self.adjust_sino.setVisible(False)
         self.change_rotation_axis.setVisible(False)
-
         return
 
     def populate_scroll_area2(self):
