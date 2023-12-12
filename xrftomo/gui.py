@@ -52,6 +52,7 @@ from matplotlib.pyplot import *
 from scipy import ndimage as ndi
 from skimage.morphology import remove_small_objects
 from skimage import io
+import h5py
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
@@ -79,8 +80,11 @@ class xrftomoGui(QMainWindow):
         closeAction.triggered.connect(sys.exit)
         closeAction.setShortcut('Ctrl+X')
 
-        openH5Action = QAction('open h5 file', self)
+        openH5Action = QAction('open h5 files', self)
         openH5Action.triggered.connect(self.openH5)
+
+        openCompleteH5Action = QAction('open structured h5 file', self)
+        openCompleteH5Action.triggered.connect(self.open_complete_H5)
 
         # openExchangeAction = QAction('open exchange file', self)
         # openExchangeAction.triggered.connect(self.openExchange)
@@ -242,6 +246,7 @@ class xrftomoGui(QMainWindow):
         menubar.setNativeMenuBar(False)
         self.fileMenu = menubar.addMenu(' &File')
         self.fileMenu.addAction(openH5Action)
+        self.fileMenu.addAction(openCompleteH5Action)
         self.fileMenu.addAction(openTiffAction)
         self.fileMenu.addAction(openStackAction)
         self.fileMenu.addAction(openThetaAction)
@@ -1798,6 +1803,61 @@ class xrftomoGui(QMainWindow):
         self.editMenu.setDisabled(True)
         self.toolsMenu.setDisabled(True)
 
+
+    def open_complete_H5(self):
+        self.fileTableWidget.data_menu.clear()
+        self.fileTableWidget.element_menu.clear()
+        self.fileTableWidget.theta_menu.clear()
+        currentDir = self.fileTableWidget.dirLineEdit.text()
+        file = QFileDialog.getOpenFileName(self, "Open complete h5", currentDir, "h5 (*.h5*)")
+        file = file[0]
+        if file == '' or file == []:
+            return
+
+        self.fileTableWidget.dirLineEdit.setText("")
+        self.fileTableWidget.extLineEdit.setText("h5")
+        self.clear_all()
+        if file == []:
+            print("check file extension")
+            return
+        img = h5py.File(file, 'r')
+        fnames = img["names"]
+        data = img["data"]
+        elements = img["elements"]
+        thetas = [float(theta) for theta in list(img["thetas"])]
+        recons = img["recons"]
+
+        self.fnames = [fname.decode("utf-8").split("/")[-1] for fname in list(fnames)]
+        self.data = np.array(data)
+        self.elements = [element.decode("utf-8") for element in list(elements)]
+        self.thetas = thetas
+
+        self.tab_widget.setTabEnabled(1, False)
+        self.tab_widget.setTabEnabled(2, False)
+        self.tab_widget.setTabEnabled(3, False)
+        self.tab_widget.setTabEnabled(4, False)
+        self.afterConversionMenu.setDisabled(True)
+        self.editMenu.setDisabled(True)
+        self.toolsMenu.setDisabled(True)
+
+        self.update_data(self.data)
+        self.recon_dict = {}
+        for i, element in enumerate(self.elements):
+            self.recon_dict[element] = recons[i]
+
+        self.updateImages(True)
+        self.reconstructionWidget.recon_dict = self.recon_dict
+        self.reconstructionWidget.recon = recons[0]
+        self.laminographyWidget.recon_dict = self.recon_dict
+        self.laminographyWidget.recon = recons[0]
+        self.fileTableWidget.fileTableModel.update_fnames(self.fnames)
+        self.fileTableWidget.fileTableModel.update_thetas(thetas)
+        self.fileTableWidget.fileTableView.sortByColumn(1, 0)
+        self.fileTableWidget.elementTableModel.loadElementNames(self.elements)
+        self.fileTableWidget.elementTableModel.setAllChecked(True)
+        self.fileTableWidget.message.setText("saved to memory")
+
+        return
     def openTiffs(self):
         files = QFileDialog.getOpenFileNames(self, "Open Tiffs", QtCore.QDir.currentPath(), "TIFF (*.tiff *.tif)" )
         if files[0] == '' or files[0] == []:

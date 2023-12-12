@@ -316,8 +316,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
             #TODO: "loading data twice results in this error, figure out how to re-initialize recon_dict"
 
 
-
-
     def update_recon_image(self):
         index = self.sld.value()
         self.lcd.display(index)

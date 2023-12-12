@@ -131,8 +131,7 @@ class FileTableModel(QtCore.QAbstractTableModel):
         else:
             return QtCore.QVariant()
 
-    def loadDirectory(self, fnames):
-
+    def update_fnames(self, fnames):
         fnames = sorted(fnames)
         self.arrayData = []
         for i in range(len(fnames)):
@@ -143,8 +142,8 @@ class FileTableModel(QtCore.QAbstractTableModel):
         self.dataChanged.emit(topLeft, bottomRight)
 
     def update_thetas(self, thetas):
-        topLeft = self.index(0, self.COL_THETA)
-        bottomRight = self.index(len(self.arrayData), self.COL_THETA)
+        topLeft = self.index(0, 1)
+        bottomRight = self.index(len(self.arrayData), 1)
         try:
             for i in range(len(self.arrayData)):
                 if len(thetas) == 0:
@@ -154,6 +153,15 @@ class FileTableModel(QtCore.QAbstractTableModel):
         except:
             print("something is off here")
         self.dataChanged.emit(topLeft, bottomRight)
+
+
+        # self.arrayData = []
+        # for i in range(len(thetas)):
+        #     self.arrayData += thetas[i]
+        # topLeft = self.index(0, self.COL_THETA)
+        # bottomRight = self.index(len(self.arrayData), self.COL_THETA)
+        # self.layoutChanged.emit()
+        # self.dataChanged.emit(topLeft, bottomRight)
         return 
         
     def getFirstCheckedFilePath(self):

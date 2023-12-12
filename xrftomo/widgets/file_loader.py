@@ -214,7 +214,7 @@ class FileTableWidget(QWidget):
                 print("no valid files, check file extension")
                 return
 
-        self.fileTableModel.loadDirectory(fnames)
+        self.fileTableModel.update_fnames(fnames)
         self.fileTableModel.setAllChecked(True)
 
         if "h5" in ext:

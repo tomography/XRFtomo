@@ -341,12 +341,17 @@ class SaveOptions(object):
 			if str(savedir).rfind(".h5") == -1:
 				savedir = str(savedir) + ".h5"
 			with h5py.File(savedir, 'w') as fid:
+				frst_key = list(recon_dict.keys())[0]
+				npy_recons = np.zeros((len(recon_dict),recon_dict[frst_key].shape[0], recon_dict[frst_key].shape[1], recon_dict[frst_key].shape[2]))
+				for i, key in enumerate(recon_dict.keys()):
+					npy_recons[i] = recon_dict[key]
+				fnames = [name.split("/")[-1] for name in fnames]
+
 				fid.create_dataset('elements', data=elements)
 				fid.create_dataset('names', data=fnames)
 				fid.create_dataset('thetas', data=thetas)
 				fid.create_dataset('data', data=data)
-				#TODO convert recondict to array in same order as element list
-				fid.create_dataset('recons', data=recon_dict)
+				fid.create_dataset('recons', data=npy_recons)
 			fid.close()
 
 		except Exception as error:
