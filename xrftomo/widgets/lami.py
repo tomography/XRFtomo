@@ -91,6 +91,9 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.hist.setImageItem(self.ReconView.projView)
         self.h5_dir = "/".join(self.parent.fileTableWidget.dirLineEdit.text().split("/")[:-1])+"/"
         truncated_dir = "~/"+"/".join(self.h5_dir.split("/")[-4:])
+
+        #TODO: Run in separate thread
+        # change reconstruct to "click to cancel" while thread is running.
         self.ViewControl.elem.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.elem.currentIndexChanged.connect(self.recon_combobox_changed)
         self.ViewControl.method.currentIndexChanged.connect(self.method_changed)

@@ -216,8 +216,9 @@ class xrftomoGui(QMainWindow):
         self.tab_widget.setTabEnabled(3,False)
         self.tab_widget.setTabEnabled(4,False)
 
-
         # self.tab_widget.currentChanged.connect(self.onTabChanged)
+        #TODO: Run in separate thread
+        # change save data to memory to "click to cancel" while thread is running.
         self.fileTableWidget.saveDataBtn.clicked.connect(self.updateImages)
 
         self.vl.addWidget(self.tab_widget)

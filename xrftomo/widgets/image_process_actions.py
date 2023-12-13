@@ -144,15 +144,13 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 			return data
 
-	# def normalize(self, data, element):
-	# 	normData = data[element, :, :, :]
-	# 	for i in range((normData.shape[0])):
-	# 		temp = normData[i, :, :]
-	# 		tempMax = temp.max()
-	# 		tempMin = temp.min()
-	# 		temp = (temp - tempMin) / tempMax * 10000
-	# 		data[element, i, :, :] = temp
-	# 	return data
+	def normalize(self, data, element, sino):
+		intensities = np.sum(sino, axis=1)
+		max_intensities = np.max(intensities)
+		intensities = intensities / max_intensities
+		for i in range(data.shape[1]):
+			data[element, i] = data[element, i] / intensities[i]
+		return data
 
 
 	def reshape_data(self, data, x_upscale, y_upscale):

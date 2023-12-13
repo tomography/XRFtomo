@@ -90,14 +90,15 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.hist.setMaximumWidth(120)
         self.hist.setImageItem(self.ReconView.projView)
 
+
+        #TODO: Run in separate thread
+        # change reconstruct and remove_artifact to "click to cancel" while thread is running.
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.combo1.currentIndexChanged.connect(self.update_recon_set)
         self.ViewControl.reconstruct.clicked.connect(self.reconstruct_params)
         self.ViewControl.remove_hotspot.clicked.connect(self.rm_hotspot_params)
-
         self.ViewControl.remove_artifact.clicked.connect(self.ViewControl.artifact_parameters.show)
         self.ViewControl.run_ar.clicked.connect(self.rm_artifact_params)
-
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
 
@@ -258,12 +259,6 @@ class ReconstructionWidget(QtWidgets.QWidget):
         data = np.flipud(data)[row_index]
         err, mse = self.actions.recon_stats(recon, middle_index, data, True)
         return
-
-    # def toggle_middle_index(self):
-    #     if self.ViewControl.recon_stats.isChecked():
-    #         self.ViewControl.middle_row.setEnabled(True)
-    #     else:
-    #         self.ViewControl.middle_row.setEnabled(False)
 
 
     def rm_hotspot_params(self):

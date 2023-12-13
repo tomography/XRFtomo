@@ -511,10 +511,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.data
         element = self.ViewControl.combo1.currentIndex()
         sino = self.parent.sinogramWidget.sinogramData[::10]
-        intensities = np.sum(sino, axis=1)
-        max_intensities = np.max(intensities)
-        intensities = intensities / max_intensities
-        for i in range(data.shape[1]):
-            data[element,i] = data[element,i]/intensities[i]
+        data = self.actions.nomalize(data, element, sino)
         self.dataChangedSig.emit(data)
         return

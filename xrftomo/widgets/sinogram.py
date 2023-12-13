@@ -101,7 +101,9 @@ class SinogramWidget(QtWidgets.QWidget):
         self.data = None
         self.sinogramData = None
 
-        # self.ViewControl.btn1.clicked.connect(self.ViewControl.com_options.show)
+
+        #TODO: Run in separate thread
+        # change save data to memory to "click to cancel" while thread is running.
         self.ViewControl.center_of_mass.clicked.connect(self.centerOfMass_params)
         self.ViewControl.cross_correlate_sinogram.clicked.connect(self.xcorsino_params)
         self.ViewControl.opflow.clicked.connect(self.opFlow_params)
