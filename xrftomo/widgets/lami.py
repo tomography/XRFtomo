@@ -46,6 +46,7 @@ import pyqtgraph
 import numpy as np
 import scipy.ndimage
 import os
+import sys
 import h5py
 import shutil
 
@@ -63,12 +64,14 @@ class LaminographyWidget(QtWidgets.QWidget):
         super(LaminographyWidget, self).__init__()
         self.parent = parent
         self.initUI()
+        sys.stdout = xrftomo.gui.Stream(newText=self.parent.onUpdateText)
+
 
     def initUI(self):
         self.ViewControl = xrftomo.LaminographyControlsWidget()
         self.ReconView = xrftomo.LamiView(self)
         self.actions = xrftomo.LaminographyActions()
-        self.writer = xrftomo.SaveOptions()
+        self.writer = xrftomo.SaveOptions(self)
 
         self.file_name_title = QtWidgets.QLabel("_")
         lbl1 = QtWidgets.QLabel("x pos:")
@@ -290,7 +293,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         '''
         load window for reconstruction window
         '''
-        self.write = xrftomo.SaveOptions()
+        self.write = xrftomo.SaveOptions(self)
         self.actions.x_shifts = self.x_shifts
         self.actions.y_shifts = self.y_shifts
         self.actions.centers = self.centers

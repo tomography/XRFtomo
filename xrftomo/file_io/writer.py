@@ -52,8 +52,16 @@ import os
 import numpy as np
 from skimage import io
 import h5py
+import sys
+import xrftomo
+
+
 
 class SaveOptions(object):
+
+	def __init__(self, parent):
+		super(SaveOptions, self).__init__()
+		self.parent = parent
 
 	def save_scatter_plot(self, fig):
 		try:

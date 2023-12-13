@@ -56,7 +56,14 @@ import h5py
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
+class Stream(QtCore.QObject):
+    newText = QtCore.pyqtSignal(str)
+    def write(self, text):
+        self.newText.emit(str(text))
+
 class xrftomoGui(QMainWindow):
+    newText = QtCore.pyqtSignal(str)
+
     def __init__(self, app, params):
         super(QMainWindow, self).__init__()
         self.params = params
@@ -64,6 +71,7 @@ class xrftomoGui(QMainWindow):
         self.app = app
         # self.get_values_from_params()
         self.initUI()
+        sys.stdout = Stream(newText=self.onUpdateText)
 
     def initUI(self):
         try:
@@ -71,6 +79,13 @@ class xrftomoGui(QMainWindow):
             self.tcp_installed = True
         except:
             self.tcp_installed = False
+
+        self.message_window = QtWidgets.QTextEdit("")
+        self.message_window.setStyleSheet("background: beige; color: black")
+        self.message_window.setReadOnly(True)
+        self.message_window.setMinimumHeight(80)
+
+        self.message_window.setMaximumHeight(300)
 
         exitAction = QAction('Exit', self)
         exitAction.triggered.connect(self.close)
@@ -86,9 +101,6 @@ class xrftomoGui(QMainWindow):
         openCompleteH5Action = QAction('open structured h5 file', self)
         openCompleteH5Action.triggered.connect(self.open_complete_H5)
 
-        # openExchangeAction = QAction('open exchange file', self)
-        # openExchangeAction.triggered.connect(self.openExchange)
-
         openTiffAction = QAction('open tiff files', self)
         openTiffAction.triggered.connect(self.openTiffs)
 
@@ -97,32 +109,6 @@ class xrftomoGui(QMainWindow):
 
         openThetaAction = QAction('open thetas file', self)
         openThetaAction.triggered.connect(self.openThetas)
-
-        # self.saveProjectionAction = QAction('Projections', self)
-        # self.saveProjectionAction.triggered.connect(self.saveProjections)
-        #
-        # self.saveSinogramAction = QAction('Sinogram', self)
-        # self.saveSinogramAction.triggered.connect(self.saveSinogram)
-        #
-        # self.saveSinogram2Action = QAction('Sinogram stack', self)
-        # self.saveSinogram2Action.triggered.connect(self.saveSinogram2)
-        #
-        # self.saveReconstructionAction = QAction('Reconstruction', self)
-        # self.saveReconstructionAction.triggered.connect(self.saveReconstruction)
-        #
-        # self.saveRecon2npyAction = QAction("recon as npy", self)
-        # self.saveRecon2npyAction.triggered.connect(self.saveRecon2npy)
-        # self.saveRecon2npyAction.setVisible(False)
-        #
-        # self.saveThetasAction = QAction('Angle information to .txt', self)
-        # self.saveThetasAction.triggered.connect(self.saveThetas)
-        #
-        # self.saveToNumpyAction = QAction("as Numpy file", self)
-        # self.saveToNumpyAction.triggered.connect(self.saveToNumpy)
-        # self.saveToNumpyAction.setVisible(False)
-        #
-        # self.saveAlignemtInfoAction = QAction("Alignment", self)
-        # self.saveAlignemtInfoAction.triggered.connect(self.saveAlignemnt)
 
         self.saveCorrAnalysisAction = QAction("Corelation Analysis", self)
         self.saveCorrAnalysisAction.triggered.connect(self.saveCorrAlsys)
@@ -153,10 +139,8 @@ class xrftomoGui(QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.vl = QtWidgets.QVBoxLayout()
 
-        # theta_auto_completes = seshowImgProcesslf.config.get(STR_CONFIG_THETA_STRS)
-        # theta_auto_completes = self.params.theta_pv
-        # if theta_auto_completes is None:
-        #     theta_auto_completes = []
+        self.writer = xrftomo.SaveOptions(self)
+        self.reader = xrftomo.ReadOptions(self)
         self.fileTableWidget = xrftomo.FileTableWidget(self)
         self.imageProcessWidget = xrftomo.ImageProcessWidget(self)
         self.sinogramWidget = xrftomo.SinogramWidget(self)
@@ -166,7 +150,7 @@ class xrftomoGui(QMainWindow):
         self.scatterWidgetRecon = xrftomo.ScatterView()
         self.miniReconWidget = xrftomo.MiniReconView()
 
-        self.writer = xrftomo.SaveOptions()
+
 
         #refresh UI
         self.imageProcessWidget.refreshSig.connect(self.refreshUI)
@@ -232,10 +216,12 @@ class xrftomoGui(QMainWindow):
         self.tab_widget.setTabEnabled(3,False)
         self.tab_widget.setTabEnabled(4,False)
 
+
         # self.tab_widget.currentChanged.connect(self.onTabChanged)
         self.fileTableWidget.saveDataBtn.clicked.connect(self.updateImages)
 
         self.vl.addWidget(self.tab_widget)
+        self.vl.addWidget(self.message_window)
         #self.vl.addWidget(self.createMessageWidget())
 
         self.frame.setLayout(self.vl)
@@ -409,6 +395,9 @@ class xrftomoGui(QMainWindow):
         self.setGeometry(add, add, 1100 + add, 500 + add)
         self.setWindowTitle('XRFtomo v{}'.format(version))
         self.show()
+
+
+
 
         #_______________________Help/config_options______________________
         self.config_options = QtWidgets.QWidget()
@@ -885,6 +874,16 @@ class xrftomoGui(QMainWindow):
 
         self.first_run_w5 = True
         self.onion_layers = None
+
+
+    def onUpdateText(self, text):
+        cursor = self.message_window.textCursor()
+        cursor.insertText(text)
+        self.message_window.setTextCursor(cursor)
+        self.message_window.ensureCursorVisible()
+
+    def __del__(self):
+        sys.stdout = sys.__stdout__
 
     def updateOnion(self):
         if self.first_run_w5:
@@ -1830,7 +1829,7 @@ class xrftomoGui(QMainWindow):
         self.fnames = [fname.decode("utf-8").split("/")[-1] for fname in list(fnames)]
         self.data = np.array(data)
         self.elements = [element.decode("utf-8") for element in list(elements)]
-        self.thetas = thetas
+        self.thetas = np.array(thetas)
 
         self.tab_widget.setTabEnabled(1, False)
         self.tab_widget.setTabEnabled(2, False)
@@ -1855,7 +1854,7 @@ class xrftomoGui(QMainWindow):
         self.fileTableWidget.fileTableView.sortByColumn(1, 0)
         self.fileTableWidget.elementTableModel.loadElementNames(self.elements)
         self.fileTableWidget.elementTableModel.setAllChecked(True)
-        self.fileTableWidget.message.setText("saved to memory")
+        print("saved to memory")
 
         return
     def openTiffs(self):
@@ -1917,7 +1916,7 @@ class xrftomoGui(QMainWindow):
         self.editMenu.setDisabled(False)
         self.toolsMenu.setDisabled(False)
         self.viewMenu.setDisabled(False)
-        self.fileTableWidget.message.setText("Angle information loaded.")
+        print("Angle information loaded.")
 
     def openThetas(self):
         file = QFileDialog.getOpenFileName(self, "Open Theta.txt", QtCore.QDir.currentPath(), "text (*.txt)" )
@@ -1946,7 +1945,7 @@ class xrftomoGui(QMainWindow):
             except AttributeError:
                 # case 1 is false:
                 # show message asking user to load data first or select valid directory.
-                self.fileTableWidget.message.setText("select valid directory or load data first. ")
+                print("select valid directory or load data first. ")
                 return
         try:
             fnames, thetas = xrftomo.load_thetas_file(file[0])
@@ -1955,7 +1954,7 @@ class xrftomoGui(QMainWindow):
         except:
             return
         if not len(thetas)==len(fnames):
-            self.fileTableWidget.message.setText("nummber of angles different than number of loaded images. ")
+            print("nummber of angles different than number of loaded images. ")
             return
 
         if thetas == []:
@@ -2014,7 +2013,7 @@ class xrftomoGui(QMainWindow):
             self.editMenu.setDisabled(False)
             self.toolsMenu.setDisabled(False)
             self.viewMenu.setDisabled(False)
-            self.fileTableWidget.message.setText("Angle information loaded.")
+            print("Angle information loaded.")
 
         return
 

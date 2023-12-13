@@ -50,6 +50,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fftpack import fftshift, ifftshift, fft, ifft, fft2, ifft2
 from scipy import interpolate
+import sys
 
 from skimage import exposure
 
@@ -60,9 +61,11 @@ class ReconstructionActions(QtWidgets.QWidget):
 	dataSig = pyqtSignal(np.ndarray, name='dataSig')
 	fnamesChanged = pyqtSignal(list,int, name="fnamesChanged")
 
-	def __init__(self):
+	def __init__(self, parent):
 		super(ReconstructionActions, self).__init__()
-		self.writer = xrftomo.SaveOptions()
+		self.parent = parent
+		self.writer = xrftomo.SaveOptions(self)
+		sys.stdout = xrftomo.gui.Stream(newText=self.parent.parent.onUpdateText)
 
 	def reconstruct(self, data, element, center, method, beta, delta, iters, thetas, guess=None):
 		'''

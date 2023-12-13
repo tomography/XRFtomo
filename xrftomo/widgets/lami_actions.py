@@ -63,7 +63,7 @@ class LaminographyActions(QtWidgets.QWidget):
 
 	def __init__(self):
 		super(LaminographyActions, self).__init__()
-		self.writer = xrftomo.SaveOptions()
+		self.writer = xrftomo.SaveOptions(self)
 
 	def reconstruct_cpu(self, data, element_idx, element, tiltangle, center_axis, method, thetas, parent_dir=None):
 		'''

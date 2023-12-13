@@ -47,7 +47,7 @@ import numpy as np
 import scipy.ndimage
 import os
 import shutil
-
+import sys
 from matplotlib import pyplot as plt
 # from matplotlib.pyplot import figure, draw, pause, close
 import time
@@ -63,13 +63,13 @@ class ReconstructionWidget(QtWidgets.QWidget):
         super(ReconstructionWidget, self).__init__()
         self.parent = parent
         self.initUI()
+        sys.stdout = xrftomo.gui.Stream(newText=self.parent.onUpdateText)
 
     def initUI(self):
         self.ViewControl = xrftomo.ReconstructionControlsWidget()
         self.ReconView = xrftomo.ReconView(self)
-        self.actions = xrftomo.ReconstructionActions()
-        self.actions2 = xrftomo.ImageProcessActions()
-        self.writer = xrftomo.SaveOptions()
+        self.actions = xrftomo.ReconstructionActions(self)
+        self.writer = xrftomo.SaveOptions(self)
 
         self.file_name_title = QtWidgets.QLabel("_")
         lbl1 = QtWidgets.QLabel("x pos:")
@@ -147,7 +147,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         '''
         load window for reconstruction window
         '''
-        self.write = xrftomo.SaveOptions()
+        self.write = xrftomo.SaveOptions(self)
         self.actions.x_shifts = self.x_shifts
         self.actions.y_shifts = self.y_shifts
         self.actions.centers = self.centers
@@ -416,7 +416,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
                 if self.ViewControl.recon_save.isChecked():
                     self.writer.save_reconstruction(recon, savedir, top_row+i)
                 err, mse = self.actions.assessRecon(recon, xsection[0,:,0], thetas, show_plots=False)
-                print(mse)
+                print("mse: ",mse)
 
             #TODO: Update recon_dict and recon display.
             recon_dict[self.ViewControl.combo1.itemText(element)] = np.array(recons)

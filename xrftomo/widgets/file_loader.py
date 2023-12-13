@@ -44,7 +44,7 @@ import xrftomo
 import h5py
 import numpy as np
 import os
-from xrftomo.file_io.reader import *
+import sys
 
 class FileTableWidget(QWidget):
     def __init__(self, parent):
@@ -60,7 +60,9 @@ class FileTableWidget(QWidget):
         self.auto_data_tag = self.parent.params.data_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
+        self.reader = self.parent.reader
         self.initUI()
+        sys.stdout = xrftomo.gui.Stream(newText=self.parent.onUpdateText)
 
     def initUI(self):
         self.fileTableModel = xrftomo.FileTableModel()
@@ -89,12 +91,6 @@ class FileTableWidget(QWidget):
         self.populate_scroll_area()
 
 
-        message_label = QLabel('Messages:')
-        self.message = QTextEdit()
-        self.message.setReadOnly(True)
-        self.message.setMaximumHeight(20)
-        self.message.setText('')
-
         layout0 = QHBoxLayout()
         layout0.addWidget(dirLabel)
         layout0.addWidget(self.dirLineEdit)
@@ -105,14 +101,11 @@ class FileTableWidget(QWidget):
         layout1.addWidget(self.fileTableView)
         layout1.addWidget(self.elementTableView)
 
-        layout2 = QHBoxLayout()
-        layout2.addWidget(message_label)
-        layout2.addWidget(self.message)
+
 
         mainLayout = QVBoxLayout()
         mainLayout.addLayout(layout0)
         mainLayout.addLayout(layout1)
-        mainLayout.addLayout(layout2)
 
         self.setLayout(mainLayout)
         try:
@@ -200,7 +193,7 @@ class FileTableWidget(QWidget):
             try:
                 path = self.dirLineEdit.text()
             except:
-                self.message.setText('Invalid directory')
+                print('Invalid directory')
                 return
         if fnames == None or fnames == []:
             fileNames = [x for x in os.listdir(path)]
@@ -263,13 +256,13 @@ class FileTableWidget(QWidget):
                     self.elementTableModel.arrayData.pop()
                 self.elementTableModel.arrayData[0].element_name = "Channel_1"
                 self.elementTableModel.arrayData[0].use = True
-            self.message.setText("Load angle information using txt or csv file")
+            print("Load angle information using txt or csv file")
         return
 
     def try_theta(self):
         success = False
         path_files = self.fileTableModel.getAllFiles()
-        thetas = load_thetas(path_files, "dummy", 3)
+        thetas = self.reader.load_thetas(path_files, "dummy", 3)
         self.fileTableModel.update_thetas(thetas)
         self.fileTableView.sortByColumn(1, 0)
         try:
@@ -474,9 +467,9 @@ class FileTableWidget(QWidget):
             self.elementTableModel.loadElementNames(elements)
             self.elementTableModel.setAllChecked(False)
             self.elementTableModel.setChecked(self.auto_selected_elements, (True))
-            self.message.setText("")
+            print("")
         except:
-            self.message.setText("invalid tag option")
+            print("invalid tag option")
         return
 
 
@@ -497,11 +490,11 @@ class FileTableWidget(QWidget):
             path_files = self.fileTableModel.getAllFiles()
             theta_tag = self.theta_tag.title()
 
-            thetas = load_thetas(path_files, theta_tag, 1)
-            self.message.setText("")
+            thetas = self.reader.load_thetas(path_files, theta_tag, 1)
+            print("")
         except:
             thetas=[]
-            self.message.setText("directory probably not mounted or incorrect theta tag")
+            print("directory probably not mounted or incorrect theta tag")
 
         self.fileTableModel.update_thetas(thetas)
         self.fileTableView.sortByColumn(1, 0)
@@ -541,7 +534,7 @@ class FileTableWidget(QWidget):
     def onSaveDataInMemory(self):
         files = [i.filename for i in self.fileTableModel.arrayData]
         if len(files) == 0:
-            self.message.setText('Directory probably not mounted')
+            print('Directory probably not mounted')
             return [], [] , [], []
         thetas = [i.theta for i in self.fileTableModel.arrayData]
         elements = [i.element_name for i in self.elementTableModel.arrayData]
@@ -565,25 +558,25 @@ class FileTableWidget(QWidget):
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
 
         if len(elements) == 0:
-            self.message.setText('no element selected.')
+            print('no element selected.')
             return [], [] , [], []
         else:
-            self.message.setText('loading files...')
+            print('loading files...')
         if all(x==thetas[0] for x in thetas):           #check if all values in thetas are the same: no theta info.
-            self.message.setText('WARNING: No unique angle information. Double check Theta PV or current directory')
+            print('WARNING: No unique angle information. Double check Theta PV or current directory')
             # return [], [] , [], []
 
         self.parent.clear_all()
         try:
             #TODO: add file upload status: n / total files uploaded
-            data = xrftomo.read_mic_xrf(path_files, elements, data_tag, element_tag)
+            data = self.reader.read_mic_xrf(path_files, elements, data_tag, element_tag)
         except:
-            self.message.setText("invalid image/data/element tag combination. Load failed")
+            print("invalid image/data/element tag combination. Load failed")
             return [], [], [], []
 
         if data is None:
             return [], [], [], []
-        self.message.setText('finished loading')
+        print('finished loading')
         data[np.isnan(data)] = 0.0001
         data[data == np.inf] = 0.0001
 

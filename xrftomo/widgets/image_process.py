@@ -43,11 +43,16 @@ import pyqtgraph
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
-
+import sys
 import xrftomo
 
 #TODO: use separate button for background subtraction instead of remove hotspot.
 #TODO: make an interactive masking option for alignment reasons. bring back equalize function.
+
+# class Stream(QtCore.QObject):
+#     newText = QtCore.pyqtSignal(str)
+#     def write(self, text):
+#         self.newText.emit(str(text))
 class ImageProcessWidget(QtWidgets.QWidget):
 
     sliderChangedSig = pyqtSignal(int, name='sliderChangedSig')
@@ -62,11 +67,15 @@ class ImageProcessWidget(QtWidgets.QWidget):
     refreshSig = pyqtSignal(name='refreshSig')
     padSig = pyqtSignal(int, int, name="padSig")
 
+
+
     def __init__(self, parent):
         super(ImageProcessWidget, self).__init__()
         self.parent = parent
         self.thetas = []
         self.initUI()
+        sys.stdout = xrftomo.gui.Stream(newText=self.parent.onUpdateText)
+
 
     def initUI(self):
         self.ViewControl = xrftomo.ImageProcessControlsWidget()
@@ -412,12 +421,6 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def background_value_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         self.actions.background_value(img)
-
-    # def normalize_params(self):
-    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-    #     data = self.data
-    #     self.actions.normalize(data, element)
-    #     self.dataChangedSig.emit(data)
 
     def invert_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()

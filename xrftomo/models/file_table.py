@@ -57,7 +57,8 @@ class TableArrayItem:
         self.filename = fname
         self.theta = 0.0
         self.use = True
-
+        # self.parent = parent
+        # sys.stdout = self.parent.Stream(newText=self.parent.onUpdateText)
 
 class FileTableModel(QtCore.QAbstractTableModel):
 
