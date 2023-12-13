@@ -100,6 +100,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.run_padding.clicked.connect(self.pad_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
+        self.ViewControl.normalize.clicked.connect(self.normalize_params)
         self.ViewControl.downsample.clicked.connect(self.downsample_params)
         self.ViewControl.invert.clicked.connect(self.invert_params)
 
@@ -412,11 +413,11 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         self.actions.background_value(img)
 
-    def normalize_params(self):
-        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
-        data = self.data
-        self.actions.normalize(data, element)
-        self.dataChangedSig.emit(data)
+    # def normalize_params(self):
+    #     element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+    #     data = self.data
+    #     self.actions.normalize(data, element)
+    #     self.dataChangedSig.emit(data)
 
     def invert_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
@@ -502,3 +503,15 @@ class ImageProcessWidget(QtWidgets.QWidget):
         data = self.data
         data = self.actions.remove_hotspots(data, element)
         self.dataChangedSig.emit(data)
+
+    def normalize_params(self):
+        data = self.data
+        element = self.ViewControl.combo1.currentIndex()
+        sino = self.parent.sinogramWidget.sinogramData[::10]
+        intensities = np.sum(sino, axis=1)
+        max_intensities = np.max(intensities)
+        intensities = intensities / max_intensities
+        for i in range(data.shape[1]):
+            data[element,i] = data[element,i]/intensities[i]
+        self.dataChangedSig.emit(data)
+        return

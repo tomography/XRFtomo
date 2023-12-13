@@ -364,6 +364,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         recon = self.actions.remove_hotspots(recon)
         self.update_recon_image()
 
+
     def set_thresh_params(self):
         recon = self.recon
         threshold = float(self.ViewControl.lThresh.text())
@@ -475,7 +476,7 @@ class LaminographyWidget(QtWidgets.QWidget):
                 if line == "file-name":
                     #TODO: full path is not specified here.
                     path = self.ViewControl.__dict__["file-name"].text()
-                    command += " "+path + "tomocupy_data/{}.h5".format(element)
+                    command += " "+path + "/tomocupy_data/{}.h5".format(element)
         return command
 
     def validate_params(self,sender):

@@ -90,7 +90,8 @@ class LaminographyActions(QtWidgets.QWidget):
 			const = data[0, 0, 0]
 			data = np.pad(data, ((0, 0), (0, 0), (0, 2)), mode='edge')
 			data_dark = np.zeros([1, data.shape[1], data.shape[2]], dtype='float32')
-			data_white = np.ones([1, data.shape[1], data.shape[2]], dtype='float32') * const
+			# data_white = np.ones([1, data.shape[1], data.shape[2]], dtype='float32') * const
+			data_white = np.ones([1, data.shape[1], data.shape[2]], dtype='float32')
 
 			with h5py.File(f'{elem_h5_path}.h5', 'w') as fid:
 				fid.create_dataset('exchange/data', data=data)
@@ -130,7 +131,8 @@ class LaminographyActions(QtWidgets.QWidget):
 			data = np.pad(data, ((0, 0), (0, 0), (0, 2)), mode='edge')
 
 			data_dark = np.zeros([1, data.shape[1], data.shape[2]], dtype='float32')
-			data_white = np.ones([1, data.shape[1], data.shape[2]], dtype='float32') * const
+			# data_white = np.ones([1, data.shape[1], data.shape[2]], dtype='float32') * const
+			data_white = np.ones([1, data.shape[1], data.shape[2]], dtype='float32') 
 
 			with h5py.File(f'{elem_h5_path}.h5', 'w') as fid:
 				fid.create_dataset('exchange/data', data=data)
@@ -150,11 +152,11 @@ class LaminographyActions(QtWidgets.QWidget):
 			ops = command_string.split("--")
 			recon_type = [s for s in ops if "reconstruction-type" in s][0].split(" ")[1]
 			if recon_type == "try":
-				path = parent_dir + "tomocupy_data_rec/try_center/{}/".format(element)
+				path = parent_dir + "/tomocupy_data_rec/try_center/{}/".format(element)
 			elif recon_type == "full":
-				path = parent_dir + "tomocupy_data_rec/{}_rec/".format(element)
+				path = parent_dir + "/tomocupy_data_rec/{}_rec/".format(element)
 			elif recon_type == "try_lamino":
-				path = parent_dir + "tomocupy_data_rec/try_center/{}/".format(element)
+				path = parent_dir + "/tomocupy_data_rec/try_center/{}/".format(element)
 			else:
 				return None
 			recons = self.get_recon_tiffs(path)[0]
