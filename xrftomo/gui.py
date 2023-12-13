@@ -53,6 +53,8 @@ from scipy import ndimage as ndi
 from skimage.morphology import remove_small_objects
 from skimage import io
 import h5py
+import os
+import subprocess
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 
@@ -135,6 +137,8 @@ class xrftomoGui(QMainWindow):
         self.configAction = QAction('load configuration settings', self)
         self.configAction.triggered.connect(self.configSettings)
 
+        self.softwareupdateAction = QAction('update software', self)
+        self.softwareupdateAction.triggered.connect(self.update_software)
         ###
         self.frame = QtWidgets.QFrame()
         self.vl = QtWidgets.QVBoxLayout()
@@ -149,8 +153,6 @@ class xrftomoGui(QMainWindow):
         self.scatterWidget = xrftomo.ScatterView()
         self.scatterWidgetRecon = xrftomo.ScatterView()
         self.miniReconWidget = xrftomo.MiniReconView()
-
-
 
         #refresh UI
         self.imageProcessWidget.refreshSig.connect(self.refreshUI)
@@ -386,6 +388,7 @@ class xrftomoGui(QMainWindow):
         self.helpMenu = menubar.addMenu(' &Help')
         self.helpMenu.addAction(self.keyMapAction)
         self.helpMenu.addAction(self.configAction)
+        self.helpMenu.addAction(self.softwareupdateAction)
         self.helpMenu.setVisible(False)
 
         self.afterConversionMenu.setDisabled(True)
@@ -885,6 +888,29 @@ class xrftomoGui(QMainWindow):
 
     def __del__(self):
         sys.stdout = sys.__stdout__
+
+
+    def update_software(self):
+        #TODO: update software using subprocess
+        TOP = "/".join(os.getcwd().replace("\\","/").split("/")[:-1])+"/"
+        bat_file = TOP+"Menu/start_xrftomo.bat"
+        with open(bat_file,'r') as f:
+            lines = f.readlines()
+        conda_env = os.environ['CONDA_PREFIX'].replace("\\","/").split("/")[-1]
+        command_string = "cd {} \n conda activate {} \n git stash \n git pull;".format(TOP.replace("/","\\"), conda_env)
+        subprocess.Popen(command_string, shell=True)
+
+        #delete and restore .bat file
+        command_string = "cd {} \n conda activate {} \n git stash \n git pull \n".format(TOP, conda_env)
+        subprocess.Popen(command_string, shell=True)
+        new_bat = open(bat_file, 'w+')
+        new_bat.write(lines[0])
+        new_bat.close()
+
+        #this next step will probably close the software...
+        command_string = "cd {} \n conda activate {} \n pip uninstall -y xrftomo \n python setup.py install \n start /m {}".format(TOP, conda_env, bat_file)
+        subprocess.Popen(command_string, shell=True)
+        return
 
     def updateOnion(self):
         if self.first_run_w5:
