@@ -52,6 +52,12 @@ from matplotlib import pyplot as plt
 # from matplotlib.pyplot import figure, draw, pause, close
 import time
 
+#TODO: add volume rotation option
+#TODO: add crop option
+#TODO: add ROI box or draggable ROI
+
+# TODO: Run recons in separate thread
+# TODO: change reconstruct and remove_artifact to "click to cancel" while thread is running.
 
 class ReconstructionWidget(QtWidgets.QWidget):
     elementChangedSig = pyqtSignal(int, name='elementChangedSig')
@@ -91,8 +97,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.hist.setImageItem(self.ReconView.projView)
 
 
-        #TODO: Run in separate thread
-        # change reconstruct and remove_artifact to "click to cancel" while thread is running.
+
         self.ViewControl.combo1.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.combo1.currentIndexChanged.connect(self.update_recon_set)
         self.ViewControl.reconstruct.clicked.connect(self.reconstruct_params)

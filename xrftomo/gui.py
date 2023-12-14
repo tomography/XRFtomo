@@ -891,26 +891,28 @@ class xrftomoGui(QMainWindow):
 
 
     def update_software(self):
-        #TODO: update software using subprocess
         TOP = "/".join(os.getcwd().replace("\\","/").split("/")[:-1])+"/"
         bat_file = TOP+"Menu/start_xrftomo.bat"
         with open(bat_file,'r') as f:
             lines = f.readlines()
         conda_env = os.environ['CONDA_PREFIX'].replace("\\","/").split("/")[-1]
         command_string = "cd {} \n conda activate {} \n git stash \n git pull;".format(TOP.replace("/","\\"), conda_env)
-        subprocess.Popen(command_string, shell=True)
+        p1 = subprocess.Popen(command_string, shell=True)
+        p1.wait()
 
         #delete and restore .bat file
-        command_string = "cd {} \n conda activate {} \n git stash \n git pull \n".format(TOP, conda_env)
-        subprocess.Popen(command_string, shell=True)
-        new_bat = open(bat_file, 'w+')
-        new_bat.write(lines[0])
-        new_bat.close()
+        command_string = "rm {}".format(bat_file)
+        p1 = subprocess.Popen(command_string, shell=True)
+        p1.wait()
+        mybat = open(bat_file, 'w+')
+        mybat.write(lines[0])
+        mybat.close()
 
         #this next step will probably close the software...
-        command_string = "cd {} \n conda activate {} \n pip uninstall -y xrftomo \n python setup.py install \n start /m {}".format(TOP, conda_env, bat_file)
-        subprocess.Popen(command_string, shell=True)
-        return
+        command_string = "cd {} \n conda activate {} \n pip uninstall -y xrftomo \n python setup.py install".format(TOP, conda_env)
+        p1 = subprocess.Popen(command_string, shell=True)
+        p1.wait()
+        self.close()
 
     def updateOnion(self):
         if self.first_run_w5:
