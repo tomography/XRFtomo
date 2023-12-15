@@ -79,6 +79,8 @@ class LaminographyControlsWidget(QWidget):
         item_dict2["reconstruct"] = [["button"], "run reconstruction", None, None]
         item_dict2["recon_stats"] = [["button"], "show reconstruction statistics", None, None]
         item_dict2["rm_hotspot"] = [["button"], "laminography tilt angle", None, None]
+        item_dict["rotate_volume"] = [["button"], "opens tool in separate window to rotate reconstructed volume", None, None]
+
 
         try:
             import tomocupy

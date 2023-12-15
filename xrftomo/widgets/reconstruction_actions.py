@@ -49,9 +49,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fftpack import fftshift, ifftshift, fft, ifft, fft2, ifft2
-from scipy import interpolate
+from scipy import interpolate, ndimage
 import sys
-
 from skimage import exposure
 
 
@@ -306,6 +305,21 @@ class ReconstructionActions(QtWidgets.QWidget):
 		plt.show()
 		return new_recon
 
+	def rotate_volume(self, recon, angles):
+		# angles = [x_deg,y_deg,z_deg]
+		if angles[0] != 0:
+			axes = (0, 1)  # z,y
+			recon = ndimage.rotate(recon, angles[0], axes=axes)
+
+		if angles[1] != 0:
+			axes = (1, 2)  # y,x
+			recon = ndimage.rotate(recon, angles[1], axes=axes)
+
+		if angles[2] != 0:
+			axes = (0, 2)  # x,z
+			recon = ndimage.rotate(recon, angles[2], axes=axes)
+
+		return recon
 	def create_circular_mask(self, h, w, center=None, radius=None):
 
 		if center is None:  # use the middle of the image

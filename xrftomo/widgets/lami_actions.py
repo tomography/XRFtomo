@@ -45,7 +45,7 @@ import xrftomo
 import os
 import matplotlib.pyplot as plt
 from scipy.fftpack import fftshift, ifftshift, fft, ifft, fft2, ifft2
-from scipy import interpolate
+from scipy import interpolate, ndimage
 import numpy as np
 import h5py
 import subprocess
@@ -176,6 +176,29 @@ class LaminographyActions(QtWidgets.QWidget):
 
 		except:
 			return None
+
+	def rotate_volume(self, recon_dict, angles):
+		# angles = [x_deg,y_deg,z_deg]
+
+		if angles[0] != 0:
+			axes = (0, 1)  # z,y
+			for key in recon_dict:
+				stack = recon_dict[key]
+				recon_dict[key] = ndimage.rotate(stack, angles[0], axes=axes)
+
+		if angles[1] != 0:
+			axes = (1, 2)  # y,x
+			for key in recon_dict:
+				stack = recon_dict[key]
+				recon_dict[key] = ndimage.rotate(stack, angles[1], axes=axes)
+
+		if angles[2] != 0:
+			axes = (0, 2)  # x,z
+			for key in recon_dict:
+				stack = recon_dict[key]
+				recon_dict[key] = ndimage.rotate(stack, angles[2], axes=axes)
+
+		return recon_dict
 
 
 	def assessRecon(self,recon, data, thetas,show_plots=False):

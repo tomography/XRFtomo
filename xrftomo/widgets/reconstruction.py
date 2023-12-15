@@ -103,6 +103,15 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.ViewControl.reconstruct.clicked.connect(self.reconstruct_params)
         self.ViewControl.remove_hotspot.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.remove_artifact.clicked.connect(self.ViewControl.artifact_parameters.show)
+        self.ViewControl.rotate_volume.clicked.connect(self.openEvent)
+        self.ViewControl.sld_rot_vol.sliderReleased.connect(self.update_vol_image)
+        self.ViewControl.sld_x.sliderReleased.connect(self.rot_vol_sld_changed)
+        self.ViewControl.sld_y.sliderReleased.connect(self.rot_vol_sld_changed)
+        self.ViewControl.sld_z.sliderReleased.connect(self.rot_vol_sld_changed)
+        self.ViewControl.sld_x_ldt.returnPressed.connect(self.rot_vol_ldt_changed)
+        self.ViewControl.sld_y_ldt.returnPressed.connect(self.rot_vol_ldt_changed)
+        self.ViewControl.sld_z_ldt.returnPressed.connect(self.rot_vol_ldt_changed)
+        self.ViewControl.reset.clicked.connect(self.reset_recon_volume)
         self.ViewControl.run_ar.clicked.connect(self.rm_artifact_params)
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
@@ -112,6 +121,7 @@ class ReconstructionWidget(QtWidgets.QWidget):
         self.centers = None
         self.recon = None
         self.recon_dict = {}
+        self.tmp_recon = None
         self.data = None
         self.data_original = None
 
@@ -283,13 +293,100 @@ class ReconstructionWidget(QtWidgets.QWidget):
         except Exception as error:
             print(error)
 
-    # def set_thresh_params(self):
-    #     recon = self.recon
-    #     threshold = float(self.ViewControl.lThresh.text())
-    #     recon = self.actions.setThreshold(threshold,recon)
-    #     self.update_recon_image()
+    def openEvent(self):
+        self.tmp_recon = np.copy(self.recon)
+        self.reset_recon_volume()
+        self.update_vol_image()
+        self.ViewControl.rotate_volume_window.show()
 
+    def reset_recon_volume(self):
+        self.ViewControl.sld_rot_vol.setRange(0,self.tmp_recon.shape[0])
+        self.ViewControl.sld_x_ldt.setText(str(0))
+        self.ViewControl.sld_y_ldt.setText(str(0))
+        self.ViewControl.sld_z_ldt.setText(str(0))
+        self.ViewControl.sld_rot_vol.setValue(0)
+        self.ViewControl.sld_x.setValue(0)
+        self.ViewControl.sld_y.setValue(0)
+        self.ViewControl.sld_z.setValue(0)
 
+    def rot_vol_sld_changed(self):
+        x_deg = self.ViewControl.sld_x.value()
+        y_deg = self.ViewControl.sld_y.value()
+        z_deg = self.ViewControl.sld_z.value()
+        self.ViewControl.sld_x_ldt.setText(str(x_deg))
+        self.ViewControl.sld_y_ldt.setText(str(y_deg))
+        self.ViewControl.sld_z_ldt.setText(str(z_deg))
+        self.rotate_volume_params([x_deg,y_deg,z_deg])
+
+    def rot_vol_ldt_changed(self):
+        x_ldt = self.ViewControl.sld_x_ldt.text()
+        y_ldt = self.ViewControl.sld_y_ldt.text()
+        z_ldt = self.ViewControl.sld_z_ldt.text()
+        try:
+            x_ldt = round(eval(x_ldt))
+            y_ldt = round(eval(y_ldt))
+            z_ldt = round(eval(z_ldt))
+            if x_ldt < -90 or x_ldt > 90 or y_ldt < -90 or y_ldt > 90 or z_ldt < -90 or z_ldt > 90:
+                print("invalid angle entered")
+                return
+        except:
+            print("invalid angle entered")
+            return
+
+        self.ViewControl.sld_x.setValue(x_ldt)
+        self.ViewControl.sld_y.setValue(y_ldt)
+        self.ViewControl.sld_z.setValue(z_ldt)
+        self.rot_vol_sld_changed()
+
+    def rotate_volume_params(self, angles):
+        try:
+            recon_dict = self.tmp_recon
+            for key in recon_dict:
+                recon = recon_dict[key]
+                recon = self.actions.rotate_volume(recon, angles)
+            element = self.ViewControl.combo1.currentText()
+            self.tmp_recon = recon
+            self.ViewControl.sld_rot_vol.setRange(recon.shape[0])
+            self.update_vol_image()
+        except Exception as error:
+            print(error)
+
+    def apply_clicked(self):
+        try:
+            x_ldt = self.ViewControl.sld_x_ldt.text()
+            y_ldt = self.ViewControl.sld_y_ldt.text()
+            z_ldt = self.ViewControl.sld_z_ldt.text()
+            try:
+                x_ldt = round(eval(x_ldt))
+                y_ldt = round(eval(y_ldt))
+                z_ldt = round(eval(z_ldt))
+                if x_ldt < -90 or x_ldt > 90 or y_ldt < -90 or y_ldt > 90 or z_ldt < -90 or z_ldt > 90:
+                    print("invalid angle entered")
+                    return
+            except:
+                print("invalid angle entered")
+                return
+
+            angles = [x_ldt,y_ldt,z_ldt]
+            recon_dict = self.recon_dict
+            for key in recon_dict:
+                recon = recon_dict[key]
+                self.recon_dict[key] = self.actions.rotate_volume(recon, angles)
+            element = self.ViewControl.combo1.currentText()
+            self.recon = self.recon_dict[element]
+            self.sld.setRange(self.recon.shape[0])
+            self.update_recon_image()
+            # self.update_vol_image()
+
+        except Exception as error:
+            print(error)
+    def update_vol_image(self):
+        idx = self.ViewControl.sld_rot_vol.value()
+        try:
+            self.ViewControl.sld_rot_vol.setRange(0, self.tmp_recon.shape[0])
+            self.ViewControl.volume_img.projView.setImage(self.tmp_recon[idx, :, :])
+        except:
+            print("run reconstruction first")
     def update_recon_dict(self, recon):
         elem = self.ViewControl.combo1.currentText()
         #recon could be a partial reconstruction, account for this by indexing the Y range as well
@@ -319,9 +416,9 @@ class ReconstructionWidget(QtWidgets.QWidget):
     def update_recon_image(self):
         index = self.sld.value()
         self.lcd.display(index)
-
         try:
             self.ReconView.projView.setImage(self.recon[index, :, :])
+            self.tmp_recon = self.recon
         except:
             print("run reconstruction first")
 

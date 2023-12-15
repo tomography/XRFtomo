@@ -41,6 +41,7 @@
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import *
+import xrftomo
 class ReconstructionControlsWidget(QtWidgets.QWidget):
     def __init__(self):
         super(ReconstructionControlsWidget, self).__init__()
@@ -54,6 +55,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
 
         self.populate_scroll_area()
         self.remove_artifact_scroll_area()
+        self.rotate_volume_area()
 
         self.middle_row_lbl.setVisible(False)
         self.middle_row_lbl.setVisible(False)
@@ -91,6 +93,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         item_dict["recon_stats"] = ["button", "show reconstruction statisticks"]
         item_dict["remove_hotspot"] = ["button", "remove hotspots from reconstruction"]
         item_dict["remove_artifact"] = ["button", "remove line artifacts"]
+        item_dict["rotate_volume"] = ["button", "opens tool in separate window to rotate reconstructed volume"]
 
 
         vb_recon = QVBoxLayout()
@@ -134,7 +137,6 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.beta.setText("1")
         self.delta.setText("0.01")
         self.lower_thresh.setText("0.0")
-
         return
 
     def remove_artifact_scroll_area(self):
@@ -187,3 +189,63 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.artifact_scroll_widget.setLayout(artifact_v_box)
         self.artifact_scroll.setWidget(self.artifact_scroll_widget)
         self.artifact_parameters.setLayout(artifact_v_box)
+
+    def rotate_volume_area(self):
+
+        #__________Popup window for PIRT button__________
+        self.rotate_volume_window = QtWidgets.QWidget()
+        self.rotate_volume_window.resize(500,400)
+        self.rotate_volume_window.setWindowTitle('rotate volume tool')
+        widgetsizes = [300, 135, 75]
+        volume_dict = {}
+        volume_dict["volume_img"] = [["view"], "",None, None]
+        volume_dict["sld_rot_vol"] = [["label", "slider", "linedit"], "current cross section",None, "0"]
+        volume_dict["sld_x"] = [["label", "slider", "linedit"], "change x angle",None, "0"]
+        volume_dict["sld_y"] = [["label", "slider", "linedit"], "change y angle.", None, "0"]
+        volume_dict["sld_z"] = [["label", "slider", "linedit"], "change z angle", None, "0"]
+        volume_dict["reset"] = [["button"], "reset view", None, None]
+        volume_dict["apply"] = [["button"], "reset view", None, None]
+
+        volume_v_box = QVBoxLayout()
+        for i, key in enumerate(volume_dict.keys()):
+            widget_items = volume_dict[key][0]
+            attrs = volume_dict[key]
+            widgetsize = widgetsizes[len(widget_items) - 1]
+
+            line_num = "volume_line_{}".format(i)
+            setattr(self, line_num, QHBoxLayout())
+            volume_line = self.__dict__[line_num]
+
+            for widget in widget_items:
+                if widget == "view":
+                    setattr(self, key, xrftomo.ReconView(self))
+                    object = self.__dict__[key]
+                    volume_line.addWidget(object)
+                if widget == "button":
+                    setattr(self, key, QPushButton(key))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    volume_line.addWidget(object)
+                elif widget == "slider":
+                    setattr(self, key, QSlider(QtCore.Qt.Horizontal, self))
+                    object = self.__dict__[key]
+                    object.setRange(-90, 90)
+                    volume_line.addWidget(object)
+                elif widget == "linedit":
+                    name = key+"_ldt"
+                    setattr(self, name, QLineEdit(attrs[3]))
+                    object = self.__dict__[name]
+                    object.setFixedWidth(widgetsize)
+                    volume_line.addWidget(object)
+                elif widget == "label":
+                    name = key + "_lbl"
+                    setattr(self, name, QLabel(key))
+                    object = self.__dict__[name]
+                    object.setFixedWidth(75)
+                    object.setToolTip(attrs[1])
+                    volume_line.addWidget(object)
+            volume_v_box.addLayout(volume_line)
+
+        volume_v_box.setSpacing(0)
+        volume_v_box.setContentsMargins(0, 0, 0, 0)
+        self.rotate_volume_window.setLayout(volume_v_box)

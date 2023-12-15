@@ -109,6 +109,8 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
         self.ViewControl.reconstruct.clicked.connect(self.reconstruct_params)
+        # self.ViewControl.rotate_volume.clicked.connect(self.ViewControl.rotate_volume_window.show)
+
 
         self.x_shifts = None
         self.y_shifts = None
