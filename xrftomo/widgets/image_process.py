@@ -509,8 +509,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
     def normalize_params(self):
         data = self.data
-        element = self.ViewControl.combo1.currentIndex()
         sino = self.parent.sinogramWidget.sinogramData[::10]
-        data = self.actions.normalize(data, element, sino)
+        data = self.actions.normalize(data, sino)
         self.dataChangedSig.emit(data)
         return

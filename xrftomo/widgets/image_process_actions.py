@@ -144,12 +144,12 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 			return data
 
-	def normalize(self, data, element, sino):
-		intensities = np.sum(sino, axis=1)
-		max_intensities = np.max(intensities)
-		intensities = intensities / max_intensities
-		for i in range(data.shape[1]):
-			data[element, i] = data[element, i] / intensities[i]
+	def normalize(self, data, sino):
+		intensities = np.sum(sino, axis=1)          #1D array;
+		max_intensities = np.max(intensities)       #float val
+		intensities = intensities / max_intensities #normalization factor
+		for i in range(data.shape[0]):      #apply for all elements
+			data[i] = data[i]/intensities[:,None,None]
 		return data
 
 
