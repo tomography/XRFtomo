@@ -921,6 +921,36 @@ class SinogramActions(QtWidgets.QWidget):
 
         return x_shifts, y_shifts, data
 
+    def alignFromText1(self, fileName, data, data_fnames, x_padding=0):
+        '''
+        align by reading text file in following format: name of the file, xshift, yshift
+        appends shifts to existing alignmet, so reset if you want a clean slate prior to importing txt file.
+        yshift(string after first comma before second comma),
+        xshift(string after second comma)
+        Variables
+        -----------
+        data: ndarray
+            4D xrf dataset ndarray [elements, theta, y,x]
+
+        '''
+        try:
+            file = np.load(fileName[0])
+            x_shifts = np.array([eval(item) for item in file[1]])
+            y_shifts = np.array([eval(item) for item in file[2]])
+            datacopy = np.zeros(data.shape)
+            datacopy[...] = data[...]
+            data[np.isnan(data)] = 1
+            data = self.shift_all(data, x_shifts, y_shifts)
+            self.alignmentDone()
+            return data, x_shifts, y_shifts
+        except IndexError:
+            print("index missmatch between align file and current dataset ")
+        except IOError:
+            print("choose file please")
+        except TypeError:
+            print("choose file please")
+        return
+
     def alignFromText2(self, fileName, data, data_fnames, x_padding=0):
         '''
         align by reading text file in following format: name of the file, xshift, yshift

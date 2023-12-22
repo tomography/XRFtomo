@@ -53,6 +53,7 @@ from scipy import ndimage as ndi
 from scipy import fftpack
 from scipy.stats import tmean
 from scipy.fftpack import fftshift, fft2, ifft2
+import matplotlib.pyplot as plt
 
 
 class ImageProcessActions(QtWidgets.QWidget):
@@ -146,10 +147,14 @@ class ImageProcessActions(QtWidgets.QWidget):
 
 	def normalize(self, data, sino):
 		intensities = np.sum(sino, axis=1)          #1D array;
-		max_intensities = np.max(intensities)       #float val
-		intensities = intensities / max_intensities #normalization factor
+		max_intensity = np.max(intensities)       #float val
+		intensities = max_intensity/intensities   #normalization factor
+		plt.figure()
+		plt.plot(intensities)
+		plt.show()
+
 		for i in range(data.shape[0]):      #apply for all elements
-			data[i] = data[i]/intensities[:,None,None]
+			data[i] = intensities[:,None,None]*data[i]
 		return data
 
 

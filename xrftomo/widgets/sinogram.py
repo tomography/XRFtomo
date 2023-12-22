@@ -1008,7 +1008,7 @@ class SinogramWidget(QtWidgets.QWidget):
         data_fnames = self.fnames
         x_padding = self.x_padding_hist[-1]
         try:
-            data, x_shifts, y_shifts = self.actions.alignFromText2(fileName, data, data_fnames, x_padding)
+            data, x_shifts, y_shifts = self.actions.alignFromText1(fileName, data, data_fnames, x_padding)
             # self.restoreSig.emit() #DO not restore this must be done manually else error occur.
             self.dataChangedSig.emit(data)
             self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)

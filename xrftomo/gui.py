@@ -1853,7 +1853,7 @@ class xrftomoGui(QMainWindow):
         data = img["data"]
         elements = img["elements"]
         thetas = [float(theta) for theta in list(img["thetas"])]
-        recons = img["recons"]
+        # recons = img["recons"]
 
         self.fnames = [fname.decode("utf-8").split("/")[-1] for fname in list(fnames)]
         self.data = np.array(data)
@@ -1869,15 +1869,15 @@ class xrftomoGui(QMainWindow):
         self.toolsMenu.setDisabled(True)
 
         self.update_data(self.data)
-        self.recon_dict = {}
-        for i, element in enumerate(self.elements):
-            self.recon_dict[element] = recons[i]
+        # self.recon_dict = {}
+        # for i, element in enumerate(self.elements):
+        #     self.recon_dict[element] = recons[i]
 
         self.updateImages(True)
-        self.reconstructionWidget.recon_dict = self.recon_dict
-        self.reconstructionWidget.recon = recons[0]
-        self.laminographyWidget.recon_dict = self.recon_dict
-        self.laminographyWidget.recon = recons[0]
+        # self.reconstructionWidget.recon_dict = self.recon_dict
+        # self.reconstructionWidget.recon = recons[0]
+        # self.laminographyWidget.recon_dict = self.recon_dict
+        # self.laminographyWidget.recon = recons[0]
         self.fileTableWidget.fileTableModel.update_fnames(self.fnames)
         self.fileTableWidget.fileTableModel.update_thetas(thetas)
         self.fileTableWidget.fileTableView.sortByColumn(1, 0)
@@ -2231,6 +2231,10 @@ class xrftomoGui(QMainWindow):
         if not from_open:
             self.app.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
             self.data, self.elements, self.thetas, self.fnames = self.fileTableWidget.onSaveDataInMemory()
+            #create empty recon_dict here
+            self.recon_dict = {}
+            for element in self.elements:
+                self.recon_dict[element] = np.zeros((self.data.shape[2],self.data.shape[3],self.data.shape[3]))
             #populate scatter plot combo box windows
             self.first_run = True
 

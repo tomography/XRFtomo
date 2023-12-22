@@ -548,7 +548,7 @@ class FileTableWidget(QWidget):
         path_files = [self.fileTableModel.directory + s for s in files]
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
-
+        elements.append("us_ic")
         #update auto-load parameters
         self.parent.params.input_path = self.dirLineEdit.text()
         self.parent.params.file_extension = self.extLineEdit.text()
