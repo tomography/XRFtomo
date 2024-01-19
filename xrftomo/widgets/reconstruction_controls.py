@@ -192,7 +192,7 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
 
     def rotate_volume_area(self):
 
-        #__________Popup window for PIRT button__________
+        #__________Popup window for rotate volume button__________
         self.rotate_volume_window = QtWidgets.QWidget()
         self.rotate_volume_window.resize(500,400)
         self.rotate_volume_window.setWindowTitle('rotate volume tool')

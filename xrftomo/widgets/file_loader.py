@@ -58,8 +58,10 @@ class FileTableWidget(QWidget):
         self.auto_extension = self.parent.params.file_extension
         self.auto_element_tag = self.parent.params.element_tag
         self.auto_data_tag = self.parent.params.data_tag
+        self.auto_scaler_tag = self.parent.params.scaler_tag
         self.auto_sorted_angles = self.parent.params.sorted_angles
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
+        self.auto_selected_scalers = eval(self.parent.params.selected_scalers)
         self.reader = self.parent.reader
         self.initUI()
         sys.stdout = xrftomo.gui.Stream(newText=self.parent.onUpdateText)
@@ -79,6 +81,14 @@ class FileTableWidget(QWidget):
         self.elementTableView.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.elementTableView.setContextMenuPolicy(Qt.CustomContextMenu)
         self.elementTableView.customContextMenuRequested.connect(self.onElementTableContextMenu)
+
+        self.scalerTableModel = xrftomo.ElementTableModel()
+        self.scalerTableModel.columns = ['Scaler Map']
+        self.scalerTableView = QTableView()
+        self.scalerTableView.setModel(self.scalerTableModel)
+        self.scalerTableView.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.scalerTableView.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.scalerTableView.customContextMenuRequested.connect(self.onScalerTableContextMenu)
 
         dirLabel = QLabel('Directory:')
         self.dirLineEdit = QLineEdit(self.auto_input_path)
@@ -100,6 +110,7 @@ class FileTableWidget(QWidget):
         layout1.addWidget(self.scroll)
         layout1.addWidget(self.fileTableView)
         layout1.addWidget(self.elementTableView)
+        layout1.addWidget(self.scalerTableView)
 
 
 
@@ -120,10 +131,11 @@ class FileTableWidget(QWidget):
         self.scroll.setMaximumWidth(290)
 
         item_dict = {}  # [type(button, file, path, dropdown), descriptions[idx], choices[idx],defaults[idx]]
-        item_dict["data_menu"] = [["label","menu"], "downsample by 2x", None, None]
-        item_dict["element_menu"] = [["label","menu"], "invert 2d array", None, None]
-        item_dict["theta_menu"] = [["label","menu"], "crop to ROI", None, None]
-        item_dict["saveDataBtn"] = [["button"], "save to memory", None, None]
+        item_dict["data_menu"] = [["label","menu"], "", None, None]
+        item_dict["element_menu"] = [["label","menu"], "", None, None]
+        item_dict["scaler_menu"] = [["label","menu"], "", None, None]
+        item_dict["theta_menu"] = [["label","menu"], "", None, None]
+        item_dict["saveDataBtn"] = [["button"], "", None, None]
 
         vb_files = QVBoxLayout()
         widgetsizes = [240, 115, 50]
@@ -224,6 +236,11 @@ class FileTableWidget(QWidget):
                 self.populate_element_menu(self.img, self.element_tag)
                 self.element_tag.setTitle(self.auto_element_tag)
 
+                self.scaler_tag = self.element_menu.addMenu("scaler")
+                self.scaler_tag.objectName = "scaler_tag"
+                self.populate_scaler_menu(self.img, self.scaler_tag)
+                self.scaler_tag.setTitle(self.auto_scaler_tag)
+
                 self.theta_tag = self.theta_menu.addMenu("theta")
                 self.populate_theta_menu(self.img, self.theta_tag)
                 self.theta_tag.objectName = "theta_tag"
@@ -236,6 +253,7 @@ class FileTableWidget(QWidget):
                     return
 
                 self.element_tag_changed()
+                self.scaler_tag_changed()
                 try:
                     thetas_loaded = self.try_theta()
                 except Exception as error:
@@ -274,14 +292,16 @@ class FileTableWidget(QWidget):
     def check_auto_tags(self):
         data_tag_exists = self.auto_data_tag in self.img
         element_tag_exists = self.auto_element_tag in self.img
+        scaler_tag_exists = self.auto_scaler_tag in self.img
         # theta_tag_exists = self.auto_theta_tag in self.img
 
-        if data_tag_exists and element_tag_exists:
+        if data_tag_exists and element_tag_exists and scaler_tag_exists:
             return True
         else:
             default = list(self.img.keys())[0]
             self.data_tag.setTitle(default)
             self.element_tag.setTitle(default)
+            self.scaler_tag.setTitle(default)
             self.theta_tag.setTitle(default)
             return False
 
@@ -307,6 +327,18 @@ class FileTableWidget(QWidget):
                 sub_action = QAction(key,self)
                 menu.addAction(sub_action)
                 sub_action.triggered.connect(self.update_element_tag)
+        return menu
+
+    def populate_scaler_menu(self, obj, menu):
+        keys = obj.keys()
+        for key in keys:
+            if isinstance(obj[key],h5py.Group):
+                sub_menu = menu.addMenu(key)
+                self.populate_scaler_menu(obj[key], sub_menu)
+            elif isinstance(obj[key],h5py.Dataset):
+                sub_action = QAction(key,self)
+                menu.addAction(sub_action)
+                sub_action.triggered.connect(self.update_scaler_tag)
         return menu
 
     def populate_theta_menu(self, obj, menu):
@@ -376,6 +408,33 @@ class FileTableWidget(QWidget):
         self.element_menu.show()
         self.element_tag_changed()
 
+    def update_scaler_tag(self):
+        self.scaler_tag.setTitle("scaler_tag")
+        lvl0 = ""
+        lvl1 = ""
+        lvl2 = ""
+        lvl3 = ""
+        lvl4 = ""
+        try:
+            #hardcoding path to max depth of 4.
+            lvl0 = self.sender().text()
+            lvl1 = self.sender().associatedWidgets()[0].title()
+            lvl2 = self.sender().associatedWidgets()[0].parent().title()
+            lvl3 = self.sender().associatedWidgets()[0].parent().parent().title()
+            lvl4 = self.sender().associatedWidgets()[0].parent().parent().parent().title()
+        except:
+            pass
+        lvl_list = [lvl0, lvl1, lvl2, lvl3, lvl4]
+        lvls = []
+        for i in lvl_list:
+            if i != "scaler_tag":
+                lvls.insert(0, i)
+            else:
+                break
+        self.scaler_tag.setTitle("/".join(lvls))
+        self.scaler_menu.setFixedSize(123,25)
+        self.scaler_menu.show()
+        self.scaler_tag_changed()
     def update_theta_tag(self):
         self.theta_tag.setTitle("theta_tag")
         lvl0 = ""
@@ -472,6 +531,19 @@ class FileTableWidget(QWidget):
             print("invalid tag option")
         return
 
+    def scaler_tag_changed(self):
+        try:
+            scaler_tag = self.scaler_tag.title()
+            scaler_list = list(self.img[scaler_tag])
+            scalers = [x.decode("utf-8") for x in scaler_list]
+            self.scalerTableModel.loadElementNames(scalers)
+            self.scalerTableModel.setAllChecked(False)
+            self.scalerTableModel.setChecked(self.auto_selected_scalers, (True))
+            print("")
+        except:
+            print("invalid tag option")
+        return
+
 
     def normalizeData(self, data, scalers, quants):
         #normalize
@@ -492,12 +564,13 @@ class FileTableWidget(QWidget):
 
             thetas = self.reader.load_thetas(path_files, theta_tag, 1)
             print("")
+            self.fileTableModel.update_thetas(thetas)
+            self.fileTableView.sortByColumn(1, 0)
         except:
             thetas=[]
             print("directory probably not mounted or incorrect theta tag")
 
-        self.fileTableModel.update_thetas(thetas)
-        self.fileTableView.sortByColumn(1, 0)
+
 
         return
 
@@ -525,6 +598,18 @@ class FileTableWidget(QWidget):
             if action == check_action or action == uncheck_action:
                 self.elementTableModel.setChecked(rows, (check_action == action))
 
+    def onScalerTableContextMenu(self, pos):
+        if self.scalerTableView.selectionModel().selection().indexes():
+            rows = []
+            for i in self.scalerTableView.selectionModel().selection().indexes():
+                rows += [i.row()]
+            menu = QMenu()
+            check_action = menu.addAction("Check")
+            uncheck_action = menu.addAction("Uncheck")
+            action = menu.exec_(self.scalerTableView.mapToGlobal(pos))
+            if action == check_action or action == uncheck_action:
+                self.scalerTableModel.setChecked(rows, (check_action == action))
+
     def reset_widgets(self):
         self.parent.imageProcessWidget.sld.setValue(0)
         self.parent.reconstructionWidget.sld.setValue(0)
@@ -538,9 +623,12 @@ class FileTableWidget(QWidget):
             return [], [] , [], []
         thetas = [i.theta for i in self.fileTableModel.arrayData]
         elements = [i.element_name for i in self.elementTableModel.arrayData]
+        scalers = [i.element_name for i in self.scalerTableModel.arrayData]
         files_bool = [i.use for i in self.fileTableModel.arrayData]
         elements_bool = [i.use for i in self.elementTableModel.arrayData]
+        scalers_bool = [i.use for i in self.scalerTableModel.arrayData]
         element_tag = self.element_tag.title()
+        scaler_tag = self.scaler_tag.title()
         data_tag = self.data_tag.title()
         k = np.arange(len(files))
         l = np.arange(len(elements))
@@ -548,6 +636,7 @@ class FileTableWidget(QWidget):
         path_files = [self.fileTableModel.directory + s for s in files]
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
+        scalers = [scalers[j] for j in l if scalers_bool[j]==True]
         elements.append("us_ic")
         #update auto-load parameters
         self.parent.params.input_path = self.dirLineEdit.text()
@@ -556,6 +645,8 @@ class FileTableWidget(QWidget):
         self.parent.params.data_tag = self.data_tag.title()
         self.parent.params.element_tag = self.element_tag.title()
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
+        self.parent.params.scaler_tag = self.scaler_tag.title()
+        self.parent.params.selected_scalers = str(list(np.where(scalers_bool)[0]))
 
         if len(elements) == 0:
             print('no element selected.')
@@ -569,7 +660,7 @@ class FileTableWidget(QWidget):
         self.parent.clear_all()
         try:
             #TODO: add file upload status: n / total files uploaded
-            data = self.reader.read_mic_xrf(path_files, elements, data_tag, element_tag)
+            data = self.reader.read_mic_xrf(path_files, elements, data_tag, element_tag, scalers, scaler_tag)
         except:
             print("invalid image/data/element tag combination. Load failed")
             return [], [], [], []
@@ -577,8 +668,6 @@ class FileTableWidget(QWidget):
         if data is None:
             return [], [], [], []
         print('finished loading')
-        data[np.isnan(data)] = 0.0001
-        data[data == np.inf] = 0.0001
-
+        elements = elements+scalers
         return data, elements, thetas, files
 

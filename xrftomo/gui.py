@@ -1835,6 +1835,7 @@ class xrftomoGui(QMainWindow):
     def open_complete_H5(self):
         self.fileTableWidget.data_menu.clear()
         self.fileTableWidget.element_menu.clear()
+        self.fileTableWidget.scaler_menu.clear()
         self.fileTableWidget.theta_menu.clear()
         currentDir = self.fileTableWidget.dirLineEdit.text()
         file = QFileDialog.getOpenFileName(self, "Open complete h5", currentDir, "h5 (*.h5*)")

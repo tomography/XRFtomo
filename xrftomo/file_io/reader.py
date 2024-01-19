@@ -136,6 +136,7 @@ class ReadOptions(object):
             projection
 
         """
+        print(element, data_tag, element_tag)
         elements = self.read_channel_names(fname, element_tag)
         if elements == []:
             return
@@ -232,7 +233,7 @@ class ReadOptions(object):
         else:
             return
 
-    def read_mic_xrf(self, path_files, elements, data_tag, element_tag):
+    def read_mic_xrf(self, path_files, elements, data_tag, element_tag, scalers, scaler_tag):
         """
         Converts hdf files to numpy arrays for plotting and manipulation
 
@@ -257,6 +258,7 @@ class ReadOptions(object):
         max_y, max_x = 0, 0
         num_files = len(path_files)
         num_elements = len(elements)-1
+        num_scalers = len(scalers)
         #get max dimensons
         for i in range(num_files):
             proj = self.read_projection(path_files[i], elements[0], data_tag, element_tag)
@@ -268,8 +270,8 @@ class ReadOptions(object):
                 if proj.shape[1] > max_x:
                     max_x = proj.shape[1]
 
-        data = np.zeros([num_elements+1,num_files, max_y, max_x])
-        scalers = np.zeros([num_files, max_y, max_x])
+        data = np.zeros([num_elements+1+num_scalers,num_files, max_y, max_x])
+        norm_scalers = np.zeros([num_files, max_y, max_x])
         flux = np.zeros(num_files)
         #get data
         for i in range(num_elements):
@@ -287,35 +289,52 @@ class ReadOptions(object):
                         print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
                         data[i, j] = np.zeros([max_y,max_x])
 
-
         for j in range(num_files):
-            scaler = self.read_projection(path_files[j], "US_IC", "MAPS/scalers", "MAPS/scaler_names")
+            norm_scaler = self.read_projection(path_files[j], "US_IC", "MAPS/scalers", "MAPS/scaler_names")
             # MAPS/scalers[32]
             # MAPS/scaler_names[32]
             # exchange_0/data
             # exchange_0/data_names
             # US_IC, DS_IC
-            if scaler is not None:
-                img_y = scaler.shape[0]
-                img_x = scaler.shape[1]
-                dx = (max_x-img_x)//2
-                dy = (max_y-img_y)//2
-                scalers[j, dy:img_y + dy, dx:img_x + dx] = scaler
-                flux[j] = np.sum(scaler)    #corrects for long term beam flux changes; i.e. adjacebt projection intensity
+            if norm_scaler is not None:
+                img_y = norm_scaler.shape[0]
+                img_x = norm_scaler.shape[1]
+                dx = (max_x - img_x) // 2
+                dy = (max_y - img_y) // 2
+                norm_scalers[j, dy:img_y + dy, dx:img_x + dx] = norm_scaler
+                flux[j] = np.mean(norm_scaler)  # corrects for long term beam flux changes; i.e. adjacebt projection intensity
 
-        scalers = scalers/np.max(scalers)
-        # flux = np.max(flux)/flux
-        scalers[scalers == 0] = 1
-        scalers = np.roll(scalers,1,axis=2)
-        data[-1] = scalers
-        before = np.sum(data[0],axis=(1,2))
-        # data[:-1] = flux[None,:,None,None]*data[:-1]/scalers[None,:]
-        data[:-1] = data[:-1]/scalers[None,:]
-        after = np.sum(data[0],axis=(1,2))
-        intensity = after/before
-        plt.figure()
-        plt.plot(intensity)
-        plt.show()
+
+        for i in range(num_scalers):
+            k = i+num_elements+1
+            for j in range(num_files):
+                proj = self.read_projection(path_files[j], scalers[i], data_tag.split("/")[0]+"/scalers", scaler_tag)
+                proj = np.roll(proj,1, axis=1)
+                if proj is not None:
+                    img_y = proj.shape[0]
+                    img_x = proj.shape[1]
+                    dx = (max_x-img_x)//2
+                    dy = (max_y-img_y)//2
+                    try:
+                        data[k, j, dy:img_y+dy, dx:img_x+dx] = proj
+                    except Exception as error:
+                        print(error)
+                        print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
+                        data[k, j] = np.zeros([max_y,max_x])
+
+        norm_scalers = norm_scalers / np.max(norm_scalers)
+        # flux = np.max(flux) / flux
+        norm_scalers[norm_scalers == 0] = 0.001
+        norm_scalers = np.roll(norm_scalers, 1, axis=2)
+        data[num_elements] = norm_scalers
+        # before = np.sum(data[0], axis=(1, 2))
+        # data[:num_elements] = flux[None, :, None, None] * data[:num_elements] / norm_scalers[None, :]
+        data[:num_elements] = data[:num_elements]/norm_scalers[None,:]
+        # after = np.sum(data[0], axis=(1, 2))
+        # intensity = after / before
+        # plt.figure()
+        # plt.plot(intensity)
+        # plt.show()
 
         data[np.isnan(data)] = 0.0001
         data[data == np.inf] = 0.0001

@@ -78,6 +78,11 @@ SECTIONS['file-io'] = {
         'type': str,
         'help': "element tag for h5 file",
         'metavar': 'PATH'},
+    'scaler-tag': {
+        'default': 'scaler_names',
+        'type': str,
+        'help': "scaler tag for h5 file",
+        'metavar': 'PATH'},
     'sorted-angles': {
         'default': 'True',
         'type': bool,
@@ -92,6 +97,10 @@ SECTIONS['file-io'] = {
         'default': '[0,1]',
         'type': str,
         'help': "list of selected elements indexes"},
+    'selected-scalers': {
+        'default': '[0,1]',
+        'type': str,
+        'help': "list of selected scaler indexes"},
         }
 
 SECTIONS['reconstruction'] = {
