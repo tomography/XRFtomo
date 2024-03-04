@@ -87,7 +87,7 @@ class SaveOptions(object):
 				raise IOError
 			for j in range(data.shape[0]):  # element index
 				img = data[j]
-				io.imsave("{}/{}_proj.tiff".format(savedir,elements[j]), img)
+				io.imsave("{}/{}_proj.tiff".format(savedir,elements[j]), np.float32(img))
 			return
 		except IOError:
 			print("type the header name")
@@ -109,7 +109,7 @@ class SaveOptions(object):
 					recon_index = indx[:-len(str(i))] + str(i)
 					img = data[j, i]
 					img = img.astype(np.float32)
-					io.imsave("{}/{}_proj_{}.tiff".format(subdir,elements[j],str(recon_index)), img)
+					io.imsave("{}/{}_proj_{}.tiff".format(subdir,elements[j],str(recon_index)), np.float32(img))
 			return
 		except IOError:
 			print("type the header name")
@@ -125,20 +125,21 @@ class SaveOptions(object):
 				raise IOError
 			for j in range(data.shape[0]):  # elemen t index
 				stack = data[j]
-				np.save("{}/{}_proj.npy".format(savedir,elements[j]), stack)
+				np.save("{}/{}_proj.npy".format(savedir,elements[j]), np.float32(stack))
 			return
 		except IOError:
 			print("type the header name")
 		except Exception as e:
 			print(e)
-	def save_recon_stack(self, recon_dict):
+	def save_recon_stack(self, recon_dict, savedir = None):
 		try:
-			savedir = QFileDialog.getExistingDirectory()
+			if savedir == None:
+				savedir = QFileDialog.getExistingDirectory()
 			if savedir == "":
 				raise IOError
 			for key in recon_dict:  # elemen t index
 				recon = recon_dict[key]
-				io.imsave("{}/{}_recon.tiff".format(savedir,key),recon)
+				io.imsave("{}/{}_recon.tiff".format(savedir,key),np.float32(recon))
 			return
 		except IOError:
 			print("type the header name")
@@ -158,7 +159,7 @@ class SaveOptions(object):
 					# recon = tomopy.circ_mask(recon, axis=0)
 					indx = "0000"
 					recon_index = indx[:-len(str(i))] + str(i)
-					io.imsave("{}/{}_recon_{}.tiff".format(subdir, element, str(recon_index)), recon[i])
+					io.imsave("{}/{}_recon_{}.tiff".format(subdir, element, str(recon_index)), np.float32(recon[i]))
 
 			else:
 				subdir = "{}/{}_proj".format(savedir,element)
@@ -166,7 +167,7 @@ class SaveOptions(object):
 				# recon = tomopy.circ_mask(recon, axis=0)
 				indx = "0000"
 				recon_index = indx[:-len(str(index))]+str(index)
-				io.imsave("{}/{}_recon_{}.tiff".format(subdir, element, str(recon_index)), recon[0])
+				io.imsave("{}/{}_recon_{}.tiff".format(subdir, element, str(recon_index)), np.float32(recon[0]))
 
 			return
 		except IOError:
@@ -183,7 +184,7 @@ class SaveOptions(object):
 			# recon = tomopy.circ_mask(recon, axis=0)
 			for key in recon_dict:  # elemen t index
 				recon = recon_dict[key]
-				np.save("{}/{}_recon.npy".format(savedir,key), recon)
+				np.save("{}/{}_recon.npy".format(savedir,key), np.float32(recon))
 			return
 		except IOError:
 			print("type the header name")
@@ -205,7 +206,7 @@ class SaveOptions(object):
 					sino[i,j] = data[i,:,j,:]
 			for j in range(sino.shape[0]):  # elemen t index
 				img = sino[j]
-				io.imsave("{}/{}_sino.tiff".format(savedir,elements[j]), img)
+				io.imsave("{}/{}_sino.tiff".format(savedir,elements[j]), np.float32(img))
 			return
 		except IOError:
 			print("type the header name")
@@ -230,7 +231,7 @@ class SaveOptions(object):
 					indx = "0000"
 					recon_index = indx[:-len(str(j))] + str(j)
 					img = sino[i,j]
-					io.imsave("{}/{}_sino_{}.tiff".format(subdir, elements[i], str(recon_index)), img)
+					io.imsave("{}/{}_sino_{}.tiff".format(subdir, elements[i], str(recon_index)), np.float32(img))
 			return
 		except IOError:
 			print("type the header name")
@@ -250,7 +251,7 @@ class SaveOptions(object):
 					sino[i,j] = data[i,:,j,:]
 			for i in range(sino.shape[0]):  # elemen t index
 				stack = sino[i]
-				np.save("{}/{}_sino.npy".format(savedir,elements[i]), stack)
+				np.save("{}/{}_sino.npy".format(savedir,elements[i]), np.float32(stack))
 			return
 		except IOError:
 			print("type the header name")

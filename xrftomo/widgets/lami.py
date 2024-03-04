@@ -165,6 +165,8 @@ class LaminographyWidget(QtWidgets.QWidget):
                 for i in range(num_widgets):
                     hbox.itemAt(i).widget().setVisible(False)
 
+            self.ViewControl.__dict__["elem_lbl"].setVisible(True)
+            self.ViewControl.__dict__["elem"].setVisible(True)
             self.ViewControl.__dict__["method_lbl"].setVisible(True)
             self.ViewControl.__dict__["method"].setVisible(True)
             self.ViewControl.__dict__["browse"].setVisible(True)
@@ -202,6 +204,9 @@ class LaminographyWidget(QtWidgets.QWidget):
                 num_widgets = hbox.count()
                 for i in range(num_widgets):
                     hbox.itemAt(i).widget().setVisible(False)
+
+            self.ViewControl.__dict__["elem_lbl"].setVisible(True)
+            self.ViewControl.__dict__["elem"].setVisible(True)
             self.ViewControl.__dict__["method_lbl"].setVisible(True)
             self.ViewControl.__dict__["method"].setVisible(True)
             self.ViewControl.__dict__["lamino-angle_lbl"].setVisible(True)
@@ -211,6 +216,7 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.__dict__["fbp-filter_lbl"].setVisible(True)
             self.ViewControl.__dict__["fbp-filter"].setVisible(True)
             self.ViewControl.__dict__["recon_all"].setVisible(True)
+            self.ViewControl.__dict__["recon_save"].setVisible(True)
             self.ViewControl.__dict__["reconstruct"].setVisible(True)
             self.ViewControl.__dict__["recon_stats"].setVisible(True)
             self.ViewControl.__dict__["rm_hotspot"].setVisible(True)
@@ -429,33 +435,50 @@ class LaminographyWidget(QtWidgets.QWidget):
         data = self.data.copy()
         recon_dict = self.recon_dict.copy()
 
+        if self.ViewControl.recon_save.isChecked():
+            try: #promps for directory and subdir folder
+                save_path = QFileDialog.getExistingDirectory(self, "Open Folder", QtCore.QDir.currentPath())
+                if save_path == "":
+                    raise IOError
+                if save_path == None:
+                    return
+            except IOError:
+                print("type the header name")
+                return
+            except:
+                print("Unknown error in reconstruct_params()")
+                return
+
         if self.ViewControl.recon_all.isChecked():
             num_elements = self.ViewControl.elem.count()
             elements = [i for i in range(num_elements)]
 
-        elif method == 0:
-            for element_idx in elements:
-                element = self.parent.elements[element_idx]
-                self.ViewControl.elem.setCurrentIndex(element_idx)  # required to properly update recon_dict
-                recons = self.actions.reconstruct_cpu(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir)
-                recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons),
-                self.recon = np.array(recons)
 
-        if method ==1:
-            if not self.check_savepath_exists():
-                print("save path invalid or insufficient permissions")
-                return
+        for element_idx in elements:
+            element = self.parent.elements[element_idx]
+            self.ViewControl.elem.setCurrentIndex(element_idx)  # required to properly update recon_dict
+            empty_recon = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
+            recon_dict[element] = empty_recon
+            print("running reconstruction for:", element)
+            if method == 0:
+                recon = self.actions.reconstruct_cpu(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir)
 
-            for element_idx in elements:
+            if method ==1:
+                if not self.check_savepath_exists():
+                    print("save path invalid or insufficient permissions")
+                    return
                 element = self.parent.elements[element_idx]
                 command_string = self.get_command_string(element)
-
-                self.ViewControl.elem.setCurrentIndex(element_idx)    #required to properly update recon_dict
-                recons = self.actions.reconstruct_gpu(data, element_idx, element, thetas, parent_dir=self.h5_dir, command_string=command_string)
-                if recons is None:
+                recon = self.actions.reconstruct_gpu(data, element_idx, element, thetas, parent_dir=self.h5_dir, command_string=command_string)
+                if recon is None:
                     return
-                recon_dict[self.ViewControl.elem.itemText(element_idx)] = np.array(recons)
-                self.recon = np.array(recons)
+
+            if self.ViewControl.recon_save.isChecked():
+                rec = {element: recon}
+                self.writer.save_recon_stack(rec, savedir=save_path)
+
+            recon_dict[element] = np.array(recon)
+            self.recon = np.array(recon)
 
         self.update_recon_image()               #get single image from self.recon
         self.update_recon_dict(self.recon)      #put self.recon into self.recon_dict[element]

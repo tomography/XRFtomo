@@ -208,8 +208,12 @@ class FileTableWidget(QWidget):
                 print('Invalid directory')
                 return
         if fnames == None or fnames == []:
-            fileNames = [x for x in os.listdir(path)]
-            fileNames = [file for file in fileNames if file.split(".")[-1] == ext]
+            try:
+                fileNames = [x for x in os.listdir(path)]
+                fileNames = [file for file in fileNames if file.split(".")[-1] == ext]
+            except Exception as e:
+                print(e)
+                return
 
             # TODO: filter files begining with "._"
             with_ = [x for x in fileNames if x.startswith(".")]

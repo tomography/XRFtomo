@@ -324,7 +324,7 @@ class ReadOptions(object):
 
         norm_scalers = norm_scalers / np.max(norm_scalers)
         # flux = np.max(flux) / flux
-        norm_scalers[norm_scalers == 0] = 0.001
+        norm_scalers[norm_scalers == 0] = 1
         norm_scalers = np.roll(norm_scalers, 1, axis=2)
         data[num_elements] = norm_scalers
         # before = np.sum(data[0], axis=(1, 2))

@@ -52,12 +52,12 @@ class LaminographyControlsWidget(QWidget):
     def initUI(self):
         button1size = 270       #long button (1 column)
 
-        self.elem = QComboBox(self)
-        self.elem.setFixedWidth(button1size)
+        # self.elem = QComboBox(self)
+        # self.elem.setFixedWidth(button1size)
 
         self.populate_scroll_area()
         vb = QVBoxLayout()
-        vb.addWidget(self.elem)
+        # vb.addWidget(self.elem)
         vb.addWidget(self.lami_scroll)
         self.setLayout(vb)
         self.setMaximumWidth(290)
@@ -66,6 +66,7 @@ class LaminographyControlsWidget(QWidget):
         #TODO: This function getting called tiwce, figure out why
         #[QFileDilog / Label] [text input / combobox]  [enable]
         item_dict = {}
+        item_dict["elem"] = [["label","dropdown"], "elements", ["none"], "none"]
         item_dict["method"] = [["label","dropdown"], "recon method", ["lamni-fbp(cpu)","lamni-fbp(gpu)"], "lamni-fbp(cpu)"]
         item_dict["browse"] = [["label","path"], "location where data is stored", None, ""]
         item_dict["generate"] = [["label","button"], "generate folder structure in data path", None, None]
@@ -76,10 +77,11 @@ class LaminographyControlsWidget(QWidget):
 
         item_dict2 = {}
         item_dict2["recon_all"] = [["checkbox"], "reconstruct all loaded elements", None, False]
+        item_dict2["recon_save"] = [["checkbox"], "reconstruct and save simultaneously", None, False]
         item_dict2["reconstruct"] = [["button"], "run reconstruction", None, None]
         item_dict2["recon_stats"] = [["button"], "show reconstruction statistics", None, None]
         item_dict2["rm_hotspot"] = [["button"], "laminography tilt angle", None, None]
-        item_dict["rotate_volume"] = [["button"], "opens tool in separate window to rotate reconstructed volume", None, None]
+        item_dict2["rotate_volume"] = [["button"], "opens tool in separate window to rotate reconstructed volume", None, None]
 
 
         try:
@@ -108,7 +110,7 @@ class LaminographyControlsWidget(QWidget):
         return
 
     def create_widgets(self,item_dict):
-        widgetsizes = [240,115, 50]
+        widgetsizes = [240, 115, 50]
         self.vb_lami = QVBoxLayout()
         self.num_lines= len(item_dict.keys())
         self.line_names = []
