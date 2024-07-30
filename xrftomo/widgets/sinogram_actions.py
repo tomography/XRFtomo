@@ -110,7 +110,7 @@ class SinogramActions(QtWidgets.QWidget):
             image1_warp = np.fliplr(image1_warp*img1_max)
             data[element,-1] = image1_warp
         except Exception as error:
-            print(error)
+            print("runOpFlow error: ", error)
         return data
 
 

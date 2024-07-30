@@ -410,7 +410,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
             self.dataChangedSig.emit(data)
 
         except Exception as error:
-            print(error)
+            print("mask_params error: ", error)
         return
 
     def downsample_params(self):

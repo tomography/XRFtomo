@@ -483,9 +483,6 @@ class xrftomoGui(QMainWindow):
                 try:
                     child.setChecked(self.checkbox_states[counter])
                 except:
-                    #TODO:  this gets printed several times then crashes
-
-                    print("number of checkbox states changed, appending new settings... ")
                     child.setChecked(False)
                     self.checkbox_states.append(False)
                 child.stateChanged.connect(self.loadSettingsChanged)

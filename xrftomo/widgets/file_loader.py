@@ -187,6 +187,9 @@ class FileTableWidget(QWidget):
         if not self.element_menu.isVisible():
             self.element_menu.setHidden(False)
             self.element_menu.show()
+        if not self.scaler_menu.isVisible():
+            self.scaler_menu.setHidden(False)
+            self.scaler_menu.show()
         if not self.theta_menu.isVisible():
             self.theta_menu.setHidden(False)
             self.theta_menu.show()
@@ -196,10 +199,11 @@ class FileTableWidget(QWidget):
         try:
             self.data_menu.clear()
             self.element_menu.clear()
+            self.scaler_menu.clear()
             self.theta_menu.clear()
             ext = self.extLineEdit.text()
         except Exception as error:
-            print(error)
+            print("onLoadDirectory Error: ",error)
 
         if path == None:
             try:
@@ -240,7 +244,7 @@ class FileTableWidget(QWidget):
                 self.populate_element_menu(self.img, self.element_tag)
                 self.element_tag.setTitle(self.auto_element_tag)
 
-                self.scaler_tag = self.element_menu.addMenu("scaler")
+                self.scaler_tag = self.scaler_menu.addMenu("scaler")
                 self.scaler_tag.objectName = "scaler_tag"
                 self.populate_scaler_menu(self.img, self.scaler_tag)
                 self.scaler_tag.setTitle(self.auto_scaler_tag)
@@ -255,20 +259,13 @@ class FileTableWidget(QWidget):
                     pass
                 else:
                     return
-
                 self.element_tag_changed()
                 self.scaler_tag_changed()
-                try:
-                    thetas_loaded = self.try_theta()
-                except Exception as error:
-                    print(error)
-
-                if not thetas_loaded:
-                    self.theta_tag_changed()
-
-
-            except KeyError:
-                pass
+                # self.theta_tag_changed()
+            except:
+                print("problem")
+                return
+            
 
         if ext == '*.tiff' or ext == ".tiff" or ext == ".tif" or ext == "*.tif":
             # TODO: when loading from filemenu, check only files which were selected
@@ -284,20 +281,24 @@ class FileTableWidget(QWidget):
     def try_theta(self):
         success = False
         path_files = self.fileTableModel.getAllFiles()
-        thetas = self.reader.load_thetas(path_files, "dummy", 3)
-        self.fileTableModel.update_thetas(thetas)
-        self.fileTableView.sortByColumn(1, 0)
-        try:
-            if max(thetas) - min(thetas) > 5:
-                success = True
-        except:
-            print("thetas is None")
+        try_idxs = [663, 657, 691, 663]
+        for idx in try_idxs:
+            thetas = self.reader.load_thetas(files=path_files, theta_tag="dummy", idx=idx)
+            uniques = len(set(thetas))
+            errflag = len(path_files)/uniques > 3
+            try:
+                if max(thetas)<=360 and min(thetas)>=-360 and not errflag: #thetas valid if at least more than one unique value per every 3 files and range is within +-360
+                    self.fileTableModel.update_thetas(thetas)
+                    self.fileTableView.sortByColumn(1, 0)
+                    success = True
+                    break
+            except:
+                print("thetas is None")
         return success
     def check_auto_tags(self):
         data_tag_exists = self.auto_data_tag in self.img
         element_tag_exists = self.auto_element_tag in self.img
         scaler_tag_exists = self.auto_scaler_tag in self.img
-        # theta_tag_exists = self.auto_theta_tag in self.img
 
         if data_tag_exists and element_tag_exists and scaler_tag_exists:
             return True
@@ -439,6 +440,7 @@ class FileTableWidget(QWidget):
         self.scaler_menu.setFixedSize(123,25)
         self.scaler_menu.show()
         self.scaler_tag_changed()
+
     def update_theta_tag(self):
         self.theta_tag.setTitle("theta_tag")
         lvl0 = ""
@@ -530,9 +532,12 @@ class FileTableWidget(QWidget):
             self.elementTableModel.loadElementNames(elements)
             self.elementTableModel.setAllChecked(False)
             self.elementTableModel.setChecked(self.auto_selected_elements, (True))
-            print("")
         except:
             print("invalid tag option")
+
+        thetas_loaded = self.try_theta()
+        if not thetas_loaded:
+            self.theta_tag_changed()
         return
 
     def scaler_tag_changed(self):
@@ -636,12 +641,13 @@ class FileTableWidget(QWidget):
         data_tag = self.data_tag.title()
         k = np.arange(len(files))
         l = np.arange(len(elements))
+        s = np.arange(len(scalers))
         files = [files[j] for j in k if files_bool[j]==True]
         path_files = [self.fileTableModel.directory + s for s in files]
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
-        scalers = [scalers[j] for j in l if scalers_bool[j]==True]
-        elements.append("us_ic")
+        scalers = [scalers[j] for j in s if scalers_bool[j]==True]
+        # elements.append("us_ic")
         #update auto-load parameters
         self.parent.params.input_path = self.dirLineEdit.text()
         self.parent.params.file_extension = self.extLineEdit.text()

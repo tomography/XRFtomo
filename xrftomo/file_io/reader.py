@@ -136,7 +136,7 @@ class ReadOptions(object):
             projection
 
         """
-        print(element, data_tag, element_tag)
+        print(element, fname)
         elements = self.read_channel_names(fname, element_tag)
         if elements == []:
             return
@@ -145,10 +145,10 @@ class ReadOptions(object):
         projection = img[data_tag][idx]
         return projection
 
-    def load_thetas(self, files, theta_tag, method = 1):
+    def load_thetas(self, files, theta_tag, idx=None):
         thetas = []
-        if method==1:
-            img = h5py.File(files[0], 'r')
+        img = h5py.File(files[0], 'r')
+        if idx is None:
             pv = theta_tag.split("/")[-1]
             pvs = img["/".join(theta_tag.split("/")[:-1])]
             idx = [i for i, s in enumerate(pvs) if pv in s.decode("utf8")][0]
@@ -156,46 +156,15 @@ class ReadOptions(object):
 
         for file in files:
             try:
-                if method ==1:
-                    img = h5py.File(file, 'r')
-                    try:
-                        # TODO: some files do not have extra_pvs tag within the mda folder causng this method to fail even if
-                        # previous files succeeded;. Try except will then try the legacy h5 structure which will also fail.
-                        theta = float(img["/".join(theta_tag.split("/")[:-2])+"/Values"][idx].decode("utf-8"))
-                        thetas.append(theta)
-                    except:
-                        if len(thetas)>2:
-                            print("problem with {}".format(file))
-                            pass
-                        else:
-                            break
-
-                elif method ==2:
-                    theta = float(img[theta_tag][0])
-                    thetas.append(theta)
+                img = h5py.File(file, 'r')
+                theta = float(img["/".join(theta_tag.split("/")[:-1])][idx].decode("utf-8").split(",")[1])
             except:
                 try:
-                    #TODO: this is stupid, we need to standardize h5 file structure
-                    img = h5py.File(file, 'r')
-                    theta = float(img["/".join(theta_tag.split("/")[:-1])][idx].decode("utf-8").split(",")[-1])
-                    thetas.append(theta)
+                    theta = float(img["MAPS/extra_pvs_as_csv/"][idx].decode("utf-8").split(",")[1])
                 except:
                     print("error reading thetas position for file: {}".format(file))
-                    return
-
-        if method == 3:
-            for file in files:
-                img = h5py.File(file, 'r')
-                try:
-                    theta = float(img["MAPS/extra_pvs_as_csv/"][657].decode("utf-8").split(",")[-1])
-                    thetas.append(theta)
-                except:
-                    print("trying other pv path")
-                try:
-                    theta = float(img["MAPS/Scan/Extra_PVs/Values/"][591].decode("utf-8"))
-                    thetas.append(theta)
-                except:
-                    print("trying other pv path")
+                    return []
+            thetas.append(theta)
 
         return thetas
 
@@ -257,7 +226,7 @@ class ReadOptions(object):
 
         max_y, max_x = 0, 0
         num_files = len(path_files)
-        num_elements = len(elements)-1
+        num_elements = len(elements)
         num_scalers = len(scalers)
         #get max dimensons
         for i in range(num_files):
@@ -270,9 +239,7 @@ class ReadOptions(object):
                 if proj.shape[1] > max_x:
                     max_x = proj.shape[1]
 
-        data = np.zeros([num_elements+1+num_scalers,num_files, max_y, max_x])
-        norm_scalers = np.zeros([num_files, max_y, max_x])
-        flux = np.zeros(num_files)
+        data = np.zeros([num_elements+num_scalers,num_files, max_y, max_x])
         #get data
         for i in range(num_elements):
             for j in range(num_files):
@@ -289,24 +256,26 @@ class ReadOptions(object):
                         print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
                         data[i, j] = np.zeros([max_y,max_x])
 
-        for j in range(num_files):
-            norm_scaler = self.read_projection(path_files[j], "US_IC", "MAPS/scalers", "MAPS/scaler_names")
-            # MAPS/scalers[32]
-            # MAPS/scaler_names[32]
-            # exchange_0/data
-            # exchange_0/data_names
-            # US_IC, DS_IC
-            if norm_scaler is not None:
-                img_y = norm_scaler.shape[0]
-                img_x = norm_scaler.shape[1]
-                dx = (max_x - img_x) // 2
-                dy = (max_y - img_y) // 2
-                norm_scalers[j, dy:img_y + dy, dx:img_x + dx] = norm_scaler
-                flux[j] = np.mean(norm_scaler)  # corrects for long term beam flux changes; i.e. adjacebt projection intensity
+        # norm_scalers = np.zeros([num_files, max_y, max_x])
+        # flux = np.zeros(num_files)
+        # for j in range(num_files):
+        #     norm_scaler = self.read_projection(path_files[j], "US_IC", "MAPS/scalers", "MAPS/scaler_names")
+        #     # MAPS/scalers[32]
+        #     # MAPS/scaler_names[32]
+        #     # exchange_0/data
+        #     # exchange_0/data_names
+        #     # US_IC, DS_IC
+        #     if norm_scaler is not None:
+        #         img_y = norm_scaler.shape[0]
+        #         img_x = norm_scaler.shape[1]
+        #         dx = (max_x - img_x) // 2
+        #         dy = (max_y - img_y) // 2
+        #         norm_scalers[j, dy:img_y + dy, dx:img_x + dx] = norm_scaler
+        #         flux[j] = np.mean(norm_scaler)  # corrects for long term beam flux changes; i.e. adjacebt projection intensity
 
 
         for i in range(num_scalers):
-            k = i+num_elements+1
+            k = i+num_elements
             for j in range(num_files):
                 proj = self.read_projection(path_files[j], scalers[i], data_tag.split("/")[0]+"/scalers", scaler_tag)
                 proj = np.roll(proj,1, axis=1)
@@ -322,19 +291,19 @@ class ReadOptions(object):
                         print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
                         data[k, j] = np.zeros([max_y,max_x])
 
-        norm_scalers = norm_scalers / np.max(norm_scalers)
-        # flux = np.max(flux) / flux
-        norm_scalers[norm_scalers == 0] = 1
-        norm_scalers = np.roll(norm_scalers, 1, axis=2)
-        data[num_elements] = norm_scalers
-        # before = np.sum(data[0], axis=(1, 2))
-        # data[:num_elements] = flux[None, :, None, None] * data[:num_elements] / norm_scalers[None, :]
-        data[:num_elements] = data[:num_elements]/norm_scalers[None,:]
-        # after = np.sum(data[0], axis=(1, 2))
-        # intensity = after / before
-        # plt.figure()
-        # plt.plot(intensity)
-        # plt.show()
+        # norm_scalers = norm_scalers / np.max(norm_scalers)
+        # # flux = np.max(flux) / flux
+        # norm_scalers[norm_scalers == 0] = 1
+        # norm_scalers = np.roll(norm_scalers, 1, axis=2)
+        # data[num_elements] = norm_scalers
+        # # before = np.sum(data[0], axis=(1, 2))
+        # # data[:num_elements] = flux[None, :, None, None] * data[:num_elements] / norm_scalers[None, :]
+        # data[:num_elements] = data[:num_elements]/norm_scalers[None,:]
+        # # after = np.sum(data[0], axis=(1, 2))
+        # # intensity = after / before
+        # # plt.figure()
+        # # plt.plot(intensity)
+        # # plt.show()
 
         data[np.isnan(data)] = 0.0001
         data[data == np.inf] = 0.0001
