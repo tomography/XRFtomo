@@ -157,7 +157,7 @@ class ReadOptions(object):
         for file in files:
             try:
                 img = h5py.File(file, 'r')
-                theta = float(img["/".join(theta_tag.split("/")[:-1])][idx].decode("utf-8").split(",")[1])
+                theta = float(img["MAPS/Scan/Extra_PVs/Values"][591].decode("utf-8"))
             except:
                 try:
                     theta = float(img["MAPS/extra_pvs_as_csv/"][idx].decode("utf-8").split(",")[1])
