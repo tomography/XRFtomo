@@ -52,7 +52,7 @@ from skimage.registration import optical_flow_tvl1, optical_flow_ilk
 import scipy.ndimage
 from skimage.registration import phase_cross_correlation
 from scipy.signal import find_peaks
-import matplotlib; matplotlib.use('Qt5Agg')
+import matplotlib; matplotlib.use('Agg')
 
 class SinogramActions(QtWidgets.QWidget):
     def __init__(self):
