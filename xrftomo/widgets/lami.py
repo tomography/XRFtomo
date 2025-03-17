@@ -98,6 +98,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.h5_dir = "/".join(self.parent.fileTableWidget.dirLineEdit.text().split("/")[:-1])+"/"
         truncated_dir = "~/"+"/".join(self.h5_dir.split("/")[-4:])
 
+        self.ViewControl.rotate_volume.clicked.connect(self.openEvent)
         self.ViewControl.elem.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.elem.currentIndexChanged.connect(self.recon_combobox_changed)
         self.ViewControl.method.currentIndexChanged.connect(self.method_changed)
@@ -109,6 +110,16 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
         self.ViewControl.reconstruct.clicked.connect(self.reconstruct_params)
+        self.ViewControl.reset.clicked.connect(self.reset_recon_volume)
+        self.ViewControl.apply.clicked.connect(self.apply_clicked)
+        self.ViewControl.sld_rot_vol.sliderReleased.connect(self.update_vol_image)
+        self.ViewControl.sld_rot_vol_ldt.returnPressed.connect(self.rot_vol_ldt_changed)
+        self.ViewControl.sld_x.sliderReleased.connect(self.rot_vol_sld_changed)
+        self.ViewControl.sld_y.sliderReleased.connect(self.rot_vol_sld_changed)
+        self.ViewControl.sld_z.sliderReleased.connect(self.rot_vol_sld_changed)
+        self.ViewControl.sld_x_ldt.returnPressed.connect(self.rot_vol_ldt_changed)
+        self.ViewControl.sld_y_ldt.returnPressed.connect(self.rot_vol_ldt_changed)
+        self.ViewControl.sld_z_ldt.returnPressed.connect(self.rot_vol_ldt_changed)
         # self.ViewControl.rotate_volume.clicked.connect(self.ViewControl.rotate_volume_window.show)
 
 
@@ -193,9 +204,108 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.__dict__["reconstruct"].setVisible(True)
             self.ViewControl.__dict__["recon_stats"].setVisible(True)
             self.ViewControl.__dict__["rm_hotspot"].setVisible(True)
+            self.ViewControl.__dict__["rotate_volume"].setVisible(True)
+
         self.hide_plus()
         self.show_select_plus()
         return
+
+    def openEvent(self):
+        self.tmp_recon = np.copy(self.recon)
+        self.reset_recon_volume()
+        self.update_vol_image()
+        self.ViewControl.rotate_volume_window.show()
+
+    def reset_recon_volume(self):
+        self.tmp_recon = np.copy(self.recon)
+        self.ViewControl.sld_rot_vol.setRange(0,self.tmp_recon.shape[0])
+        self.ViewControl.sld_x_ldt.setText(str(0))
+        self.ViewControl.sld_y_ldt.setText(str(0))
+        self.ViewControl.sld_z_ldt.setText(str(0))
+        self.ViewControl.sld_rot_vol.setValue(0)
+        self.ViewControl.sld_x.setValue(0)
+        self.ViewControl.sld_y.setValue(0)
+        self.ViewControl.sld_z.setValue(0)
+
+
+    def rot_vol_sld_changed(self):
+        x_deg = self.ViewControl.sld_x.value()
+        y_deg = self.ViewControl.sld_y.value()
+        z_deg = self.ViewControl.sld_z.value()
+        self.ViewControl.sld_x_ldt.setText(str(x_deg))
+        self.ViewControl.sld_y_ldt.setText(str(y_deg))
+        self.ViewControl.sld_z_ldt.setText(str(z_deg))
+        self.rotate_volume_params([x_deg,y_deg,z_deg])
+
+    def rot_vol_ldt_changed(self):
+        vol_ldt = self.ViewControl.sld_rot_vol_ldt.text()
+        x_ldt = self.ViewControl.sld_x_ldt.text()
+        y_ldt = self.ViewControl.sld_y_ldt.text()
+        z_ldt = self.ViewControl.sld_z_ldt.text()
+        try:
+            vol_ldt = round(eval(vol_ldt))
+            x_ldt = round(eval(x_ldt))
+            y_ldt = round(eval(y_ldt))
+            z_ldt = round(eval(z_ldt))
+            if x_ldt < -90 or x_ldt > 90 or y_ldt < -90 or y_ldt > 90 or z_ldt < -90 or z_ldt > 90:
+                print("invalid angle entered")
+                return
+        except:
+            print("invalid angle entered")
+            return
+
+        self.ViewControl.sld_rot_vol.setValue(vol_ldt)
+        self.ViewControl.sld_x.setValue(x_ldt)
+        self.ViewControl.sld_y.setValue(y_ldt)
+        self.ViewControl.sld_z.setValue(z_ldt)
+        self.rot_vol_sld_changed()
+
+    def rotate_volume_params(self, angles):
+        try:
+            recon = np.copy(self.recon)
+            self.tmp_recon = self.actions.rotate_volume(recon, angles)
+            self.ViewControl.sld_rot_vol.setRange(0, self.tmp_recon.shape[0])
+            self.update_vol_image()
+        except Exception as error:
+            print(error)
+
+    def apply_clicked(self):
+        try:
+            x_ldt = self.ViewControl.sld_x_ldt.text()
+            y_ldt = self.ViewControl.sld_y_ldt.text()
+            z_ldt = self.ViewControl.sld_z_ldt.text()
+            try:
+                x_ldt = round(eval(x_ldt))
+                y_ldt = round(eval(y_ldt))
+                z_ldt = round(eval(z_ldt))
+                if x_ldt < -90 or x_ldt > 90 or y_ldt < -90 or y_ldt > 90 or z_ldt < -90 or z_ldt > 90:
+                    print("invalid angle entered")
+                    return
+            except:
+                print("invalid angle entered")
+                return
+
+            angles = [x_ldt,y_ldt,z_ldt]
+            recon_dict = self.recon_dict
+            for key in recon_dict:
+                recon = recon_dict[key]
+                self.recon_dict[key] = self.actions.rotate_volume(recon, angles)
+            element = self.ViewControl.combo1.currentText()
+            self.recon = self.recon_dict[element]
+            self.sld.setRange(self.recon.shape[0])
+            self.update_recon_image()
+            # self.update_vol_image()
+
+        except Exception as error:
+            print(error)
+    def update_vol_image(self):
+        idx = self.ViewControl.sld_rot_vol.value()
+        try:
+            self.ViewControl.sld_rot_vol.setRange(0, self.tmp_recon.shape[0])
+            self.ViewControl.sld_rot_vol_ldt.setText(str(idx))
+            self.ViewControl.volume_img.projView.setImage(self.tmp_recon[idx, :, :])
+        except:
+            print("run reconstruction first")
 
     def method_changed(self):
         if self.ViewControl.method.currentIndex() == 0:
@@ -220,6 +330,7 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.__dict__["reconstruct"].setVisible(True)
             self.ViewControl.__dict__["recon_stats"].setVisible(True)
             self.ViewControl.__dict__["rm_hotspot"].setVisible(True)
+            self.ViewControl.__dict__["rotate_volume"].setVisible(True)
 
         elif self.ViewControl.method.currentIndex() == 1:
             self.ViewControl.browse.setVisible(True)
@@ -235,7 +346,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         return
 
     def hide_plus(self):
-        items = ["method", "browse", "generate", "show_ops", "recon_all", "reconstruct", "recon_stats", "rm_hotspot"]
+        items = ["method", "browse", "generate", "show_ops", "recon_all", "reconstruct", "recon_stats", "rm_hotspot", "rotate_volume"]
         for i in items:
             widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
             self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(False)

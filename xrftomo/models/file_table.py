@@ -100,21 +100,36 @@ class FileTableModel(QtCore.QAbstractTableModel):
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
         if index.column() == self.COL_FILE:
             flags |= QtCore.Qt.ItemIsUserCheckable
+        if index.column() == self.COL_THETA:
+            flags |= QtCore.Qt.ItemIsEditable
         return flags
 
     def setData(self, index, value, role=QtCore.Qt.EditRole):
+        if not index.isValid():
+            return False
+
         if role == QtCore.Qt.CheckStateRole:
             rows = len(self.arrayData)
             if rows > 0 and index.row() < rows:
                 self.arrayData[index.row()].use = bool(value)
                 self.dataChanged.emit(index, index)
                 return True
+        elif role == QtCore.Qt.EditRole:
+            if index.column() == self.COL_THETA:
+                try:
+                    theta_value = float(value)
+                    self.arrayData[index.row()].theta = theta_value
+                    self.dataChanged.emit(index, index)
+                    return True
+                except (ValueError, TypeError):
+                    return False
         return False
 
     def data(self, index, role):
         if not index.isValid():
             return QtCore.QVariant()
-        elif role == QtCore.Qt.CheckStateRole and index.column() == self.COL_FILE:
+        
+        if role == QtCore.Qt.CheckStateRole and index.column() == self.COL_FILE:
             if len(self.arrayData) > 0:
                 if self.arrayData[index.row()].use is True:
                     return QtCore.Qt.Checked
@@ -122,15 +137,13 @@ class FileTableModel(QtCore.QAbstractTableModel):
                     return QtCore.Qt.Unchecked
             else:
                 return QtCore.Qt.Unchecked
-        elif role != QtCore.Qt.DisplayRole:
-            return QtCore.QVariant()
-        if len(self.arrayData) > 0:
-            if index.column() == self.COL_FILE:
-                return QtCore.QVariant(self.arrayData[index.row()].filename)
-            elif index.column() == self.COL_THETA:
-                return QtCore.QVariant(self.arrayData[index.row()].theta)
-        else:
-            return QtCore.QVariant()
+        elif role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:  # Add EditRole here
+            if len(self.arrayData) > 0:
+                if index.column() == self.COL_FILE:
+                    return QtCore.QVariant(self.arrayData[index.row()].filename)
+                elif index.column() == self.COL_THETA:
+                    return QtCore.QVariant(self.arrayData[index.row()].theta)
+        return QtCore.QVariant()
 
     def update_fnames(self, fnames):
         fnames = sorted(fnames)
@@ -155,14 +168,6 @@ class FileTableModel(QtCore.QAbstractTableModel):
             print("something is off here")
         self.dataChanged.emit(topLeft, bottomRight)
 
-
-        # self.arrayData = []
-        # for i in range(len(thetas)):
-        #     self.arrayData += thetas[i]
-        # topLeft = self.index(0, self.COL_THETA)
-        # bottomRight = self.index(len(self.arrayData), self.COL_THETA)
-        # self.layoutChanged.emit()
-        # self.dataChanged.emit(topLeft, bottomRight)
         return 
         
     def getFirstCheckedFilePath(self):
@@ -198,3 +203,27 @@ class FileTableModel(QtCore.QAbstractTableModel):
         if order == QtCore.Qt.DescendingOrder:
             self.arrayData.reverse()
         self.layoutChanged.emit()
+
+    def extrapolate_thetas(self, start_idx=None, end_idx=None):
+        """Extrapolate theta values between two points linearly"""
+        if start_idx is None or end_idx is None:
+            return
+
+        if start_idx >= end_idx or start_idx < 0 or end_idx >= len(self.arrayData):
+            return
+
+        start_theta = self.arrayData[start_idx].theta
+        end_theta = self.arrayData[end_idx].theta
+        
+        # Calculate step size for even distribution
+        num_steps = end_idx - start_idx
+        step_size = (end_theta - start_theta) / num_steps
+
+        # Fill in the intermediate values
+        for i in range(start_idx + 1, end_idx):
+            self.arrayData[i].theta = start_theta + step_size * (i - start_idx)
+
+        # Emit signal for the updated range
+        topLeft = self.index(start_idx, self.COL_THETA)
+        bottomRight = self.index(end_idx, self.COL_THETA)
+        self.dataChanged.emit(topLeft, bottomRight)

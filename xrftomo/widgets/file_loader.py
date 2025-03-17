@@ -70,10 +70,20 @@ class FileTableWidget(QWidget):
         self.fileTableModel = xrftomo.FileTableModel()
         self.fileTableView = QTableView()
         self.fileTableView.setModel(self.fileTableModel)
+        
+        # Modify these selection settings
+        self.fileTableView.setSelectionMode(QAbstractItemView.ContiguousSelection)  # Allows range selection
+        self.fileTableView.setSelectionBehavior(QAbstractItemView.SelectRows)  # Selects entire rows
+        self.fileTableView.setDragEnabled(False)  # Prevent drag and drop
+        self.fileTableView.setAcceptDrops(False)
+        
         self.fileTableView.setSortingEnabled(True)
         self.fileTableView.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.fileTableView.setContextMenuPolicy(Qt.CustomContextMenu)
         self.fileTableView.customContextMenuRequested.connect(self.onFileTableContextMenu)
+        self.fileTableView.setEditTriggers(QAbstractItemView.DoubleClicked | 
+                                         QAbstractItemView.EditKeyPressed |
+                                         QAbstractItemView.AnyKeyPressed)
 
         self.elementTableModel = xrftomo.ElementTableModel()
         self.elementTableView = QTableView()
@@ -585,15 +595,85 @@ class FileTableWidget(QWidget):
 
     def onFileTableContextMenu(self, pos):
         if self.fileTableView.selectionModel().selection().indexes():
-            rows = []
-            for i in self.fileTableView.selectionModel().selection().indexes():
-                rows += [i.row()]
+            rows = sorted(set(i.row() for i in self.fileTableView.selectionModel().selection().indexes()))
             menu = QMenu()
             check_action = menu.addAction("Check")
             uncheck_action = menu.addAction("Uncheck")
+            edit_action = menu.addAction("Edit Theta")
+            
+            # Add extrapolate action if multiple rows are selected
+            extrapolate_action = None
+            if len(rows) > 1:
+                extrapolate_action = menu.addAction("Extrapolate Thetas")
+            
             action = menu.exec_(self.fileTableView.mapToGlobal(pos))
             if action == check_action or action == uncheck_action:
                 self.fileTableModel.setChecked(rows, (check_action == action))
+            elif action == edit_action:
+                self.editTheta(rows[0])
+            elif extrapolate_action and action == extrapolate_action:
+                self.extrapolateThetas(rows)
+
+    def extrapolateThetas(self, rows):
+        """Handle extrapolation of theta values for selected rows"""
+        print("here")
+        if len(rows) < 2:
+            return
+            
+        # Get first and last selected rows
+        start_idx = rows[0]
+        end_idx = rows[-1]
+        
+        # Ask user for start and end theta values
+        start_theta, ok1 = QInputDialog.getDouble(
+            self, 
+            'Start Theta',
+            'Enter starting theta value:',
+            self.fileTableModel.arrayData[start_idx].theta,
+            -360,
+            360,
+            2
+        )
+        
+        if not ok1:
+            return
+        else: 
+            self.fileTableModel.arrayData[start_idx].theta = start_theta
+
+            
+        end_theta, ok2 = QInputDialog.getDouble(
+            self, 
+            'End Theta',
+            'Enter ending theta value:',
+            self.fileTableModel.arrayData[end_idx].theta,
+            -360,
+            360,
+            2
+        )
+        
+        if not ok2:
+            return
+        else: 
+            self.fileTableModel.arrayData[end_idx].theta = end_theta
+        
+        # Update start and end values and perform extrapolation
+        self.fileTableModel.extrapolate_thetas(start_idx, end_idx)
+
+    def editTheta(self, row):
+        """Handle editing of theta value"""
+        current_theta = self.fileTableModel.arrayData[row].theta
+        new_theta, ok = QInputDialog.getDouble(
+            self, 
+            'Edit Theta',
+            'Enter new theta value:',
+            current_theta,
+            -360,
+            360,
+            2
+        )
+        if ok:
+            index = self.fileTableModel.index(row, self.fileTableModel.COL_THETA)
+            self.fileTableModel.setData(index, new_theta, Qt.EditRole)
 
     def onElementTableContextMenu(self, pos):
         if self.elementTableView.selectionModel().selection().indexes():

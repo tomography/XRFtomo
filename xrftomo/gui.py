@@ -1767,8 +1767,6 @@ class xrftomoGui(QMainWindow):
         self.sinogramWidget.ViewControl.adjust_sino.setVisible(mode)
         self.sinogramWidget.ViewControl.change_rotation_axis.setVisible(mode)
 
-        self.reconstructionWidget.ViewControl.middle_row_lbl.setVisible(mode)
-        self.reconstructionWidget.ViewControl.middle_row.setVisible(mode)
         self.reconstructionWidget.ViewControl.beta_lbl.setVisible(mode)
         self.reconstructionWidget.ViewControl.delta_lbl.setVisible(mode)
         self.reconstructionWidget.ViewControl.lower_thresh_lbl.setVisible(mode)

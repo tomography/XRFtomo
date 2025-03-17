@@ -42,6 +42,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import *
 import subprocess
+import xrftomo
 
 class LaminographyControlsWidget(QWidget):
 
@@ -61,6 +62,8 @@ class LaminographyControlsWidget(QWidget):
         vb.addWidget(self.lami_scroll)
         self.setLayout(vb)
         self.setMaximumWidth(290)
+        self.rotate_volume_area()
+
 
     def populate_scroll_area(self):
         #TODO: This function getting called tiwce, figure out why
@@ -97,11 +100,11 @@ class LaminographyControlsWidget(QWidget):
         self.lami_scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
         self.lami_scroll.setWidgetResizable(True)
         #TODO: the dictionary pop function maks self forget that lami_scroll exists. fix
-        self.create_widgets(widget_dict)
+        vb_lami = self.create_widgets(widget_dict)
         self.lami_scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
-        self.vb_lami.setSpacing(0)
-        self.vb_lami.setContentsMargins(0, 0, 0, 0)
-        self.lami_scroll_widget.setLayout(self.vb_lami)
+        vb_lami.setSpacing(0)
+        vb_lami.setContentsMargins(0, 0, 0, 0)
+        self.lami_scroll_widget.setLayout(vb_lami)
         self.lami_scroll.setWidget(self.lami_scroll_widget)
 
         self.show_ops.setCheckable(True)
@@ -111,7 +114,7 @@ class LaminographyControlsWidget(QWidget):
 
     def create_widgets(self,item_dict):
         widgetsizes = [240, 115, 50]
-        self.vb_lami = QVBoxLayout()
+        vb_lami = QVBoxLayout()
         self.num_lines= len(item_dict.keys())
         self.line_names = []
         for i, key in enumerate(item_dict.keys()):
@@ -193,9 +196,9 @@ class LaminographyControlsWidget(QWidget):
             line_btn.setObjectName(str(button_name))
             line_btn.setFixedWidth(25)
             line.addWidget(line_btn)
-            self.vb_lami.addLayout(line)
+            vb_lami.addLayout(line)
 
-        return self.vb_lami
+        return vb_lami
 
     def op_parser(self):
         result = subprocess.check_output(["tomocupy", "recon_steps", "-h"]).decode().split("options:")[1]
@@ -269,3 +272,64 @@ class LaminographyControlsWidget(QWidget):
         sender = self.sender
         path = QFileDialog.getExistingDirectory(self, "Open Directory", QtCore.QDir.currentPath())
         sender().setText(path)
+
+
+    def rotate_volume_area(self):
+
+        #__________Popup window for rotate volume button__________
+        self.rotate_volume_window = QtWidgets.QWidget()
+        self.rotate_volume_window.resize(500,400)
+        self.rotate_volume_window.setWindowTitle('rotate volume tool')
+        widgetsizes = [300, 135, 75]
+        volume_dict = {}
+        volume_dict["volume_img"] = [["view"], "",None, None]
+        volume_dict["sld_rot_vol"] = [["label", "slider", "linedit"], "current cross section",None, "0"]
+        volume_dict["sld_x"] = [["label", "slider", "linedit"], "change x angle",None, "0"]
+        volume_dict["sld_y"] = [["label", "slider", "linedit"], "change y angle.", None, "0"]
+        volume_dict["sld_z"] = [["label", "slider", "linedit"], "change z angle", None, "0"]
+        volume_dict["reset"] = [["button"], "reset view", None, None]
+        volume_dict["apply"] = [["button"], "reset view", None, None]
+
+        volume_v_box = QVBoxLayout()
+        for i, key in enumerate(volume_dict.keys()):
+            widget_items = volume_dict[key][0]
+            attrs = volume_dict[key]
+            widgetsize = widgetsizes[len(widget_items) - 1]
+
+            line_num = "volume_line_{}".format(i)
+            setattr(self, line_num, QHBoxLayout())
+            volume_line = self.__dict__[line_num]
+
+            for widget in widget_items:
+                if widget == "view":
+                    setattr(self, key, xrftomo.ReconView(self))
+                    object = self.__dict__[key]
+                    volume_line.addWidget(object)
+                if widget == "button":
+                    setattr(self, key, QPushButton(key))
+                    object = self.__dict__[key]
+                    object.setFixedWidth(widgetsize)
+                    volume_line.addWidget(object)
+                elif widget == "slider":
+                    setattr(self, key, QSlider(QtCore.Qt.Horizontal, self))
+                    object = self.__dict__[key]
+                    object.setRange(-90, 90)
+                    volume_line.addWidget(object)
+                elif widget == "linedit":
+                    name = key+"_ldt"
+                    setattr(self, name, QLineEdit(attrs[3]))
+                    object = self.__dict__[name]
+                    object.setFixedWidth(widgetsize)
+                    volume_line.addWidget(object)
+                elif widget == "label":
+                    name = key + "_lbl"
+                    setattr(self, name, QLabel(key))
+                    object = self.__dict__[name]
+                    object.setFixedWidth(75)
+                    object.setToolTip(attrs[1])
+                    volume_line.addWidget(object)
+            volume_v_box.addLayout(volume_line)
+
+        volume_v_box.setSpacing(0)
+        volume_v_box.setContentsMargins(0, 0, 0, 0)
+        self.rotate_volume_window.setLayout(volume_v_box)
