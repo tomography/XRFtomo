@@ -616,7 +616,6 @@ class FileTableWidget(QWidget):
 
     def extrapolateThetas(self, rows):
         """Handle extrapolation of theta values for selected rows"""
-        print("here")
         if len(rows) < 2:
             return
             

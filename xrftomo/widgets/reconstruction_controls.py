@@ -41,6 +41,8 @@
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import *
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
 
 class ReconstructionControlsWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -183,3 +185,4 @@ class ReconstructionControlsWidget(QtWidgets.QWidget):
         self.artifact_scroll_widget.setLayout(artifact_v_box)
         self.artifact_scroll.setWidget(self.artifact_scroll_widget)
         self.artifact_parameters.setLayout(artifact_v_box)
+

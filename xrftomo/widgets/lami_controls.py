@@ -85,7 +85,7 @@ class LaminographyControlsWidget(QWidget):
         item_dict2["recon_stats"] = [["button"], "show reconstruction statistics", None, None]
         item_dict2["rm_hotspot"] = [["button"], "laminography tilt angle", None, None]
         item_dict2["rotate_volume"] = [["button"], "opens tool in separate window to rotate reconstructed volume", None, None]
-
+        item_dict2["circular_mask"] = [["button"], "remove volume outside cylinder", None, None]
 
         try:
             import tomocupy
@@ -313,7 +313,7 @@ class LaminographyControlsWidget(QWidget):
                 elif widget == "slider":
                     setattr(self, key, QSlider(QtCore.Qt.Horizontal, self))
                     object = self.__dict__[key]
-                    object.setRange(-90, 90)
+                    object.setRange(-900, 900)
                     volume_line.addWidget(object)
                 elif widget == "linedit":
                     name = key+"_ldt"

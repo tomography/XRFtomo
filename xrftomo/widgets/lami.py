@@ -120,8 +120,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.ViewControl.sld_x_ldt.returnPressed.connect(self.rot_vol_ldt_changed)
         self.ViewControl.sld_y_ldt.returnPressed.connect(self.rot_vol_ldt_changed)
         self.ViewControl.sld_z_ldt.returnPressed.connect(self.rot_vol_ldt_changed)
-        # self.ViewControl.rotate_volume.clicked.connect(self.ViewControl.rotate_volume_window.show)
-
+        self.ViewControl.circular_mask.clicked.connect(self.circular_mask_params)
 
         self.x_shifts = None
         self.y_shifts = None
@@ -204,6 +203,7 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.__dict__["reconstruct"].setVisible(True)
             self.ViewControl.__dict__["recon_stats"].setVisible(True)
             self.ViewControl.__dict__["rm_hotspot"].setVisible(True)
+            self.ViewControl.__dict__["circular_mask"].setVisible(True)
             self.ViewControl.__dict__["rotate_volume"].setVisible(True)
 
         self.hide_plus()
@@ -227,11 +227,10 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.ViewControl.sld_y.setValue(0)
         self.ViewControl.sld_z.setValue(0)
 
-
     def rot_vol_sld_changed(self):
-        x_deg = self.ViewControl.sld_x.value()
-        y_deg = self.ViewControl.sld_y.value()
-        z_deg = self.ViewControl.sld_z.value()
+        x_deg = self.ViewControl.sld_x.value()/10
+        y_deg = self.ViewControl.sld_y.value()/10
+        z_deg = self.ViewControl.sld_z.value()/10
         self.ViewControl.sld_x_ldt.setText(str(x_deg))
         self.ViewControl.sld_y_ldt.setText(str(y_deg))
         self.ViewControl.sld_z_ldt.setText(str(z_deg))
@@ -243,10 +242,10 @@ class LaminographyWidget(QtWidgets.QWidget):
         y_ldt = self.ViewControl.sld_y_ldt.text()
         z_ldt = self.ViewControl.sld_z_ldt.text()
         try:
-            vol_ldt = round(eval(vol_ldt))
-            x_ldt = round(eval(x_ldt))
-            y_ldt = round(eval(y_ldt))
-            z_ldt = round(eval(z_ldt))
+            vol_ldt = round(eval(vol_ldt),1)
+            x_ldt = round(eval(x_ldt),1)
+            y_ldt = round(eval(y_ldt),1)
+            z_ldt = round(eval(z_ldt),1)
             if x_ldt < -90 or x_ldt > 90 or y_ldt < -90 or y_ldt > 90 or z_ldt < -90 or z_ldt > 90:
                 print("invalid angle entered")
                 return
@@ -254,10 +253,11 @@ class LaminographyWidget(QtWidgets.QWidget):
             print("invalid angle entered")
             return
 
+        
         self.ViewControl.sld_rot_vol.setValue(vol_ldt)
-        self.ViewControl.sld_x.setValue(x_ldt)
-        self.ViewControl.sld_y.setValue(y_ldt)
-        self.ViewControl.sld_z.setValue(z_ldt)
+        self.ViewControl.sld_x.setValue(int(x_ldt*10))
+        self.ViewControl.sld_y.setValue(int(y_ldt*10))
+        self.ViewControl.sld_z.setValue(int(z_ldt*10))
         self.rot_vol_sld_changed()
 
     def rotate_volume_params(self, angles):
@@ -275,9 +275,9 @@ class LaminographyWidget(QtWidgets.QWidget):
             y_ldt = self.ViewControl.sld_y_ldt.text()
             z_ldt = self.ViewControl.sld_z_ldt.text()
             try:
-                x_ldt = round(eval(x_ldt))
-                y_ldt = round(eval(y_ldt))
-                z_ldt = round(eval(z_ldt))
+                x_ldt = round(eval(x_ldt),1)
+                y_ldt = round(eval(y_ldt),1)
+                z_ldt = round(eval(z_ldt),1)
                 if x_ldt < -90 or x_ldt > 90 or y_ldt < -90 or y_ldt > 90 or z_ldt < -90 or z_ldt > 90:
                     print("invalid angle entered")
                     return
@@ -290,7 +290,7 @@ class LaminographyWidget(QtWidgets.QWidget):
             for key in recon_dict:
                 recon = recon_dict[key]
                 self.recon_dict[key] = self.actions.rotate_volume(recon, angles)
-            element = self.ViewControl.combo1.currentText()
+            element = self.ViewControl.elem.currentText()
             self.recon = self.recon_dict[element]
             self.sld.setRange(self.recon.shape[0])
             self.update_recon_image()
@@ -330,8 +330,9 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.__dict__["reconstruct"].setVisible(True)
             self.ViewControl.__dict__["recon_stats"].setVisible(True)
             self.ViewControl.__dict__["rm_hotspot"].setVisible(True)
+            self.ViewControl.__dict__["circular_mask"].setVisible(True)
             self.ViewControl.__dict__["rotate_volume"].setVisible(True)
-
+            
         elif self.ViewControl.method.currentIndex() == 1:
             self.ViewControl.browse.setVisible(True)
             self.ViewControl.generate.setVisible(True)
@@ -492,13 +493,18 @@ class LaminographyWidget(QtWidgets.QWidget):
         recon = self.recon
         recon = self.actions.remove_hotspots(recon)
         self.update_recon_image()
+        self.update_recon_dict(recon)
 
+    def circular_mask_params(self):
+        self.recon = self.actions.circular_mask(self.recon)
+        self.update_recon_image()
+        self.update_recon_dict(self.recon)
 
     def set_thresh_params(self):
-        recon = self.recon
         threshold = float(self.ViewControl.lThresh.text())
-        recon = self.actions.setThreshold(threshold,recon)
+        self.recon = self.actions.setThreshold(threshold,self.recon)
         self.update_recon_image()
+        self.update_recon_dict(self.recon)
 
     def update_recon_dict(self, recon):
         elem = self.ViewControl.elem.currentText()
@@ -596,6 +602,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.reconChangedSig.emit(self.recon)   #signals to recon tab to update recon image
         self.reconArrChangedSig.emit(recon_dict) #signls to recon tab to update recon image
         return
+    
     def reset_recons(self):
         elements = self.parent.elements
         for key in elements:

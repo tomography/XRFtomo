@@ -177,28 +177,22 @@ class LaminographyActions(QtWidgets.QWidget):
 		except:
 			return None
 
-	def rotate_volume(self, recon_dict, angles):
+	def rotate_volume(self, recon, angles):
 		# angles = [x_deg,y_deg,z_deg]
 
 		if angles[0] != 0:
 			axes = (0, 1)  # z,y
-			for key in recon_dict:
-				stack = recon_dict[key]
-				recon_dict[key] = ndimage.rotate(stack, angles[0], axes=axes)
+			recon = ndimage.rotate(recon, angles[0], axes=axes)
 
 		if angles[1] != 0:
 			axes = (1, 2)  # y,x
-			for key in recon_dict:
-				stack = recon_dict[key]
-				recon_dict[key] = ndimage.rotate(stack, angles[1], axes=axes)
+			recon = ndimage.rotate(recon, angles[1], axes=axes)
 
 		if angles[2] != 0:
 			axes = (0, 2)  # x,z
-			for key in recon_dict:
-				stack = recon_dict[key]
-				recon_dict[key] = ndimage.rotate(stack, angles[2], axes=axes)
+			recon = ndimage.rotate(recon, angles[2], axes=axes)
 
-		return recon_dict
+		return recon
 
 
 	def assessRecon(self,recon, data, thetas,show_plots=False):
@@ -294,6 +288,18 @@ class LaminographyActions(QtWidgets.QWidget):
 			img[img > 0.5*max_val] = 0.5*max_val
 			recon[i] = img
 		return recon
+
+	def circular_mask(self, recon):
+		center = recon.shape[1] / 2
+		radius = recon.shape[1] / 2
+		x = np.arange(recon.shape[1]) - center
+		y = np.arange(recon.shape[1]) - center
+		mask = np.zeros_like(recon)
+
+		for i in range(recon.shape[0]):
+			mask[i] = np.sqrt((x[:, np.newaxis])**2 + (y[np.newaxis, :])**2) <= radius
+		masked = recon * mask * 1
+		return masked
 
 	def shiftProjection(self, data, x, y, index):
 		X = int(x//1)
