@@ -81,7 +81,12 @@ from xrftomo.widgets.lami_actions import *
 from xrftomo.menu_installer import *
 
 try:
-    import pkg_resources
-    __version__ = pkg_resources.working_set.require("xrftomo")[0].version
-except:
-    pass
+    from importlib.metadata import version
+    __version__ = version("xrftomo")
+except ImportError:
+    # Fallback for older Python versions
+    try:
+        import pkg_resources
+        __version__ = pkg_resources.working_set.require("xrftomo")[0].version
+    except:
+        __version__ = "unknown"
