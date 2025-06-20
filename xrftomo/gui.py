@@ -2736,8 +2736,8 @@ class xrftomoGui(QMainWindow):
             sections = config.TOMO_PARAMS + ('gui', )
             home = expanduser("~")
             config.write('{}/xrftomo.conf'.format(home), args=self.params, sections=sections)
-            self.sinogramWidget.ViewControl.iter_parameters.close()
-            self.sinogramWidget.ViewControl.center_parameters.close()
+            self.sinogramWidget.ViewControl.iterative.close()
+            self.sinogramWidget.ViewControl.pirt.close()
             self.sinogramWidget.ViewControl.move2edge.close()
             self.sinogramWidget.ViewControl.sino_manip.close()
             self.imageProcessWidget.ViewControl.reshape_options.close()
@@ -2750,6 +2750,10 @@ class xrftomoGui(QMainWindow):
             self.on_save_as()
 
 def main(params):
+    # BREAKPOINT: Debugger should stop here when GUI starts
+    print("DEBUG: GUI main function called")
+    # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
+    
     app = QApplication(sys.argv)
     mainWindow = xrftomoGui(app, params)
     sys.exit(app.exec_())

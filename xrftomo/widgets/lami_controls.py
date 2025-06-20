@@ -48,6 +48,9 @@ class LaminographyControlsWidget(QWidget):
 
     def __init__(self):
         super(LaminographyControlsWidget, self).__init__()
+        # BREAKPOINT TEST: This should definitely stop
+        print("DEBUG: LaminographyControlsWidget.__init__ called")
+        # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
         self.initUI()
 
     def initUI(self):
@@ -68,6 +71,11 @@ class LaminographyControlsWidget(QWidget):
     def populate_scroll_area(self):
         #TODO: This function getting called tiwce, figure out why
         #[QFileDilog / Label] [text input / combobox]  [enable]
+        
+        # BREAKPOINT 1: Debugger should stop here
+        print("DEBUG: Starting populate_scroll_area function")
+        # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
+        
         item_dict = {}
         item_dict["elem"] = [["label","dropdown"], "elements", ["none"], "none"]
         item_dict["method"] = [["label","dropdown"], "recon method", ["lamni-fbp(cpu)","lamni-fbp(gpu)"], "lamni-fbp(cpu)"]
@@ -87,14 +95,72 @@ class LaminographyControlsWidget(QWidget):
         item_dict2["rotate_volume"] = [["button"], "opens tool in separate window to rotate reconstructed volume", None, None]
         item_dict2["circular_mask"] = [["button"], "remove volume outside cylinder", None, None]
 
+        # BREAKPOINT 2: Before checking tomocupy
+        print("DEBUG: About to check tomocupy availability")
+        # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
+        
+        # Check if tomocupy is available - this allows debugger to stop properly
+        import importlib
+        import warnings
+        import subprocess
+        
+        # BREAKPOINT 3: After imports
+        print("DEBUG: Imports completed")
+        # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
+        
+        # Method 1: Check if tomocupy command is available (avoids pkg_resources warning)
+        def check_tomocupy_command():
+            try:
+                result = subprocess.run(["tomocupy", "--help"], 
+                                      capture_output=True, text=True, timeout=5)
+                return result.returncode == 0
+            except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+                return False
+        
+        # Method 2: Check if module can be imported (with warning suppression)
+        def check_tomocupy_module():
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning, module="pkg_resources")
+                try:
+                    tomocupy_spec = importlib.util.find_spec("tomocupy")
+                    return tomocupy_spec is not None
+                except Exception:
+                    return False
+        
+        # Use command check first (cleaner), fallback to module check
+        tomocupy_available = check_tomocupy_command() or check_tomocupy_module()
+        
+        # Debug: Add breakpoint here to check tomocupy availability
+        print(f"DEBUG: tomocupy_available = {tomocupy_available}")
+        # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
+        
+        # Alternative approach: Simple try-except with explicit breakpoint
+        tomocupy = None
+        if tomocupy_available:
+            try:
+                # Suppress warnings during import
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=UserWarning)
+                    import tomocupy
+                    print("DEBUG: tomocupy imported successfully")
+            except ImportError as e:
+                print(f"DEBUG: tomocupy import failed: {e}")
+                tomocupy = None
+        else:
+            print("DEBUG: tomocupy not available")
+
         try:
-            import tomocupy
-            self.tcp_installed = True
-            tomocupy_dict = self.op_parser()
-            widget_dict = item_dict | tomocupy_dict | item_dict2
-        except:
+            # Check if tomocupy is properly installed and functional
+            if tomocupy is not None:
+                tomocupy_dict = self.op_parser()
+                self.tcp_installed = True
+                widget_dict = item_dict | tomocupy_dict | item_dict2
+            else:
+                raise ImportError("tomocupy module not found")
+        except Exception as e:
             self.tcp_installed = False
-            print("tomocupy not installed, using CPU settings")
+            print(f"tomocupy not installed or not functional: {e}")
+            print("using CPU settings")
             widget_dict = item_dict | item_dict2
 
         self.lami_scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
