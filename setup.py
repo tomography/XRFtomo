@@ -11,7 +11,11 @@ setup(
     description = 'Pre-processing tools for x-ray fluorescence.',
     license='BSD-3',
     platforms='Any',
-    scripts=['xrftomo/__main__.py'],
+    entry_points={
+        'console_scripts': [
+            'xrftomo=xrftomo.__main__:main',
+        ],
+    },
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
