@@ -1,9 +1,10 @@
-python
-matplotlib
-pyqtgraph
-setuptools
-pyqt
+tomocupy
 tomopy
+h5py
+matplotlib
 scikit-image
-scipy
-numpy
+pyqt5-sip
+pyqt
+pyqtgraph
+
+#install with: conda install --file requirements.txt -c conda-forge

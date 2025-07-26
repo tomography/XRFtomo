@@ -11,18 +11,6 @@ setup(
     description = 'Pre-processing tools for x-ray fluorescence.',
     license='BSD-3',
     platforms='Any',
-    install_requires=[
-        'numpy',
-        'h5py',
-        'matplotlib',
-        'scikit-image',
-        'pyqt5-sip',
-        'pyqt',
-        'pyqtgraph',
-        'tomopy',
-        'tomocupy'
-
-    ],
     entry_points={
         'console_scripts': [
             'xrftomo=xrftomo.__main__:main',
