@@ -145,27 +145,23 @@ class ReadOptions(object):
         projection = img[data_tag][idx]
         return projection
 
-    def load_thetas(self, files, theta_tag, idx=None):
+    def load_thetas(self, files, theta_tag, row=0, col=0):
         thetas = []
         img = h5py.File(files[0], 'r')
-        if idx is None:
-            pv = theta_tag.split("/")[-1]
-            pvs = img["/".join(theta_tag.split("/")[:-1])]
-            idx = [i for i, s in enumerate(pvs) if pv in s.decode("utf8")][0]
-            img.close()
-
         for file in files:
             try:
-                img = h5py.File(file, 'r')
-                theta = float(img["MAPS/Scan/Extra_PVs/Values"][591].decode("utf-8"))
-            except:
-                try:
-                    theta = float(img["MAPS/extra_pvs_as_csv/"][idx].decode("utf-8").split(",")[1])
-                except:
+                if len(img[theta_tag].shape) == 1:
+                    theta = float(img[theta_tag][row].decode("utf-8"))
+                elif len(img[theta_tag].shape) == 2:
+                    theta = float(img[theta_tag][row][col].decode("utf-8"))
+                elif len(img[theta_tag].shape) == 0:
+                    theta = float(img[theta_tag][0])
+                else:
                     print("error reading thetas position for file: {}".format(file))
-                    return []
-            thetas.append(theta)
-
+                thetas.append(theta)
+            except:
+                print("error reading thetas position for file: {}".format(file))
+                return []
         return thetas
 
     def load_thetas_file(self, path_file):

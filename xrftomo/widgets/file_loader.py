@@ -405,7 +405,7 @@ class FileTableWidget(QWidget):
     def try_theta(self):
         success = False
         path_files = self.fileTableModel.getAllFiles()
-        try_idxs = [663, 657, 691, 663]
+        try_idxs = [663, 657, 691, 663, 606]
         for idx in try_idxs:
             thetas = self.reader.load_thetas(files=path_files, theta_tag="dummy", idx=idx)
             uniques = len(set(thetas))
@@ -613,11 +613,18 @@ class FileTableWidget(QWidget):
                     print(f"DEBUG: Selected item: {text}")
                     print(f"DEBUG: Item has children: {item.hasChildren()}")
                     
-                    # Find and store the full path
-                    full_path = self.find_item_path(item, item.text())
+                    # Get the full path directly from the item's data
+                    full_path = item.data(Qt.UserRole)
                     if full_path:
                         print(f"DEBUG: Full path: {full_path}")
                         self.setProperty("full_path", full_path)
+                        
+                        # For theta menu, also capture adjacent items
+                        if self.objectName() == "theta_menu":
+                            adjacents = self.get_adjacent_items(item)
+                            if adjacents:
+                                self.setProperty("adjacents", adjacents)
+                                print(f"DEBUG: Adjacent items: {adjacents}")
                     
                     # Update the corresponding label to show selected item
                     self.update_selected_label(text)
@@ -631,9 +638,15 @@ class FileTableWidget(QWidget):
                             def property(self, prop):
                                 if prop == "full_path":
                                     return self.path
+                                elif prop == "adjacents":
+                                    return self.adjacents if hasattr(self, 'adjacents') else None
                                 return None
                         
                         mock_sender = MockSender(full_path)
+                        # Add adjacents to mock sender if available
+                        if self.objectName() == "theta_menu" and self.property("adjacents"):
+                            mock_sender.adjacents = self.property("adjacents")
+                        
                         # Temporarily replace sender in callback
                         original_sender = getattr(self.callback_func, '__self__', None)
                         if original_sender:
@@ -854,6 +867,25 @@ class FileTableWidget(QWidget):
                 self.setFocus()
                 # Clear any internal popup state
                 self._popup_open = False
+            
+            def get_adjacent_items(self, selected_item):
+                """Get adjacent items (siblings) of the selected item"""
+                adjacents = {}
+                
+                # Get the parent of the selected item
+                parent = selected_item.parent()
+                if parent:
+                    # Get all siblings
+                    for row in range(parent.rowCount()):
+                        sibling = parent.child(row)
+                        if sibling and sibling != selected_item:
+                            # Remove icon from text
+                            sibling_text = sibling.text().replace("📄 ", "").replace("📁 ", "")
+                            sibling_path = sibling.data(Qt.UserRole)
+                            if sibling_path:
+                                adjacents[sibling_text] = sibling_path
+                
+                return adjacents
         
         return TreeComboBox(title, parent_widget, parent_widget)
 
@@ -1044,11 +1076,18 @@ class FileTableWidget(QWidget):
         """Update theta tag using combo box selection"""
         # Get the full path from the combo box's property (set by TreeComboBox)
         full_path = self.theta_menu.property("full_path")
+        adjacents = self.theta_menu.property("adjacents")
+        
         if full_path:
             # Use the stored full path if available
             self.theta_menu.setCurrentText(full_path.split('/')[-1])  # Show just the filename
             # Store the full path for later use
             self.theta_menu.setProperty("full_path", full_path)
+            
+            # Store adjacent items if available
+            if adjacents:
+                self.theta_menu.setProperty("adjacents", adjacents)
+                print(f"DEBUG: Stored adjacent items: {adjacents}")
             
             # Handle theta-specific logic
             try:
@@ -1062,7 +1101,7 @@ class FileTableWidget(QWidget):
             selected_text = self.theta_menu.currentText()
             self.theta_menu.setProperty("full_path", selected_text)
         
-        self.theta_tag_changed()
+        # self.theta_tag_changed()
 
     def create_table(self, dataset):
         from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget
@@ -1115,6 +1154,12 @@ class FileTableWidget(QWidget):
         theta_tag = theta_tag.strip(",")
         self.theta_menu.setCurrentText(theta_tag.split('/')[-1])
         self.theta_menu.setProperty("full_path", theta_tag)
+        
+        # Store the current row as a property
+        self.theta_menu.setProperty("selected_row", current_row)
+        self.theta_menu.setProperty("selected_column", current_column)
+        print(f"DEBUG: Selected row: {current_row}")
+        
         self.theta_tag_changed()
         
         # Close the table container
@@ -1130,7 +1175,7 @@ class FileTableWidget(QWidget):
         theta_tag = theta_tag.strip(",")
         self.theta_menu.setCurrentText(theta_tag.split('/')[-1])
         self.theta_menu.setProperty("full_path", theta_tag)
-        self.theta_tag_changed()
+        # self.theta_tag_changed()
         self.tablewidget.close()
 
 
@@ -1191,17 +1236,46 @@ class FileTableWidget(QWidget):
     def theta_tag_changed(self):
         try:
             path_files = self.fileTableModel.getAllFiles()
-            theta_tag = self.theta_menu.property("full_path") or self.theta_menu.currentText()
+            theta_tag = self.theta_menu.property("full_path")
+            row = self.theta_menu.property("selected_row")
+            col = self.theta_menu.property("selected_column")
+            adjacents = self.theta_menu.property("adjacents")
 
-            thetas = self.reader.load_thetas(path_files, theta_tag, 1)
-            print("")
+            # Check for various "Value" related keys in adjacents
+            values_key = None
+            # List of possible "Value" related keys to check (case insensitive)
+            value_keys = ["Value", "Values", "Val", "Vals", "VAL", "VALS"]
+            # Convert adjacents keys to lowercase for case-insensitive comparison
+            adjacents_lower = {k.lower(): k for k in adjacents.keys()}
+            
+            for key in value_keys:
+                if key.lower() in adjacents_lower:
+                    values_key = adjacents_lower[key.lower()]  # Get the original key with correct case
+                    break
+            
+            if values_key:
+                print(f"DEBUG: Found values key: {values_key}")
+                values_path = adjacents[values_key]
+                thetas = self.reader.load_thetas(path_files, values_path, row, col)
+
+            elif ("extra" or "pv" or "csv") in theta_tag:
+                print("DEBUG: No adjacents found, check if in extra_pvs")
+                thetas = self.reader.load_thetas(path_files, theta_tag, row, col)
+
+            elif "theta" in theta_tag:
+                #TODO: check if theta is linked value. 
+                #NOTE: theta as a liknked value is currently not implemented correctly in h5 file
+                #so while value technically exists, it is always zero.   
+                thetas = self.reader.load_thetas(path_files, theta_tag, 0, 0)
+            else: 
+                print("no valid option selected")
+                return
+
             self.fileTableModel.update_thetas(thetas)
             self.fileTableView.sortByColumn(1, 0)
         except:
             thetas=[]
             print("directory probably not mounted or incorrect theta tag")
-
-
 
         return
 
@@ -1317,6 +1391,7 @@ class FileTableWidget(QWidget):
         self.parent.sinogramWidget.sld.setValue(0)
 
     def onSaveDataInMemory(self):
+        #TODO: update way in whcih parameters are passsed and how file/element/scaler tables are read
         files = [i.filename for i in self.fileTableModel.arrayData]
         if len(files) == 0:
             print('Directory probably not mounted')
