@@ -138,20 +138,20 @@ class FileTableWidget(QWidget):
     def populate_scroll_area(self):
         self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
         self.scroll.setWidgetResizable(True)
-        self.scroll.setMaximumWidth(290)
+        self.max_width = 450
+        self.scroll.setMaximumWidth(self.max_width)
 
         item_dict = {}  # [type(button, file, path, dropdown), descriptions[idx], choices[idx],defaults[idx]]
-        item_dict["data_menu"] = [["label","menu","selected_label"], "", None, None]
-        item_dict["element_menu"] = [["label","menu","selected_label"], "", None, None]
-        item_dict["scaler_menu"] = [["label","menu","selected_label"], "", None, None]
-        item_dict["theta_menu"] = [["label","menu","selected_label"], "", None, None]
-        item_dict["saveDataBtn"] = [["button"], "", None, None]
+        item_dict["data_menu"] = ["label","menu","selected_label"]
+        item_dict["element_menu"] = ["label","menu","selected_label"]
+        item_dict["scaler_menu"] = ["label","menu","selected_label"]
+        item_dict["theta_menu"] = ["label","menu","selected_label"]
+        item_dict["saveDataBtn"] = ["button"]
 
         vb_files = QVBoxLayout()
-        widgetsizes = [240, 115, 50]
+        widgetsizes = [self.max_width-20, 115, 120]
         for i, key in enumerate(item_dict.keys()):
-            widget_items = item_dict[key][0]
-            attrs = item_dict[key]
+            widget_items = item_dict[key]
             widgetsize = widgetsizes[len(widget_items)-1]
             
             # Create a vertical layout for each menu group
@@ -163,6 +163,7 @@ class FileTableWidget(QWidget):
                 line_num = "line_{}".format(i)
                 setattr(self, line_num, QHBoxLayout())
                 line = self.__dict__[line_num]
+                line.setAlignment(Qt.AlignLeft)  # Left-justify the layout
                 
                 for widget in widget_items:
                     if widget == "label":
@@ -171,7 +172,8 @@ class FileTableWidget(QWidget):
                         setattr(self, name, QLabel(name))
                         object = self.__dict__[name]
                         object.setFixedWidth(widgetsize)
-                        object.setToolTip(attrs[1])
+                        object.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # Left-justified text
+                        object.setStyleSheet("border: 1px solid #c0c0c0; padding: 2px;")  # Add border
                         line.addWidget(object)
 
                     elif widget == "menu":
@@ -179,6 +181,7 @@ class FileTableWidget(QWidget):
                         tree_combo = self.create_tree_combo_box(key, self)  # Pass self as parent
                         setattr(self, key, tree_combo)
                         object = self.__dict__[key]
+                        object.setFixedSize(240, 35)
                         line.addWidget(object)
 
                     elif widget == "selected_label":
@@ -187,7 +190,8 @@ class FileTableWidget(QWidget):
                         setattr(self, name, QLabel("No selection"))
                         object = self.__dict__[name]
                         object.setFixedWidth(widgetsize)
-                        object.setStyleSheet("color: blue; font-style: italic;")
+                        object.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # Left-justified text
+                        object.setStyleSheet("color: blue; font-style: italic; border: 1px solid #c0c0c0; padding: 2px;")  # Add border
                         # Add to vertical layout instead of horizontal
                         menu_layout.addLayout(line)
                         menu_layout.addWidget(object)
@@ -208,6 +212,7 @@ class FileTableWidget(QWidget):
                 line_num = "line_{}".format(i)
                 setattr(self, line_num, QHBoxLayout())
                 line = self.__dict__[line_num]
+                line.setAlignment(Qt.AlignLeft)  # Left-justify the layout
                 
                 for widget in widget_items:
                     if widget == "button":
@@ -327,6 +332,11 @@ class FileTableWidget(QWidget):
         just_names = [os.path.basename(fname) for fname in fnames]
         self.fileTableModel.update_fnames(just_names)
         self.fileTableModel.setAllChecked(True)
+        
+        # Set the directory path in the model for proper file path construction
+        if fnames:
+            # Extract directory from the first file path
+            self.fileTableModel.directory = os.path.dirname(fnames[0])
 
         if "h5" in ext:
             try:
@@ -399,6 +409,9 @@ class FileTableWidget(QWidget):
         for idx in try_idxs:
             thetas = self.reader.load_thetas(files=path_files, theta_tag="dummy", idx=idx)
             uniques = len(set(thetas))
+            if uniques == 0:
+                print("no unique thetas found, check file extension")
+                return False
             errflag = len(path_files)/uniques > 3
             try:
                 if max(thetas)<=360 and min(thetas)>=-360 and not errflag: #thetas valid if at least more than one unique value per every 3 files and range is within +-360
@@ -596,9 +609,14 @@ class FileTableWidget(QWidget):
                     # Remove the icon from the text
                     text = item.text().replace("📄 ", "").replace("📁 ", "")
                     
+                    # Debug: Print what's being selected
+                    print(f"DEBUG: Selected item: {text}")
+                    print(f"DEBUG: Item has children: {item.hasChildren()}")
+                    
                     # Find and store the full path
                     full_path = self.find_item_path(item, item.text())
                     if full_path:
+                        print(f"DEBUG: Full path: {full_path}")
                         self.setProperty("full_path", full_path)
                     
                     # Update the corresponding label to show selected item
@@ -625,6 +643,12 @@ class FileTableWidget(QWidget):
                     
                     # Hide the popup
                     self.hidePopup()
+                    
+                    # Reset combo box state to ensure it's clickable
+                    self.reset_combo_state()
+                else:
+                    print(f"DEBUG: Clicked on folder or invalid item: {item.text() if item else 'None'}")
+                    print(f"DEBUG: Has children: {item.hasChildren() if item else 'N/A'}")
             
             def on_item_expanded(self, index):
                 """Handle item expansion - keep popup open"""
@@ -655,11 +679,33 @@ class FileTableWidget(QWidget):
                     self._custom_popup.move(popup_pos)
                     
                     # Set size
-                    self._custom_popup.resize(240, 200)
+                    self._custom_popup.resize(240, 240)
+                    
+                    # Install event filter on popup to detect when it's closed
+                    self._custom_popup.installEventFilter(self)
                     
                     # Show the popup
                     self._custom_popup.show()
                     self._popup_open = True
+            
+            def eventFilter(self, obj, event):
+                """Handle events for popup and tree view"""
+                from PyQt5.QtCore import QEvent
+                
+                # Handle popup close events
+                if hasattr(self, '_custom_popup') and self._custom_popup and obj == self._custom_popup and event.type() == QEvent.Hide:
+                    self._popup_open = False
+                    self.reset_combo_state()
+                    return True
+                
+                # Handle mouse press outside popup
+                if hasattr(self, '_custom_popup') and self._custom_popup and obj == self._custom_popup and event.type() == QEvent.MouseButtonPress:
+                    # Check if click is outside the popup
+                    if not self._custom_popup.rect().contains(event.pos()):
+                        self.hidePopup()
+                        return True
+                
+                return super().eventFilter(obj, event)
             
             def hidePopup(self):
                 """Override to hide custom popup"""
@@ -667,13 +713,16 @@ class FileTableWidget(QWidget):
                     self._custom_popup.hide()
                     self._custom_popup = None
                 self._popup_open = False
+                # Ensure the combo box regains focus and is clickable
+                self.setFocus()
             
             def mousePressEvent(self, event):
-                """Override to prevent closing when clicking on folders"""
+                """Override to handle mouse press events properly"""
                 if self._popup_open:
                     # If popup is open, don't handle the click at combo box level
                     event.ignore()
                     return
+                # If popup is closed, allow normal combo box behavior
                 super().mousePressEvent(event)
             
             def tree_mouse_press_event(self, event):
@@ -706,7 +755,7 @@ class FileTableWidget(QWidget):
                     event.ignore()
                     return
                 super().keyPressEvent(event)
-            
+
             def populate_from_h5(self, h5_obj, callback_func, max_depth=5):
                 """Populate the tree from H5 object"""
                 model = QStandardItemModel()
@@ -797,6 +846,14 @@ class FileTableWidget(QWidget):
                     if self.find_item_path(child, target_text):
                         return True
                 return False
+        
+            def reset_combo_state(self):
+                """Reset combo box state to ensure it's clickable"""
+                # Force the combo box to be enabled and clickable
+                self.setEnabled(True)
+                self.setFocus()
+                # Clear any internal popup state
+                self._popup_open = False
         
         return TreeComboBox(title, parent_widget, parent_widget)
 
@@ -985,10 +1042,10 @@ class FileTableWidget(QWidget):
 
     def update_theta_tag(self):
         """Update theta tag using combo box selection"""
-        sender = self.sender()
-        if hasattr(sender, 'property') and sender.property("full_path"):
+        # Get the full path from the combo box's property (set by TreeComboBox)
+        full_path = self.theta_menu.property("full_path")
+        if full_path:
             # Use the stored full path if available
-            full_path = sender.property("full_path")
             self.theta_menu.setCurrentText(full_path.split('/')[-1])  # Show just the filename
             # Store the full path for later use
             self.theta_menu.setProperty("full_path", full_path)
@@ -1008,6 +1065,12 @@ class FileTableWidget(QWidget):
         self.theta_tag_changed()
 
     def create_table(self, dataset):
+        from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget
+        
+        # Create a container widget for the table and button
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        
         self.tablewidget = QTableWidget()
 
         if dataset.ndim == 1:
@@ -1029,8 +1092,34 @@ class FileTableWidget(QWidget):
         else:
             print("more than 2 dimensions")
             return
-        self.tablewidget.show()
-        self.tablewidget.itemDoubleClicked.connect(self.clicked_event)
+            
+        # Add the table to the layout
+        layout.addWidget(self.tablewidget)
+        
+        # Add a "Select" button
+        select_button = QPushButton("Select Highlighted Item")
+        select_button.clicked.connect(self.select_table_item)
+        layout.addWidget(select_button)
+        
+        # Store the container for later access
+        self.table_container = container
+        container.show()
+
+    def select_table_item(self):
+        """Handle selection of an item from the table widget."""
+        current_row = self.tablewidget.currentRow()
+        current_column = self.tablewidget.currentColumn()
+        cell_value = self.tablewidget.item(current_row, current_column).text()
+        current_theta_path = self.theta_menu.property("full_path") or self.theta_menu.currentText()
+        theta_tag = "{}/{}".format(current_theta_path, cell_value)
+        theta_tag = theta_tag.strip(",")
+        self.theta_menu.setCurrentText(theta_tag.split('/')[-1])
+        self.theta_menu.setProperty("full_path", theta_tag)
+        self.theta_tag_changed()
+        
+        # Close the table container
+        if hasattr(self, 'table_container'):
+            self.table_container.close()
 
     def clicked_event(self):
         current_row = self.tablewidget.currentRow()

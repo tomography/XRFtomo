@@ -396,7 +396,7 @@ class xrftomoGui(QMainWindow):
         add = 0
         if sys.platform == "win32":
             add = 50
-        self.setGeometry(add, add, 1100 + add, 500 + add)
+        self.setGeometry(add, add, 1600 + add, 500 + add)
         self.setWindowTitle('XRFtomo v{}'.format(version))
         self.show()
 

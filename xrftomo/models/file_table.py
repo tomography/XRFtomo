@@ -180,7 +180,7 @@ class FileTableModel(QtCore.QAbstractTableModel):
         path_files = []
         for i in range(len(self.arrayData)):
             if self.arrayData[i].use is True:
-                path_files.append(self.directory+self.arrayData[i].filename)
+                path_files.append(self.directory + '/' + self.arrayData[i].filename)
         return path_files
 
     def setChecked(self, rows, value):
