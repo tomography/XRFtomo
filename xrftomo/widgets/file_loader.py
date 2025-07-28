@@ -54,6 +54,16 @@ class FileTableWidget(QWidget):
         self._num_row = 4
         self.auto_load_settings = eval(self.parent.params.load_settings)
         self.auto_theta_tag = self.parent.params.theta_tag
+        self.auto_theta_col = self.parent.params.theta_col
+        self.auto_theta_row = self.parent.params.theta_row  
+        # Convert adjacents from string to dict if it's a string
+        if hasattr(self.parent.params, 'adjacents'):
+            try:
+                self.auto_adjacents = eval(self.parent.params.adjacents) if isinstance(self.parent.params.adjacents, str) else self.parent.params.adjacents
+            except:
+                self.auto_adjacents = {}
+        else:
+            self.auto_adjacents = {}
         self.auto_input_path = self.parent.params.input_path
         self.auto_extension = self.parent.params.file_extension
         self.auto_element_tag = self.parent.params.element_tag
@@ -63,6 +73,14 @@ class FileTableWidget(QWidget):
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
         self.auto_selected_scalers = eval(self.parent.params.selected_scalers)
         self.reader = self.parent.reader
+        
+        # Debug: Print auto parameters to verify they're loaded
+        print(f"DEBUG: Auto parameters loaded:")
+        print(f"  theta_tag: {self.auto_theta_tag}")
+        print(f"  theta_col: {self.auto_theta_col}")
+        print(f"  theta_row: {self.auto_theta_row}")
+        print(f"  adjacents: {self.auto_adjacents}")
+        
         self.initUI()
         sys.stdout = xrftomo.gui.Stream(newText=self.parent.onUpdateText)
 
@@ -106,11 +124,7 @@ class FileTableWidget(QWidget):
         self.extLineEdit = QLineEdit(self.auto_extension)
         self.extLineEdit.setMaximumSize(50, 30)
         self.extLineEdit.returnPressed.connect(self.onLoadDirectory)
-
-
         self.populate_scroll_area()
-
-
         layout0 = QHBoxLayout()
         layout0.addWidget(dirLabel)
         layout0.addWidget(self.dirLineEdit)
@@ -121,8 +135,6 @@ class FileTableWidget(QWidget):
         layout1.addWidget(self.fileTableView)
         layout1.addWidget(self.elementTableView)
         layout1.addWidget(self.scalerTableView)
-
-
 
         mainLayout = QVBoxLayout()
         mainLayout.addLayout(layout0)
@@ -362,28 +374,72 @@ class FileTableWidget(QWidget):
                 self.theta_menu.setEditable(False)
 
                 tags_exist = self.check_auto_tags()
+                print(f"DEBUG: check_auto_tags() returned: {tags_exist}")
                 if tags_exist:
+                    print("DEBUG: Entering auto-loading section")
                     # Set the auto tags if they exist
                     self.data_menu.setCurrentText(self.auto_data_tag)
                     self.element_menu.setCurrentText(self.auto_element_tag)
                     self.scaler_menu.setCurrentText(self.auto_scaler_tag)
-                    self.theta_menu.setCurrentText(self.auto_theta_tag)
                     
                     # Set the full paths as properties
                     self.data_menu.setProperty("full_path", self.auto_data_tag)
                     self.element_menu.setProperty("full_path", self.auto_element_tag)
                     self.scaler_menu.setProperty("full_path", self.auto_scaler_tag)
-                    self.theta_menu.setProperty("full_path", self.auto_theta_tag)
                     
-                    # Update the selected labels
-                    self.data_selected.setText(self.auto_data_tag)
-                    self.element_selected.setText(self.auto_element_tag)
-                    self.scaler_selected.setText(self.auto_scaler_tag)
-                    self.theta_selected.setText(self.auto_theta_tag)
+                    # Handle theta tag - only set if it exists
+                    if self.auto_theta_tag in self.img:
+                        self.theta_menu.setCurrentText(self.auto_theta_tag)
+                        self.theta_menu.setProperty("full_path", self.auto_theta_tag)
+                        print(f"DEBUG: Theta tag exists, setting to: {self.auto_theta_tag}")
+                    else:
+                        print(f"DEBUG: Theta tag doesn't exist, leaving as default")
+                        # Don't set theta menu - let user select manually
+                    
+                    # Set theta row and column properties for auto-loading
+                    self.theta_menu.setProperty("selected_row", self.auto_theta_row)
+                    self.theta_menu.setProperty("selected_column", self.auto_theta_col)
+                    
+                    # Set adjacents if available
+                    if hasattr(self, 'auto_adjacents') and self.auto_adjacents:
+                        self.theta_menu.setProperty("adjacents", self.auto_adjacents)
+                    
+                    # Debug: Print auto-loading info
+                    print(f"DEBUG: Auto-loading theta parameters:")
+                    print(f"  row: {self.auto_theta_row}")
+                    print(f"  col: {self.auto_theta_col}")
+                    print(f"  adjacents: {self.auto_adjacents}")
+                    
+                    # Update the selected labels - show just the filename part
+                    data_label_text = self.auto_data_tag.split('/')[-1] if '/' in self.auto_data_tag else self.auto_data_tag
+                    element_label_text = self.auto_element_tag.split('/')[-1] if '/' in self.auto_element_tag else self.auto_element_tag
+                    scaler_label_text = self.auto_scaler_tag.split('/')[-1] if '/' in self.auto_scaler_tag else self.auto_scaler_tag
+                    
+                    self.data_selected.setText(data_label_text)
+                    self.element_selected.setText(element_label_text)
+                    self.scaler_selected.setText(scaler_label_text)
+                    
+                    # Handle theta label - only update if theta tag exists
+                    if self.auto_theta_tag in self.img:
+                        theta_label_text = self.auto_theta_tag.split('/')[-1] if '/' in self.auto_theta_tag else self.auto_theta_tag
+                        self.theta_selected.setText(theta_label_text)
+                    else:
+                        self.theta_selected.setText("No selection")
+                    
+                    # Debug: Print label updates
+                    print(f"DEBUG: Updated labels:")
+                    print(f"  data_selected: {data_label_text}")
+                    print(f"  element_selected: {element_label_text}")
+                    print(f"  scaler_selected: {scaler_label_text}")
+                    if self.auto_theta_tag in self.img:
+                        theta_label_text = self.auto_theta_tag.split('/')[-1] if '/' in self.auto_theta_tag else self.auto_theta_tag
+                        print(f"  theta_selected: {theta_label_text}")
+                    else:
+                        print(f"  theta_selected: No selection (tag doesn't exist)")
                     
                     self.element_tag_changed()
                     self.scaler_tag_changed()
-                    # self.theta_tag_changed()
+                    self.theta_tag_changed()
                 else:
                     return
             except:
@@ -402,34 +458,24 @@ class FileTableWidget(QWidget):
             print("Load angle information using txt or csv file")
         return
 
-    def try_theta(self):
-        success = False
-        path_files = self.fileTableModel.getAllFiles()
-        try_idxs = [663, 657, 691, 663, 606]
-        for idx in try_idxs:
-            thetas = self.reader.load_thetas(files=path_files, theta_tag="dummy", idx=idx)
-            uniques = len(set(thetas))
-            if uniques == 0:
-                print("no unique thetas found, check file extension")
-                return False
-            errflag = len(path_files)/uniques > 3
-            try:
-                if max(thetas)<=360 and min(thetas)>=-360 and not errflag: #thetas valid if at least more than one unique value per every 3 files and range is within +-360
-                    self.fileTableModel.update_thetas(thetas)
-                    self.fileTableView.sortByColumn(1, 0)
-                    success = True
-                    break
-            except:
-                print("thetas is None")
-        return success
     def check_auto_tags(self):
         data_tag_exists = self.auto_data_tag in self.img
         element_tag_exists = self.auto_element_tag in self.img
         scaler_tag_exists = self.auto_scaler_tag in self.img
+        theta_tag_exists = self.auto_theta_tag in self.img
 
+        print(f"DEBUG: check_auto_tags - tag existence:")
+        print(f"  data_tag_exists: {data_tag_exists} ({self.auto_data_tag})")
+        print(f"  element_tag_exists: {element_tag_exists} ({self.auto_element_tag})")
+        print(f"  scaler_tag_exists: {scaler_tag_exists} ({self.auto_scaler_tag})")
+        print(f"  theta_tag_exists: {theta_tag_exists} ({self.auto_theta_tag})")
+
+        # Require data, element, and scaler tags to exist, but make theta tag optional
         if data_tag_exists and element_tag_exists and scaler_tag_exists:
+            print("DEBUG: Required tags exist, returning True")
             return True
         else:
+            print("DEBUG: Required tags don't exist, setting defaults and returning False")
             default = list(self.img.keys())[0]
             self.data_menu.setCurrentText(default)
             self.element_menu.setCurrentText(default)
@@ -1087,6 +1133,7 @@ class FileTableWidget(QWidget):
             # Store adjacent items if available
             if adjacents:
                 self.theta_menu.setProperty("adjacents", adjacents)
+                self.auto_adjacents = adjacents
                 print(f"DEBUG: Stored adjacent items: {adjacents}")
             
             # Handle theta-specific logic
@@ -1175,7 +1222,6 @@ class FileTableWidget(QWidget):
         theta_tag = theta_tag.strip(",")
         self.theta_menu.setCurrentText(theta_tag.split('/')[-1])
         self.theta_menu.setProperty("full_path", theta_tag)
-        # self.theta_tag_changed()
         self.tablewidget.close()
 
 
@@ -1202,9 +1248,7 @@ class FileTableWidget(QWidget):
         except:
             print("invalid tag option")
 
-        thetas_loaded = self.try_theta()
-        if not thetas_loaded:
-            self.theta_tag_changed()
+        self.theta_tag_changed()
         return
 
     def scaler_tag_changed(self):
@@ -1240,6 +1284,17 @@ class FileTableWidget(QWidget):
             row = self.theta_menu.property("selected_row")
             col = self.theta_menu.property("selected_column")
             adjacents = self.theta_menu.property("adjacents")
+            
+            # Use auto values if no manual selection has been made
+            if row is None and hasattr(self, 'auto_theta_row'):
+                row = self.auto_theta_row
+                print(f"DEBUG: Using auto theta_row: {row}")
+            if col is None and hasattr(self, 'auto_theta_col'):
+                col = self.auto_theta_col
+                print(f"DEBUG: Using auto theta_col: {col}")
+            if adjacents is None and hasattr(self, 'auto_adjacents'):
+                adjacents = self.auto_adjacents
+                print(f"DEBUG: Using auto adjacents: {adjacents}")
 
             # Check for various "Value" related keys in adjacents
             values_key = None
@@ -1256,22 +1311,23 @@ class FileTableWidget(QWidget):
             if values_key:
                 print(f"DEBUG: Found values key: {values_key}")
                 values_path = adjacents[values_key]
-                thetas = self.reader.load_thetas(path_files, values_path, row, col)
+                thetas, files = self.reader.load_thetas(path_files, values_path, row, col)
 
             elif ("extra" or "pv" or "csv") in theta_tag:
                 print("DEBUG: No adjacents found, check if in extra_pvs")
-                thetas = self.reader.load_thetas(path_files, theta_tag, row, col)
+                thetas, files = self.reader.load_thetas(path_files, theta_tag, row, col)
 
             elif "theta" in theta_tag:
                 #TODO: check if theta is linked value. 
                 #NOTE: theta as a liknked value is currently not implemented correctly in h5 file
                 #so while value technically exists, it is always zero.   
-                thetas = self.reader.load_thetas(path_files, theta_tag, 0, 0)
+                thetas, files = self.reader.load_thetas(path_files, theta_tag, 0, 0)
             else: 
                 print("no valid option selected")
                 return
-
+            just_filenames = [os.path.basename(file) for file in files]
             self.fileTableModel.update_thetas(thetas)
+            self.fileTableModel.update_files(just_filenames)
             self.fileTableView.sortByColumn(1, 0)
         except:
             thetas=[]
@@ -1409,7 +1465,7 @@ class FileTableWidget(QWidget):
         l = np.arange(len(elements))
         s = np.arange(len(scalers))
         files = [files[j] for j in k if files_bool[j]==True]
-        path_files = [self.fileTableModel.directory + s for s in files]
+        path_files = [self.fileTableModel.directory + '/' + s for s in files]
         thetas = np.asarray([thetas[j] for j in k if files_bool[j]==True])
         elements = [elements[j] for j in l if elements_bool[j]==True]
         scalers = [scalers[j] for j in s if scalers_bool[j]==True]
@@ -1423,6 +1479,18 @@ class FileTableWidget(QWidget):
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
         self.parent.params.scaler_tag = self.scaler_menu.property("full_path") or self.scaler_menu.currentText()
         self.parent.params.selected_scalers = str(list(np.where(scalers_bool)[0]))
+        
+        # Save theta row, column and adjacents for auto-loading
+        theta_row = self.theta_menu.property("selected_row")
+        theta_col = self.theta_menu.property("selected_column")
+        adjacents = self.theta_menu.property("adjacents")
+        
+        if theta_row is not None:
+            self.parent.params.theta_row = theta_row
+        if theta_col is not None:
+            self.parent.params.theta_col = theta_col
+        if adjacents is not None:
+            self.parent.params.adjacents = str(adjacents)
 
         if len(elements) == 0:
             print('no element selected.')

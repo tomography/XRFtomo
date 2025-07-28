@@ -101,6 +101,21 @@ SECTIONS['file-io'] = {
         'default': '[0,1]',
         'type': str,
         'help': "list of selected scaler indexes"},
+    'theta-col': {
+        'default': 0,
+        'type': int,
+        'help': "theta column index for auto-loading",
+        'metavar': 'INDEX'},
+    'theta-row': {
+        'default': 0,
+        'type': int,
+        'help': "theta row index for auto-loading",
+        'metavar': 'INDEX'},
+    'adjacents': {
+        'default': '{}',
+        'type': str,
+        'help': "adjacent items dictionary for theta auto-loading",
+        'metavar': 'DICT'},
         }
 
 SECTIONS['reconstruction'] = {

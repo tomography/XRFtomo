@@ -237,7 +237,10 @@ class ImageProcessWidget(QtWidgets.QWidget):
         plot_dy = np.gradient(plotv, dx)**2
         plot_dy = self.relax_edge(plot_dy,3)
 
-        ploty_dy = plot_dy*xrange*0.1/plot_dy.max()
+        try: 
+            ploty_dy = plot_dy*xrange*0.1/plot_dy.max()
+        except:
+            ploty_dy = plot_dy*xrange*0.1
 
 
         self.imageView.p1.clearPlots()

@@ -147,8 +147,9 @@ class ReadOptions(object):
 
     def load_thetas(self, files, theta_tag, row=0, col=0):
         thetas = []
-        img = h5py.File(files[0], 'r')
+        loaded_files = []
         for file in files:
+            img = h5py.File(file, "r")
             try:
                 if len(img[theta_tag].shape) == 1:
                     theta = float(img[theta_tag][row].decode("utf-8"))
@@ -159,10 +160,10 @@ class ReadOptions(object):
                 else:
                     print("error reading thetas position for file: {}".format(file))
                 thetas.append(theta)
+                loaded_files.append(file)
             except:
                 print("error reading thetas position for file: {}".format(file))
-                return []
-        return thetas
+        return thetas, loaded_files
 
     def load_thetas_file(self, path_file):
 
@@ -251,24 +252,6 @@ class ReadOptions(object):
                         print(error)
                         print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
                         data[i, j] = np.zeros([max_y,max_x])
-
-        # norm_scalers = np.zeros([num_files, max_y, max_x])
-        # flux = np.zeros(num_files)
-        # for j in range(num_files):
-        #     norm_scaler = self.read_projection(path_files[j], "US_IC", "MAPS/scalers", "MAPS/scaler_names")
-        #     # MAPS/scalers[32]
-        #     # MAPS/scaler_names[32]
-        #     # exchange_0/data
-        #     # exchange_0/data_names
-        #     # US_IC, DS_IC
-        #     if norm_scaler is not None:
-        #         img_y = norm_scaler.shape[0]
-        #         img_x = norm_scaler.shape[1]
-        #         dx = (max_x - img_x) // 2
-        #         dy = (max_y - img_y) // 2
-        #         norm_scalers[j, dy:img_y + dy, dx:img_x + dx] = norm_scaler
-        #         flux[j] = np.mean(norm_scaler)  # corrects for long term beam flux changes; i.e. adjacebt projection intensity
-
 
         for i in range(num_scalers):
             k = i+num_elements

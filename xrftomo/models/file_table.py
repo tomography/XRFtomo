@@ -168,6 +168,32 @@ class FileTableModel(QtCore.QAbstractTableModel):
             print("something is off here")
         self.dataChanged.emit(topLeft, bottomRight)
 
+        return
+        
+    def update_files(self, filenames):
+        """Update the filename list in the table model"""
+        if len(filenames) != len(self.arrayData):
+            print(f"Warning: Number of filenames ({len(filenames)}) doesn't match number of table rows ({len(self.arrayData)})")
+            print("This may be due to invalid files being filtered out during theta loading")
+            
+        try:
+            # Update filenames for the available entries
+            for i in range(min(len(filenames), len(self.arrayData))):
+                self.arrayData[i].filename = filenames[i]
+            
+            # If we have fewer filenames than table rows, mark the extra rows as unused
+            if len(filenames) < len(self.arrayData):
+                for i in range(len(filenames), len(self.arrayData)):
+                    self.arrayData[i].use = False
+                    self.arrayData[i].filename = "INVALID_FILE"
+            
+            # Emit signal for the entire table to reflect changes
+            topLeft = self.index(0, 0)
+            bottomRight = self.index(len(self.arrayData), len(self.columns))
+            self.dataChanged.emit(topLeft, bottomRight)
+        except Exception as e:
+            print(f"Error updating filenames: {e}")
+        
         return 
         
     def getFirstCheckedFilePath(self):
