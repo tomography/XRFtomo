@@ -89,7 +89,7 @@ SECTIONS['file-io'] = {
         'help': "sort interlaced dataset by projection angle",
         'metavar': 'PATH'},
     'theta-tag': {
-        'default': 'MAPS/Scan/Extra_PVs/Names/2xfm:m58.VAL',
+        'default': 'MAPS/Scan/Extra_PVs/Names/2xfm:m60.VAL',
         'type': str,
         'help': "theta tag holding rotation angle PV",
         'metavar': 'PATH'},
@@ -128,7 +128,7 @@ SECTIONS['reconstruction'] = {
         'default': 'none',
         'type': str,
         'help': "Reconstruction filter",
-        'choices': ['none', 'shepp', 'cosine', 'hann', 'hamming', 'ramlak', 'parzen', 'butterworth']},
+        'choices': ['none', 'shepp', 'cosine', 'hann', 'hamming', 'ramlak', 'butterworth']},
     'center': {
         'default': 1024.0,
         'type': float,

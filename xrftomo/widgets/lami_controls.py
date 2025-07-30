@@ -204,8 +204,13 @@ class LaminographyControlsWidget(QWidget):
                     default = attrs[3]
                     for option in options:
                         object.addItem(option)
-                    idx = options.index(default)
-                    object.setCurrentIndex(idx)
+                    # Check if default value exists in options list
+                    if default in options:
+                        idx = options.index(default)
+                        object.setCurrentIndex(idx)
+                    else:
+                        # If default is not in options, set to first option or 0
+                        object.setCurrentIndex(0)
                     line.addWidget(object)
 
                 elif widget == "label":

@@ -229,23 +229,35 @@ class ImageProcessWidget(QtWidgets.QWidget):
 
         ploth = np.sum(img, axis=0)*xrange*0.2/(np.sum(stack,axis=1).max())
         plotv = np.sum(img, axis=1)*yrange*0.2/(np.sum(stack,axis=2).max())
+
         dy = 0.1
         plot_dx = np.gradient(ploth, dy)
-        ploty_dx = plot_dx*yrange*0.1/plot_dx.max()
 
         dx = 0.1
         plot_dy = np.gradient(plotv, dx)**2
         plot_dy = self.relax_edge(plot_dy,3)
 
-        try: 
-            ploty_dy = plot_dy*xrange*0.1/plot_dy.max()
-        except:
-            ploty_dy = plot_dy*xrange*0.1
+        # Handle division by zero or invalid values with numpy warning suppression
+        with np.errstate(divide='ignore', invalid='ignore'):
+            try: 
+                if plot_dy.max() != 0 and not np.isnan(plot_dy.max()):
+                    ploty_dy = plot_dy*xrange*0.1/plot_dy.max()
+                else:
+                    ploty_dy = plot_dy*xrange*0.1
+            except:
+                ploty_dy = plot_dy*xrange*0.1
 
+            try:
+                if plot_dx.max() != 0 and not np.isnan(plot_dx.max()):
+                    plotx_dx = plot_dx*yrange*0.1/plot_dx.max()
+                else:
+                    plotx_dx = plot_dx*yrange*0.1
+            except:
+                plotx_dx = plot_dx*yrange*0.1
 
         self.imageView.p1.clearPlots()
         self.imageView.p1.plot(ploth, pen=pyqtgraph.mkPen(color='b'))
-        self.imageView.p1.plot(ploty_dx, pen=pyqtgraph.mkPen(color='c'))
+        self.imageView.p1.plot(plotx_dx, pen=pyqtgraph.mkPen(color='c'))
 
         self.imageView.p1.plot(plotv, np.arange(len(plotv)), pen=pyqtgraph.mkPen(color='r'))
         self.imageView.p1.plot(ploty_dy, np.arange(len(plot_dy)), pen=pyqtgraph.mkPen(color='y'))
