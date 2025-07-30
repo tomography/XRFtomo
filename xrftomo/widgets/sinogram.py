@@ -676,7 +676,7 @@ class SinogramWidget(QtWidgets.QWidget):
         center = self.actions.find_center(tomo, thetas, slice_index, init_center, tol, mask_bool, ratio)
         self.ViewControl.center_1.setText("center: {}".format(center))
         self.ViewControl.center_2.setText("center: {}".format(center))
-        self.ViewControl.rot_axis.setDisabled(False)
+        self.ViewControl.mo.setDisabled(False)
 
     def center_Vacek_params(self):
         element, row, data, thetas = self.get_params()
@@ -693,7 +693,7 @@ class SinogramWidget(QtWidgets.QWidget):
         center_int = np.round(center_offset)
         self.ViewControl.center_1.setText("center: {}".format(center))
         self.ViewControl.center_2.setText("center: {}".format(center))
-        self.ViewControl.rot_axis.setDisabled(False)
+        # self.ViewControl.rot_axis.setDisabled(False)
 
     def move2center_params(self):
         data = self.data

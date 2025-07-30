@@ -52,7 +52,8 @@ from scipy.fftpack import fftshift, ifftshift, fft, ifft, fft2, ifft2
 from scipy import interpolate, ndimage
 import sys
 from skimage import exposure
-
+import matplotlib
+matplotlib.use('Qt5Agg')
 
 
 #TODO: add multiple viewing angles for reconstruction.
