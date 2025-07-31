@@ -159,19 +159,12 @@ class LaminographyActions(QtWidgets.QWidget):
 				path = parent_dir + "/tomocupy_data_rec/try_center/{}/".format(element)
 			else:
 				return None
-			recons = self.get_recon_tiffs(path)[0]
-			return recons
 
-		except:
-			return None
-
-	def get_recon_tiffs(self, dir):
-		try:
-			files = os.listdir(dir)
+			files = os.listdir(path)
 			files = [file for file in files if file.endswith(".tiff")]
 			files = sorted(files, key=lambda x:x[-10:])
-			path_files = [dir + file for file in files]
-			recons = xrftomo.read_tiffs(path_files)
+			path_files = [path + file for file in files]
+			recons = xrftomo.read_tiffs(path_files)[0]
 			return recons
 
 		except:

@@ -72,7 +72,6 @@ class FileTableWidget(QWidget):
         self.auto_sorted_angles = self.parent.params.sorted_angles
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
         self.auto_selected_scalers = eval(self.parent.params.selected_scalers)
-        self.reader = self.parent.reader
         
         # Debug: Print auto parameters to verify they're loaded
         print(f"DEBUG: Auto parameters loaded:")
@@ -1311,17 +1310,17 @@ class FileTableWidget(QWidget):
             if values_key:
                 print(f"DEBUG: Found values key: {values_key}")
                 values_path = adjacents[values_key]
-                thetas, files = self.reader.load_thetas(path_files, values_path, row, col)
+                thetas, files = xrftomo.load_thetas(path_files, values_path, row, col)
 
             elif ("extra" or "pv" or "csv") in theta_tag:
                 print("DEBUG: No adjacents found, check if in extra_pvs")
-                thetas, files = self.reader.load_thetas(path_files, theta_tag, row, col)
+                thetas, files = xrftomo.load_thetas(path_files, theta_tag, row, col)
 
             elif "theta" in theta_tag:
                 #TODO: check if theta is linked value. 
                 #NOTE: theta as a liknked value is currently not implemented correctly in h5 file
                 #so while value technically exists, it is always zero.   
-                thetas, files = self.reader.load_thetas(path_files, theta_tag, 0, 0)
+                thetas, files = xrftomo.load_thetas(path_files, theta_tag, 0, 0)
             else: 
                 print("no valid option selected")
                 return
@@ -1504,7 +1503,7 @@ class FileTableWidget(QWidget):
         self.parent.clear_all()
         try:
             #TODO: add file upload status: n / total files uploaded
-            data = self.reader.read_mic_xrf(path_files, elements, data_tag, element_tag, scalers, scaler_tag)
+            data = xrftomo.read_mic_xrf(path_files, elements, data_tag, element_tag, scalers, scaler_tag)
         except:
             print("invalid image/data/element tag combination. Load failed")
             return [], [], [], []

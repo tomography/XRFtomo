@@ -144,7 +144,7 @@ class xrftomoGui(QMainWindow):
         self.vl = QtWidgets.QVBoxLayout()
 
         self.writer = xrftomo.SaveOptions(self)
-        self.reader = xrftomo.ReadOptions(self)
+        # self.reader = xrftomo.ReadOptions()
         self.fileTableWidget = xrftomo.FileTableWidget(self)
         self.imageProcessWidget = xrftomo.ImageProcessWidget(self)
         self.sinogramWidget = xrftomo.SinogramWidget(self)
