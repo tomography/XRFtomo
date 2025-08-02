@@ -6,5 +6,6 @@ scikit-image
 pyqt5-sip
 pyqt
 pyqtgraph
+astra-toolbox=2.3.1=cudapy312*
 
 #install with: conda install --file requirements.txt -c conda-forge
