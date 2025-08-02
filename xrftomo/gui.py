@@ -55,6 +55,7 @@ from skimage import io
 import h5py
 import os
 import subprocess
+os.environ["QT_DEBUG_PLUGINS"] = "1"
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
 

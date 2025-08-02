@@ -1,4 +1,4 @@
-#tomocupy
+tomocupy
 tomopy
 h5py
 matplotlib
