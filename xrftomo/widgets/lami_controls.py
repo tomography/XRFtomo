@@ -56,12 +56,18 @@ class LaminographyControlsWidget(QWidget):
     def initUI(self):
         button1size = 270       #long button (1 column)
 
-        # self.elem = QComboBox(self)
-        # self.elem.setFixedWidth(button1size)
+        self.elem = QComboBox(self)
+        self.elem.setFixedWidth(button1size)
+        self.method = QComboBox(self)
+        self.method.setFixedWidth(button1size)
+        self.method.addItems(["lamni-fbp(cpu)","lamni-fbp(gpu)"])
+        self.method.setCurrentIndex(0)
+
 
         self.populate_scroll_area()
         vb = QVBoxLayout()
-        # vb.addWidget(self.elem)
+        vb.addWidget(self.elem)
+        vb.addWidget(self.method)
         vb.addWidget(self.lami_scroll)
         self.setLayout(vb)
         self.setMaximumWidth(290)
@@ -77,8 +83,6 @@ class LaminographyControlsWidget(QWidget):
         # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
         
         item_dict = {}
-        item_dict["elem"] = [["label","dropdown"], "elements", ["none"], "none"]
-        item_dict["method"] = [["label","dropdown"], "recon method", ["lamni-fbp(cpu)","lamni-fbp(gpu)"], "lamni-fbp(cpu)"]
         item_dict["browse"] = [["label","path"], "location where data is stored", None, ""]
         item_dict["generate"] = [["label","button"], "generate folder structure in data path", None, None]
         item_dict["show_ops"] = [["checkbox"], "show additional options", None, False]
@@ -132,7 +136,6 @@ class LaminographyControlsWidget(QWidget):
         
         # Debug: Add breakpoint here to check tomocupy availability
         print(f"DEBUG: tomocupy_available = {tomocupy_available}")
-        # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
         
         # Alternative approach: Simple try-except with explicit breakpoint
         tomocupy = None
@@ -161,6 +164,9 @@ class LaminographyControlsWidget(QWidget):
             self.tcp_installed = False
             print(f"tomocupy not installed or not functional: {e}")
             print("using CPU settings")
+            self.method.clear()
+            self.method.addItems(["lamni-fbp(cpu)"])
+            self.method.setCurrentIndex(0)
             widget_dict = item_dict | item_dict2
 
         self.lami_scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget

@@ -175,10 +175,6 @@ class LaminographyWidget(QtWidgets.QWidget):
                 for i in range(num_widgets):
                     hbox.itemAt(i).widget().setVisible(False)
 
-            self.ViewControl.__dict__["elem_lbl"].setVisible(True)
-            self.ViewControl.__dict__["elem"].setVisible(True)
-            self.ViewControl.__dict__["method_lbl"].setVisible(True)
-            self.ViewControl.__dict__["method"].setVisible(True)
             self.ViewControl.__dict__["browse"].setVisible(True)
             self.ViewControl.__dict__["browse_lbl"].setVisible(True)
             self.ViewControl.__dict__["generate"].setVisible(True)
@@ -315,10 +311,6 @@ class LaminographyWidget(QtWidgets.QWidget):
                 for i in range(num_widgets):
                     hbox.itemAt(i).widget().setVisible(False)
 
-            self.ViewControl.__dict__["elem_lbl"].setVisible(True)
-            self.ViewControl.__dict__["elem"].setVisible(True)
-            self.ViewControl.__dict__["method_lbl"].setVisible(True)
-            self.ViewControl.__dict__["method"].setVisible(True)
             self.ViewControl.__dict__["lamino-angle_lbl"].setVisible(True)
             self.ViewControl.__dict__["lamino-angle"].setVisible(True)
             self.ViewControl.__dict__["rotation-axis_lbl"].setVisible(True)
@@ -347,7 +339,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         return
 
     def hide_plus(self):
-        items = ["method", "browse", "generate", "show_ops", "recon_all", "reconstruct", "recon_stats", "rm_hotspot", "rotate_volume"]
+        items = ["browse", "generate", "show_ops", "recon_all", "reconstruct", "recon_stats", "rm_hotspot", "rotate_volume"]
         for i in items:
             widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
             self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(False)
