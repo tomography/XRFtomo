@@ -80,6 +80,7 @@ from xrftomo.widgets.lami_actions import *
 from xrftomo.widgets.lamiCPU import LaminographyCPU
 from xrftomo.widgets.lamiTomocupy import LaminographyTomocupy
 from xrftomo.widgets.pyxalign_opts import OptionsWidget
+from xrftomo.widgets.pyxalign_recon import run_it
 # from xrftomo.widgets.lamiPyxalign import *
 
 from xrftomo.menu_installer import *

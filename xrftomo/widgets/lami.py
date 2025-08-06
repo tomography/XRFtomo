@@ -476,8 +476,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         elements = [self.ViewControl.elem.currentIndex()]
         method = self.ViewControl.method.currentIndex()
         thetas = self.thetas
-        lami_angle = 90 - eval(self.ViewControl.__dict__["lamino-angle"].text())
-        center_axis = eval(self.ViewControl.__dict__["rotation-axis"].text())
+
         parent_dir = self.h5_dir
         data = self.data.copy()
         recon_dict = self.recon_dict.copy()
@@ -508,18 +507,32 @@ class LaminographyWidget(QtWidgets.QWidget):
             recon_dict[element] = empty_recon
             print("running reconstruction for:", element)
             if method == 0:
+                lami_angle = 90 - eval(self.ViewControl.__dict__["lamino-angle"].text())
+                center_axis = eval(self.ViewControl.__dict__["rotation-axis"].text())
                 recon = self.actions.reconstruct_cpu(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir)
 
-            if method ==1:
+            elif method ==1:
                 if not self.check_savepath_exists():
                     print("save path invalid or insufficient permissions")
                     return
                 element = self.parent.elements[element_idx]
                 command_string = self.get_command_string(element)
-                recon = self.actions.reconstruct_gpu(data, element_idx, element, thetas, parent_dir=self.h5_dir, command_string=command_string)
+                recon = self.actions.reconstruct_gpu(data, element_idx, element, thetas, parent_dir=parent_dir, command_string=command_string)
                 if recon is None:
                     return
 
+            elif method == 2:
+                scan_numbers = [i.split("_")[1].split(".")[0] for i in self.parent.fnames]
+                elements = self.parent.elements
+                data_dict = {}
+                primary_element = self.parent.elements[element_idx]
+                for element in elements:
+                    data_dict[element] = data[elements.index(element)]
+                self.actions.run_it(data_dict, primary_element, elements, scan_numbers, thetas, lami_angle=20)
+
+            else:
+                print("invalid method")
+                return
             if self.ViewControl.recon_save.isChecked():
                 rec = {element: recon}
                 self.writer.save_recon_stack(rec, savedir=save_path)
