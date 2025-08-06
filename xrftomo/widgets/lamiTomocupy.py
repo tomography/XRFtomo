@@ -46,63 +46,33 @@ import xrftomo
 
 class LaminographyTomocupy(QWidget):
 
-    def __init__(self):
+    def __init__(self, parent):
         super(LaminographyTomocupy, self).__init__()
-        # BREAKPOINT TEST: This should definitely stop
-        print("DEBUG: LaminographyTomocupy.__init__ called")
-        # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
+        self.parent = parent
         self.initUI()
 
     def initUI(self):
-        button1size = 270       #long button (1 column)
-
-        self.elem = QComboBox(self)
-        self.elem.setFixedWidth(button1size)
-        self.method = QComboBox(self)
-        self.method.setFixedWidth(button1size)
-        self.method.addItems(["lamni-fbp(cpu)","lamni-fbp(gpu)"])
-        self.method.setCurrentIndex(0)
+        button1size = self.parent.button1size       #long button (1 column)
 
         self.populate_scroll_area()
         vb = QVBoxLayout()
-        vb.addWidget(self.elem)
-        vb.addWidget(self.method)
-        vb.addWidget(self.lami_scroll)
+        vb.addWidget(self.tomocupy_scroll)
         self.setLayout(vb)
-        self.setMaximumWidth(290)
-        self.rotate_volume_area()
+        self.setMinimumWidth(button1size)
 
     def populate_scroll_area(self):
 
         item_dict = {}
         item_dict["browse"] = [["label","path"], "location where data is stored", None, ""]
         item_dict["generate"] = [["label","button"], "generate folder structure in data path", None, None]
-        item_dict["show_ops"] = [["checkbox"], "show additional options", None, False]
         item_dict["fbp-filter"] = [["label","dropdown"], "filter choice", ["ramp", "shepp"], "shepp"]
         item_dict["rotation-axis"] = [["label","linedit"], "rotation axis given by x-position", None, ""]
         item_dict["lamino-angle"] = [["label","linedit"], "laminography tilt angle", None, "18.25"]
 
-        item_dict2 = {}
-        item_dict2["recon_all"] = [["checkbox"], "reconstruct all loaded elements", None, False]
-        item_dict2["recon_save"] = [["checkbox"], "reconstruct and save simultaneously", None, False]
-        item_dict2["reconstruct"] = [["button"], "run reconstruction", None, None]
-        item_dict2["recon_stats"] = [["button"], "show reconstruction statistics", None, None]
-        item_dict2["rm_hotspot"] = [["button"], "laminography tilt angle", None, None]
-        item_dict2["rotate_volume"] = [["button"], "opens tool in separate window to rotate reconstructed volume", None, None]
-        item_dict2["circular_mask"] = [["button"], "remove volume outside cylinder", None, None]
-
-        # BREAKPOINT 2: Before checking tomocupy
-        print("DEBUG: About to check tomocupy availability")
-        # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
-        
         # Check if tomocupy is available - this allows debugger to stop properly
         import importlib
         import warnings
         import subprocess
-        
-        # BREAKPOINT 3: After imports
-        print("DEBUG: Imports completed")
-        # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
         
         # Method 1: Check if tomocupy command is available (avoids pkg_resources warning)
         def check_tomocupy_command():
@@ -126,9 +96,6 @@ class LaminographyTomocupy(QWidget):
         # Use command check first (cleaner), fallback to module check
         tomocupy_available = check_tomocupy_command() or check_tomocupy_module()
         
-        # Debug: Add breakpoint here to check tomocupy availability
-        print(f"DEBUG: tomocupy_available = {tomocupy_available}")
-        
         # Alternative approach: Simple try-except with explicit breakpoint
         tomocupy = None
         if tomocupy_available:
@@ -143,38 +110,91 @@ class LaminographyTomocupy(QWidget):
                 tomocupy = None
         else:
             print("DEBUG: tomocupy not available")
-
+            return
         try:
             # Check if tomocupy is properly installed and functional
             if tomocupy is not None:
                 tomocupy_dict = self.op_parser()
                 self.tcp_installed = True
-                widget_dict = item_dict | tomocupy_dict | item_dict2
+                widget_dict = item_dict | tomocupy_dict 
             else:
                 raise ImportError("tomocupy module not found")
         except Exception as e:
             self.tcp_installed = False
             print(f"tomocupy not installed or not functional: {e}")
             print("using CPU settings")
-            self.method.clear()
-            self.method.addItems(["lamni-fbp(cpu)"])
-            self.method.setCurrentIndex(0)
-            widget_dict = item_dict | item_dict2
+            widget_dict = item_dict 
 
-        self.lami_scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
-        self.lami_scroll.setWidgetResizable(True)
-        #TODO: the dictionary pop function maks self forget that lami_scroll exists. fix
+        self.tomocupy_scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
+        self.tomocupy_scroll.setWidgetResizable(True)
         vb_lami = self.create_widgets(widget_dict)
-        self.lami_scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
+        self.tomocupy_widget = QWidget()  # Widget that contains the collection of Vertical Box
         vb_lami.setSpacing(0)
         vb_lami.setContentsMargins(0, 0, 0, 0)
-        self.lami_scroll_widget.setLayout(vb_lami)
-        self.lami_scroll.setWidget(self.lami_scroll_widget)
+        self.tomocupy_widget.setLayout(vb_lami)
+        self.tomocupy_scroll.setWidget(self.tomocupy_widget)
 
-        self.show_ops.setCheckable(True)
-        self.show_ops.setChecked(False)
-        self.recon_all.setChecked(False)
         return
+
+    def op_parser(self):
+        result = subprocess.check_output(["tomocupy", "recon_steps", "-h"]).decode().split("options:")[1]
+        options = result.split("--")[2::]
+        op_tmp = [i.replace("                       ","") for i in options]
+        op_tmp = [i.replace("\r\n","") for i in op_tmp]
+        op_tmp = [i.replace("  "," ") for i in op_tmp]
+        op_tmp = [i.replace("  "," ") for i in op_tmp]
+        op_tmp = [i.replace("  "," ") for i in op_tmp]
+        keys = [i.split(" ")[0] for i in op_tmp]
+        op_tmp = [" ".join(i.split(" ")[1::]).strip(" ") for i in op_tmp]
+        default_tmp = [i.split("default: ") for i in op_tmp]
+
+        op_dict = {}
+        for key in keys:
+            op_dict[key] = [None, None, None, None]
+
+        for i, line in enumerate(default_tmp):
+            key = list(op_dict.keys())[i]
+            if len(line)>1:
+                default = line[-1].replace(")", "")
+
+            else:
+                default = None
+            op_dict[key][3] = default
+
+        for i, line in enumerate(op_tmp):
+            key = list(op_dict.keys())[i]
+            idx_0 = line.find("{")
+            idx_1 = line.find("}")
+            if idx_0 == -1:
+                choice = None
+            else:
+                choice = line[idx_0 + 1:idx_1].split(",")
+            op_dict[key][2] = choice
+
+        op_tmp = [i.split("(default")[0] for i in op_tmp]
+        op_tmp = [i.split("}")[::-1][0].strip("") for i in op_tmp]
+
+        for i, line in enumerate(op_tmp):
+            key = list(op_dict.keys())[i]
+            first = line.split(" ")[0]
+            if first.isupper():
+                if first == "PATH":
+                    op_dict[key][0] = ["label", "path"]
+                elif first == "FILE":
+                    op_dict[key][0] = ["label", "file"]
+                else:
+                    op_dict[key][0] = ["label", "linedit"]
+                desc = " ".join(line.split(" ")[1::]).strip(" ")
+                op_dict[key][1] = desc
+            else:
+                if op_dict[key][2] is not None:
+                    op_dict[key][0] = ["label", "dropdown"]
+                else:
+                    op_dict[key][0] = ["label", "linedit"]
+                desc = line.strip(" ")
+                op_dict[key][1] = desc
+
+        return op_dict
 
     def create_widgets(self,item_dict):
         widgetsizes = [240, 115, 50]
@@ -266,68 +286,7 @@ class LaminographyTomocupy(QWidget):
             line_btn.setFixedWidth(25)
             line.addWidget(line_btn)
             vb_lami.addLayout(line)
-
         return vb_lami
-
-    def op_parser(self):
-        result = subprocess.check_output(["tomocupy", "recon_steps", "-h"]).decode().split("options:")[1]
-        options = result.split("--")[2::]
-        op_tmp = [i.replace("                       ","") for i in options]
-        op_tmp = [i.replace("\r\n","") for i in op_tmp]
-        op_tmp = [i.replace("  "," ") for i in op_tmp]
-        op_tmp = [i.replace("  "," ") for i in op_tmp]
-        op_tmp = [i.replace("  "," ") for i in op_tmp]
-        keys = [i.split(" ")[0] for i in op_tmp]
-        op_tmp = [" ".join(i.split(" ")[1::]).strip(" ") for i in op_tmp]
-        default_tmp = [i.split("default: ") for i in op_tmp]
-
-        op_dict = {}
-        for key in keys:
-            op_dict[key] = [None, None, None, None]
-
-        for i, line in enumerate(default_tmp):
-            key = list(op_dict.keys())[i]
-            if len(line)>1:
-                default = line[-1].replace(")", "")
-
-            else:
-                default = None
-            op_dict[key][3] = default
-
-        for i, line in enumerate(op_tmp):
-            key = list(op_dict.keys())[i]
-            idx_0 = line.find("{")
-            idx_1 = line.find("}")
-            if idx_0 == -1:
-                choice = None
-            else:
-                choice = line[idx_0 + 1:idx_1].split(",")
-            op_dict[key][2] = choice
-
-        op_tmp = [i.split("(default")[0] for i in op_tmp]
-        op_tmp = [i.split("}")[::-1][0].strip("") for i in op_tmp]
-
-        for i, line in enumerate(op_tmp):
-            key = list(op_dict.keys())[i]
-            first = line.split(" ")[0]
-            if first.isupper():
-                if first == "PATH":
-                    op_dict[key][0] = ["label", "path"]
-                elif first == "FILE":
-                    op_dict[key][0] = ["label", "file"]
-                else:
-                    op_dict[key][0] = ["label", "linedit"]
-                desc = " ".join(line.split(" ")[1::]).strip(" ")
-                op_dict[key][1] = desc
-            else:
-                if op_dict[key][2] is not None:
-                    op_dict[key][0] = ["label", "dropdown"]
-                else:
-                    op_dict[key][0] = ["label", "linedit"]
-                desc = line.strip(" ")
-                op_dict[key][1] = desc
-
-        return op_dict
 
     def get_file(self):
         try:

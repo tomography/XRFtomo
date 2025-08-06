@@ -46,19 +46,20 @@ import xrftomo
 
 class LaminographyCPU(QWidget):
 
-    def __init__(self):
+    def __init__(self,parent):
         super(LaminographyCPU, self).__init__()
+        self.parent=parent
         self.initUI()
 
     def initUI(self):
-        button1size = 270       #long button (1 column)
+        button1size = self.parent.button1size-10       #long button (1 column)
 
         self.populate_scroll_area()
         vb = QVBoxLayout()
         vb.addWidget(self.lami_scroll)
         self.setLayout(vb)
-        self.setMaximumWidth(290)
-        self.rotate_volume_area()
+        # self.setMaximumWidth(self.button1size)
+        self.setMinimumWidth(button1size)
 
     def populate_scroll_area(self):
         widget_dict = {}

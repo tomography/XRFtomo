@@ -48,176 +48,56 @@ class LaminographyControlsWidget(QWidget):
 
     def __init__(self):
         super(LaminographyControlsWidget, self).__init__()
-        # BREAKPOINT TEST: This should definitely stop
-        print("DEBUG: LaminographyControlsWidget.__init__ called")
-        # import pdb; pdb.set_trace()  # Uncomment to force breakpoint
         self.initUI()
 
     def initUI(self):
-        button1size = 270       #long button (1 column)
+        self.button1size = 450       #long button (1 column)
 
         self.elem = QComboBox(self)
-        self.elem.setFixedWidth(button1size)
+        self.elem.setFixedWidth(self.button1size)
         self.method = QComboBox(self)
-        self.method.setFixedWidth(button1size)
+        self.method.setFixedWidth(self.button1size)
+        self.method.clear()
+        self.method.addItem("lamni-fbp(cpu)")
+        self.method.setCurrentIndex(0)
+        self.recon_all = QCheckBox(self)
+        self.recon_all.setText("reconstruct all")
+        self.recon_all.setToolTip("reconstruct all loaded elements")
+        self.recon_all.setChecked(False)
+        self.recon_save = QCheckBox(self)
+        self.recon_save.setToolTip("reconstruct and save simultaneously")
+        self.recon_save.setChecked(False)
+        self.recon_save.setText("reconstruct and save")
+        self.reconstruct = QPushButton("reconstruct")
+        self.recon_stats = QPushButton("recon stats")
+        self.rm_hotspot = QPushButton("remove hotspot")
+        self.rotate_volume = QPushButton("rotate volume")
+        self.circular_mask = QPushButton("circular mask")
 
 
-        
-
-        self.populate_scroll_area()
+        self.cpu_opts = xrftomo.LaminographyCPU(self)
+        self.tomocupy_opts = xrftomo.LaminographyTomocupy(self)
+        self.pyxalign_opts = xrftomo.OptionsWidget()
+        if self.tomocupy_opts is not None: 
+            self.method.addItem("tomocupy(gpu)")
+        if self.pyxalign_opts is not None:
+            self.method.addItem("pyxalign(gpu)")
         vb = QVBoxLayout()
+        vb.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         vb.addWidget(self.elem)
         vb.addWidget(self.method)
-        vb.addWidget(self.lami_scroll)
+        vb.addWidget(self.cpu_opts)
+        vb.addWidget(self.tomocupy_opts)
+        vb.addWidget(self.pyxalign_opts)
+        vb.addWidget(self.recon_all)
+        vb.addWidget(self.recon_save)
+        vb.addWidget(self.reconstruct)
+        vb.addWidget(self.recon_stats)
+        vb.addWidget(self.rm_hotspot)
+        vb.addWidget(self.circular_mask)
         self.setLayout(vb)
-        self.setMaximumWidth(290)
+        self.setMaximumWidth(self.button1size)
         self.rotate_volume_area()
-
-    def populate_scroll_area(self):
-
-        item_dict = {}
-        item_dict["browse"] = [["label","path"], "location where data is stored", None, ""]
-        item_dict["generate"] = [["label","button"], "generate folder structure in data path", None, None]
-        item_dict["show_ops"] = [["checkbox"], "show additional options", None, False]
-        item_dict["fbp-filter"] = [["label","dropdown"], "filter choice", ["ramp", "shepp"], "shepp"]
-        item_dict["rotation-axis"] = [["label","linedit"], "rotation axis given by x-position", None, ""]
-        item_dict["lamino-angle"] = [["label","linedit"], "laminography tilt angle", None, "18.25"]
-
-        item_dict2 = {}
-        item_dict2["recon_all"] = [["checkbox"], "reconstruct all loaded elements", None, False]
-        item_dict2["recon_save"] = [["checkbox"], "reconstruct and save simultaneously", None, False]
-        item_dict2["reconstruct"] = [["button"], "run reconstruction", None, None]
-        item_dict2["recon_stats"] = [["button"], "show reconstruction statistics", None, None]
-        item_dict2["rm_hotspot"] = [["button"], "laminography tilt angle", None, None]
-        item_dict2["rotate_volume"] = [["button"], "opens tool in separate window to rotate reconstructed volume", None, None]
-        item_dict2["circular_mask"] = [["button"], "remove volume outside cylinder", None, None]
-
-     
-        self.method.clear()
-        self.method.addItems(["lamni-fbp(cpu)"])
-        self.method.setCurrentIndex(0)
-        widget_dict = item_dict | item_dict2
-
-        self.lami_scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
-        self.lami_scroll.setWidgetResizable(True)
-        #TODO: the dictionary pop function maks self forget that lami_scroll exists. fix
-        vb_lami = self.create_widgets(widget_dict)
-        self.lami_scroll_widget = QWidget()  # Widget that contains the collection of Vertical Box
-        vb_lami.setSpacing(0)
-        vb_lami.setContentsMargins(0, 0, 0, 0)
-        self.lami_scroll_widget.setLayout(vb_lami)
-        self.lami_scroll.setWidget(self.lami_scroll_widget)
-
-        self.show_ops.setCheckable(True)
-        self.show_ops.setChecked(False)
-        self.recon_all.setChecked(False)
-        return
-
-    def create_widgets(self,item_dict):
-        widgetsizes = [240, 115, 50]
-        vb_lami = QVBoxLayout()
-        self.num_lines= len(item_dict.keys())
-        self.line_names = []
-        for i, key in enumerate(item_dict.keys()):
-            widget_items = item_dict[key][0]
-            attrs = item_dict[key]
-            widgetsize = widgetsizes[len(widget_items)-1]
-
-            self.line_names.append(key)
-
-            line_num = "line_{}".format(i)
-            setattr(self, line_num, QHBoxLayout())
-            line = self.__dict__[line_num]
-
-            for widget in widget_items:
-                #TODO: add line number and extra button to each line
-                if widget == "dropdown":
-                    setattr(self, key, QComboBox())
-                    object = self.__dict__[key]
-                    object.setFixedWidth(widgetsize)
-                    options = attrs[2]
-                    default = attrs[3]
-                    for option in options:
-                        object.addItem(option)
-                    # Check if default value exists in options list
-                    if default in options:
-                        idx = options.index(default)
-                        object.setCurrentIndex(idx)
-                    else:
-                        # If default is not in options, set to first option or 0
-                        object.setCurrentIndex(0)
-                    line.addWidget(object)
-
-                elif widget == "label":
-                    name = key+"_lbl"
-                    setattr(self, name, QLabel())
-                    object = self.__dict__[name]
-                    object.setFixedWidth(widgetsize)
-                    object.setToolTip(attrs[1])
-                    object.setText(key)
-                    line.addWidget(object)
-
-                elif widget == "linedit":
-                    setattr(self, key, QLineEdit())
-                    object = self.__dict__[key]
-                    object.setFixedWidth(widgetsize)
-                    object.setText(attrs[3])
-                    line.addWidget(object)
-
-                elif widget == "checkbox":
-                    setattr(self, key, QCheckBox(attrs[1]))
-                    object = self.__dict__[key]
-                    object.setFixedWidth(widgetsize)
-                    object.setChecked(attrs[3])
-                    line.addWidget(object)
-
-                elif widget == "button":
-                    setattr(self, key, QPushButton(key))
-                    object = self.__dict__[key]
-                    object.setFixedWidth(widgetsize)
-                    line.addWidget(object)
-
-                elif widget == "file":
-                    setattr(self, key, QPushButton(key))
-                    object = self.__dict__[key]
-                    object.setFixedWidth(widgetsize)
-                    object.setText(attrs[3])
-                    object.clicked.connect(self.get_file)
-                    line.addWidget(object)
-
-                elif widget == "path":
-                    setattr(self, key, QPushButton(key))
-                    object = self.__dict__[key]
-                    object.setFixedWidth(widgetsize)
-                    object.setText(attrs[3])
-                    object.clicked.connect(self.get_path)
-                    line.addWidget(object)
-                else:
-                    print("invalid option")
-
-            button_name = "btn_{}".format(i)
-            setattr(self, button_name, QPushButton("+"))
-            line_btn = self.__dict__[button_name]
-            line_btn.setCheckable(True)
-            line_btn.setObjectName(str(button_name))
-            line_btn.setFixedWidth(25)
-            line.addWidget(line_btn)
-            vb_lami.addLayout(line)
-        return vb_lami
-
-    def get_file(self):
-        try:
-            sender = self.sender
-            file = QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath())
-            sender().setText(file)
-        except:
-            return
-
-    def get_path(self):
-        sender = self.sender
-        path = QFileDialog.getExistingDirectory(self, "Open Directory", QtCore.QDir.currentPath())
-        sender().setText(path)
-
 
     def rotate_volume_area(self):
         #__________Popup window for rotate volume button__________

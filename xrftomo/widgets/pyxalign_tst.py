@@ -380,3 +380,13 @@ class OptionsWidget(QWidget):
             print(f"Error loading settings: {e}")
 
 
+def main():
+    app = QApplication([])
+    widget = OptionsWidget()
+    widget.show()
+    app.exec_()
+
+
+if __name__ == "__main__":
+    main()
+

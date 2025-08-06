@@ -72,7 +72,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.initUI()
         sys.stdout = xrftomo.gui.Stream(newText=self.parent.onUpdateText)
 
-
     def initUI(self):
         self.ViewControl = xrftomo.LaminographyControlsWidget()
         self.ReconView = xrftomo.LamiView(self)
@@ -102,10 +101,10 @@ class LaminographyWidget(QtWidgets.QWidget):
         self.ViewControl.elem.currentIndexChanged.connect(self.elementChanged)
         self.ViewControl.elem.currentIndexChanged.connect(self.recon_combobox_changed)
         self.ViewControl.method.currentIndexChanged.connect(self.method_changed)
-        self.ViewControl.browse.setText(truncated_dir)
-        self.ViewControl.browse.clicked.connect(self.file_browse)
-        self.ViewControl.generate.clicked.connect(self.generate_structure)
-        self.ViewControl.show_ops.clicked.connect(self.show_options)
+        self.ViewControl.tomocupy_opts.browse.setText(truncated_dir)
+        self.ViewControl.tomocupy_opts.browse.clicked.connect(self.file_browse)
+        self.ViewControl.tomocupy_opts.generate.clicked.connect(self.generate_structure)
+        # self.ViewControl.tomocupy_opts.show_ops.clicked.connect(self.show_options)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
         self.ViewControl.recon_stats.clicked.connect(self.get_recon_stats)
         self.sld.valueChanged.connect(self.update_recon_image)
@@ -157,53 +156,7 @@ class LaminographyWidget(QtWidgets.QWidget):
 
         self.setLayout(hb2)
 
-    def show_options(self):
-        if self.ViewControl.show_ops.isChecked() and self.parent.tcp_installed:
-            self.ViewControl.show_ops.setText("show less")
-
-            for line in range(self.ViewControl.num_lines):
-                hbox = self.__dict__["ViewControl"].__dict__["line_{}".format(line)]
-                num_widgets = hbox.count()
-                for i in range(num_widgets):
-                    hbox.itemAt(i).widget().setVisible(True)
-
-        elif not self.ViewControl.show_ops.isChecked() and self.parent.tcp_installed:
-            self.ViewControl.show_ops.setText("show more")
-            for line in range(self.ViewControl.num_lines):
-                hbox = self.__dict__["ViewControl"].__dict__["line_{}".format(line)]
-                num_widgets = hbox.count()
-                for i in range(num_widgets):
-                    hbox.itemAt(i).widget().setVisible(False)
-
-            self.ViewControl.__dict__["browse"].setVisible(True)
-            self.ViewControl.__dict__["browse_lbl"].setVisible(True)
-            self.ViewControl.__dict__["generate"].setVisible(True)
-            self.ViewControl.__dict__["generate_lbl"].setVisible(True)
-            self.ViewControl.__dict__["show_ops"].setVisible(True)
-
-            self.ViewControl.__dict__["reconstruction-type_lbl"].setVisible(True)
-            self.ViewControl.__dict__["reconstruction-type"].setVisible(True)
-            self.ViewControl.__dict__["lamino-angle_lbl"].setVisible(True)
-            self.ViewControl.__dict__["lamino-angle"].setVisible(True)
-            self.ViewControl.__dict__["rotation-axis_lbl"].setVisible(True)
-            self.ViewControl.__dict__["rotation-axis"].setVisible(True)
-            self.ViewControl.__dict__["lamino-search-width_lbl"].setVisible(True)
-            self.ViewControl.__dict__["lamino-search-width"].setVisible(True)
-            self.ViewControl.__dict__["fbp-filter_lbl"].setVisible(True)
-            self.ViewControl.__dict__["fbp-filter"].setVisible(True)
-            self.ViewControl.__dict__["minus-log_lbl"].setVisible(True)
-            self.ViewControl.__dict__["minus-log"].setVisible(True)
-            self.ViewControl.__dict__["file-name"].setVisible(True)
-            self.ViewControl.__dict__["file-name_lbl"].setVisible(True)
-
-            self.ViewControl.__dict__["reconstruct"].setVisible(True)
-            self.ViewControl.__dict__["recon_stats"].setVisible(True)
-            self.ViewControl.__dict__["rm_hotspot"].setVisible(True)
-            self.ViewControl.__dict__["circular_mask"].setVisible(True)
-            self.ViewControl.__dict__["rotate_volume"].setVisible(True)
-
-        self.hide_plus()
-        self.show_select_plus()
+        # self.show_select_plus()
         return
 
     def openEvent(self):
@@ -304,60 +257,45 @@ class LaminographyWidget(QtWidgets.QWidget):
             print("run reconstruction first")
 
     def method_changed(self):
-        if self.ViewControl.method.currentIndex() == 0:
-            for line in range(self.ViewControl.num_lines):
-                hbox = self.__dict__["ViewControl"].__dict__["line_{}".format(line)]
-                num_widgets = hbox.count()
-                for i in range(num_widgets):
-                    hbox.itemAt(i).widget().setVisible(False)
-
-            self.ViewControl.__dict__["lamino-angle_lbl"].setVisible(True)
-            self.ViewControl.__dict__["lamino-angle"].setVisible(True)
-            self.ViewControl.__dict__["rotation-axis_lbl"].setVisible(True)
-            self.ViewControl.__dict__["rotation-axis"].setVisible(True)
-            self.ViewControl.__dict__["fbp-filter_lbl"].setVisible(True)
-            self.ViewControl.__dict__["fbp-filter"].setVisible(True)
-            self.ViewControl.__dict__["recon_all"].setVisible(True)
-            self.ViewControl.__dict__["recon_save"].setVisible(True)
-            self.ViewControl.__dict__["reconstruct"].setVisible(True)
-            self.ViewControl.__dict__["recon_stats"].setVisible(True)
-            self.ViewControl.__dict__["rm_hotspot"].setVisible(True)
-            self.ViewControl.__dict__["circular_mask"].setVisible(True)
-            self.ViewControl.__dict__["rotate_volume"].setVisible(True)
+        #TODO: hide individual scroll areas not individual widgets 
+        if self.ViewControl.method.currentIndex()==0:
+            self.ViewControl.cpu_opts.setHidden(False)
+            self.ViewControl.tomocupy_opts.setHidden(True)
+            self.ViewControl.pyxalign_opts.setHidden(True)
             
-        elif self.ViewControl.method.currentIndex() == 1:
-            self.ViewControl.browse.setVisible(True)
-            self.ViewControl.generate.setVisible(True)
-            self.ViewControl.generate_lbl.setVisible(True)
-            self.ViewControl.browse_lbl.setVisible(True)
-            self.ViewControl.show_ops.setVisible(True)
-            self.show_options()
+        elif self.ViewControl.method.currentIndex()==1:
+            self.ViewControl.cpu_opts.setHidden(True)
+            self.ViewControl.tomocupy_opts.setHidden(False)
+            self.ViewControl.pyxalign_opts.setHidden(True)
+
+        elif self.ViewControl.method.currentIndex()==2:
+            self.ViewControl.cpu_opts.setHidden(True)
+            self.ViewControl.tomocupy_opts.setHidden(True)
+            self.ViewControl.pyxalign_opts.setHidden(False)
 
         else:
             pass
-        self.hide_plus()
         return
 
-    def hide_plus(self):
-        items = ["browse", "generate", "show_ops", "recon_all", "reconstruct", "recon_stats", "rm_hotspot", "rotate_volume"]
-        for i in items:
-            widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
-            self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(False)
-    def show_select_plus(self):
-        items = ["reconstruction-type", "rotation-axis", "lamino-search-width", "fbp-filter", "minus-log", "file-name", "lamino-angle"]
-        for i in items:
-            widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
-            self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(True)
+    # def hide_plus(self):
+    #     items = ["browse", "generate", "show_ops", "recon_all", "reconstruct", "recon_stats", "rm_hotspot", "rotate_volume"]
+    #     for i in items:
+    #         widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
+    #         self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(False)
+    # def show_select_plus(self):
+    #     items = ["reconstruction-type", "rotation-axis", "lamino-search-width", "fbp-filter", "minus-log", "file-name", "lamino-angle"]
+    #     for i in items:
+    #         widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
+    #         self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(True)
 
-    def option_checked(self, option):
-        widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].count()
-        checked = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].itemAt(
-            widx - 1).widget().isChecked()
-        return checked
-    def set_option_checked(self,option):
-        widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].count()
-        checked = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].itemAt(
-            widx - 1).widget().setChecked(True)
+    # def option_checked(self, option):
+    #     widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].count()
+    #     checked = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].itemAt(
+    #         widx - 1).widget().isChecked()
+    #     return checked
+    def set_option_checked(self,option, wgt):
+        widx = wgt.__dict__["line_{}".format(wgt.line_names.index(option))].count()
+        checked = wgt.__dict__["line_{}".format(wgt.line_names.index(option))].itemAt(widx - 1).widget().setChecked(True)
     def file_browse(self):
         try:  # promps for directory and subdir folder
             if os.path.exists(self.h5_dir):
@@ -423,21 +361,21 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.ViewControl.elem.addItem(j)
             self.recon_dict[j] = np.zeros((self.y_range,self.data.shape[3],self.data.shape[3]))
 
-        self.ViewControl.__dict__["fbp-filter"].setCurrentIndex(1)
-        self.set_option_checked("fbp-filter")
-        self.ViewControl.__dict__["lamino-angle"].setText("18.25")
-        self.set_option_checked("lamino-angle")
-        self.ViewControl.__dict__["rotation-axis"].setText(str(self.data.shape[3] // 2))
-        self.set_option_checked("rotation-axis")
+        self.ViewControl.cpu_opts.__dict__["fbp-filter"].setCurrentIndex(1)
+        self.set_option_checked("fbp-filter",self.ViewControl.cpu_opts)
+        self.ViewControl.cpu_opts.__dict__["lamino-angle"].setText("18.25")
+        self.set_option_checked("lamino-angle",self.ViewControl.cpu_opts)
+        self.ViewControl.cpu_opts.__dict__["rotation-axis"].setText(str(self.data.shape[3] // 2))
+        self.set_option_checked("rotation-axis",self.ViewControl.cpu_opts)
 
         if self.parent.tcp_installed:
-            self.set_option_checked("reconstruction-type")
-            self.ViewControl.__dict__["minus-log"].setText("False")
-            self.set_option_checked("reconstruction-type")
-            self.ViewControl.__dict__["file-name"].setText(self.h5_dir)
-            self.set_option_checked("file-name")
-            self.ViewControl.__dict__["lamino-search-width"].setText("20")
-            self.set_option_checked("lamino-search-width")
+            self.set_option_checked("reconstruction-type", self.ViewControl.tomocupy_opts)
+            self.ViewControl.tomocupy_opts.__dict__["minus-log"].setText("False")
+            self.set_option_checked("reconstruction-type", self.ViewControl.tomocupy_opts)
+            self.ViewControl.tomocupy_opts.__dict__["file-name"].setText(self.h5_dir)
+            self.set_option_checked("file-name", self.ViewControl.tomocupy_opts)
+            self.ViewControl.tomocupy_opts.__dict__["lamino-search-width"].setText("20")
+            self.set_option_checked("lamino-search-width", self.ViewControl.tomocupy_opts)
         else:
             self.ViewControl.method.clear()
             self.ViewControl.method.addItem("lamni-fbp(cpu)")
