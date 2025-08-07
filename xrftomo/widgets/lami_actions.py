@@ -467,14 +467,7 @@ class LaminographyActions(QtWidgets.QWidget):
 		save_temp_files: bool = False,
 		test_start_point: enums.TestStartPoints = enums.TestStartPoints.BEGINNING,  # not yet used
 	):
-		# Setup the test
-		ci_options = opts.CITestOptions(
-			update_tester_results=update_tester_results,
-			save_temp_files=save_temp_files,
-		)
-		ci_test_helper = CITestHelper(options=ci_options)
-		# define a downscaling value for when volumes are saved to prevent
-		# saving files large files
+
 		s = 4
 
 		# Setup default gpu options
@@ -501,11 +494,6 @@ class LaminographyActions(QtWidgets.QWidget):
 			centery = xrf_array_dict[primary_channel].shape[1] / 2
 			centerx = xrf_array_dict[primary_channel].shape[2] / 2
 
-			for channel, projection_array in xrf_array_dict.items():
-				ci_test_helper.save_or_compare_results(
-					projection_array[:3], f"input_projections_{channel}"
-				)
-
 			# Insert data into an XRFTask object
 			xrf_task = XRFTask(
 				xrf_array_dict=xrf_array_dict,
@@ -518,34 +506,17 @@ class LaminographyActions(QtWidgets.QWidget):
 				primary_channel=primary_channel,
 			)
 
-	
 			# Update sample thickness and center of rotation
 			xrf_task.projection_options.experiment.sample_thickness = thickness
 			xrf_task.center_of_rotation = np.array([centery, centerx], dtype=r_type)
 
-			# check projection arrays, angles, cor, and sample thickness for all channels
-			for channel, proj in xrf_task.projections_dict.items():
-				ci_test_helper.save_or_compare_results(
-					proj.data[::s, ::s, ::s], f"pre_pma_projections_{channel}"
-				)
-				ci_test_helper.save_or_compare_results(proj.angles, f"angles_{channel}")
-				ci_test_helper.save_or_compare_results(proj.scan_numbers, f"scan_numbers_{channel}")
-				ci_test_helper.save_or_compare_results(
-					proj.center_of_rotation, f"center_of_rotation_{channel}"
-				)
-
 			# create preliminary reconstructions
 			for channel, proj in xrf_task.projections_dict.items():
 				proj.get_3D_reconstruction(True)
-				# Check/save the preliminary volume
-				ci_test_helper.save_or_compare_results(
-					proj.volume.data[::s, ::s, ::s], f"pre_pma_volume_{channel}"
-				)
 
 			# create dummy mask
 			xrf_task.projections_dict[xrf_task._primary_channel].masks = np.ones_like(
-				xrf_task.projections_dict[xrf_task._primary_channel].data
-			)
+				xrf_task.projections_dict[xrf_task._primary_channel].data)
 			xrf_task.projections_dict[xrf_task._primary_channel].pin_arrays()
 
 			pma_options = xrf_task.alignment_options.projection_matching
@@ -566,8 +537,6 @@ class LaminographyActions(QtWidgets.QWidget):
 			for i, scale in enumerate(scales):
 				pma_options.downsample.scale = scale
 				shift = xrf_task.get_projection_matching_shift(initial_shift=shift)
-				# Check/save the resulting alignment shifts at each resolution
-				ci_test_helper.save_or_compare_results(shift, f"pma_shift_{scale}x")
 
 			# shift all projections
 			xrf_task.apply_staged_shift_to_all_channels()
@@ -575,10 +544,6 @@ class LaminographyActions(QtWidgets.QWidget):
 			# create final reconstructions
 			for channel, projections in xrf_task.projections_dict.items():
 				projections.get_3D_reconstruction(True)
-				# Check/save the aligned volume
-				ci_test_helper.save_or_compare_results(
-					projections.volume.data[::s, ::s, ::s], f"pma_aligned_volume_{channel}"
-				)
 
 			# Rotate all of the reconstructions
 			for channel, projections in xrf_task.projections_dict.items():
@@ -586,20 +551,8 @@ class LaminographyActions(QtWidgets.QWidget):
 					[2.7, 4, 40]
 				)  # estimated this manually
 				projections.volume.rotate_reconstruction()
-				# Check/save the aligned, rotated volume
-				ci_test_helper.save_or_compare_results(
-					proj.volume.data, f"pma_aligned_rotated_volume_{channel}"
-				)
-				# Save tiff file
-				ci_test_helper.save_tiff(
-					projections.volume.data,
-					f"pma_aligned_rotated_volume_{channel}.tiff",
-				)
 
 			xrf_task.clear_pma_gui_list()
-
-			# print results of the test
-			ci_test_helper.finish_test()
 
 			# Launch the volume viewer
 			app = QApplication.instance() or QApplication([])
@@ -615,8 +568,6 @@ class LaminographyActions(QtWidgets.QWidget):
 
 
 	def run_it(self, data, current_elment, elements, scan_numbers, thetas, lami_angle):
-		# ci_parser = CITestArgumentParser()
-		# args = ci_parser.parser.parse_args()
 		other = {
 			"primary_channel": current_elment,
 			"data": data,
