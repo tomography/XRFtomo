@@ -22,6 +22,7 @@ Installation
 ============
 
 cd into desired directory and nstall CPU-only version with: 
+
     $ cd
     $ clone https://github.com/tomography/XRFtomo.git
     $ cd XRFtomo
