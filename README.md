@@ -9,18 +9,23 @@ Pre-requisites
 add conda channels:
 
     $ conda config --add channels conda-forge
+    $ conda config --set channel_priority strict
 
-Install Anaconda3 and create a python 3.10 conda environment:
+Install Anaconda3, create a python 3.12 conda environment, install libmamba solver:
 
-    $ conda create -n xrf
-    $ source activate xrf
+    $ conda create -n py312
+    $ conda activate py312
+    $ conda install -n base conda-libmamba-solver
+    $ conda config --set solver libmamba
 
 Installation
 ============
 
-Install with: 
-
-    $ python setup.py install
+cd into desired directory and nstall CPU-only version with: 
+    $ cd
+    $ clone https://github.com/tomography/XRFtomo.git
+    $ cd XRFtomo
+    $ conda install --file requirements.txt -c conda-forge
 
 Usage
 =====
