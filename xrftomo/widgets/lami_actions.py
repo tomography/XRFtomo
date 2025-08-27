@@ -53,18 +53,18 @@ import time
 import os
 import cupy as cp
 import numpy as np
-from PyQt5.QtWidgets import QApplication
+# from PyQt5.QtWidgets import QApplication
 from pyxalign import options as opts
 from pyxalign.api import enums
 from pyxalign.api.types import r_type
 from pyxalign.data_structures.xrf_task import XRFTask
-from pyxalign.io.loaders.xrf.api import (
-    convert_xrf_projection_dicts_to_arrays,
-    load_data_from_xrf_format,
-)
-from pyxalign.io.loaders.xrf.options import XRFLoadOptions
-from pyxalign.test_utils_2 import CITestArgumentParser, CITestHelper
-from pyxalign.plotting.interactive.xrf import XRFProjectionsViewer, XRFVolumeViewer
+# from pyxalign.io.loaders.xrf.api import (
+#     convert_xrf_projection_dicts_to_arrays,
+#     load_data_from_xrf_format,
+# )
+# from pyxalign.io.loaders.xrf.options import XRFLoadOptions
+# from pyxalign.test_utils_2 import CITestArgumentParser, CITestHelper
+# from pyxalign.plotting.interactive.xrf import XRFProjectionsViewer, XRFVolumeViewer
 
 
 #TODO: add multiple viewing angles for reconstruction.
@@ -554,17 +554,28 @@ class LaminographyActions(QtWidgets.QWidget):
 
 			xrf_task.clear_pma_gui_list()
 
-			# Launch the volume viewer
-			app = QApplication.instance() or QApplication([])
-			gui = XRFVolumeViewer(xrf_task)
-			gui.show()
-			app.exec()
+			# # Launch the volume viewer
+			# app = QApplication.instance() or QApplication([])
+			# gui = XRFVolumeViewer(xrf_task)
+			# gui.show()
+			# app.exec()
 
-			# Launch the projections viewer
-			app = QApplication.instance() or QApplication([])
-			gui = XRFProjectionsViewer(xrf_task)
-			gui.show()
-			app.exec()
+			# # Launch the projections viewer
+			# app = QApplication.instance() or QApplication([])
+			# gui = XRFProjectionsViewer(xrf_task)
+			# gui.show()
+			# app.exec()
+
+
+		recons = {}
+		projections = {}
+		for element in other["elements"]:
+			recons[element] = xrf_task.projections_dict[element].volume.data
+			projections[element] = xrf_task.projections_dict[element].data
+
+
+		shifts = xrf_task.get_projection_matching_shift()
+		return recons, projections, shifts
 
 
 	def run_it(self, data, current_elment, elements, scan_numbers, thetas, lami_angle):
@@ -577,8 +588,9 @@ class LaminographyActions(QtWidgets.QWidget):
 			"thetas": thetas,
 			"thickness": 70,
 		}
-		self.run_full_test_xrf_data_type_1(
+		recons, projections, shifts = self.run_full_test_xrf_data_type_1(
 			other=other,
 			update_tester_results=False,
 			save_temp_files=False
 		)
+		return recons, projections, shifts

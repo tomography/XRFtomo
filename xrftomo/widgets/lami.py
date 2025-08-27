@@ -288,11 +288,11 @@ class LaminographyWidget(QtWidgets.QWidget):
     #         widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
     #         self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(True)
 
-    # def option_checked(self, option):
-    #     widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].count()
-    #     checked = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(option))].itemAt(
-    #         widx - 1).widget().isChecked()
-    #     return checked
+    def option_checked(self, option):
+        widx = self.__dict__["ViewControl"].tomocupy_opts.__dict__["line_{}".format(self.ViewControl.tomocupy_opts.line_names.index(option))].count()
+        checked = self.__dict__["ViewControl"].tomocupy_opts.__dict__["line_{}".format(self.ViewControl.tomocupy_opts.line_names.index(option))].itemAt(
+            widx - 1).widget().isChecked()
+        return checked
     def set_option_checked(self,option, wgt):
         widx = wgt.__dict__["line_{}".format(wgt.line_names.index(option))].count()
         checked = wgt.__dict__["line_{}".format(wgt.line_names.index(option))].itemAt(widx - 1).widget().setChecked(True)
@@ -510,7 +510,8 @@ class LaminographyWidget(QtWidgets.QWidget):
                 lami_angle = 90 - eval(self.ViewControl.__dict__["lamino-angle"].text())
                 center_axis = eval(self.ViewControl.__dict__["rotation-axis"].text())
                 recon = self.actions.reconstruct_cpu(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir)
-
+                recon_dict[element] = np.array(recon)
+                self.recon = np.array(recon)
             elif method ==1:
                 if not self.check_savepath_exists():
                     print("save path invalid or insufficient permissions")
@@ -518,6 +519,8 @@ class LaminographyWidget(QtWidgets.QWidget):
                 element = self.parent.elements[element_idx]
                 command_string = self.get_command_string(element)
                 recon = self.actions.reconstruct_gpu(data, element_idx, element, thetas, parent_dir=parent_dir, command_string=command_string)
+                recon_dict[element] = np.array(recon)
+                self.recon = np.array(recon)                
                 if recon is None:
                     return
 
@@ -528,7 +531,13 @@ class LaminographyWidget(QtWidgets.QWidget):
                 primary_element = self.parent.elements[element_idx]
                 for element in elements:
                     data_dict[element] = data[elements.index(element)]
-                self.actions.run_it(data_dict, primary_element, elements, scan_numbers, thetas, lami_angle=20)
+                recons, projections, shifts = self.actions.run_it(data_dict, primary_element, elements, scan_numbers, thetas, lami_angle=20)
+                data = np.array([projections[element] for element in elements])
+                recon_dict = recons
+                recon = recon_dict[primary_element]
+                self.recon = np.array(recon)
+                self.parent.update_data(data)
+
 
             else:
                 print("invalid method")
@@ -537,8 +546,7 @@ class LaminographyWidget(QtWidgets.QWidget):
                 rec = {element: recon}
                 self.writer.save_recon_stack(rec, savedir=save_path)
 
-            recon_dict[element] = np.array(recon)
-            self.recon = np.array(recon)
+
 
         self.update_recon_image()               #get single image from self.recon
         self.update_recon_dict(self.recon)      #put self.recon into self.recon_dict[element]
@@ -556,8 +564,8 @@ class LaminographyWidget(QtWidgets.QWidget):
         values = []
         command = "tomocupy recon_steps"
 
-        for line in self.ViewControl.line_names:
-            line_object = self.ViewControl.__dict__[line]
+        for line in self.ViewControl.tomocupy_opts.line_names:
+            line_object = self.ViewControl.tomocupy_opts.__dict__[line]
             if self.option_checked(line):
                 options.append(line)
                 command += " --{}".format(line)
@@ -571,7 +579,7 @@ class LaminographyWidget(QtWidgets.QWidget):
                     command += " {}".format(value)
                 if line == "file-name":
                     #TODO: full path is not specified here.
-                    path = self.ViewControl.__dict__["file-name"].text()
+                    path = self.ViewControl.tomocupy_opts.__dict__["file-name"].text()
                     command += " "+path + "/tomocupy_data/{}.h5".format(element)
         return command
 
