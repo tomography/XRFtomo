@@ -54,10 +54,18 @@ import os
 import cupy as cp
 import numpy as np
 # from PyQt5.QtWidgets import QApplication
-from pyxalign import options as opts
-from pyxalign.api import enums
-from pyxalign.api.types import r_type
-from pyxalign.data_structures.xrf_task import XRFTask
+try:
+    from pyxalign import options as opts
+    from pyxalign.api import enums
+    from pyxalign.api.types import r_type
+    from pyxalign.data_structures.xrf_task import XRFTask
+    PYXALIGN_AVAILABLE = True
+except ImportError:
+    PYXALIGN_AVAILABLE = False
+    opts = None
+    enums = None
+    r_type = None
+    XRFTask = None
 # from pyxalign.io.loaders.xrf.api import (
 #     convert_xrf_projection_dicts_to_arrays,
 #     load_data_from_xrf_format,
@@ -465,8 +473,10 @@ class LaminographyActions(QtWidgets.QWidget):
 		other,
 		update_tester_results: bool = False,
 		save_temp_files: bool = False,
-		test_start_point: enums.TestStartPoints = enums.TestStartPoints.BEGINNING,  # not yet used
+		test_start_point = None,  # not yet used
 	):
+		if not PYXALIGN_AVAILABLE:
+			raise ImportError("pyxalign package is required for this function but is not installed")
 
 		s = 4
 
@@ -482,7 +492,7 @@ class LaminographyActions(QtWidgets.QWidget):
 		)
 
 		# if not projection_matching_only:
-		checkpoint_list = [enums.TestStartPoints.BEGINNING]
+		checkpoint_list = [enums.TestStartPoints.BEGINNING] if PYXALIGN_AVAILABLE else []
 		if test_start_point in checkpoint_list:
 
 			xrf_array_dict = other["data"]
@@ -500,15 +510,13 @@ class LaminographyActions(QtWidgets.QWidget):
 				angles=thetas,
 				scan_numbers=scan_numbers,
 				alignment_options=opts.AlignmentTaskOptions(),
-				projection_options=opts.ProjectionOptions(
-					experiment=opts.ExperimentOptions(laminography_angle=90 - lamino_angle),
-				),
+				projection_options=opts.ProjectionOptions(experiment=opts.ExperimentOptions(laminography_angle=90 - lamino_angle), reconstruct=opts.ReconstructOptions(astra=opts.AstraOptions(back_project_gpu_indices=(0,), forward_project_gpu_indices=(0,))), filter=opts.FilterOptions(device=opts.DeviceOptions(gpu=opts.GPUOptions(chunk_length=20, n_gpus=1, gpu_indices=(0,)))), mask=opts.MaskOptions(downsample=opts.DownsampleOptions(scale=4, enabled=True, device=opts.DeviceOptions(gpu=opts.GPUOptions(chunk_length=20, n_gpus=1, gpu_indices=(0,))))), mask_downsample_type=enums.DownsampleType.NEAREST, mask_downsample_use_gaussian_filter=True, rotation=opts.RotationOptions(angle=0.0, shear=opts.RotationOptions(angle=0.0))),
 				primary_channel=primary_channel,
 			)
 
 			# Update sample thickness and center of rotation
 			xrf_task.projection_options.experiment.sample_thickness = thickness
-			xrf_task.center_of_rotation = np.array([centery, centerx], dtype=r_type)
+			xrf_task.center_of_rotation = np.array([centery, centerx], dtype=r_type if PYXALIGN_AVAILABLE else np.float32)
 
 			# create preliminary reconstructions
 			for channel, proj in xrf_task.projections_dict.items():

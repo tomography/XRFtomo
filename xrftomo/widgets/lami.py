@@ -40,6 +40,7 @@
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QFileDialog, QComboBox, QLineEdit
 from PyQt5.QtCore import pyqtSignal
 import xrftomo
 import pyqtgraph
@@ -472,6 +473,7 @@ class LaminographyWidget(QtWidgets.QWidget):
 
     def reconstruct_params(self):
         #TODO: create temporary directory to save structured h5 data in if one is not specified
+        print("DEBUG: entering LaminographyWidget.reconstruct_params")
 
         elements = [self.ViewControl.elem.currentIndex()]
         method = self.ViewControl.method.currentIndex()
@@ -525,6 +527,8 @@ class LaminographyWidget(QtWidgets.QWidget):
                     return
 
             elif method == 2:
+                # Temporary debug stop to ensure this branch is reached during debugging
+
                 scan_numbers = [i.split("_")[1].split(".")[0] for i in self.parent.fnames]
                 elements = self.parent.elements
                 data_dict = {}

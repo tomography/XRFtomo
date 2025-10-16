@@ -2,24 +2,41 @@ import os
 import cupy as cp
 import numpy as np
 from PyQt5.QtWidgets import QApplication
-from pyxalign import options as opts
-from pyxalign.api import enums
-from pyxalign.api.types import r_type
-from pyxalign.data_structures.xrf_task import XRFTask
-from pyxalign.io.loaders.xrf.api import (
-    convert_xrf_projection_dicts_to_arrays,
-    load_data_from_xrf_format,
-)
-from pyxalign.io.loaders.xrf.options import XRFLoadOptions
-from pyxalign.test_utils_2 import CITestArgumentParser, CITestHelper
-from pyxalign.plotting.interactive.xrf import XRFProjectionsViewer, XRFVolumeViewer
+try:
+    from pyxalign import options as opts
+    from pyxalign.api import enums
+    from pyxalign.api.types import r_type
+    from pyxalign.data_structures.xrf_task import XRFTask
+    from pyxalign.io.loaders.xrf.api import (
+        convert_xrf_projection_dicts_to_arrays,
+        load_data_from_xrf_format,
+    )
+    from pyxalign.io.loaders.xrf.options import XRFLoadOptions
+    from pyxalign.test_utils_2 import CITestArgumentParser, CITestHelper
+    from pyxalign.plotting.interactive.xrf import XRFProjectionsViewer, XRFVolumeViewer
+    PYXALIGN_AVAILABLE = True
+except ImportError:
+    PYXALIGN_AVAILABLE = False
+    opts = None
+    enums = None
+    r_type = None
+    XRFTask = None
+    convert_xrf_projection_dicts_to_arrays = None
+    load_data_from_xrf_format = None
+    XRFLoadOptions = None
+    CITestArgumentParser = None
+    CITestHelper = None
+    XRFProjectionsViewer = None
+    XRFVolumeViewer = None
 
 
 def run_full_test_xrf_data_type_1(
     update_tester_results: bool = False,
     save_temp_files: bool = False,
-    test_start_point: enums.TestStartPoints = enums.TestStartPoints.BEGINNING,  # not yet used
+    test_start_point = None,  # not yet used
 ):
+    if not PYXALIGN_AVAILABLE:
+        raise ImportError("pyxalign package is required for this function but is not installed")
     # Setup the test
     ci_options = opts.CITestOptions(
         test_data_name=os.path.join("2ide", "2025-1_Lamni-4"),

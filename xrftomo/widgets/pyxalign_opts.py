@@ -1,4 +1,9 @@
-from pyxalign import options as opts
+try:
+    from pyxalign import options as opts
+    PYXALIGN_AVAILABLE = True
+except ImportError:
+    PYXALIGN_AVAILABLE = False
+    opts = None
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
     QPushButton, QComboBox, QCheckBox, QSpinBox, QDoubleSpinBox, 
