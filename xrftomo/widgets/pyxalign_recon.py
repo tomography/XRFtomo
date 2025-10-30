@@ -1,5 +1,14 @@
+try:
+    from pyxalign import options as opts
+    PYXALIGN_AVAILABLE = True
+except ImportError:
+    PYXALIGN_AVAILABLE = False
+    opts = None
 import os
-import cupy as cp
+if PYXALIGN_AVAILABLE:      
+	import cupy as cp
+else:
+	cp = None
 import numpy as np
 from PyQt5.QtWidgets import QApplication
 try:

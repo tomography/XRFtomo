@@ -61,6 +61,8 @@ class LaminographyTomocupy(QWidget):
         self.setMinimumWidth(button1size)
 
     def populate_scroll_area(self):
+        self.tomocupy_scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
+        self.tomocupy_scroll.setWidgetResizable(True)
 
         item_dict = {}
         item_dict["browse"] = [["label","path"], "location where data is stored", None, ""]
@@ -110,7 +112,6 @@ class LaminographyTomocupy(QWidget):
                 tomocupy = None
         else:
             print("DEBUG: tomocupy not available")
-            return
         try:
             # Check if tomocupy is properly installed and functional
             if tomocupy is not None:
@@ -125,8 +126,7 @@ class LaminographyTomocupy(QWidget):
             print("using CPU settings")
             widget_dict = item_dict 
 
-        self.tomocupy_scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
-        self.tomocupy_scroll.setWidgetResizable(True)
+
         vb_lami = self.create_widgets(widget_dict)
         self.tomocupy_widget = QWidget()  # Widget that contains the collection of Vertical Box
         vb_lami.setSpacing(0)

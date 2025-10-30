@@ -51,7 +51,7 @@ import h5py
 import subprocess
 import time
 import os
-import cupy as cp
+
 import numpy as np
 # from PyQt5.QtWidgets import QApplication
 try:
@@ -66,6 +66,11 @@ except ImportError:
     enums = None
     r_type = None
     XRFTask = None
+
+if PYXALIGN_AVAILABLE:
+	import cupy as cp
+else:
+	cp = None
 # from pyxalign.io.loaders.xrf.api import (
 #     convert_xrf_projection_dicts_to_arrays,
 #     load_data_from_xrf_format,
