@@ -15,8 +15,11 @@ import inspect
 import json
 import os
 from typing import Any, Dict, List, Tuple, Union
-import yaml
 
+if PYXALIGN_AVAILABLE:
+	import yaml
+else:
+	yaml = None 
 
 class CollapsibleGroupBox(QGroupBox):
     def __init__(self, title: str, parent=None):
