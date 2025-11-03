@@ -39,7 +39,13 @@
 ###########################################################################
 
 from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import (
+    QWidget, QTableView, QLabel, QLineEdit, QScrollArea, QVBoxLayout,
+    QHBoxLayout, QAbstractItemView, QHeaderView, QPushButton, QMenu,
+    QAction, QTableWidget, QTableWidgetItem, QInputDialog, QStyle
+)
 from PyQt5.QtCore import *
+from PyQt5.QtCore import Qt
 import xrftomo
 import h5py
 import numpy as np
@@ -1279,7 +1285,7 @@ class FileTableWidget(QWidget):
     def theta_tag_changed(self):
         try:
             path_files = self.fileTableModel.getAllFiles()
-            theta_tag = self.theta_menu.property("full_path")
+            theta_path = "/".join(self.theta_menu.property("full_path").split("/")[:-1])
             row = self.theta_menu.property("selected_row")
             col = self.theta_menu.property("selected_column")
             adjacents = self.theta_menu.property("adjacents")
@@ -1295,35 +1301,40 @@ class FileTableWidget(QWidget):
                 adjacents = self.auto_adjacents
                 print(f"DEBUG: Using auto adjacents: {adjacents}")
 
-            # Check for various "Value" related keys in adjacents
-            values_key = None
-            # List of possible "Value" related keys to check (case insensitive)
-            value_keys = ["Value", "Values", "Val", "Vals", "VAL", "VALS"]
-            # Convert adjacents keys to lowercase for case-insensitive comparison
-            adjacents_lower = {k.lower(): k for k in adjacents.keys()}
+            # # Check for various "Value" related keys in adjacents
+            # values_key = None
+            # # List of possible "Value" related keys to check (case insensitive)
+            # value_keys = ["Value", "Values", "Val", "Vals", "VAL", "VALS"]
+            # # Convert adjacents keys to lowercase for case-insensitive comparison
+            # adjacents_lower = {k.lower(): k for k in adjacents.keys()}
             
-            for key in value_keys:
-                if key.lower() in adjacents_lower:
-                    values_key = adjacents_lower[key.lower()]  # Get the original key with correct case
-                    break
+            # for key in value_keys:
+            #     if key.lower() in adjacents_lower:
+            #         values_key = adjacents_lower[key.lower()]  # Get the original key with correct case
+            #         break
             
-            if values_key:
-                print(f"DEBUG: Found values key: {values_key}")
-                values_path = adjacents[values_key]
-                thetas, files = xrftomo.load_thetas(path_files, values_path, row, col)
+            # if values_key:
+            #     print(f"DEBUG: Found values key: {values_key}")
+            #     values_path = adjacents[values_key]
+            #     thetas, files = xrftomo.load_thetas(path_files, values_path, False, row, col)
 
-            elif ("extra" or "pv" or "csv") in theta_tag:
-                print("DEBUG: No adjacents found, check if in extra_pvs")
-                thetas, files = xrftomo.load_thetas(path_files, theta_tag, row, col)
+            # elif ("extra" or "pv" or "csv") in theta_tag:
+            #     print("DEBUG: No adjacents found, check if in extra_pvs")
+            #     thetas, files = xrftomo.load_thetas(path_files, theta_tag, False, row, col)
 
-            elif "theta" in theta_tag:
-                #TODO: check if theta is linked value. 
-                #NOTE: theta as a liknked value is currently not implemented correctly in h5 file
-                #so while value technically exists, it is always zero.   
-                thetas, files = xrftomo.load_thetas(path_files, theta_tag, 0, 0)
-            else: 
-                print("no valid option selected")
-                return
+            # elif "theta" in theta_tag:
+            #     #TODO: check if theta is linked value. 
+            #     #NOTE: theta as a liknked value is currently not implemented correctly in h5 file
+            #     #so while value technically exists, it is always zero.   
+            #     thetas, files = xrftomo.load_thetas(path_files, theta_tag, False, 0, 0)
+
+            # elif "value" in theta_tag:
+            #     thetas, files = xrftomo.load_thetas(path_files, theta_tag, True, 0, 0)
+            # else: 
+            #     print("no valid option selected")
+            #     return
+
+            thetas, files = xrftomo.load_thetas(path_files, theta_path, row=row, col=col)
             just_filenames = [os.path.basename(file) for file in files]
             self.fileTableModel.update_thetas(thetas)
             self.fileTableModel.update_files(just_filenames)

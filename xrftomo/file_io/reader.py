@@ -138,18 +138,27 @@ def read_projection(fname, element, data_tag, element_tag):
     projection = img[data_tag][idx]
     return projection
 
-def load_thetas(files, theta_tag, row=0, col=0):
+def load_thetas(files, theta_path, row=0, col=0):
     thetas = []
     loaded_files = []
     for file in files:
         img = h5py.File(file, "r")
         try:
-            if len(img[theta_tag].shape) == 1:
-                theta = float(img[theta_tag][row].decode("utf-8"))
-            elif len(img[theta_tag].shape) == 2:
-                theta = float(img[theta_tag][row][col].decode("utf-8"))
-            elif len(img[theta_tag].shape) == 0:
-                theta = float(img[theta_tag][0])
+            if len(img[theta_path].shape) == 1:
+                if img[theta_path][row] is bytes:
+                    theta = float(img[theta_path][row].decode("utf-8"))
+                else:
+                    theta = float(img[theta_path][row])
+            elif len(img[theta_path].shape) == 2:
+                if img[theta_path][row][col] is bytes:
+                    theta = float(img[theta_path][row][col].decode("utf-8"))
+                else:
+                    theta = float(img[theta_path][row][col])
+            elif len(img[theta_path].shape) == 0:
+                if img[theta_path][0] is bytes:
+                    theta = float(img[theta_path][0].decode("utf-8"))
+                else:
+                    theta = float(img[theta_path][0])
             else:
                 print("error reading thetas position for file: {}".format(file))
             thetas.append(theta)
