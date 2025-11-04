@@ -283,6 +283,367 @@ class ImageProcessActions(QtWidgets.QWidget):
 		imgs[imgs>15*std_imgs] = std_imgs
 		data[element] = imgs
 		return data
+
+	def remove_hotspot_blend(self, data, element, reference_projection=None):
+		"""
+		Remove hotspots by replacing them with a blend (median) of surrounding pixels.
+		Uses local adaptive detection to identify hotspots of various sizes by detecting
+		sudden jumps in pixel values compared to their local neighborhood.
+		Uses a reference projection (typically the current image) to calibrate detection thresholds.
+		
+		Parameters:
+		-----------
+		data : ndarray
+			4D xrf dataset ndarray [elements, projections, y, x]
+		element : int
+			element index to process
+		reference_projection : int, optional
+			Index of projection to use as reference for calibrating hotspot detection.
+			If None, uses the projection with the highest maximum value.
+			
+		Returns:
+		--------
+		data : ndarray
+			Modified data array with hotspots replaced
+		"""
+		imgs = data[element].copy()
+		num_projections = imgs.shape[0]
+		
+		# Helper function to compute median of surrounding pixels excluding NaN
+		def median_ignore_nan(window):
+			"""Compute median of window, ignoring NaN values."""
+			window_flat = window.flatten()
+			valid_values = window_flat[~np.isnan(window_flat)]
+			if len(valid_values) > 0:
+				return np.median(valid_values)
+			else:
+				return np.nan
+		
+		def mean_ignore_nan(window):
+			"""Compute mean of window, ignoring NaN values."""
+			window_flat = window.flatten()
+			valid_values = window_flat[~np.isnan(window_flat)]
+			if len(valid_values) > 0:
+				return np.mean(valid_values)
+			else:
+				return np.nan
+		
+		def std_ignore_nan(window):
+			"""Compute std of window, ignoring NaN values."""
+			window_flat = window.flatten()
+			valid_values = window_flat[~np.isnan(window_flat)]
+			if len(valid_values) > 1:
+				return np.std(valid_values)
+			else:
+				return 0.0
+		
+		# Helper function to compute median excluding center pixel
+		def median_exclude_center(window):
+			"""Compute median excluding center pixel."""
+			center_idx = window.size // 2
+			window_flat = window.flatten()
+			# Exclude center pixel
+			neighbors = np.concatenate([window_flat[:center_idx], window_flat[center_idx+1:]])
+			valid_values = neighbors[~np.isnan(neighbors)]
+			if len(valid_values) > 0:
+				return np.median(valid_values)
+			else:
+				return np.nan
+		
+		def std_exclude_center(window):
+			"""Compute std excluding center pixel."""
+			center_idx = window.size // 2
+			window_flat = window.flatten()
+			# Exclude center pixel
+			neighbors = np.concatenate([window_flat[:center_idx], window_flat[center_idx+1:]])
+			valid_values = neighbors[~np.isnan(neighbors)]
+			if len(valid_values) > 1:
+				return np.std(valid_values)
+			else:
+				return 0.0
+		
+		# Step 0: Analyze reference projection to calibrate thresholds
+		# If no reference provided, use projection with highest max value
+		if reference_projection is None:
+			max_vals = [np.max(imgs[i]) for i in range(num_projections)]
+			reference_projection = np.argmax(max_vals)
+		
+		# Ensure reference_projection is within valid range
+		reference_projection = max(0, min(reference_projection, num_projections - 1))
+		ref_img = imgs[reference_projection].copy()
+		
+		# Analyze reference image to find obvious hotspots and their characteristics
+		print(f"Analyzing reference projection {reference_projection} for hotspot calibration...")
+		
+		# Compute local statistics for reference image
+		ref_local_median = ndi.generic_filter(ref_img, median_exclude_center, size=5, mode='nearest')
+		ref_local_std = ndi.generic_filter(ref_img, std_exclude_center, size=5, mode='nearest')
+		ref_local_std = np.maximum(ref_local_std, 1e-10)
+		
+		# Compute z-scores for reference image
+		ref_z_scores = (ref_img - ref_local_median) / ref_local_std
+		
+		# Find obvious hotspots in reference (using very aggressive initial detection)
+		ref_hotspot_mask = ref_z_scores > 3.0  # Lower threshold to catch obvious hotspots
+		
+		# Also check gradient
+		ref_grad_y = ndi.sobel(ref_img, axis=0, mode='nearest')
+		ref_grad_x = ndi.sobel(ref_img, axis=1, mode='nearest')
+		ref_grad_magnitude = np.sqrt(ref_grad_x**2 + ref_grad_y**2)
+		ref_grad_normalized = ref_grad_magnitude / (ref_local_median + 1e-10)
+		
+		# Combine detection criteria for reference
+		ref_hotspot_mask = ref_hotspot_mask | (ref_grad_normalized > 0.3)
+		
+		# Calculate reference statistics from detected hotspots
+		if np.any(ref_hotspot_mask):
+			ref_hotspot_z_scores = ref_z_scores[ref_hotspot_mask]
+			ref_hotspot_gradients = ref_grad_normalized[ref_hotspot_mask]
+			ref_abs_diffs = (ref_img[ref_hotspot_mask] - ref_local_median[ref_hotspot_mask])
+			
+			# Use percentiles of detected hotspots to set thresholds
+			# Use lower percentiles to be more inclusive
+			calibrated_z_min = np.percentile(ref_hotspot_z_scores, 25) if len(ref_hotspot_z_scores) > 0 else 3.5
+			calibrated_z_med = np.percentile(ref_hotspot_z_scores, 50) if len(ref_hotspot_z_scores) > 0 else 2.5
+			calibrated_grad_min = np.percentile(ref_hotspot_gradients, 25) if len(ref_hotspot_gradients) > 0 else 0.3
+			
+			# Compute relative absolute difference thresholds
+			ref_abs_diff_ratios = ref_abs_diffs / (ref_local_median[ref_hotspot_mask] + 1e-10)
+			calibrated_abs_diff_min = np.percentile(ref_abs_diff_ratios, 25) if len(ref_abs_diff_ratios) > 0 else 0.3
+			
+			print(f"  Detected {np.sum(ref_hotspot_mask)} hotspot pixels in reference projection")
+			print(f"  Calibrated thresholds: z_min={calibrated_z_min:.2f}, z_med={calibrated_z_med:.2f}, "
+				  f"grad={calibrated_grad_min:.2f}, abs_diff={calibrated_abs_diff_min:.2f}")
+		else:
+			# No obvious hotspots found, use default aggressive thresholds
+			calibrated_z_min = 3.5
+			calibrated_z_med = 2.5
+			calibrated_grad_min = 0.3
+			calibrated_abs_diff_min = 0.3
+			print(f"  No obvious hotspots found in reference, using default thresholds")
+		
+		# Process each projection separately
+		for proj_idx in range(num_projections):
+			img = imgs[proj_idx].copy()
+			max_val_before = np.max(img)
+			
+			# Start with calibrated thresholds from reference projection
+			# Use calibrated values, but ensure they're not too aggressive (set minimums)
+			z_score_threshold_high = max(2.5, calibrated_z_min)  # Use calibrated, but ensure minimum
+			z_score_threshold_medium = max(1.8, calibrated_z_med * 0.8)  # Slightly more aggressive than calibrated
+			z_score_threshold_very_high = max(3.5, calibrated_z_min * 1.5)  # Higher threshold for very high z-scores
+			gradient_threshold = max(0.2, calibrated_grad_min * 0.8)  # Slightly more aggressive
+			absolute_diff_factor = max(0.2, calibrated_abs_diff_min * 0.8)  # Slightly more aggressive
+			
+			# Iteratively process until max value decreases or no more hotspots found
+			max_iterations = 3
+			for iteration in range(max_iterations):
+				# Step 1: Detect hotspots using local adaptive thresholds
+				# Use multiple kernel sizes to detect hotspots of different sizes
+				hotspot_mask = np.zeros(img.shape, dtype=bool)
+				
+				# Try different kernel sizes to detect various hotspot sizes
+				for kernel_size in [3, 5, 7, 11]:
+					# Compute local statistics excluding center pixel for more accurate detection
+					local_median = ndi.generic_filter(img, median_exclude_center, size=kernel_size, mode='nearest')
+					local_std = ndi.generic_filter(img, std_exclude_center, size=kernel_size, mode='nearest')
+					
+					# Avoid division by zero
+					local_std = np.maximum(local_std, 1e-10)
+					
+					# Compute how many standard deviations each pixel is above its local median
+					z_score = (img - local_median) / local_std
+					
+					# Detect sudden jumps: pixels significantly higher than local neighborhood
+					# Use more aggressive adaptive threshold
+					local_hotspot = z_score > z_score_threshold_high
+					
+					# Also check absolute difference: sudden jumps should be significant
+					absolute_diff = img - local_median
+					# Use a threshold that's adaptive to local scale (more aggressive)
+					min_absolute_diff = np.maximum(local_median * absolute_diff_factor, local_std * 2.0)
+					local_hotspot = local_hotspot | (absolute_diff > min_absolute_diff)
+					
+					# Combine with gradient-based detection for sudden jumps
+					# Compute gradient magnitude
+					grad_y = ndi.sobel(img, axis=0, mode='nearest')
+					grad_x = ndi.sobel(img, axis=1, mode='nearest')
+					grad_magnitude = np.sqrt(grad_x**2 + grad_y**2)
+					
+					# Normalize gradient by local median to detect relative jumps
+					grad_normalized = grad_magnitude / (local_median + 1e-10)
+					high_gradient = grad_normalized > gradient_threshold
+					
+					# Hotspot if: (high z-score OR high absolute difference) AND high gradient
+					# This catches sudden jumps in values
+					# Also catch pixels with very high z-score even without gradient (for isolated hotspots)
+					local_hotspot = local_hotspot | (high_gradient & (z_score > z_score_threshold_medium)) | (z_score > z_score_threshold_very_high)
+					
+					# Also detect pixels that are significantly above the maximum of their neighbors
+					# This catches cases where hotspots are in high-value regions
+					max_neighbor = ndi.maximum_filter(img, size=kernel_size, mode='nearest')
+					# Exclude center pixel by using a different approach
+					# If pixel is significantly higher than median, it's suspicious
+					high_relative_to_max = (img > local_median * 1.5) & (img > max_neighbor * 0.95)
+					local_hotspot = local_hotspot | (high_relative_to_max & (z_score > 2.0))
+					
+					# Combine detections from different kernel sizes
+					hotspot_mask = hotspot_mask | local_hotspot
+				
+				# Step 2: Expand hotspot regions to include adjacent high-value pixels
+				# This handles cases where hotspots span multiple pixels
+				# Iteratively expand to include pixels that are significantly higher than
+				# the non-hotspot neighborhood
+				for expand_iter in range(3):  # Allow up to 3 iterations of expansion
+					if not np.any(hotspot_mask):
+						break
+					
+					# Create a mask excluding hotspots
+					non_hotspot_img = img.copy()
+					non_hotspot_img[hotspot_mask] = np.nan
+					
+					# Compute local median of non-hotspot pixels
+					local_median_safe = ndi.generic_filter(
+						non_hotspot_img, 
+						median_ignore_nan, 
+						size=5, 
+						mode='nearest'
+					)
+					local_std_safe = ndi.generic_filter(
+						non_hotspot_img, 
+						std_ignore_nan, 
+						size=5, 
+						mode='nearest'
+					)
+					local_std_safe = np.maximum(local_std_safe, 1e-10)
+					
+					# Find pixels adjacent to hotspots that are also suspicious
+					# Dilate hotspot mask to get adjacent pixels
+					dilated_mask = ndi.binary_dilation(hotspot_mask, structure=np.ones((3, 3)))
+					adjacent_pixels = dilated_mask & ~hotspot_mask
+					
+					if not np.any(adjacent_pixels):
+						break
+					
+					# Check if adjacent pixels are significantly higher than local median
+					# Use more aggressive threshold for expansion
+					z_score_threshold_adjacent = 2.5 - (iteration * 0.3)  # More aggressive each iteration
+					z_score_adjacent = (img - local_median_safe) / local_std_safe
+					suspicious_adjacent = adjacent_pixels & (z_score_adjacent > z_score_threshold_adjacent)
+					suspicious_adjacent = suspicious_adjacent & (img > local_median_safe + 1.5 * local_std_safe)
+					
+					# Add suspicious adjacent pixels to hotspot mask
+					if np.any(suspicious_adjacent):
+						hotspot_mask = hotspot_mask | suspicious_adjacent
+					else:
+						break  # No more expansion needed
+				
+				# Step 3: Replace hotspots with blended values
+				if not np.any(hotspot_mask):
+					# No hotspots found in this iteration, check if we should continue
+					break
+				
+				# Create a temporary image with hotspots masked out for better blending
+				temp_img = img.copy()
+				temp_img[hotspot_mask] = np.nan
+				
+				# Use a larger kernel for blending (7x7) to get better representation
+				# of surrounding pixels, especially for larger hotspots
+				blended_img = ndi.generic_filter(
+					temp_img, 
+					median_ignore_nan, 
+					size=7, 
+					mode='nearest'
+				)
+				
+				# Fallback: if median filter resulted in NaN, use mean of surrounding pixels
+				nan_mask = np.isnan(blended_img) & hotspot_mask
+				if np.any(nan_mask):
+					mean_blended = ndi.generic_filter(
+						temp_img, 
+						mean_ignore_nan, 
+						size=7, 
+						mode='nearest'
+					)
+					blended_img[nan_mask] = mean_blended[nan_mask]
+				
+				# Final fallback: if still NaN, use the original image's local mean
+				nan_mask = np.isnan(blended_img) & hotspot_mask
+				if np.any(nan_mask):
+					mean_val_local = ndi.uniform_filter(img, size=7, mode='nearest')
+					blended_img[nan_mask] = mean_val_local[nan_mask]
+				
+				# Replace only the hotspot pixels with the blended values
+				img[hotspot_mask] = blended_img[hotspot_mask]
+				
+				# Check if max value decreased
+				max_val_after = np.max(img)
+				if max_val_after < max_val_before:
+					# Successfully reduced max value, update max_val_before for next iteration
+					max_val_before = max_val_after
+					# If still hotspots exist, continue with current thresholds
+					if iteration < max_iterations - 1:
+						continue
+					else:
+						break
+				else:
+					# Max value didn't decrease, make thresholds more aggressive
+					if iteration < max_iterations - 1:
+						# Make thresholds more aggressive for next iteration
+						z_score_threshold_high = max(2.0, z_score_threshold_high - 0.5)
+						z_score_threshold_medium = max(1.5, z_score_threshold_medium - 0.3)
+						z_score_threshold_very_high = max(3.0, z_score_threshold_very_high - 1.0)
+						gradient_threshold = max(0.2, gradient_threshold - 0.05)
+						absolute_diff_factor = max(0.2, absolute_diff_factor - 0.05)
+						# Continue with more aggressive thresholds
+						continue
+					else:
+						# Last iteration, force detection of maximum pixel
+						# Find the maximum pixel and its neighbors
+						max_pixel_idx = np.unravel_index(np.argmax(img), img.shape)
+						# Create a small mask around maximum pixel
+						y_max, x_max = max_pixel_idx
+						y_min = max(0, y_max - 2)
+						y_max_bound = min(img.shape[0], y_max + 3)
+						x_min = max(0, x_max - 2)
+						x_max_bound = min(img.shape[1], x_max + 3)
+						
+						# Create a mask for this region
+						force_mask = np.zeros(img.shape, dtype=bool)
+						force_mask[y_min:y_max_bound, x_min:x_max_bound] = True
+						
+						# Recompute blended image for this region
+						temp_img_force = img.copy()
+						temp_img_force[force_mask] = np.nan
+						blended_img_force = ndi.generic_filter(
+							temp_img_force, 
+							median_ignore_nan, 
+							size=7, 
+							mode='nearest'
+						)
+						
+						# Fallback to mean if needed
+						nan_mask_force = np.isnan(blended_img_force) & force_mask
+						if np.any(nan_mask_force):
+							mean_blended_force = ndi.generic_filter(
+								temp_img_force, 
+								mean_ignore_nan, 
+								size=7, 
+								mode='nearest'
+							)
+							blended_img_force[nan_mask_force] = mean_blended_force[nan_mask_force]
+						
+						# Replace the maximum pixel region
+						img[force_mask] = blended_img_force[force_mask]
+			
+			# Update the projection
+			imgs[proj_idx] = img
+		
+		# Assign back to data
+		data[element] = imgs
+		
+		return data
+
 	def mask_data(self, data, element, threshold):
 		img = data[element, :, :, :]
 		num_projections = data.shape[1]

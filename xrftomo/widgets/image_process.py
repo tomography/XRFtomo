@@ -519,7 +519,7 @@ class ImageProcessWidget(QtWidgets.QWidget):
     def rm_hotspot_params(self):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
-        data = self.actions.remove_hotspots(data, element)
+        data = self.actions.remove_hotspot_blend(data, element, reference_projection=projection)
         self.dataChangedSig.emit(data)
 
     def normalize_params(self):
