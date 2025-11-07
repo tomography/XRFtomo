@@ -114,7 +114,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.ViewControl.iterative.clicked.connect(self.ViewControl.iter_parameters.show)
         self.ViewControl.pirt.clicked.connect(self.ViewControl.pirt_parameters.show)
         self.ViewControl.run_alignmnet.clicked.connect(self.iter_align_params)
-        self.ViewControl.from_file.clicked.connect(self.alignFromText2_params)
+        self.ViewControl.from_file.clicked.connect(self.alignFromFile_params)
         self.ViewControl.push2edge.clicked.connect(self.ViewControl.move2edge.show)
         self.ViewControl.run_move2edge.clicked.connect(self.move2edge_params)
         self.ViewControl.adjust_sino.clicked.connect(self.ViewControl.sino_manip.show)
@@ -998,7 +998,7 @@ class SinogramWidget(QtWidgets.QWidget):
         self.alignmentChangedSig.emit(self.x_shifts+x_shifts, self.y_shifts+y_shifts)
         return
 
-    def alignFromText2_params(self):
+    def alignFromFile_params(self):
         ##### for future reference "All File (*);;CSV (*.csv *.CSV)"
         fileName = QFileDialog.getOpenFileName(self, "Open File", QtCore.QDir.currentPath(), "TXT (*.txt) ;; NPY (*.npy)")
 
@@ -1007,14 +1007,12 @@ class SinogramWidget(QtWidgets.QWidget):
         data = self.data.copy()
         data_fnames = self.fnames
         x_padding = self.x_padding_hist[-1]
-        try:
-            data, x_shifts, y_shifts = self.actions.alignFromText1(fileName, data, data_fnames, x_padding)
-            # self.restoreSig.emit() #DO not restore this must be done manually else error occur.
-            self.dataChangedSig.emit(data)
-            self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
-        except TypeError:
-            return
-
+        if fileName[1] == "NPY (*.npy)":
+            data, x_shifts, y_shifts = self.actions.alignFromNPY(fileName, data, data_fnames, x_padding)
+        else:
+            data, x_shifts, y_shifts = self.actions.alignFromText(fileName, data, data_fnames, x_padding)
+        self.dataChangedSig.emit(data)
+        self.alignmentChangedSig.emit(self.x_shifts + x_shifts, self.y_shifts + y_shifts)
         return
 
     def get_params(self):
