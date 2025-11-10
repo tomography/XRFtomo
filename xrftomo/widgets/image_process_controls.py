@@ -146,6 +146,8 @@ class ImageProcessControlsWidget(QtWidgets.QWidget):
         item_dict["padBtn"] = [["button"], "add 0 pixels ro edge of image", None, None]
         item_dict["deleteProjection"] = [["button"], "exclude form analysis", None, None]
         item_dict["rm_hotspot"] = [["button"], "remove hotspot", None, None]
+        item_dict["rm_hotspot_roi"] = [["button"], "remove hotspot in ROI", None, None]
+        item_dict["rm_hotspot_old"] = [["button"], "remove hotspot (old method)", None, None]
         item_dict["normalize"] = [["button"], "normalize from sinogram", None, None]
         item_dict["mask"] = [["button","linedit"], "binary thresholding for alignment purposes", None, None]
 

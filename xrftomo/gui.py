@@ -82,6 +82,12 @@ class xrftomoGui(QMainWindow):
             self.tcp_installed = True
         except:
             self.tcp_installed = False
+        
+        try:
+            from pyxalign import options as opts
+            self.pyxalign_installed = True
+        except:
+            self.pyxalign_installed = False
 
         self.message_window = QtWidgets.QTextEdit("")
         self.message_window.setStyleSheet("background: beige; color: black")
@@ -2757,4 +2763,5 @@ def main(params):
     
     app = QApplication(sys.argv)
     mainWindow = xrftomoGui(app, params)
+    mainWindow.show()
     sys.exit(app.exec_())

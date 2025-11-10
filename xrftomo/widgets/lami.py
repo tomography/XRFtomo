@@ -258,18 +258,21 @@ class LaminographyWidget(QtWidgets.QWidget):
             print("run reconstruction first")
 
     def method_changed(self):
-        #TODO: hide individual scroll areas not individual widgets 
-        if self.ViewControl.method.currentIndex()==0:
+        #TODO: hide individual scroll areas not individual widgets
+        # Check the actual method name instead of index to handle when some methods are not available
+        current_method = self.ViewControl.method.currentText()
+        
+        if "cpu" in current_method.lower():
             self.ViewControl.cpu_opts.setHidden(False)
             self.ViewControl.tomocupy_opts.setHidden(True)
             self.ViewControl.pyxalign_opts.setHidden(True)
             
-        elif self.ViewControl.method.currentIndex()==1:
+        elif "tomocupy" in current_method.lower():
             self.ViewControl.cpu_opts.setHidden(True)
             self.ViewControl.tomocupy_opts.setHidden(False)
             self.ViewControl.pyxalign_opts.setHidden(True)
 
-        elif self.ViewControl.method.currentIndex()==2:
+        elif "pyxalign" in current_method.lower():
             self.ViewControl.cpu_opts.setHidden(True)
             self.ViewControl.tomocupy_opts.setHidden(True)
             self.ViewControl.pyxalign_opts.setHidden(False)
@@ -277,17 +280,6 @@ class LaminographyWidget(QtWidgets.QWidget):
         else:
             pass
         return
-
-    # def hide_plus(self):
-    #     items = ["browse", "generate", "show_ops", "recon_all", "reconstruct", "recon_stats", "rm_hotspot", "rotate_volume"]
-    #     for i in items:
-    #         widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
-    #         self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(False)
-    # def show_select_plus(self):
-    #     items = ["reconstruction-type", "rotation-axis", "lamino-search-width", "fbp-filter", "minus-log", "file-name", "lamino-angle"]
-    #     for i in items:
-    #         widx = self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].count()
-    #         self.__dict__["ViewControl"].__dict__["line_{}".format(self.ViewControl.line_names.index(i))].itemAt(widx - 1).widget().setVisible(True)
 
     def option_checked(self, option):
         widx = self.__dict__["ViewControl"].tomocupy_opts.__dict__["line_{}".format(self.ViewControl.tomocupy_opts.line_names.index(option))].count()
@@ -377,9 +369,9 @@ class LaminographyWidget(QtWidgets.QWidget):
             self.set_option_checked("file-name", self.ViewControl.tomocupy_opts)
             self.ViewControl.tomocupy_opts.__dict__["lamino-search-width"].setText("20")
             self.set_option_checked("lamino-search-width", self.ViewControl.tomocupy_opts)
-        else:
-            self.ViewControl.method.clear()
-            self.ViewControl.method.addItem("lamni-fbp(cpu)")
+        # else:
+        #     self.ViewControl.method.clear()
+        #     self.ViewControl.method.addItem("lamni-fbp(cpu)")
 
         self.elementChanged()
         #TODO: recon_array will need to update with any changes to data dimensions as well as re-initialization

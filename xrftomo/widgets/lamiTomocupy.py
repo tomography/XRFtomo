@@ -123,7 +123,6 @@ class LaminographyTomocupy(QWidget):
         except Exception as e:
             self.tcp_installed = False
             print(f"tomocupy not installed or not functional: {e}")
-            print("using CPU settings")
             widget_dict = item_dict 
 
 

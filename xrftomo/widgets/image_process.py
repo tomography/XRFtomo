@@ -109,6 +109,8 @@ class ImageProcessWidget(QtWidgets.QWidget):
         self.ViewControl.run_padding.clicked.connect(self.pad_params)
         self.ViewControl.deleteProjection.clicked.connect(self.exclude_params)
         self.ViewControl.rm_hotspot.clicked.connect(self.rm_hotspot_params)
+        self.ViewControl.rm_hotspot_roi.clicked.connect(self.rm_hotspot_roi_params)
+        self.ViewControl.rm_hotspot_old.clicked.connect(self.rm_hotspot_old_params)
         self.ViewControl.normalize.clicked.connect(self.normalize_params)
         self.ViewControl.downsample.clicked.connect(self.downsample_params)
         self.ViewControl.invert.clicked.connect(self.invert_params)
@@ -520,6 +522,18 @@ class ImageProcessWidget(QtWidgets.QWidget):
         element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
         data = self.data
         data = self.actions.remove_hotspot_blend(data, element, reference_projection=projection)
+        self.dataChangedSig.emit(data)
+
+    def rm_hotspot_roi_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        data = self.actions.remove_hotspot_roi(data, element, projection, x_pos, y_pos, x_size, y_size)
+        self.dataChangedSig.emit(data)
+
+    def rm_hotspot_old_params(self):
+        element, projection, x_pos, y_pos, x_size, y_size, img = self.get_params()
+        data = self.data
+        data = self.actions.remove_hotspot_old(data, element)
         self.dataChangedSig.emit(data)
 
     def normalize_params(self):

@@ -43,6 +43,7 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import *
 import subprocess
 import xrftomo
+from xrftomo.widgets.pyxalign_opts import PYXALIGN_AVAILABLE
 
 class LaminographyControlsWidget(QWidget):
 
@@ -78,9 +79,16 @@ class LaminographyControlsWidget(QWidget):
         self.cpu_opts = xrftomo.LaminographyCPU(self)
         self.tomocupy_opts = xrftomo.LaminographyTomocupy(self)
         self.pyxalign_opts = xrftomo.OptionsWidget()
-        if self.tomocupy_opts is not None: 
+        
+        # Check if tomocupy is actually installed
+        try:
+            import tomocupy
+            self.tcp_installed = True
             self.method.addItem("tomocupy(gpu)")
-        if self.pyxalign_opts is not None:
+        except ImportError:
+            self.tcp_installed = False
+            
+        if PYXALIGN_AVAILABLE:
             self.method.addItem("pyxalign(gpu)")
         vb = QVBoxLayout()
         vb.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)

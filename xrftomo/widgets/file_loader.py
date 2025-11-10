@@ -59,7 +59,21 @@ class FileTableWidget(QWidget):
         self._num_cols = 4
         self._num_row = 4
         self.auto_load_settings = eval(self.parent.params.load_settings)
-        self.auto_theta_tag = self.parent.params.theta_tag
+        
+        # Fix legacy theta_tag format: strip off numeric cell value if present
+        raw_theta_tag = self.parent.params.theta_tag
+        if raw_theta_tag and "/" in raw_theta_tag:
+            last_component = raw_theta_tag.split("/")[-1]
+            # Check if last component looks like a numeric value (contains only digits, dots, or minus)
+            if last_component.replace(".", "").replace("-", "").replace("e", "").replace("E", "").replace("+", "").isdigit():
+                # Strip off the numeric value to get the dataset path
+                self.auto_theta_tag = "/".join(raw_theta_tag.split("/")[:-1])
+                print(f"DEBUG: Fixed legacy theta_tag format: {raw_theta_tag} -> {self.auto_theta_tag}")
+            else:
+                self.auto_theta_tag = raw_theta_tag
+        else:
+            self.auto_theta_tag = raw_theta_tag
+            
         self.auto_theta_col = self.parent.params.theta_col
         self.auto_theta_row = self.parent.params.theta_row  
         # Convert adjacents from string to dict if it's a string
@@ -382,10 +396,14 @@ class FileTableWidget(QWidget):
                 print(f"DEBUG: check_auto_tags() returned: {tags_exist}")
                 if tags_exist:
                     print("DEBUG: Entering auto-loading section")
-                    # Set the auto tags if they exist
-                    self.data_menu.setCurrentText(self.auto_data_tag)
-                    self.element_menu.setCurrentText(self.auto_element_tag)
-                    self.scaler_menu.setCurrentText(self.auto_scaler_tag)
+                    # Set the auto tags if they exist - show just the last part in the menu
+                    data_label_text = self.auto_data_tag.split('/')[-1] if '/' in self.auto_data_tag else self.auto_data_tag
+                    element_label_text = self.auto_element_tag.split('/')[-1] if '/' in self.auto_element_tag else self.auto_element_tag
+                    scaler_label_text = self.auto_scaler_tag.split('/')[-1] if '/' in self.auto_scaler_tag else self.auto_scaler_tag
+                    
+                    self.data_menu.setCurrentText(data_label_text)
+                    self.element_menu.setCurrentText(element_label_text)
+                    self.scaler_menu.setCurrentText(scaler_label_text)
                     
                     # Set the full paths as properties
                     self.data_menu.setProperty("full_path", self.auto_data_tag)
@@ -394,10 +412,13 @@ class FileTableWidget(QWidget):
                     
                     # Handle theta tag - only set if it exists
                     if self.auto_theta_tag in self.img:
-                        self.theta_menu.setCurrentText(self.auto_theta_tag)
+                        # Show just the last part in the menu, but store the full path
+                        theta_label_text = self.auto_theta_tag.split('/')[-1] if '/' in self.auto_theta_tag else self.auto_theta_tag
+                        self.theta_menu.setCurrentText(theta_label_text)
                         self.theta_menu.setProperty("full_path", self.auto_theta_tag)
                         print(f"DEBUG: Theta tag exists, setting to: {self.auto_theta_tag}")
                     else:
+                        theta_label_text = "No selection"
                         print(f"DEBUG: Theta tag doesn't exist, leaving as default")
                         # Don't set theta menu - let user select manually
                     
@@ -409,38 +430,22 @@ class FileTableWidget(QWidget):
                     if hasattr(self, 'auto_adjacents') and self.auto_adjacents:
                         self.theta_menu.setProperty("adjacents", self.auto_adjacents)
                     
+                    # Update the selected labels with the label text we already computed
+                    self.data_selected.setText(data_label_text)
+                    self.element_selected.setText(element_label_text)
+                    self.scaler_selected.setText(scaler_label_text)
+                    self.theta_selected.setText(theta_label_text)
+                    
                     # Debug: Print auto-loading info
                     print(f"DEBUG: Auto-loading theta parameters:")
                     print(f"  row: {self.auto_theta_row}")
                     print(f"  col: {self.auto_theta_col}")
                     print(f"  adjacents: {self.auto_adjacents}")
-                    
-                    # Update the selected labels - show just the filename part
-                    data_label_text = self.auto_data_tag.split('/')[-1] if '/' in self.auto_data_tag else self.auto_data_tag
-                    element_label_text = self.auto_element_tag.split('/')[-1] if '/' in self.auto_element_tag else self.auto_element_tag
-                    scaler_label_text = self.auto_scaler_tag.split('/')[-1] if '/' in self.auto_scaler_tag else self.auto_scaler_tag
-                    
-                    self.data_selected.setText(data_label_text)
-                    self.element_selected.setText(element_label_text)
-                    self.scaler_selected.setText(scaler_label_text)
-                    
-                    # Handle theta label - only update if theta tag exists
-                    if self.auto_theta_tag in self.img:
-                        theta_label_text = self.auto_theta_tag.split('/')[-1] if '/' in self.auto_theta_tag else self.auto_theta_tag
-                        self.theta_selected.setText(theta_label_text)
-                    else:
-                        self.theta_selected.setText("No selection")
-                    
-                    # Debug: Print label updates
                     print(f"DEBUG: Updated labels:")
                     print(f"  data_selected: {data_label_text}")
                     print(f"  element_selected: {element_label_text}")
                     print(f"  scaler_selected: {scaler_label_text}")
-                    if self.auto_theta_tag in self.img:
-                        theta_label_text = self.auto_theta_tag.split('/')[-1] if '/' in self.auto_theta_tag else self.auto_theta_tag
-                        print(f"  theta_selected: {theta_label_text}")
-                    else:
-                        print(f"  theta_selected: No selection (tag doesn't exist)")
+                    print(f"  theta_selected: {theta_label_text}")
                     
                     self.element_tag_changed()
                     self.scaler_tag_changed()
@@ -1202,15 +1207,21 @@ class FileTableWidget(QWidget):
         current_column = self.tablewidget.currentColumn()
         cell_value = self.tablewidget.item(current_row, current_column).text()
         current_theta_path = self.theta_menu.property("full_path") or self.theta_menu.currentText()
-        theta_tag = "{}/{}".format(current_theta_path, cell_value)
-        theta_tag = theta_tag.strip(",")
-        self.theta_menu.setCurrentText(theta_tag.split('/')[-1])
-        self.theta_menu.setProperty("full_path", theta_tag)
         
-        # Store the current row as a property
+        # Don't append cell value to path - the path is the dataset, not the value
+        # Keep the dataset path as is (e.g., MAPS/Scan/Extra_PVs/Values)
+        # Display the cell value for user reference, but store the path separately
+        display_text = f"{current_theta_path.split('/')[-1]} [{cell_value}]"
+        self.theta_menu.setCurrentText(display_text)
+        self.theta_menu.setProperty("full_path", current_theta_path)
+        
+        # Store the current row and column as properties - these are used to index into the dataset
         self.theta_menu.setProperty("selected_row", current_row)
         self.theta_menu.setProperty("selected_column", current_column)
-        print(f"DEBUG: Selected row: {current_row}")
+        print(f"DEBUG: Selected theta from table:")
+        print(f"  Dataset path: {current_theta_path}")
+        print(f"  Row: {current_row}, Column: {current_column}")
+        print(f"  Value: {cell_value}")
         
         self.theta_tag_changed()
         
@@ -1219,14 +1230,28 @@ class FileTableWidget(QWidget):
             self.table_container.close()
 
     def clicked_event(self):
+        """Handle double-click or enter key on table item."""
         current_row = self.tablewidget.currentRow()
         current_column = self.tablewidget.currentColumn()
         cell_value = self.tablewidget.item(current_row, current_column).text()
         current_theta_path = self.theta_menu.property("full_path") or self.theta_menu.currentText()
-        theta_tag = "{}/{}".format(current_theta_path, self.tablewidget.currentItem().text())
-        theta_tag = theta_tag.strip(",")
-        self.theta_menu.setCurrentText(theta_tag.split('/')[-1])
-        self.theta_menu.setProperty("full_path", theta_tag)
+        
+        # Don't append cell value to path - the path is the dataset, not the value
+        # Keep the dataset path as is (e.g., MAPS/Scan/Extra_PVs/Values)
+        # Display the cell value for user reference, but store the path separately
+        display_text = f"{current_theta_path.split('/')[-1]} [{cell_value}]"
+        self.theta_menu.setCurrentText(display_text)
+        self.theta_menu.setProperty("full_path", current_theta_path)
+        
+        # Store the current row and column as properties - these are used to index into the dataset
+        self.theta_menu.setProperty("selected_row", current_row)
+        self.theta_menu.setProperty("selected_column", current_column)
+        print(f"DEBUG: Double-clicked theta from table:")
+        print(f"  Dataset path: {current_theta_path}")
+        print(f"  Row: {current_row}, Column: {current_column}")
+        print(f"  Value: {cell_value}")
+        
+        self.theta_tag_changed()
         self.tablewidget.close()
 
 
@@ -1285,10 +1310,16 @@ class FileTableWidget(QWidget):
     def theta_tag_changed(self):
         try:
             path_files = self.fileTableModel.getAllFiles()
-            theta_path = "/".join(self.theta_menu.property("full_path").split("/")[:-1])
+            # Use the full_path directly - it now contains the dataset path without cell values
+            # e.g., "MAPS/Scan/Extra_PVs/Values" not "MAPS/Scan/Extra_PVs/Values/0.000000"
+            theta_path = self.theta_menu.property("full_path")
             row = self.theta_menu.property("selected_row")
             col = self.theta_menu.property("selected_column")
             adjacents = self.theta_menu.property("adjacents")
+            
+            print(f"DEBUG: theta_tag_changed - Loading thetas:")
+            print(f"  theta_path: {theta_path}")
+            print(f"  row: {row}, col: {col}")
             
             # Use auto values if no manual selection has been made
             if row is None and hasattr(self, 'auto_theta_row'):
@@ -1335,7 +1366,12 @@ class FileTableWidget(QWidget):
             #     return
 
             thetas, files = xrftomo.load_thetas(path_files, theta_path, row=row, col=col)
-            just_filenames = [os.path.basename(file) for file in files]
+            if len(thetas) == 0:
+                print("no thetas found")
+                just_filenames = [os.path.basename(file) for file in path_files]
+            else:
+                just_filenames = [os.path.basename(file) for file in files]
+            
             self.fileTableModel.update_thetas(thetas)
             self.fileTableModel.update_files(just_filenames)
             self.fileTableView.sortByColumn(1, 0)
@@ -1483,7 +1519,37 @@ class FileTableWidget(QWidget):
         #update auto-load parameters
         self.parent.params.input_path = self.dirLineEdit.text()
         self.parent.params.file_extension = self.extLineEdit.text()
-        self.parent.params.theta_tag = self.theta_menu.property("full_path") or self.theta_menu.currentText()
+        
+        # Save theta_tag directly - it should already be the correct dataset path
+        # (e.g., MAPS/Scan/Extra_PVs/Values) without any cell values appended
+        # since select_table_item() and clicked_event() now store only the dataset path
+        theta_full_path = self.theta_menu.property("full_path") or self.theta_menu.currentText()
+        adjacents = self.theta_menu.property("adjacents")
+        
+        # If we have adjacents but theta_full_path doesn't end with a dataset name,
+        # try to infer the Values dataset from adjacents
+        if adjacents and isinstance(adjacents, dict):
+            # Check if theta_full_path is just the parent path
+            # by seeing if any adjacent's path starts with it
+            for key, adjacent_path in adjacents.items():
+                if adjacent_path and adjacent_path.startswith(theta_full_path + "/"):
+                    # We have a parent path, try to find Values
+                    parent_path = theta_full_path
+                    # Try common value dataset names
+                    for values_name in ["Values", "Value", "values", "value"]:
+                        possible_values_path = f"{parent_path}/{values_name}"
+                        try:
+                            if hasattr(self, 'img') and possible_values_path in self.img:
+                                theta_full_path = possible_values_path
+                                print(f"DEBUG: Inferred theta values dataset from adjacents: {theta_full_path}")
+                                break
+                        except:
+                            pass
+                    break
+        
+        self.parent.params.theta_tag = theta_full_path
+        print(f"DEBUG: Saving theta_tag: {theta_full_path}")
+        
         self.parent.params.data_tag = self.data_menu.property("full_path") or self.data_menu.currentText()
         self.parent.params.element_tag = self.element_menu.property("full_path") or self.element_menu.currentText()
         self.parent.params.selected_elements = str(list(np.where(elements_bool)[0]))
