@@ -7,12 +7,10 @@ try:
 except ImportError:
     PYXALIGN_AVAILABLE = False
 
-def run_full_test_xrf_data_type_1(lamino_angle, results_folder, center_of_rotation, xrf_array_dict, xrf_standard_data_dict):
+def run_it(lamino_angle, results_folder, center_of_rotation, xrf_array_dict, scan_numbers, thetas, primary_channel, file_paths):
 
     if not PYXALIGN_AVAILABLE:
         raise ImportError("pyxalign package is required for this function but is not installed")
- 
- 
 
     # specify projection options
     projection_options = pyxalign.options.ProjectionOptions()
@@ -22,19 +20,15 @@ def run_full_test_xrf_data_type_1(lamino_angle, results_folder, center_of_rotati
     #Question: does it help to know the pixel size?
 
     #Create the results folder
-    # Pick the channel that will be used for alignment.
-    # The channel with the strongest and clearest features
-    # is typicall a good choice.
-    primary_channel = "Ti"
 
     # Create the XRFTask object
     xrf_task = pyxalign.data_structures.XRFTask(
         xrf_array_dict=xrf_array_dict,
-        angles=xrf_standard_data_dict[primary_channel].angles,
-        scan_numbers=xrf_standard_data_dict[primary_channel].scan_numbers,
+        angles=thetas,
+        scan_numbers=scan_numbers,
         projection_options=projection_options,
         primary_channel=primary_channel,
-        file_paths=list(xrf_standard_data_dict[primary_channel].file_paths.values()),
+        file_paths=file_paths,
     )
 
     xrf_task.center_of_rotation = center_of_rotation  # [30, 130] y=30, x=130

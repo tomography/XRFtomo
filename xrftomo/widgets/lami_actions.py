@@ -51,6 +51,11 @@ import h5py
 import subprocess
 import time
 import os
+try:
+    import pyxalign
+    PYXALIGN_AVAILABLE = True
+except ImportError:
+    PYXALIGN_AVAILABLE = False
 
 import numpy as np
 # from PyQt5.QtWidgets import QApplication
@@ -59,6 +64,8 @@ try:
     from pyxalign.api import enums
     from pyxalign.api.types import r_type
     from pyxalign.data_structures.xrf_task import XRFTask
+    from pyxalign.io.loaders.xrf.api import convert_projection_dict_to_array
+    from pyxalign.api.constants import divisor
     PYXALIGN_AVAILABLE = True
 except ImportError:
     PYXALIGN_AVAILABLE = False
@@ -472,138 +479,83 @@ class LaminographyActions(QtWidgets.QWidget):
 				data[:] = tmp[:, :, ne // 2 - n // 2:ne // 2 + n // 2 + 1]
 		return data
 
+	def run_pyxalign(self, lamino_angle, results_folder, center_of_rotation, xrf_array_dict, scan_numbers, thetas, primary_channel, file_paths):
 
-
-	def run_full_test_xrf_data_type_1(self,
-		other,
-		update_tester_results: bool = False,
-		save_temp_files: bool = False,
-		test_start_point = None,  # not yet used
-	):
 		if not PYXALIGN_AVAILABLE:
 			raise ImportError("pyxalign package is required for this function but is not installed")
 
-		s = 4
+		# specify projection options
+		projection_options = pyxalign.options.ProjectionOptions()
+		projection_options.experiment.laminography_angle = lamino_angle
+		projection_options.experiment.pixel_size = 1  # unknown for this dataset
+		projection_options.experiment.sample_thickness = 70  # an initial guess, can be updated later
+		#Question: does it help to know the pixel size?
 
-		# Setup default gpu options
-		n_gpus = cp.cuda.runtime.getDeviceCount()
-		gpu_list = list(range(0, n_gpus))
-		multi_gpu_device_options = opts.DeviceOptions(
-			gpu=opts.GPUOptions(
-				n_gpus=n_gpus,
-				gpu_indices=gpu_list,
-				chunk_length=20,
-			)
+		#Create the results folder
+
+		# Create the XRFTask object
+		xrf_task = pyxalign.data_structures.XRFTask(
+			xrf_array_dict=xrf_array_dict,
+			angles=thetas,
+			scan_numbers=scan_numbers,
+			projection_options=projection_options,
+			primary_channel=primary_channel,
+			file_paths=file_paths,
 		)
 
-		# if not projection_matching_only:
-		checkpoint_list = [enums.TestStartPoints.BEGINNING] if PYXALIGN_AVAILABLE else []
-		if test_start_point in checkpoint_list:
+		xrf_task.center_of_rotation = center_of_rotation  # [30, 130] y=30, x=130
 
-			xrf_array_dict = other["data"]
-			lamino_angle = other["lamino_angle"]
-			primary_channel = other["primary_channel"]
-			thickness = other["thickness"]
-			scan_numbers = other["scan_numbers"]
-			thetas = other["thetas"]
-			centery = xrf_array_dict[primary_channel].shape[1] / 2
-			centerx = xrf_array_dict[primary_channel].shape[2] / 2
+		pma_options = xrf_task.alignment_options.projection_matching
+		pma_options.keep_on_gpu = True
+		pma_options.high_pass_filter = 0.001
+		pma_options.min_step_size = 0.005
+		pma_options.iterations = 1000
+		pma_options.downsample.enabled = True
+		pma_options.mask_shift_type = "fft"
+		pma_options.projection_shift_type = "fft"
+		pma_options.momentum.enabled = True
+		pma_options.interactive_viewer.update.enabled = False
+		pma_options.interactive_viewer.update.stride = 50
+		pma_options.prevent_wrapping_from_shift = True
+		#Question: what is step size in units of?
 
-			# Insert data into an XRFTask object
-			xrf_task = XRFTask(
-				xrf_array_dict=xrf_array_dict,
-				angles=thetas,
-				scan_numbers=scan_numbers,
-				alignment_options=opts.AlignmentTaskOptions(),
-				projection_options=opts.ProjectionOptions(experiment=opts.ExperimentOptions(laminography_angle=90 - lamino_angle), reconstruct=opts.ReconstructOptions(astra=opts.AstraOptions(back_project_gpu_indices=(0,), forward_project_gpu_indices=(0,))), filter=opts.FilterOptions(device=opts.DeviceOptions(gpu=opts.GPUOptions(chunk_length=20, n_gpus=1, gpu_indices=(0,)))), mask=opts.MaskOptions(downsample=opts.DownsampleOptions(scale=4, enabled=True, device=opts.DeviceOptions(gpu=opts.GPUOptions(chunk_length=20, n_gpus=1, gpu_indices=(0,))))), mask_downsample_type=enums.DownsampleType.NEAREST, mask_downsample_use_gaussian_filter=True, rotation=opts.RotationOptions(angle=0.0, shear=opts.RotationOptions(angle=0.0))),
-				primary_channel=primary_channel,
-			)
+		# create a masked region for projection matching alignment; this will be done
+		# automatically or with a GUI in the future
+		xrf_task.projections_dict[xrf_task._primary_channel].masks = np.ones_like(xrf_task.projections_dict[xrf_task._primary_channel].data)
 
-			# Update sample thickness and center of rotation
-			xrf_task.projection_options.experiment.sample_thickness = thickness
-			xrf_task.center_of_rotation = np.array([centery, centerx], dtype=r_type if PYXALIGN_AVAILABLE else np.float32)
+		#Start the alignment for 2x downsampling of the projections
+		pma_options.downsample.scale = 2
+		#Note, returns two values: pma_object and shift
+		shift = xrf_task.get_projection_matching_shift()
 
-			# create preliminary reconstructions
-			for channel, proj in xrf_task.projections_dict.items():
-				proj.get_3D_reconstruction(True)
+		# run projection matching alignment at full resolution
+		pma_options.downsample.scale = 1
+		shift = xrf_task.get_projection_matching_shift(shift)
 
-			# create dummy mask
-			xrf_task.projections_dict[xrf_task._primary_channel].masks = np.ones_like(
-				xrf_task.projections_dict[xrf_task._primary_channel].data)
-			xrf_task.projections_dict[xrf_task._primary_channel].pin_arrays()
+		# shift all projections
+		xrf_task.apply_staged_shift_to_all_channels()
 
-			pma_options = xrf_task.alignment_options.projection_matching
-			pma_options.keep_on_gpu = True
-			pma_options.high_pass_filter = 0.001
-			pma_options.min_step_size = 0.005
-			pma_options.iterations = 1000
-			pma_options.downsample.enabled = True
-			pma_options.mask_shift_type = "fft"
-			pma_options.projection_shift_type = "fft"
-			pma_options.momentum.enabled = True
-			pma_options.interactive_viewer.update.enabled = True
-			pma_options.interactive_viewer.update.stride = 50
+		#Save the aligned task
+		aligned_task_path = os.path.join(results_folder, "aligned_xrf_task.h5")
+		xrf_task.save_task(aligned_task_path)
 
-			# Run projection-matching alignment at successively higher resolutions
-			scales = [2, 1]
-			shift = None
-			for i, scale in enumerate(scales):
-				pma_options.downsample.scale = scale
-				shift = xrf_task.get_projection_matching_shift(initial_shift=shift)
+		# Get 3D reconstruction
+		xrf_task.get_3D_reconstructions_for_all_channels()
 
-			# shift all projections
-			xrf_task.apply_staged_shift_to_all_channels()
+		#Launch the volume viewer
+		gui = pyxalign.gui.launch_xrf_volume_viewer(xrf_task)
 
-			# create final reconstructions
-			for channel, projections in xrf_task.projections_dict.items():
-				projections.get_3D_reconstruction(True)
-
-			# Rotate all of the reconstructions
-			for channel, projections in xrf_task.projections_dict.items():
-				projections.volume.optimal_rotation_angles = np.array(
-					[2.7, 4, 40]
-				)  # estimated this manually
-				projections.volume.rotate_reconstruction()
-
-			xrf_task.clear_pma_gui_list()
-
-			# # Launch the volume viewer
-			# app = QApplication.instance() or QApplication([])
-			# gui = XRFVolumeViewer(xrf_task)
-			# gui.show()
-			# app.exec()
-
-			# # Launch the projections viewer
-			# app = QApplication.instance() or QApplication([])
-			# gui = XRFProjectionsViewer(xrf_task)
-			# gui.show()
-			# app.exec()
+		#Save the aligned volumes as tiffs
+		xrf_task.save_volumes_as_tiffs(results_folder=results_folder, file_prefix="aligned_volume_")
 
 
-		recons = {}
-		projections = {}
-		for element in other["elements"]:
-			recons[element] = xrf_task.projections_dict[element].volume.data
-			projections[element] = xrf_task.projections_dict[element].data
+class st_array:
+    def __init__(self):
+        self._array = None
 
+    def set_values(self, arr):
+        self._array = arr
 
-		shifts = xrf_task.get_projection_matching_shift()
-		return recons, projections, shifts
-
-
-	def run_it(self, data, current_elment, elements, scan_numbers, thetas, lami_angle):
-		other = {
-			"primary_channel": current_elment,
-			"data": data,
-			"lamino_angle": lami_angle,
-			"elements": elements,
-			"scan_numbers": scan_numbers,
-			"thetas": thetas,
-			"thickness": 70,
-		}
-		recons, projections, shifts = self.run_full_test_xrf_data_type_1(
-			other=other,
-			update_tester_results=False,
-			save_temp_files=False
-		)
-		return recons, projections, shifts
+    def values(self):
+        # return whatever you want — raw array, processed array, etc.
+        return self._array

@@ -468,7 +468,7 @@ class LaminographyWidget(QtWidgets.QWidget):
         print("DEBUG: entering LaminographyWidget.reconstruct_params")
 
         elements = [self.ViewControl.elem.currentIndex()]
-        method = self.ViewControl.method.currentIndex()
+        method_name = self.ViewControl.method.currentText()
         thetas = self.thetas
 
         parent_dir = self.h5_dir
@@ -497,16 +497,18 @@ class LaminographyWidget(QtWidgets.QWidget):
         for element_idx in elements:
             element = self.parent.elements[element_idx]
             self.ViewControl.elem.setCurrentIndex(element_idx)  # required to properly update recon_dict
-            empty_recon = np.zeros((data.shape[2], data.shape[3], data.shape[3]))  # empty array of size [y, x,x]
+            empty_recon = np.zeros((data.shape[2], data.shape[3], data.shape[3]), dtype=np.float32)  # empty array of size [y, x,x]
             recon_dict[element] = empty_recon
             print("running reconstruction for:", element)
-            if method == 0:
-                lami_angle = 90 - eval(self.ViewControl.__dict__["lamino-angle"].text())
-                center_axis = eval(self.ViewControl.__dict__["rotation-axis"].text())
-                recon = self.actions.reconstruct_cpu(data, element_idx, element, lami_angle, center_axis, method, thetas, parent_dir=parent_dir)
+            if "cpu" in method_name.lower():
+                lami_angle = 90 - eval(self.ViewControl.cpu_opts.__dict__["lamino-angle"].text())
+                center_axis = eval(self.ViewControl.cpu_opts.__dict__["rotation-axis"].text())
+                # Note: method parameter might be used by reconstruct_cpu for algo selection
+                method_idx = 0  # CPU method
+                recon = self.actions.reconstruct_cpu(data, element_idx, element, lami_angle, center_axis, method_idx, thetas, parent_dir=parent_dir)
                 recon_dict[element] = np.array(recon)
                 self.recon = np.array(recon)
-            elif method ==1:
+            elif "tomocupy" in method_name.lower():
                 if not self.check_savepath_exists():
                     print("save path invalid or insufficient permissions")
                     return
@@ -518,7 +520,7 @@ class LaminographyWidget(QtWidgets.QWidget):
                 if recon is None:
                     return
 
-            elif method == 2:
+            elif "pyxalign" in method_name.lower():
                 # Temporary debug stop to ensure this branch is reached during debugging
 
                 scan_numbers = [i.split("_")[1].split(".")[0] for i in self.parent.fnames]
@@ -527,16 +529,20 @@ class LaminographyWidget(QtWidgets.QWidget):
                 primary_element = self.parent.elements[element_idx]
                 for element in elements:
                     data_dict[element] = data[elements.index(element)]
-                recons, projections, shifts = self.actions.run_it(data_dict, primary_element, elements, scan_numbers, thetas, lami_angle=20)
-                data = np.array([projections[element] for element in elements])
-                recon_dict = recons
-                recon = recon_dict[primary_element]
-                self.recon = np.array(recon)
-                self.parent.update_data(data)
+                    #run_it(lamino_angle, results_folder, center_of_rotation, xrf_array_dict, scan_numbers, thetas, xrf_standard_data_dict, primary_channel
+                results_folder = self.h5_dir + "/pyxalign_results"
+                center = [data.shape[2] // 2, data.shape[3] // 2]
+                file_paths = self.parent.fileTableWidget.fileTableModel.getAllFiles()
+                recons, projections, shifts = self.actions.run_pyxalign(lamino_angle=20, results_folder=results_folder, center_of_rotation=center, xrf_array_dict=data_dict, scan_numbers=scan_numbers, thetas=thetas, primary_channel=primary_element, file_paths=file_paths)
+                # recon_dict = recons
+                # recon = recon_dict[primary_element]
+                # self.recon = np.array(recon)
+                # self.parent.update_data(data)
+                return
 
 
             else:
-                print("invalid method")
+                print(f"Invalid or unrecognized method: {method_name}")
                 return
             if self.ViewControl.recon_save.isChecked():
                 rec = {element: recon}
