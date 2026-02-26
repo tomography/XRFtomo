@@ -52,12 +52,262 @@ from matplotlib.pyplot import *
 from scipy import ndimage as ndi
 from skimage.morphology import remove_small_objects
 from skimage import io
+import csv
 import h5py
 import os
+import re
 import subprocess
 os.environ["QT_DEBUG_PLUGINS"] = "1"
 
 STR_CONFIG_THETA_STRS = 'theta_pv_strs'
+
+
+def _extract_scan_number(filename):
+    """Extract scan number from filename stem only (preserves leading zeros)."""
+    stem = os.path.splitext(filename)[0]
+    digits = re.findall(r'\d+', stem)
+    if digits:
+        return digits[-1]
+    if '_' in stem:
+        part = stem.split('_')[-1]
+        if part.isdigit():
+            return part
+    return ''
+
+
+def _scan_numbers_match(scan_from_filename, scan_from_txt):
+    """True if both refer to the same scan (10 matches 010; 10 does not match 10.5)."""
+    a, b = str(scan_from_filename).strip(), str(scan_from_txt).strip()
+    if a == b:
+        return True
+    try:
+        fa, fb = float(a), float(b)
+        return abs(fa - fb) < 1e-9
+    except (ValueError, TypeError):
+        return False
+
+
+class MatchFilenamesThetasDialog(QDialog):
+    """Popup table: column 0 = filenames, column 1 = scan#, rest = columns from loaded txt file."""
+
+    def __init__(self, filenames, parent=None):
+        super(MatchFilenamesThetasDialog, self).__init__(parent)
+        self.filenames = list(filenames) if filenames else []
+        self.txt_headers = []
+        self.txt_rows = []
+        self.scan_in_last_column = False
+        self.column_header_overrides = {}
+        self.PREDEFINED_HEADERS = ["x-shifts", "y-shifts", "theta"]
+        self.setWindowTitle("Match filenames to thetas")
+        self.setMinimumSize(600, 400)
+        layout = QVBoxLayout(self)
+
+        row0 = QHBoxLayout()
+        self.loadTxtBtn = QPushButton("Load txt file (comma-delimited)")
+        self.loadTxtBtn.clicked.connect(self._load_txt)
+        row0.addWidget(self.loadTxtBtn)
+        row0.addWidget(QLabel("Scan # column:"))
+        self.scanColCombo = QComboBox()
+        self.scanColCombo.addItems(["First column", "Last column"])
+        self.scanColCombo.currentIndexChanged.connect(self._on_scan_column_changed)
+        row0.addWidget(self.scanColCombo)
+        layout.addLayout(row0)
+
+        self.table = QTableWidget()
+        self.table.setAlternatingRowColors(True)
+        hheader = self.table.horizontalHeader()
+        hheader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        hheader.customContextMenuRequested.connect(self._on_header_context_menu)
+        layout.addWidget(self.table)
+
+        self.acceptBtn = QPushButton("Accept")
+        self.acceptBtn.clicked.connect(self._on_accept)
+        layout.addWidget(self.acceptBtn)
+
+        self._build_table()
+
+    def _on_scan_column_changed(self, index):
+        self.scan_in_last_column = (index == 1)
+        self._build_table()
+
+    def _header_label_for_column(self, col_index):
+        """Resolved header for column col_index (override or loaded)."""
+        if col_index < 2:
+            return ["Filename", "Scan #"][col_index]
+        j = col_index - 2
+        if j >= len(self.txt_headers):
+            return ''
+        return self.column_header_overrides.get(col_index) or self.txt_headers[j]
+
+    def _refresh_header_labels(self):
+        n_cols = self.table.columnCount()
+        headers = [self._header_label_for_column(c) for c in range(n_cols)]
+        self.table.setHorizontalHeaderLabels(headers)
+
+    def _on_header_context_menu(self, pos):
+        col = self.table.horizontalHeader().logicalIndexAt(pos)
+        if col < 2:
+            return
+        menu = QMenu(self)
+        for name in self.PREDEFINED_HEADERS:
+            act = menu.addAction(name)
+            act.triggered.connect(lambda checked, n=name, c=col: self._set_column_header(c, n))
+        menu.addSeparator()
+        clear_act = menu.addAction("Clear header")
+        clear_act.triggered.connect(lambda checked, c=col: self._set_column_header(c, None))
+        menu.exec_(self.table.horizontalHeader().mapToGlobal(pos))
+
+    def _set_column_header(self, col_index, name):
+        if name is not None:
+            for other in list(self.column_header_overrides):
+                if other != col_index and self.column_header_overrides.get(other) == name:
+                    del self.column_header_overrides[other]
+            self.column_header_overrides[col_index] = name
+        else:
+            self.column_header_overrides.pop(col_index, None)
+        self._refresh_header_labels()
+
+    def _column_index_for_header(self, label):
+        for c in range(self.table.columnCount()):
+            if self._header_label_for_column(c) == label:
+                return c
+        return None
+
+    def _table_cell_text(self, row, col):
+        item = self.table.item(row, col)
+        return item.text().strip() if item else ''
+
+    def _on_accept(self):
+        theta_col = self._column_index_for_header("theta")
+        if theta_col is None:
+            QMessageBox.information(
+                self, "Assign theta",
+                "Assign \"theta\" to a column (right-click its header) before accepting."
+            )
+            return
+        x_col = self._column_index_for_header("x-shifts")
+        y_col = self._column_index_for_header("y-shifts")
+
+        accepted = []
+        shifts = []
+        for row in range(self.table.rowCount()):
+            fname = self._table_cell_text(row, 0)
+            theta_val = self._table_cell_text(row, theta_col)
+            if not theta_val:
+                continue
+            try:
+                theta_float = float(theta_val)
+            except ValueError:
+                continue
+            x_val = self._table_cell_text(row, x_col) if x_col is not None else ''
+            y_val = self._table_cell_text(row, y_col) if y_col is not None else ''
+            accepted.append((fname, theta_float))
+            shifts.append({
+                "filename": fname,
+                "theta": theta_float,
+                "x-shifts": x_val,
+                "y-shifts": y_val,
+            })
+
+        if not accepted:
+            QMessageBox.information(
+                self, "No rows",
+                "No rows have a theta value. Fill the theta column for at least one row."
+            )
+            return
+
+        accepted.sort(key=lambda x: x[0])
+        fnames = [a[0] for a in accepted]
+        thetas_list = [float(a[1]) for a in accepted]
+
+        main = self.parent()
+        if main is None:
+            self.reject()
+            return
+        main.fileTableWidget.fileTableModel.update_fnames(fnames)
+        main.fileTableWidget.fileTableModel.update_thetas(thetas_list)
+        main.fnames = list(fnames)
+        main.thetas = np.array(thetas_list)
+        main.shifts = shifts
+
+        self.accept()
+
+    def _build_table(self):
+        scan_numbers = [_extract_scan_number(f) for f in self.filenames]
+        n_extra = len(self.txt_headers)
+        n_cols = 2 + n_extra
+        self.table.setRowCount(len(self.filenames))
+        self.table.setColumnCount(n_cols)
+        headers = [self._header_label_for_column(c) for c in range(n_cols)]
+        self.table.setHorizontalHeaderLabels(headers)
+
+        for i, (fname, scan) in enumerate(zip(self.filenames, scan_numbers)):
+            self.table.setItem(i, 0, QTableWidgetItem(fname))
+            self.table.setItem(i, 1, QTableWidgetItem(scan))
+            for j, h in enumerate(self.txt_headers):
+                val = self._value_for_row(i, j)
+                self.table.setItem(i, 2 + j, QTableWidgetItem(val))
+        self.table.resizeColumnsToContents()
+
+    def _value_for_row(self, file_index, col_index):
+        """Find the txt row whose scan column matches this file's scan number; return the data value at col_index."""
+        if col_index >= len(self.txt_headers) or not self.txt_rows:
+            return ''
+        scan = _extract_scan_number(self.filenames[file_index])
+        for row in self.txt_rows:
+            key = row[-1] if self.scan_in_last_column else (row[0] if row else '')
+            if len(row) > 0 and _scan_numbers_match(scan, key):
+                if self.scan_in_last_column:
+                    if col_index < len(row) - 1:
+                        return str(row[col_index]).strip()
+                else:
+                    if col_index + 1 < len(row):
+                        return str(row[col_index + 1]).strip()
+                return ''
+        return ''
+
+    def _load_txt(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Open comma-delimited txt", QtCore.QDir.currentPath(), "Text (*.txt);;All (*)"
+        )
+        if not path:
+            return
+        try:
+            with open(path, 'r', encoding='utf-8', errors='replace', newline='') as f:
+                rows = []
+                for row in csv.reader(f):
+                    row = [c.strip() for c in row]
+                    if not row or all(not c for c in row):
+                        continue
+                    rows.append(row)
+            if not rows:
+                return
+            first = rows[0]
+            n_cols = max(len(r) for r in rows) if rows else 0
+            n_data_cols = max(0, n_cols - 1)
+            if self.scan_in_last_column:
+                key_cell = first[-1].strip() if len(first) > 0 else ''
+                has_header = key_cell != '' and not re.match(r'^-?\d*\.?\d+$', key_cell)
+                if has_header:
+                    self.txt_headers = [c.strip() for c in first[0:n_data_cols]]
+                else:
+                    self.txt_headers = [''] * n_data_cols
+                self.txt_rows = list(rows[1:]) if has_header else list(rows)
+            else:
+                key_cell = first[0].strip() if len(first) > 0 else ''
+                has_header = key_cell != '' and not re.match(r'^-?\d*\.?\d+$', key_cell)
+                if has_header:
+                    self.txt_headers = [c.strip() for c in first[1:n_data_cols + 1]]
+                else:
+                    self.txt_headers = [''] * n_data_cols
+                self.txt_rows = list(rows[1:]) if has_header else list(rows)
+            while len(self.txt_headers) < n_data_cols:
+                self.txt_headers.append('')
+            self.column_header_overrides.clear()
+            self._build_table()
+        except Exception as e:
+            QMessageBox.warning(self, "Load error", "Could not load file: {}".format(e))
+
 
 class Stream(QtCore.QObject):
     newText = QtCore.pyqtSignal(str)
@@ -71,6 +321,7 @@ class xrftomoGui(QMainWindow):
         super(QMainWindow, self).__init__()
         self.params = params
         self.param_list = {}
+        self.shifts = []
         self.app = app
         # self.get_values_from_params()
         self.initUI()
@@ -118,6 +369,9 @@ class xrftomoGui(QMainWindow):
 
         openThetaAction = QAction('open thetas file', self)
         openThetaAction.triggered.connect(self.openThetas)
+
+        matchFilenamesThetasAction = QAction('match filenames to thetas', self)
+        matchFilenamesThetasAction.triggered.connect(self.match_filenames_to_thetas)
 
         self.saveCorrAnalysisAction = QAction("Corelation Analysis", self)
         self.saveCorrAnalysisAction.triggered.connect(self.saveCorrAlsys)
@@ -246,6 +500,7 @@ class xrftomoGui(QMainWindow):
         self.fileMenu.addAction(openTiffAction)
         self.fileMenu.addAction(openStackAction)
         self.fileMenu.addAction(openThetaAction)
+        self.fileMenu.addAction(matchFilenamesThetasAction)
         self.fileMenu.addAction(exitAction)
         self.fileMenu.addAction(closeAction)
 
@@ -2048,6 +2303,24 @@ class xrftomoGui(QMainWindow):
             print("Angle information loaded.")
 
         return
+
+    def match_filenames_to_thetas(self):
+        """Open popup table: filenames, extracted scan#, and columns from a loaded txt file."""
+        try:
+            filenames = [
+                self.fileTableWidget.fileTableModel.arrayData[i].filename
+                for i in range(len(self.fileTableWidget.fileTableModel.arrayData))
+            ]
+        except (AttributeError, TypeError):
+            filenames = getattr(self, 'fnames', None) or []
+        if not filenames:
+            QMessageBox.information(
+                self, "No filenames",
+                "Load a directory or files first so that filenames are available."
+            )
+            return
+        dlg = MatchFilenamesThetasDialog(filenames, self)
+        dlg.exec_()
 
     def peel_string(self, string_list):
         peel_back = True

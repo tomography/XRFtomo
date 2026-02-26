@@ -142,7 +142,8 @@ class FileTableModel(QtCore.QAbstractTableModel):
                 if index.column() == self.COL_FILE:
                     return QtCore.QVariant(self.arrayData[index.row()].filename)
                 elif index.column() == self.COL_THETA:
-                    return QtCore.QVariant(self.arrayData[index.row()].theta)
+                    theta_val = self.arrayData[index.row()].theta
+                    return QtCore.QVariant(float(theta_val))
         return QtCore.QVariant()
 
     def update_fnames(self, fnames):
@@ -156,16 +157,18 @@ class FileTableModel(QtCore.QAbstractTableModel):
         self.dataChanged.emit(topLeft, bottomRight)
 
     def update_thetas(self, thetas):
-        topLeft = self.index(0, 1)
-        bottomRight = self.index(len(self.arrayData), 1)
+        if not self.arrayData:
+            return
         try:
             for i in range(len(self.arrayData)):
                 if len(thetas) == 0:
                     self.arrayData[i].theta = -1
                 else:
-                    self.arrayData[i].theta = thetas[i]
-        except:
-            print("something is off here")
+                    self.arrayData[i].theta = float(thetas[i])
+        except Exception:
+            pass
+        topLeft = self.index(0, self.COL_THETA)
+        bottomRight = self.index(len(self.arrayData) - 1, self.COL_THETA)
         self.dataChanged.emit(topLeft, bottomRight)
 
         return

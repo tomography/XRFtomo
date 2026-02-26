@@ -17,9 +17,12 @@ import os
 from typing import Any, Dict, List, Tuple, Union
 
 if PYXALIGN_AVAILABLE:
-	import yaml
+	try:
+		import yaml  # type: ignore[import-untyped]
+	except ImportError:
+		yaml = None
 else:
-	yaml = None 
+	yaml = None
 
 class CollapsibleGroupBox(QGroupBox):
     def __init__(self, title: str, parent=None):
