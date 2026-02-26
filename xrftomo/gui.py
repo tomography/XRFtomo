@@ -3011,8 +3011,34 @@ class xrftomoGui(QMainWindow):
         self.config_options.show()
         return
 
+    def _save_session_on_close(self):
+        """Save directory, filenames, thetas, tag paths, and selected elements/scalers for next launch."""
+        try:
+            self.params.input_path = self.fileTableWidget.dirLineEdit.text()
+            self.params.file_extension = self.fileTableWidget.extLineEdit.text().strip()
+            self.params.data_tag = self.fileTableWidget.data_menu.property("full_path") or self.fileTableWidget.data_menu.currentText() or getattr(self.params, 'data_tag', '')
+            self.params.element_tag = self.fileTableWidget.element_menu.property("full_path") or self.fileTableWidget.element_menu.currentText() or getattr(self.params, 'element_tag', '')
+            self.params.scaler_tag = self.fileTableWidget.scaler_menu.property("full_path") or self.fileTableWidget.scaler_menu.currentText() or getattr(self.params, 'scaler_tag', '')
+            self.params.theta_tag = self.fileTableWidget.theta_menu.property("full_path") or self.fileTableWidget.theta_menu.currentText() or getattr(self.params, 'theta_tag', '')
+            arr = self.fileTableWidget.fileTableModel.arrayData
+            if arr:
+                self.params.last_filenames = str([getattr(x, 'filename', '') for x in arr])
+                self.params.last_thetas = str([float(getattr(x, 'theta', 0)) for x in arr])
+            else:
+                self.params.last_filenames = '[]'
+                self.params.last_thetas = '[]'
+            elem_arr = self.fileTableWidget.elementTableModel.arrayData
+            scaler_arr = self.fileTableWidget.scalerTableModel.arrayData
+            if elem_arr:
+                self.params.selected_elements = str(list(np.where([getattr(x, 'use', True) for x in elem_arr])[0]))
+            if scaler_arr:
+                self.params.selected_scalers = str(list(np.where([getattr(x, 'use', True) for x in scaler_arr])[0]))
+        except Exception:
+            pass
+
     def closeEvent(self, event):
         try:
+            self._save_session_on_close()
             sections = config.TOMO_PARAMS + ('gui', )
             home = expanduser("~")
             config.write('{}/xrftomo.conf'.format(home), args=self.params, sections=sections)

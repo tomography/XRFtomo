@@ -116,6 +116,14 @@ SECTIONS['file-io'] = {
         'type': str,
         'help': "adjacent items dictionary for theta auto-loading",
         'metavar': 'DICT'},
+    'last-filenames': {
+        'default': '[]',
+        'type': str,
+        'help': "list of last loaded filenames for session restore"},
+    'last-thetas': {
+        'default': '[]',
+        'type': str,
+        'help': "list of last loaded thetas for session restore"},
         }
 
 SECTIONS['reconstruction'] = {

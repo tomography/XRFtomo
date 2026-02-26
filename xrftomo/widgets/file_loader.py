@@ -92,6 +92,14 @@ class FileTableWidget(QWidget):
         self.auto_sorted_angles = self.parent.params.sorted_angles
         self.auto_selected_elements = eval(self.parent.params.selected_elements)
         self.auto_selected_scalers = eval(self.parent.params.selected_scalers)
+        self.auto_last_filenames = getattr(self.parent.params, 'last_filenames', '[]')
+        self.auto_last_thetas = getattr(self.parent.params, 'last_thetas', '[]')
+        try:
+            self.auto_last_filenames = eval(self.auto_last_filenames) if isinstance(self.auto_last_filenames, str) else self.auto_last_filenames
+            self.auto_last_thetas = eval(self.auto_last_thetas) if isinstance(self.auto_last_thetas, str) else self.auto_last_thetas
+        except Exception:
+            self.auto_last_filenames = []
+            self.auto_last_thetas = []
         
         # Debug: Print auto parameters to verify they're loaded
         print(f"DEBUG: Auto parameters loaded:")
@@ -450,6 +458,21 @@ class FileTableWidget(QWidget):
                     self.element_tag_changed()
                     self.scaler_tag_changed()
                     self.theta_tag_changed()
+                    # Restore filenames and thetas if "Load last files selection" is checked
+                    if getattr(self.parent, 'files_chbx', None) and self.parent.files_chbx.isChecked() and self.auto_last_filenames and self.auto_last_thetas and len(self.auto_last_filenames) == len(self.auto_last_thetas):
+                        try:
+                            path = self.fileTableModel.directory or self.dirLineEdit.text()
+                            existing = set(os.listdir(path)) if path and os.path.isdir(path) else set()
+                            pairs = [(f, self.auto_last_thetas[self.auto_last_filenames.index(f)]) for f in self.auto_last_filenames if f in existing]
+                            if pairs:
+                                pairs.sort(key=lambda x: x[0])
+                                keep_f = [p[0] for p in pairs]
+                                keep_t = [float(p[1]) for p in pairs]
+                                self.fileTableModel.update_fnames(keep_f)
+                                self.fileTableModel.update_thetas(keep_t)
+                                self.fileTableView.sortByColumn(1, 0)
+                        except Exception:
+                            pass
                 else:
                     return
             except:
