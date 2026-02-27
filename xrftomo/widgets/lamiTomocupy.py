@@ -82,7 +82,7 @@ class LaminographyTomocupy(QWidget):
                 result = subprocess.run(["tomocupy", "--help"], 
                                       capture_output=True, text=True, timeout=5)
                 return result.returncode == 0
-            except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+            except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError, PermissionError):
                 return False
         
         # Method 2: Check if module can be imported (with warning suppression)
@@ -140,6 +140,7 @@ class LaminographyTomocupy(QWidget):
         options = result.split("--")[2::]
         op_tmp = [i.replace("                       ","") for i in options]
         op_tmp = [i.replace("\r\n","") for i in op_tmp]
+        op_tmp = [i.replace("\n","") for i in op_tmp]  # Also handle Unix-style newlines
         op_tmp = [i.replace("  "," ") for i in op_tmp]
         op_tmp = [i.replace("  "," ") for i in op_tmp]
         op_tmp = [i.replace("  "," ") for i in op_tmp]
@@ -154,7 +155,7 @@ class LaminographyTomocupy(QWidget):
         for i, line in enumerate(default_tmp):
             key = list(op_dict.keys())[i]
             if len(line)>1:
-                default = line[-1].replace(")", "")
+                default = line[-1].replace(")", "").strip()
 
             else:
                 default = None
@@ -167,7 +168,7 @@ class LaminographyTomocupy(QWidget):
             if idx_0 == -1:
                 choice = None
             else:
-                choice = line[idx_0 + 1:idx_1].split(",")
+                choice = [c.strip() for c in line[idx_0 + 1:idx_1].split(",")]
             op_dict[key][2] = choice
 
         op_tmp = [i.split("(default")[0] for i in op_tmp]

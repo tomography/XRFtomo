@@ -457,28 +457,20 @@ class FileTableWidget(QWidget):
                     
                     self.element_tag_changed()
                     self.scaler_tag_changed()
+                    
+                    # theta_tag_changed() will check for valid saved thetas internally
+                    # and skip H5 loading if "No selection" or valid saved thetas exist
                     self.theta_tag_changed()
-                    # Restore filenames and thetas if "Load last files selection" is checked
-                    if getattr(self.parent, 'files_chbx', None) and self.parent.files_chbx.isChecked() and self.auto_last_filenames and self.auto_last_thetas and len(self.auto_last_filenames) == len(self.auto_last_thetas):
-                        try:
-                            path = self.fileTableModel.directory or self.dirLineEdit.text()
-                            existing = set(os.listdir(path)) if path and os.path.isdir(path) else set()
-                            pairs = [(f, self.auto_last_thetas[self.auto_last_filenames.index(f)]) for f in self.auto_last_filenames if f in existing]
-                            if pairs:
-                                pairs.sort(key=lambda x: x[0])
-                                keep_f = [p[0] for p in pairs]
-                                keep_t = [float(p[1]) for p in pairs]
-                                self.fileTableModel.update_fnames(keep_f)
-                                self.fileTableModel.update_thetas(keep_t)
-                                self.fileTableView.sortByColumn(1, 0)
-                        except Exception:
-                            pass
                 else:
-                    return
-            except:
-                print("problem")
-                return
-            
+                    print("DEBUG: Tags don't exist, skipping H5 theta loading")
+                    # Still try to restore saved file selection
+                    if self._should_restore_saved_thetas():
+                        self.restore_saved_file_selection()
+            except Exception as e:
+                print(f"DEBUG: Error during H5 processing: {e}")
+                # Still try to restore on error
+                if self._should_restore_saved_thetas():
+                    self.restore_saved_file_selection()
 
         if ext == '*.tiff' or ext == ".tiff" or ext == ".tif" or ext == "*.tif":
             # TODO: when loading from filemenu, check only files which were selected
@@ -489,6 +481,9 @@ class FileTableWidget(QWidget):
                 self.elementTableModel.arrayData[0].element_name = "Channel_1"
                 self.elementTableModel.arrayData[0].use = True
             print("Load angle information using txt or csv file")
+            # Try to restore saved file selection for TIFF files
+            if self._should_restore_saved_thetas():
+                self.restore_saved_file_selection()
         return
 
     def check_auto_tags(self):
@@ -515,6 +510,111 @@ class FileTableWidget(QWidget):
             self.scaler_menu.setCurrentText(default)
             self.theta_menu.setCurrentText(default)
             return False
+
+    def _should_restore_saved_thetas(self):
+        """Check if we have valid saved thetas that should be restored instead of loading from H5."""
+        import sys
+        
+        # Check if files_chbx exists and is checked
+        # Note: At startup, the checkbox might not exist yet, so we also check the config
+        files_chbx = getattr(self.parent, 'files_chbx', None)
+        
+        # Check config value directly (checkbox state comes from load_settings array, index 9)
+        try:
+            load_settings = eval(self.parent.params.load_settings)
+            # files_chbx is at index 9 in the checkbox list
+            files_chbx_from_config = len(load_settings) > 9 and load_settings[9]
+        except:
+            files_chbx_from_config = False
+        
+        # Use checkbox if it exists, otherwise use config value
+        if files_chbx is not None:
+            is_checked = files_chbx.isChecked()
+        else:
+            is_checked = files_chbx_from_config
+            
+        sys.stderr.write(f"DEBUG: files_chbx = {files_chbx}, from_config = {files_chbx_from_config}, is_checked = {is_checked}\n")
+        
+        if not is_checked:
+            print("DEBUG: _should_restore_saved_thetas - files_chbx not checked", flush=True)
+            return False
+        
+        # Check if we have saved filenames and thetas
+        sys.stderr.write(f"DEBUG: auto_last_filenames count = {len(self.auto_last_filenames) if self.auto_last_filenames else 0}\n")
+        sys.stderr.write(f"DEBUG: auto_last_thetas count = {len(self.auto_last_thetas) if self.auto_last_thetas else 0}\n")
+        if not self.auto_last_filenames or not self.auto_last_thetas:
+            print("DEBUG: _should_restore_saved_thetas - no saved filenames or thetas", flush=True)
+            return False
+        
+        if len(self.auto_last_filenames) != len(self.auto_last_thetas):
+            print("DEBUG: _should_restore_saved_thetas - length mismatch", flush=True)
+            return False
+        
+        # Check if saved thetas are valid (not all -1)
+        if all(t == -1.0 or t == -1 for t in self.auto_last_thetas):
+            print("DEBUG: _should_restore_saved_thetas - all thetas are -1 (invalid)", flush=True)
+            return False
+        
+        print(f"DEBUG: _should_restore_saved_thetas - found {len(self.auto_last_thetas)} valid saved thetas", flush=True)
+        sys.stderr.write(f"DEBUG: VALID THETAS FOUND - {len(self.auto_last_thetas)} entries\n")
+        return True
+
+    def restore_saved_file_selection(self):
+        """Restore previously saved filenames and theta values from the last session."""
+        print(f"DEBUG: restore_saved_file_selection called", flush=True)
+        
+        # Note: We skip the checkbox check here because _should_restore_saved_thetas() 
+        # already validated this before calling us. The checkbox might not exist yet at startup.
+        
+        # Check if we have saved filenames and thetas
+        if not self.auto_last_filenames or not self.auto_last_thetas:
+            print("DEBUG: No saved filenames or thetas to restore", flush=True)
+            return
+        if len(self.auto_last_filenames) != len(self.auto_last_thetas):
+            print(f"DEBUG: Length mismatch - filenames: {len(self.auto_last_filenames)}, thetas: {len(self.auto_last_thetas)}", flush=True)
+            return
+        
+        print(f"DEBUG: Have {len(self.auto_last_filenames)} filenames and thetas to restore", flush=True)
+            
+        try:
+            path = self.fileTableModel.directory or self.dirLineEdit.text()
+            print(f"DEBUG: Checking directory: {path}")
+            
+            if not path or not os.path.isdir(path):
+                print(f"DEBUG: Invalid directory path: {path}")
+                return
+                
+            existing = set(os.listdir(path))
+            print(f"DEBUG: Found {len(existing)} files in directory")
+            
+            # Create pairs of (filename, theta) for files that still exist
+            pairs = []
+            for i, fname in enumerate(self.auto_last_filenames):
+                if fname in existing:
+                    pairs.append((fname, self.auto_last_thetas[i]))
+                else:
+                    print(f"DEBUG: File not found in directory: {fname}")
+                    
+            print(f"DEBUG: Matched {len(pairs)} files from saved selection")
+            
+            if pairs:
+                # Sort by filename for consistent ordering
+                pairs.sort(key=lambda x: x[0])
+                keep_f = [p[0] for p in pairs]
+                keep_t = [float(p[1]) for p in pairs]
+                
+                print(f"DEBUG: Restoring {len(keep_f)} files with thetas")
+                self.fileTableModel.update_fnames(keep_f)
+                self.fileTableModel.update_thetas(keep_t)
+                self.fileTableView.sortByColumn(1, 0)
+                print("DEBUG: File selection restored successfully")
+            else:
+                print("DEBUG: No matching files found to restore")
+                
+        except Exception as e:
+            print(f"DEBUG: Error restoring file selection: {e}")
+            import traceback
+            traceback.print_exc()
 
     def populate_unified_menu(self, h5_obj, existing_menu, callback_func, max_depth=5):
         """
@@ -1246,7 +1346,7 @@ class FileTableWidget(QWidget):
         print(f"  Row: {current_row}, Column: {current_column}")
         print(f"  Value: {cell_value}")
         
-        self.theta_tag_changed()
+        self.theta_tag_changed(force=True)  # User selection - force load from H5
         
         # Close the table container
         if hasattr(self, 'table_container'):
@@ -1274,7 +1374,7 @@ class FileTableWidget(QWidget):
         print(f"  Row: {current_row}, Column: {current_column}")
         print(f"  Value: {cell_value}")
         
-        self.theta_tag_changed()
+        self.theta_tag_changed(force=True)  # User selection - force load from H5
         self.tablewidget.close()
 
 
@@ -1300,8 +1400,8 @@ class FileTableWidget(QWidget):
             self.elementTableModel.setChecked(self.auto_selected_elements, (True))
         except:
             print("invalid tag option")
-
-        self.theta_tag_changed()
+        # Note: theta_tag_changed() is called separately from onLoadDirectory()
+        # Don't call it here to avoid duplicate H5 reading attempts
         return
 
     def scaler_tag_changed(self):
@@ -1330,7 +1430,27 @@ class FileTableWidget(QWidget):
         data[data == np.inf] = 0.0001
         return data
 
-    def theta_tag_changed(self):
+    def theta_tag_changed(self, force=False):
+        """Load theta values from H5 files.
+        
+        Args:
+            force: If True, load from H5 even if valid saved thetas exist.
+                   User-initiated selections should pass force=True.
+        """
+        # Check if theta tag is "No selection" - skip loading
+        theta_text = self.theta_menu.currentText()
+        print(f"DEBUG: theta_tag_changed called - theta_text='{theta_text}', force={force}", flush=True)
+        
+        if theta_text == "No selection" or not theta_text:
+            print("DEBUG: theta_tag_changed - Theta tag is 'No selection', skipping H5 load", flush=True)
+            return
+        
+        # Skip H5 loading if valid saved thetas exist (unless forced by user action)
+        if not force and self._should_restore_saved_thetas():
+            print("DEBUG: theta_tag_changed - Valid saved thetas exist, skipping H5 load", flush=True)
+            self.restore_saved_file_selection()
+            return
+        
         try:
             path_files = self.fileTableModel.getAllFiles()
             # Use the full_path directly - it now contains the dataset path without cell values
@@ -1340,7 +1460,7 @@ class FileTableWidget(QWidget):
             col = self.theta_menu.property("selected_column")
             adjacents = self.theta_menu.property("adjacents")
             
-            print(f"DEBUG: theta_tag_changed - Loading thetas:")
+            print(f"DEBUG: theta_tag_changed - Loading thetas from H5:")
             print(f"  theta_path: {theta_path}")
             print(f"  row: {row}, col: {col}")
             

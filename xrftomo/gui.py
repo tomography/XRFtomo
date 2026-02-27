@@ -216,7 +216,10 @@ class MatchFilenamesThetasDialog(QDialog):
             )
             return
 
+        # Sort by filename to maintain consistency
         accepted.sort(key=lambda x: x[0])
+        shifts.sort(key=lambda x: x["filename"])
+        
         fnames = [a[0] for a in accepted]
         thetas_list = [float(a[1]) for a in accepted]
 
@@ -745,8 +748,10 @@ class xrftomoGui(QMainWindow):
                 try:
                     child.setChecked(self.checkbox_states[counter])
                 except:
-                    child.setChecked(False)
-                    self.checkbox_states.append(False)
+                    # Default to True for file-related checkboxes (first 10), False for others
+                    default_val = counter < 10
+                    child.setChecked(default_val)
+                    self.checkbox_states.append(default_val)
                 child.stateChanged.connect(self.loadSettingsChanged)
                 counter += 1
             else:
@@ -2495,6 +2500,85 @@ class xrftomoGui(QMainWindow):
 
     # def reset_widgets(self):
 
+    def _apply_initial_shifts(self):
+        """Apply x/y shifts from 'match filenames to thetas' dialog with subpixel precision."""
+        from scipy.ndimage import shift as ndimage_shift
+        
+        num_projections = self.data.shape[1]
+        self.x_shifts = np.zeros(num_projections, dtype=float)
+        self.y_shifts = np.zeros(num_projections, dtype=float)
+        
+        # Check if we have shifts from the match filenames dialog
+        if not hasattr(self, 'shifts') or not self.shifts:
+            return
+        
+        # Build a mapping from filename to shift values
+        shift_map = {}
+        for shift_entry in self.shifts:
+            fname = shift_entry.get("filename", "")
+            x_val = shift_entry.get("x-shifts", "")
+            y_val = shift_entry.get("y-shifts", "")
+            if fname:
+                shift_map[fname] = (x_val, y_val)
+        
+        if not shift_map:
+            return
+        
+        # Check if any shifts are non-zero
+        has_shifts = False
+        for fname in self.fnames:
+            if fname in shift_map:
+                x_str, y_str = shift_map[fname]
+                try:
+                    x_shift = float(x_str) if x_str else 0.0
+                    y_shift = float(y_str) if y_str else 0.0
+                    if x_shift != 0.0 or y_shift != 0.0:
+                        has_shifts = True
+                        break
+                except ValueError:
+                    pass
+        
+        if not has_shifts:
+            print("No x/y shifts to apply")
+            return
+        
+        print("Applying x/y shifts from text file with subpixel precision...")
+        
+        # Apply shifts to each projection
+        for proj_idx, fname in enumerate(self.fnames):
+            if fname not in shift_map:
+                continue
+            
+            x_str, y_str = shift_map[fname]
+            try:
+                x_shift = float(x_str) if x_str else 0.0
+                y_shift = float(y_str) if y_str else 0.0
+            except ValueError:
+                print(f"  Warning: Invalid shift values for {fname}: x={x_str}, y={y_str}")
+                continue
+            
+            if x_shift == 0.0 and y_shift == 0.0:
+                continue
+            
+            # Store the shift values for tracking
+            self.x_shifts[proj_idx] = x_shift
+            self.y_shifts[proj_idx] = y_shift
+            
+            # Apply shift to all elements for this projection
+            # Data shape is [elements, projections, height, width]
+            # ndimage_shift uses (row_shift, col_shift) = (y, x)
+            for elem_idx in range(self.data.shape[0]):
+                self.data[elem_idx, proj_idx] = ndimage_shift(
+                    self.data[elem_idx, proj_idx],
+                    shift=(y_shift, x_shift),
+                    order=3,  # Cubic interpolation for subpixel
+                    mode='constant',
+                    cval=0.0
+                )
+        
+        applied_count = np.sum((self.x_shifts != 0) | (self.y_shifts != 0))
+        print(f"Applied shifts to {applied_count} projections")
+
     def updateImages(self, from_open=False):
         self.prevTab = self.tab_widget.currentIndex()
         self.data_history = []
@@ -2527,8 +2611,10 @@ class xrftomoGui(QMainWindow):
             self.updateScatter()
 
         self.centers = [100,100,self.data.shape[3]//2]
-        self.x_shifts = np.zeros(self.data.shape[1], dtype="int")
-        self.y_shifts = np.zeros(self.data.shape[1], dtype="int")
+        
+        # Apply shifts from "match filenames to thetas" if available
+        self._apply_initial_shifts()
+        
         self.original_data = self.data.copy()
         self.original_fnames = self.fnames.copy()
         self.original_thetas = self.thetas.copy()
@@ -3022,8 +3108,16 @@ class xrftomoGui(QMainWindow):
             self.params.theta_tag = self.fileTableWidget.theta_menu.property("full_path") or self.fileTableWidget.theta_menu.currentText() or getattr(self.params, 'theta_tag', '')
             arr = self.fileTableWidget.fileTableModel.arrayData
             if arr:
-                self.params.last_filenames = str([getattr(x, 'filename', '') for x in arr])
-                self.params.last_thetas = str([float(getattr(x, 'theta', 0)) for x in arr])
+                filenames = [getattr(x, 'filename', '') for x in arr]
+                thetas = [float(getattr(x, 'theta', 0)) for x in arr]
+                # Only save if thetas have valid values (not all -1)
+                # This prevents corrupting saved config when thetas weren't loaded properly
+                if not all(t == -1.0 for t in thetas):
+                    self.params.last_filenames = str(filenames)
+                    self.params.last_thetas = str(thetas)
+                    print(f"DEBUG: Saved {len(filenames)} filenames and thetas")
+                else:
+                    print("DEBUG: Not saving filenames/thetas - all thetas are -1 (invalid)")
             else:
                 self.params.last_filenames = '[]'
                 self.params.last_thetas = '[]'

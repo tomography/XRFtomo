@@ -47,7 +47,7 @@ SECTIONS['gui'] = {
 SECTIONS['file-io'] = {
     'load-settings': {
         'type': str,
-        'default': "[True, True, True, True, True, True, True, True]",
+        'default': "[True, True, True, True, True, True, True, True, True, True, False, False, False, False, False, False, False, False]",
         'help': "True/False state for checkboxes under help drowdown menu"},
     'legacy-mode': {
         'default': True,

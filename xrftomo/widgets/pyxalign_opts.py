@@ -1,7 +1,9 @@
 try:
     from pyxalign import options as opts
     PYXALIGN_AVAILABLE = True
-except ImportError:
+except (ImportError, AttributeError, KeyError):
+    # AttributeError/KeyError can occur if pyxalign uses StrEnum (Python 3.11+)
+    # but we're running Python 3.10 or earlier
     PYXALIGN_AVAILABLE = False
     opts = None
 from PyQt5.QtWidgets import (
