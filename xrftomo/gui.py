@@ -349,6 +349,8 @@ class xrftomoGui(QMainWindow):
         self.message_window.setMinimumHeight(80)
 
         self.message_window.setMaximumHeight(300)
+        self.message_window.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.message_window.customContextMenuRequested.connect(self._on_message_window_context_menu)
 
         exitAction = QAction('Exit', self)
         exitAction.triggered.connect(self.close)
@@ -683,7 +685,9 @@ class xrftomoGui(QMainWindow):
         self.quant_chbx = QtWidgets.QCheckBox("Load last quant setting")
         self.normalize_chbx = QtWidgets.QCheckBox("Load last normalization")
         self.elememts_chbx = QtWidgets.QCheckBox("Load last element selection")
-        self.files_chbx = QtWidgets.QCheckBox("Load last files selection")
+        # Controls whether to restore last file/theta selection from the config
+        # instead of re-loading theta values from H5/PV on startup.
+        self.files_chbx = QtWidgets.QCheckBox("Restore last file/theta selection")
 
         processing_lbl = QtWidgets.QLabel("pre-processing")
         self.crop_chbx = QtWidgets.QCheckBox("crop after aligning")
@@ -1149,6 +1153,12 @@ class xrftomoGui(QMainWindow):
         cursor.insertText(text)
         self.message_window.setTextCursor(cursor)
         self.message_window.ensureCursorVisible()
+
+    def _on_message_window_context_menu(self, position):
+        menu = QMenu(self)
+        clear_action = menu.addAction("Clear")
+        clear_action.triggered.connect(self.message_window.clear)
+        menu.exec_(self.message_window.mapToGlobal(position))
 
     def __del__(self):
         sys.stdout = sys.__stdout__

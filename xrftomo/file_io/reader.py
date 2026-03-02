@@ -229,10 +229,13 @@ def read_mic_xrf(path_files, elements, data_tag, element_tag, scalers, scaler_ta
     num_scalers = len(scalers)
     #get max dimensons
     for i in range(num_files):
-        proj = read_projection(path_files[i], elements[0], data_tag, element_tag)
-        if proj is None:
-            pass
-        else:
+        try:
+            proj = read_projection(path_files[i], elements[0], data_tag, element_tag)
+        except Exception as error:
+            print(error)
+            print("WARNING: possible error with file: {}. Skipping file when determining dimensions.".format(path_files[i]))
+            proj = None
+        if proj is not None:
             if proj.shape[0] > max_y:
                 max_y = proj.shape[0]
             if proj.shape[1] > max_x:
@@ -242,7 +245,12 @@ def read_mic_xrf(path_files, elements, data_tag, element_tag, scalers, scaler_ta
     #get data
     for i in range(num_elements):
         for j in range(num_files):
-            proj = read_projection(path_files[j], elements[i], data_tag, element_tag)
+            try:
+                proj = read_projection(path_files[j], elements[i], data_tag, element_tag)
+            except Exception as error:
+                print(error)
+                print("WARNING: possible error with file: {}. Check file integrity. Filling with zeros for this projection.".format(path_files[j]))
+                proj = None
             if proj is not None:
                 img_y = proj.shape[0]
                 img_x = proj.shape[1]
@@ -254,13 +262,20 @@ def read_mic_xrf(path_files, elements, data_tag, element_tag, scalers, scaler_ta
                     print(error)
                     print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
                     data[i, j] = np.zeros([max_y,max_x])
+            else:
+                data[i, j] = np.zeros([max_y,max_x])
 
     for i in range(num_scalers):
         k = i+num_elements
         for j in range(num_files):
-            proj = read_projection(path_files[j], scalers[i], data_tag.split("/")[0]+"/scalers", scaler_tag)
-            proj = np.roll(proj,1, axis=1)
+            try:
+                proj = read_projection(path_files[j], scalers[i], data_tag.split("/")[0]+"/scalers", scaler_tag)
+            except Exception as error:
+                print(error)
+                print("WARNING: possible error with scaler data in file: {}. Check file integrity. Filling with zeros for this scaler.".format(path_files[j]))
+                proj = None
             if proj is not None:
+                proj = np.roll(proj,1, axis=1)
                 img_y = proj.shape[0]
                 img_x = proj.shape[1]
                 dx = (max_x-img_x)//2
@@ -271,6 +286,8 @@ def read_mic_xrf(path_files, elements, data_tag, element_tag, scalers, scaler_ta
                     print(error)
                     print("WARNING: possible error with file: {}. Check file integrity. ".format(path_files[j]))
                     data[k, j] = np.zeros([max_y,max_x])
+            else:
+                data[k, j] = np.zeros([max_y,max_x])
 
 
     data[np.isnan(data)] = 0.0001

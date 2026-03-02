@@ -458,9 +458,14 @@ class FileTableWidget(QWidget):
                     self.element_tag_changed()
                     self.scaler_tag_changed()
                     
-                    # theta_tag_changed() will check for valid saved thetas internally
-                    # and skip H5 loading if "No selection" or valid saved thetas exist
-                    self.theta_tag_changed()
+                    # IMPORTANT: Do NOT auto-load thetas from H5 here.
+                    # On startup we always prefer restoring previously saved thetas
+                    # from the config file when they exist, and we only read from H5
+                    # when the user explicitly selects a theta dataset (which calls
+                    # theta_tag_changed(force=True)).
+                    if self._should_restore_saved_thetas():
+                        print("DEBUG: Auto-load startup - restoring thetas from config instead of H5", flush=True)
+                        self.restore_saved_file_selection()
                 else:
                     print("DEBUG: Tags don't exist, skipping H5 theta loading")
                     # Still try to restore saved file selection
@@ -524,14 +529,18 @@ class FileTableWidget(QWidget):
             load_settings = eval(self.parent.params.load_settings)
             # files_chbx is at index 9 in the checkbox list
             files_chbx_from_config = len(load_settings) > 9 and load_settings[9]
-        except:
-            files_chbx_from_config = False
+        except Exception:
+            # If config can't be parsed, fall back to enabling restore by default
+            files_chbx_from_config = None
         
-        # Use checkbox if it exists, otherwise use config value
+        # Use checkbox if it exists, otherwise use config value if present,
+        # and default to True when nothing explicit is set (so saved thetas are restored).
         if files_chbx is not None:
             is_checked = files_chbx.isChecked()
-        else:
+        elif files_chbx_from_config is not None:
             is_checked = files_chbx_from_config
+        else:
+            is_checked = True
             
         sys.stderr.write(f"DEBUG: files_chbx = {files_chbx}, from_config = {files_chbx_from_config}, is_checked = {is_checked}\n")
         
@@ -1437,12 +1446,15 @@ class FileTableWidget(QWidget):
             force: If True, load from H5 even if valid saved thetas exist.
                    User-initiated selections should pass force=True.
         """
-        # Check if theta tag is "No selection" - skip loading
+        # Check if theta tag is "No selection" - skip H5 load but restore saved thetas if available
         theta_text = self.theta_menu.currentText()
         print(f"DEBUG: theta_tag_changed called - theta_text='{theta_text}', force={force}", flush=True)
         
         if theta_text == "No selection" or not theta_text:
             print("DEBUG: theta_tag_changed - Theta tag is 'No selection', skipping H5 load", flush=True)
+            if self._should_restore_saved_thetas():
+                print("DEBUG: Restoring thetas from config (last session)", flush=True)
+                self.restore_saved_file_selection()
             return
         
         # Skip H5 loading if valid saved thetas exist (unless forced by user action)
@@ -1459,7 +1471,17 @@ class FileTableWidget(QWidget):
             row = self.theta_menu.property("selected_row")
             col = self.theta_menu.property("selected_column")
             adjacents = self.theta_menu.property("adjacents")
-            
+
+            # If no valid theta_path is set on the combo, don't attempt H5 loading.
+            # This happens when the H5 has no theta dataset (auto_theta_tag not in file)
+            # and the menu was left at its placeholder text.
+            if not theta_path:
+                print("DEBUG: theta_tag_changed - No theta_path set, skipping H5 load", flush=True)
+                if self._should_restore_saved_thetas():
+                    print("DEBUG: Restoring thetas from config (last session) due to missing theta_path", flush=True)
+                    self.restore_saved_file_selection()
+                return
+
             print(f"DEBUG: theta_tag_changed - Loading thetas from H5:")
             print(f"  theta_path: {theta_path}")
             print(f"  row: {row}, col: {col}")
@@ -1474,39 +1496,6 @@ class FileTableWidget(QWidget):
             if adjacents is None and hasattr(self, 'auto_adjacents'):
                 adjacents = self.auto_adjacents
                 print(f"DEBUG: Using auto adjacents: {adjacents}")
-
-            # # Check for various "Value" related keys in adjacents
-            # values_key = None
-            # # List of possible "Value" related keys to check (case insensitive)
-            # value_keys = ["Value", "Values", "Val", "Vals", "VAL", "VALS"]
-            # # Convert adjacents keys to lowercase for case-insensitive comparison
-            # adjacents_lower = {k.lower(): k for k in adjacents.keys()}
-            
-            # for key in value_keys:
-            #     if key.lower() in adjacents_lower:
-            #         values_key = adjacents_lower[key.lower()]  # Get the original key with correct case
-            #         break
-            
-            # if values_key:
-            #     print(f"DEBUG: Found values key: {values_key}")
-            #     values_path = adjacents[values_key]
-            #     thetas, files = xrftomo.load_thetas(path_files, values_path, False, row, col)
-
-            # elif ("extra" or "pv" or "csv") in theta_tag:
-            #     print("DEBUG: No adjacents found, check if in extra_pvs")
-            #     thetas, files = xrftomo.load_thetas(path_files, theta_tag, False, row, col)
-
-            # elif "theta" in theta_tag:
-            #     #TODO: check if theta is linked value. 
-            #     #NOTE: theta as a liknked value is currently not implemented correctly in h5 file
-            #     #so while value technically exists, it is always zero.   
-            #     thetas, files = xrftomo.load_thetas(path_files, theta_tag, False, 0, 0)
-
-            # elif "value" in theta_tag:
-            #     thetas, files = xrftomo.load_thetas(path_files, theta_tag, True, 0, 0)
-            # else: 
-            #     print("no valid option selected")
-            #     return
 
             thetas, files = xrftomo.load_thetas(path_files, theta_path, row=row, col=col)
             if len(thetas) == 0:
